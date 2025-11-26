@@ -333,7 +333,7 @@ export function ProfileClient({
                                 {post.content}
                               </p>
                               <div className="mt-3 flex items-center gap-6 text-slate-500">
-                                <span className="text-sm">{post.likes?.length || 0} Likes</span>
+                                <span className="text-sm">{post.likes ?? 0} Likes</span>
                               </div>
                             </div>
                           </div>
