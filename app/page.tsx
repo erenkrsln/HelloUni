@@ -40,8 +40,8 @@ export default function Home() {
         setError("Ungültige Anmeldedaten");
         setLoading(false);
       } else {
-        router.refresh();
-        router.push("/feed");
+        await new Promise(resolve => setTimeout(resolve, 100));
+        window.location.href = "/feed";
       }
     } else {
       // Registrierung mit Convex
@@ -84,8 +84,8 @@ export default function Home() {
           setError("Registrierung erfolgreich, aber Login fehlgeschlagen");
           setLoading(false);
         } else {
-          router.refresh();
-          router.push("/feed");
+          await new Promise(resolve => setTimeout(resolve, 100));
+          window.location.href = "/feed";
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Registrierung fehlgeschlagen");
