@@ -403,8 +403,8 @@ export function FeedClient() {
       {/* Mobile Header with Tabs */}
       <header className={`sticky z-[9] bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
         isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-      }`} style={{ top: '57px', marginTop: '-1px', boxShadow: 'none', border: 'none', borderTop: 'none' }}>
-        <div className="flex">
+      }`} style={{ top: '57px', marginTop: '-1px', boxShadow: 'none', border: 'none', borderTop: 'none', backgroundColor: '#ffffff' }}>
+        <div className="flex" style={{ backgroundColor: '#ffffff' }}>
           <button
             onClick={() => setFeedTab("foryou")}
             className={`relative flex-1 px-4 py-4 text-[15px] font-semibold transition hover:bg-slate-50 ${
