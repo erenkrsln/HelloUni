@@ -58,11 +58,11 @@ export function FeedClient() {
   const posts = useQuery(api.posts.getPosts, { limit: 50 });
   const followingPosts = useQuery(
     api.posts.getFollowingPosts,
-    currentUser?._id ? { userId: currentUser._id, limit: 50 } : "skip"
+    currentUser?._id ? { userId: currentUser._id as any, limit: 50 } : "skip"
   );
   const likedPostIds = useQuery(
     api.posts.getLikedPostIds,
-    currentUser?._id ? { userId: currentUser._id } : "skip"
+    currentUser?._id ? { userId: currentUser._id as any } : "skip"
   );
   
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -105,7 +105,7 @@ export function FeedClient() {
 
   const filteredPosts = useMemo(() => {
     const posts = displayPosts ?? cachedPosts;
-    if (!posts) return undefined;
+    if (!posts) return [];
     
     // Filtere gelöschte Posts heraus
     return posts.filter((post: any) => !deletedPostIdsRef.current.has(post._id));
@@ -184,7 +184,7 @@ export function FeedClient() {
 
     try {
       const postId = await createPost({
-        authorId: currentUser._id,
+        authorId: currentUser._id as any,
         content: postContent,
         imageUrl: postImage || undefined,
       });
@@ -313,7 +313,7 @@ export function FeedClient() {
     try {
       // Nur löschen, wenn es keine temporäre ID ist
       if (!deletePostId.startsWith("temp-")) {
-        await deletePost({ postId: deletePostId, userId: currentUser._id });
+        await deletePost({ postId: deletePostId as any, userId: currentUser._id as any });
       }
       queryClient.invalidateQueries({ queryKey: postsQueryKey });
       queryClient.invalidateQueries({ queryKey: ["convex", "posts.getUserPosts"] });
@@ -504,12 +504,12 @@ export function FeedClient() {
 
       {/* Posts */}
       <div>
-        {filteredPosts === undefined && !cachedPosts ? (
+        {filteredPosts.length === 0 && !cachedPosts && !displayPosts ? (
           <div className="py-12 text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[var(--brand)] border-t-transparent" />
             <p className="mt-4 text-slate-500">Lade Posts...</p>
           </div>
-        ) : filteredPosts?.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-slate-500">Noch keine Posts vorhanden.</p>
             <p className="mt-2 text-sm text-slate-400">Erstelle deinen ersten Post oben!</p>

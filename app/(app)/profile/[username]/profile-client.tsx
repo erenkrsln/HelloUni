@@ -397,7 +397,7 @@ export function ProfileClient({
     });
 
     try {
-      await deletePost({ postId: deletePostId, userId: profileUser._id });
+      await deletePost({ postId: deletePostId as any, userId: profileUser._id as any });
       queryClient.invalidateQueries({ queryKey: userPostsQueryKey });
       queryClient.invalidateQueries({ queryKey: ["convex", "posts.getPosts"] });
       invalidateQueries();
