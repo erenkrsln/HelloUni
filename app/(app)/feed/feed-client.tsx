@@ -401,7 +401,7 @@ export function FeedClient() {
       </header>
 
       {/* Mobile Header with Tabs */}
-      <header className={`sticky top-[57px] z-[9] bg-white lg:hidden -mt-px transition-transform duration-300 ease-in-out ${
+      <header className={`sticky top-[57px] z-[9] bg-white lg:hidden -mt-px transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
         isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       }`}>
         <div className="flex">

@@ -21,20 +21,31 @@ export function ScrollProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let ticking = false;
+
     const handleScroll = () => {
-      const mainElement = document.querySelector("main");
-      if (!mainElement) return;
-      
-      const currentScrollY = mainElement.scrollTop;
-      const scrollThreshold = 50;
-      
-      if (currentScrollY > scrollThreshold && currentScrollY > lastScrollY.current) {
-        setIsHeaderVisible(false);
-      } else if (currentScrollY < lastScrollY.current) {
-        setIsHeaderVisible(true);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const mainElement = document.querySelector("main");
+          if (!mainElement) {
+            ticking = false;
+            return;
+          }
+          
+          const currentScrollY = mainElement.scrollTop;
+          const scrollThreshold = 30;
+          
+          if (currentScrollY > scrollThreshold && currentScrollY > lastScrollY.current) {
+            setIsHeaderVisible(false);
+          } else if (currentScrollY < lastScrollY.current || currentScrollY <= scrollThreshold) {
+            setIsHeaderVisible(true);
+          }
+          
+          lastScrollY.current = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
       }
-      
-      lastScrollY.current = currentScrollY;
     };
 
     const mainElement = document.querySelector("main");

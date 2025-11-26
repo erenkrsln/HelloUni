@@ -160,7 +160,7 @@ export function AppLayoutClient({
           <div className="border-r border-slate-200 bg-white xl:border-r-0">
             {/* Mobile Header - Hidden on profile pages */}
             {!pathname.startsWith("/profile") && (
-              <header className={`sticky top-0 z-10 bg-white lg:hidden transition-transform duration-300 ease-in-out ${
+              <header className={`sticky top-0 z-10 bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
                 isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
               }`}>
                 <div className="flex items-center justify-between px-4 py-3">
