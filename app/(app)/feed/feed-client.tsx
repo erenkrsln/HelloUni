@@ -23,6 +23,7 @@ import { PostLikeButton } from "@/components/post-like-button";
 import { formatRelativeTime } from "@/lib/format-time";
 import { ImageModal } from "@/components/image-modal";
 import { PostImage } from "@/components/post-image";
+import { useScroll } from "@/lib/scroll-context";
 
 export function FeedClient() {
   const [newPost, setNewPost] = useState("");
@@ -67,6 +68,7 @@ export function FeedClient() {
   );
   
   const [hasInitialized, setHasInitialized] = useState(false);
+  const { isHeaderVisible } = useScroll();
   
   useEffect(() => {
     if (posts) {
@@ -399,7 +401,9 @@ export function FeedClient() {
       </header>
 
       {/* Mobile Header with Tabs */}
-      <header className="sticky top-[57px] z-[9] bg-white lg:hidden -mt-px">
+      <header className={`sticky top-[57px] z-[9] bg-white lg:hidden -mt-px transition-transform duration-300 ease-in-out ${
+        isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
+      }`}>
         <div className="flex">
           <button
             onClick={() => setFeedTab("foryou")}

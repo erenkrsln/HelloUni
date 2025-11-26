@@ -9,6 +9,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { LogoMark } from "@/components/logo";
 import { usePrefetchConvexQuery } from "@/lib/convex-query-hooks";
+import { useScroll } from "@/lib/scroll-context";
 import {
   HomeIcon,
   MagnifyingGlassIcon,
@@ -48,6 +49,7 @@ export function AppLayoutClient({
   const pathname = usePathname();
   const router = useRouter();
   const prefetch = usePrefetchConvexQuery();
+  const { isHeaderVisible } = useScroll();
 
   const currentUser = useQuery(
     api.users.getUserByUsername,
@@ -158,7 +160,9 @@ export function AppLayoutClient({
           <div className="border-r border-slate-200 bg-white xl:border-r-0">
             {/* Mobile Header - Hidden on profile pages */}
             {!pathname.startsWith("/profile") && (
-              <header className="sticky top-0 z-10 bg-white lg:hidden">
+              <header className={`sticky top-0 z-10 bg-white lg:hidden transition-transform duration-300 ease-in-out ${
+                isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
+              }`}>
                 <div className="flex items-center justify-between px-4 py-3">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
