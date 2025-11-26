@@ -713,7 +713,7 @@ export function ProfileClient({
                   </p>
                 </div>
               ) : (
-                userPosts.map((post) => (
+                userPosts.filter((post): post is NonNullable<typeof post> => post !== null).map((post) => (
                   <article
                     key={post._id}
                     className="border-b border-slate-200 p-4 transition hover:bg-slate-50"
