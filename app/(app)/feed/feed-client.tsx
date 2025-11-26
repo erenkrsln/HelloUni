@@ -22,6 +22,7 @@ import { useAppInitialization } from "@/lib/app-initialization-context";
 import { PostLikeButton } from "@/components/post-like-button";
 import { formatRelativeTime } from "@/lib/format-time";
 import { ImageModal } from "@/components/image-modal";
+import { PostImage } from "@/components/post-image";
 
 export function FeedClient() {
   const [newPost, setNewPost] = useState("");
@@ -654,17 +655,11 @@ export function FeedClient() {
                   </div>
                   <p className="mt-2 whitespace-pre-wrap text-slate-900">{post.content}</p>
                   {post.imageUrl && (
-                    <div className="mt-3 w-full rounded-2xl border border-slate-200 p-2">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.imageUrl}
-                        alt="Post image"
-                        className="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setSelectedImageUrl(post.imageUrl!)}
-                        loading="eager"
-                        decoding="async"
-                      />
-                    </div>
+                    <PostImage
+                      src={post.imageUrl}
+                      alt="Post image"
+                      onClick={() => setSelectedImageUrl(post.imageUrl!)}
+                    />
                   )}
                   <div className="mt-3 flex items-center gap-6">
                     <PostLikeButton
