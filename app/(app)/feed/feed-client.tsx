@@ -661,6 +661,8 @@ export function FeedClient() {
                         alt="Post image"
                         className="w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
                         onClick={() => setSelectedImageUrl(post.imageUrl!)}
+                        loading="eager"
+                        decoding="async"
                       />
                     </div>
                   )}
