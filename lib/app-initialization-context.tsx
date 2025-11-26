@@ -10,7 +10,13 @@ interface AppInitializationContextType {
 const AppInitializationContext = createContext<AppInitializationContextType | undefined>(undefined);
 
 export function AppInitializationProvider({ children }: { children: ReactNode }) {
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(() => {
+    if (typeof window !== "undefined") {
+      const hasInitialized = sessionStorage.getItem("appInitialized");
+      return hasInitialized !== "true";
+    }
+    return true;
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
