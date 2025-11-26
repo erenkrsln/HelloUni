@@ -319,7 +319,7 @@ export function ProfileClient({
     setIsSaving(true);
     try {
       await updateUser({
-        userId: profileUser._id,
+        userId: profileUser._id as any,
         username: currentUser.username,
         name: editName,
         bio: editBio,
