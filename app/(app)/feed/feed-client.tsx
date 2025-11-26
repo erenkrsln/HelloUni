@@ -401,9 +401,9 @@ export function FeedClient() {
       </header>
 
       {/* Mobile Header with Tabs */}
-      <header className={`sticky top-[57px] z-[9] bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
+      <header className={`sticky z-[9] bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
         isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-      }`} style={{ marginTop: '-1px' }}>
+      }`} style={{ top: '57px', marginTop: '-1px', boxShadow: 'none', border: 'none' }}>
         <div className="flex">
           <button
             onClick={() => setFeedTab("foryou")}

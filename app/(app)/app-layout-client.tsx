@@ -162,7 +162,7 @@ export function AppLayoutClient({
             {!pathname.startsWith("/profile") && (
               <header className={`sticky top-0 z-10 bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
                 isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-              }`}>
+              }`} style={{ boxShadow: 'none', border: 'none', borderBottom: 'none' }}>
                 <div className="flex items-center justify-between px-4 py-3">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
