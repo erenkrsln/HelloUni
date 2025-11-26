@@ -253,11 +253,11 @@ export function ProfileClient({
   
   const displayUserPosts = userPostsQuery ?? cachedUserPosts;
   
-  const userPosts =
+  const userPosts: (Post | null)[] =
     userId
-      ? (displayUserPosts ?? (isOwnProfile && currentUserPosts && !hasInitialized ? currentUserPosts : []))
+      ? (displayUserPosts ?? (isOwnProfile && currentUserPosts && !hasInitialized ? currentUserPosts : [])) as (Post | null)[]
       : isOwnProfile && currentUserPosts !== null && currentUserPosts !== undefined
-        ? currentUserPosts
+        ? (currentUserPosts as (Post | null)[])
         : [];
 
   const handleOpenEditModal = () => {
@@ -720,7 +720,7 @@ export function ProfileClient({
                   </p>
                 </div>
               ) : (
-                userPosts.filter((post): post is NonNullable<typeof post> => post !== null).map((post) => (
+                userPosts.filter((post): post is Post => post !== null).map((post) => (
                   <article
                     key={post._id}
                     className="border-b border-slate-200 p-4 transition hover:bg-slate-50"
