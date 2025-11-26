@@ -15,7 +15,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <AppInitializationProvider>
       <ToastProvider>
         <ReactQueryProvider>
-          <SessionProvider>
+          <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
             <ConvexProvider client={convex}>
               <ServiceWorkerRegister />
               {children}
