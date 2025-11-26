@@ -4,8 +4,8 @@
   "description": "Vernetze dich mit Kommiliton:innen, finde Lerngruppen und bleib auf dem Laufenden rund um dein Studium.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f6f7fb",
-  "theme_color": "#f97316",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [

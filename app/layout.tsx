@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "Vernetze dich mit Kommiliton:innen, finde Lerngruppen und bleib auf dem Laufenden rund um dein Studium.",
   metadataBase: new URL("https://hellouni.app"),
   manifest: "/manifest.json",
-  themeColor: "#f97316",
+  themeColor: "#ffffff",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -49,12 +49,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
-        <meta name="theme-color" content="#f97316" />
+        <meta name="theme-color" content="#ffffff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#f97316" />
+        <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body
