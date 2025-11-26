@@ -38,7 +38,7 @@ type ProfileUser = {
   university?: string;
 } | null;
 
-type Post = {
+type PostData = {
   _id: string;
   content: string;
   createdAt: number;
@@ -51,7 +51,9 @@ type Post = {
     username: string;
     profileImage?: string;
   };
-} | null;
+};
+
+type Post = PostData | null;
 
 export function ProfileClient({
   username,
@@ -721,7 +723,7 @@ export function ProfileClient({
                 </div>
               ) : (
                 userPosts
-                  .filter((post): post is Exclude<Post, null> => post !== null)
+                  .filter((post): post is PostData => post !== null)
                   .map((post) => (
                   <article
                     key={post._id}
