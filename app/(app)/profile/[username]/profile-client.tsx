@@ -720,7 +720,9 @@ export function ProfileClient({
                   </p>
                 </div>
               ) : (
-                userPosts.filter((post): post is Post => post !== null).map((post) => (
+                userPosts
+                  .filter((post): post is Exclude<Post, null> => post !== null)
+                  .map((post) => (
                   <article
                     key={post._id}
                     className="border-b border-slate-200 p-4 transition hover:bg-slate-50"
