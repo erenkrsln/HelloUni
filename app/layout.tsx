@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   themeColor: "#f97316",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "HelloUni",
   },
   openGraph: {
@@ -46,11 +46,16 @@ export default function RootLayout({
     <html lang="en" className="bg-[var(--background)]">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
         <meta name="theme-color" content="#f97316" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-TileColor" content="#f97316" />
+        <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body
         className={`${poppins.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}
