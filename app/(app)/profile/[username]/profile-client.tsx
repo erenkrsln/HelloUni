@@ -103,11 +103,11 @@ export function ProfileClient({
   
   const userPostsQuery = useQuery(
     api.posts.getUserPosts,
-    userId ? { userId } : "skip"
+    userId ? { userId: userId as any } : "skip"
   );
   const likedPostIds = useQuery(
     api.posts.getLikedPostIds,
-    currentUserData?._id ? { userId: currentUserData._id } : "skip"
+    currentUserData?._id ? { userId: currentUserData._id as any } : "skip"
   );
   
   const profileUserId = profileUser?._id ?? cachedProfileUser?._id;
@@ -123,7 +123,7 @@ export function ProfileClient({
   const isFollowingQuery = useQuery(
     api.follows.isFollowing,
     currentUserData?._id && profileUserId && !isOwnProfile
-      ? { followerId: currentUserData._id, followingId: profileUserId }
+      ? { followerId: currentUserData._id as any, followingId: profileUserId as any }
       : "skip"
   );
   
@@ -148,7 +148,7 @@ export function ProfileClient({
   
   const followerCountQuery = useQuery(
     api.follows.getFollowerCount,
-    profileUserId ? { userId: profileUserId } : "skip"
+    profileUserId ? { userId: profileUserId as any } : "skip"
   );
   
   useEffect(() => {
@@ -172,7 +172,7 @@ export function ProfileClient({
   
   const followingCountQuery = useQuery(
     api.follows.getFollowingCount,
-    profileUserId ? { userId: profileUserId } : "skip"
+    profileUserId ? { userId: profileUserId as any } : "skip"
   );
   
   useEffect(() => {
@@ -459,8 +459,8 @@ export function ProfileClient({
         }
         
         await unfollowUser({
-          followerId: currentUserData._id,
-          followingId: profileUserId,
+          followerId: currentUserData._id as any,
+          followingId: profileUserId as any,
         });
       } else {
         // Optimistisch: Following-Count des aktuellen Users erhöhen
@@ -473,8 +473,8 @@ export function ProfileClient({
         }
         
         await followUser({
-          followerId: currentUserData._id,
-          followingId: profileUserId,
+          followerId: currentUserData._id as any,
+          followingId: profileUserId as any,
         });
       }
       queryClient.invalidateQueries({ queryKey: ["convex", "follows"] });
