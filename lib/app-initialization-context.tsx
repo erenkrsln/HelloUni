@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface AppInitializationContextType {
   isInitializing: boolean;
@@ -10,17 +10,22 @@ interface AppInitializationContextType {
 const AppInitializationContext = createContext<AppInitializationContextType | undefined>(undefined);
 
 export function AppInitializationProvider({ children }: { children: ReactNode }) {
-  const [isInitializing, setIsInitializing] = useState(() => {
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const hasInitialized = sessionStorage.getItem("appInitialized");
-      return hasInitialized !== "true";
+      if (hasInitialized === "true") {
+        setIsInitializing(false);
+      }
     }
-    return true;
-  });
+  }, []);
 
   const setInitialized = () => {
     setIsInitializing(false);
-    sessionStorage.setItem("appInitialized", "true");
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("appInitialized", "true");
+    }
   };
 
   return (
