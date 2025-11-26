@@ -44,6 +44,13 @@ type Post = {
   createdAt: number;
   likes?: number;
   imageUrl?: string;
+  authorId?: string;
+  author?: {
+    _id: string;
+    name: string;
+    username: string;
+    profileImage?: string;
+  };
 } | null;
 
 export function ProfileClient({
