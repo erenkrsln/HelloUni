@@ -213,7 +213,7 @@ export function AppLayoutClient({
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed left-0 right-0 z-20 border-t border-slate-200 bg-white lg:hidden" style={{ bottom: 'env(safe-area-inset-bottom)', paddingBottom: '8px' }}>
+      <nav className="fixed left-0 right-0 z-20 border-t border-slate-200 bg-white lg:hidden" style={{ bottom: `calc(env(safe-area-inset-bottom) + 16px)`, paddingBottom: '8px' }}>
         <div className="flex items-center justify-around px-2 py-2">
           <Link
             href="/feed"
