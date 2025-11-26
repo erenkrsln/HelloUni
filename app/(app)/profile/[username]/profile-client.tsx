@@ -398,7 +398,9 @@ export function ProfileClient({
 
     try {
       await deletePost({ postId: deletePostId as any, userId: profileUser._id as any });
-      queryClient.invalidateQueries({ queryKey: userPostsQueryKey });
+      if (userPostsQueryKey) {
+        queryClient.invalidateQueries({ queryKey: userPostsQueryKey });
+      }
       queryClient.invalidateQueries({ queryKey: ["convex", "posts.getPosts"] });
       invalidateQueries();
       showToast("Beitrag erfolgreich gelöscht", "success");
