@@ -56,7 +56,7 @@ export function FeedClient({ user }: { user: User }) {
 
     try {
       await createPost({
-        authorId: user.id,
+        authorId: user.id as any,
         content: newPost,
       });
       setNewPost("");
