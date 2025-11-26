@@ -157,7 +157,7 @@ export function AppLayoutClient({
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-white scrollbar-hide">
-          <div className="border-r border-slate-200 bg-white xl:border-r-0">
+          <div className="border-r border-slate-200 bg-white xl:border-r-0 lg:border-r-0">
             {/* Mobile Header - Hidden on profile pages */}
             {!pathname.startsWith("/profile") && (
               <header className={`sticky top-0 z-10 bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
