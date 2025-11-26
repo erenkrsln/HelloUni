@@ -68,7 +68,7 @@ export function FeedClient({ user }: { user: User }) {
 
   const handleLike = async (postId: string) => {
     try {
-      await likePost({ postId });
+      await likePost({ postId: postId as any });
       invalidateQueries();
     } catch (error) {
       console.error("Like fehlgeschlagen:", error);
