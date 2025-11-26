@@ -399,8 +399,8 @@ export function FeedClient() {
       </header>
 
       {/* Mobile Header with Tabs */}
-      <header className="sticky top-[57px] z-10 border-b border-slate-200 bg-white/70 backdrop-blur-xl lg:hidden">
-        <div className="flex border-b border-slate-200">
+      <header className="sticky top-[57px] z-10 bg-white/70 backdrop-blur-xl lg:hidden">
+        <div className="flex">
           <button
             onClick={() => setFeedTab("foryou")}
             className={`relative flex-1 px-4 py-4 text-[15px] font-semibold transition hover:bg-slate-50 ${

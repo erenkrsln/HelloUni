@@ -158,7 +158,7 @@ export function AppLayoutClient({
           <div className="border-r border-slate-200 bg-white xl:border-r-0">
             {/* Mobile Header - Hidden on profile pages */}
             {!pathname.startsWith("/profile") && (
-              <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/70 backdrop-blur-xl lg:hidden">
+              <header className="sticky top-0 z-10 bg-white/70 backdrop-blur-xl lg:hidden">
                 <div className="flex items-center justify-between px-4 py-3">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
