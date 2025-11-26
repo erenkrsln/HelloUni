@@ -19,6 +19,7 @@ export function Providers({ children }: { children: ReactNode }) {
             refetchInterval={0} 
             refetchOnWindowFocus={false}
             basePath="/api/auth"
+            refetchWhenOffline={false}
           >
             <ConvexProvider client={convex}>
               <ServiceWorkerRegister />

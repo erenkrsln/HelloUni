@@ -2,7 +2,7 @@
 import { LogoMark } from "@/components/logo";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, useSession, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -47,7 +47,8 @@ export default function Home() {
         setError("Ungültige Anmeldedaten");
         setLoading(false);
       } else {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await getSession();
+        await new Promise(resolve => setTimeout(resolve, 200));
         window.location.href = "/feed";
       }
     } else {
@@ -91,7 +92,8 @@ export default function Home() {
           setError("Registrierung erfolgreich, aber Login fehlgeschlagen");
           setLoading(false);
         } else {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await getSession();
+          await new Promise(resolve => setTimeout(resolve, 200));
           window.location.href = "/feed";
         }
       } catch (err) {
