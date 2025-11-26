@@ -17,7 +17,6 @@ import { PostLikeButton } from "@/components/post-like-button";
 import { formatRelativeTime } from "@/lib/format-time";
 import { ImageModal } from "@/components/image-modal";
 import { PostImage } from "@/components/post-image";
-import { Avatar } from "@/components/avatar";
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -732,12 +731,20 @@ export function ProfileClient({
                     className="border-b border-slate-200 p-4 transition hover:bg-slate-50"
                   >
                     <div className="flex gap-3">
-                      <Avatar
-                        src={profileUser.profileImage}
-                        alt={profileUser.name || username}
-                        fallback={profileUser.name?.charAt(0) || username.charAt(0).toUpperCase()}
-                        size="md"
-                      />
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] overflow-hidden">
+                        {profileUser.profileImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={profileUser.profileImage}
+                            alt={profileUser.name || username}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-semibold">
+                            {profileUser.name?.charAt(0) || "U"}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">

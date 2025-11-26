@@ -4,6 +4,7 @@ import { AppLayoutClient } from "./app-layout-client";
 import { convexClient } from "@/lib/convex-client";
 import { api } from "@/convex/_generated/api";
 import { UserDataProvider } from "./user-context";
+import { AppInitializationProvider } from "@/lib/app-initialization-context";
 
 export default async function AppLayout({
   children,
@@ -36,11 +37,13 @@ export default async function AppLayout({
   }
 
   return (
-    <UserDataProvider userData={currentUser} userPosts={userPosts}>
-      <AppLayoutClient user={session.user} initialUserData={currentUser}>
-        {children}
-      </AppLayoutClient>
-    </UserDataProvider>
+    <AppInitializationProvider>
+      <UserDataProvider userData={currentUser} userPosts={userPosts}>
+        <AppLayoutClient user={session.user} initialUserData={currentUser}>
+          {children}
+        </AppLayoutClient>
+      </UserDataProvider>
+    </AppInitializationProvider>
   );
 }
 
