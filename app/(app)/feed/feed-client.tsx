@@ -6,7 +6,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api } from "@/convex/_generated/api";
 import {
-  HeartIcon,
   ChatBubbleOvalLeftIcon,
   ArrowPathIcon,
   EllipsisHorizontalIcon,
@@ -14,7 +13,6 @@ import {
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { useSession } from "next-auth/react";
 import { useUserData } from "../user-context";
 import { useInvalidateConvexQueries, usePrefetchConvexQuery } from "@/lib/convex-query-hooks";

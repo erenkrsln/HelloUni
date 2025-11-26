@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,7 +25,6 @@ import {
   ArrowDownTrayIcon,
   TrashIcon,
   EllipsisHorizontalIcon,
-  HeartIcon,
 } from "@heroicons/react/24/outline";
 
 type TabType = "posts" | "replies" | "media";
@@ -195,13 +194,11 @@ export function ProfileClient({
     ? followingCountQuery 
     : cachedFollowingCount;
   
-  const isFollowingQueryLoading = isFollowingQuery === undefined && cachedIsFollowing === undefined;
   const displayIsFollowing = isFollowingQuery !== undefined 
     ? isFollowingQuery 
     : cachedIsFollowing;
   
   const [isFollowing, setIsFollowing] = useState<boolean>(displayIsFollowing ?? false);
-  const [isFollowingLoading, setIsFollowingLoading] = useState(false);
   
   useEffect(() => {
     if (isFollowingQuery !== undefined) {
@@ -511,13 +508,7 @@ export function ProfileClient({
     }
   };
 
-  const isProfileLoading = !profileUser && !cachedProfileUser && profileUserQuery === undefined;
   const isProfileNotFound = profileUserQuery === null && !isOwnProfile && !cachedProfileUser;
-
-  const isUserPostsLoading = profileUserId && userPostsQuery === undefined && cachedUserPosts === undefined;
-  const isFollowerCountLoading = profileUserId && followerCountQuery === undefined && cachedFollowerCount === undefined;
-  const isFollowingCountLoading = profileUserId && followingCountQuery === undefined && cachedFollowingCount === undefined;
-  const isFollowingStatusLoading = !isOwnProfile && currentUserData?._id && profileUserId && isFollowingQuery === undefined && cachedIsFollowing === undefined;
 
   const isLoadingComplete = profileUser && 
     (!profileUserId || (userPostsQuery !== undefined || cachedUserPosts !== undefined)) &&
