@@ -116,3 +116,4 @@ Nach dem ersten Deployment:
 - [Next.js Deployment](https://nextjs.org/docs/deployment)
 - [Convex Dokumentation](https://docs.convex.dev)
 
+

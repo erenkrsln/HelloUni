@@ -40,6 +40,7 @@ export default function Home() {
         setError("Ungültige Anmeldedaten");
         setLoading(false);
       } else {
+        router.refresh();
         router.push("/feed");
       }
     } else {
@@ -83,6 +84,7 @@ export default function Home() {
           setError("Registrierung erfolgreich, aber Login fehlgeschlagen");
           setLoading(false);
         } else {
+          router.refresh();
           router.push("/feed");
         }
       } catch (err) {
