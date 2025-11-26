@@ -23,6 +23,7 @@ import { PostLikeButton } from "@/components/post-like-button";
 import { formatRelativeTime } from "@/lib/format-time";
 import { ImageModal } from "@/components/image-modal";
 import { PostImage } from "@/components/post-image";
+import { Avatar } from "@/components/avatar";
 
 export function FeedClient() {
   const [newPost, setNewPost] = useState("");
@@ -432,21 +433,13 @@ export function FeedClient() {
 
       {/* Post Composer */}
       <div className="border-b border-slate-200 p-4">
-        <div className="flex gap-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] overflow-hidden">
-            {currentUser?.profileImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={currentUser.profileImage}
-                alt={currentUser.name || user.username || "User"}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-sm font-semibold">
-                {user.name?.charAt(0) || user.username?.charAt(0) || "U"}
-              </span>
-            )}
-          </div>
+          <div className="flex gap-3">
+          <Avatar
+            src={currentUser?.profileImage}
+            alt={currentUser?.name || user.username || "User"}
+            fallback={user.name?.charAt(0) || user.username?.charAt(0) || "U"}
+            size="md"
+          />
           <div className="flex-1">
             <textarea
               value={newPost}
@@ -535,36 +528,22 @@ export function FeedClient() {
                         }).catch(() => {});
                       }
                     }}
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] overflow-hidden transition hover:opacity-80"
+                    className="transition hover:opacity-80"
                   >
-                    {post.author?.profileImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={post.author.profileImage}
-                        alt={post.author.name || post.author.username || "User"}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-semibold">
-                        {post.author?.name?.charAt(0) || "U"}
-                      </span>
-                    )}
+                    <Avatar
+                      src={post.author?.profileImage}
+                      alt={post.author?.name || post.author?.username || "User"}
+                      fallback={post.author?.name?.charAt(0) || post.author?.username?.charAt(0) || "U"}
+                      size="md"
+                    />
                   </Link>
                 ) : (
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] overflow-hidden">
-                    {post.author?.profileImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={post.author.profileImage}
-                        alt={post.author.name || post.author.username || "User"}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-semibold">
-                        {post.author?.name?.charAt(0) || "U"}
-                      </span>
-                    )}
-                  </div>
+                  <Avatar
+                    src={post.author?.profileImage}
+                    alt={post.author?.name || post.author?.username || "User"}
+                    fallback={post.author?.name?.charAt(0) || post.author?.username?.charAt(0) || "U"}
+                    size="md"
+                  />
                 )}
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
