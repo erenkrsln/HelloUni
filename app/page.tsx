@@ -1,8 +1,8 @@
 "use client";
 import { LogoMark } from "@/components/logo";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -14,8 +14,15 @@ export default function Home() {
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
   const isLogin = mode === "login";
   const invalidateQueries = useInvalidateConvexQueries();
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      router.push("/feed");
+    }
+  }, [status, session, router]);
   
   const createUser = useMutation(api.users.createUser);
 
