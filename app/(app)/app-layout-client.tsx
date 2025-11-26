@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -50,6 +50,14 @@ export function AppLayoutClient({
   const router = useRouter();
   const prefetch = usePrefetchConvexQuery();
   const { isHeaderVisible } = useScroll();
+
+  useEffect(() => {
+    const handleOpenSidebar = () => {
+      setIsSidebarOpen(true);
+    };
+    window.addEventListener('openSidebar', handleOpenSidebar);
+    return () => window.removeEventListener('openSidebar', handleOpenSidebar);
+  }, []);
 
   const currentUser = useQuery(
     api.users.getUserByUsername,
@@ -158,8 +166,8 @@ export function AppLayoutClient({
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-white scrollbar-hide">
           <div className="border-r border-slate-200 bg-white xl:border-r-0 lg:border-r-0">
-            {/* Mobile Header - Hidden on profile pages */}
-            {!pathname.startsWith("/profile") && (
+            {/* Mobile Header - Hidden on feed and profile pages (feed has its own combined header) */}
+            {!pathname.startsWith("/profile") && pathname !== "/feed" && (
               <header className={`sticky top-0 z-10 bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
                 isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
               }`} style={{ boxShadow: 'none', border: 'none', borderBottom: 'none', backgroundColor: '#ffffff' }}>

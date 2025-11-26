@@ -24,6 +24,8 @@ import { formatRelativeTime } from "@/lib/format-time";
 import { ImageModal } from "@/components/image-modal";
 import { PostImage } from "@/components/post-image";
 import { useScroll } from "@/lib/scroll-context";
+import { LogoMark } from "@/components/logo";
+import { usePathname } from "next/navigation";
 
 export function FeedClient() {
   const [newPost, setNewPost] = useState("");
@@ -400,10 +402,32 @@ export function FeedClient() {
         </div>
       </header>
 
-      {/* Mobile Header with Tabs */}
-      <header className={`sticky z-[9] bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
+      {/* Mobile Combined Header */}
+      <header className={`sticky top-0 z-10 bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
         isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-      }`} style={{ top: '57px', marginTop: '-1px', boxShadow: 'none', border: 'none', borderTop: 'none', backgroundColor: '#ffffff' }}>
+      }`} style={{ boxShadow: 'none', border: 'none', backgroundColor: '#ffffff' }}>
+        <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: '#ffffff' }}>
+          <button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('openSidebar'));
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] transition hover:bg-[var(--brand)]/20 overflow-hidden"
+          >
+            {currentUser?.profileImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={currentUser.profileImage}
+                alt={currentUser.name || user?.username || "User"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-sm font-semibold">
+                {user?.name?.charAt(0) || user?.username?.charAt(0) || "U"}
+              </span>
+            )}
+          </button>
+          <LogoMark className="h-8 w-8" />
+        </div>
         <div className="flex" style={{ backgroundColor: '#ffffff' }}>
           <button
             onClick={() => setFeedTab("foryou")}
