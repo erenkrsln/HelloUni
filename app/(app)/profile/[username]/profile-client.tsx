@@ -941,6 +941,7 @@ export function ProfileClient({
                     placeholder="Hallo, ich bin neu bei HelloUni!"
                     rows={4}
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/30 resize-none"
+                    style={{ fontSize: '16px' }}
                   />
                 </div>
               </div>

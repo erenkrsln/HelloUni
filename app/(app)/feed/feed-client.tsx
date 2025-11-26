@@ -453,6 +453,7 @@ export function FeedClient() {
               placeholder="Was gibt's Neues?"
               className="w-full resize-none border-none text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
               rows={2}
+              style={{ fontSize: '16px' }}
             />
             {selectedImage && (
               <div className="relative mt-3 inline-block">
