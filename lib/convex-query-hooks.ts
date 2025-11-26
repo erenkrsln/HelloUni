@@ -10,7 +10,8 @@ export function usePrefetchConvexQuery() {
   return {
     prefetchUser: async (username: string) => {
       const queryKey = ["convex", "users.getUserByUsername", { username }];
-      if (queryClient.getQueryData(queryKey)) return null;
+      const cachedData = queryClient.getQueryData(queryKey);
+      if (cachedData) return cachedData as any;
       
       await queryClient.prefetchQuery({
         queryKey,
@@ -21,7 +22,7 @@ export function usePrefetchConvexQuery() {
         },
         staleTime: 1000 * 60 * 5,
       });
-      return null;
+      return queryClient.getQueryData(queryKey) as any;
     },
     prefetchUserPosts: async (userId: string) => {
       const queryKey = ["convex", "posts.getUserPosts", { userId }];
