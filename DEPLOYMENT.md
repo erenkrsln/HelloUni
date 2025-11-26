@@ -35,8 +35,8 @@
 4. Wähle dein Repository aus
 5. **Wichtig**: Konfiguriere die Umgebungsvariablen:
    - `NEXT_PUBLIC_CONVEX_URL` - Deine Convex URL
-   - `NEXTAUTH_URL` - Wird automatisch gesetzt (https://dein-app.vercel.app)
-   - `NEXTAUTH_SECRET` - Generiere einen zufälligen Secret (z.B. mit `openssl rand -base64 32`)
+   - `AUTH_URL` - Wird automatisch gesetzt (https://dein-app.vercel.app) - Optional für NextAuth v5
+   - `AUTH_SECRET` - Generiere einen zufälligen Secret (z.B. mit `openssl rand -base64 32`)
 
 6. Klicke auf "Deploy"
 
@@ -72,13 +72,14 @@ Nach dem ersten Deployment:
      - Value: Deine Convex URL (z.B. `https://your-project.convex.cloud`)
      - Environments: Production, Preview, Development
 
-   - **NEXTAUTH_URL**
-     - Value: Deine Vercel URL (wird automatisch gesetzt, z.B. `https://your-app.vercel.app`)
+   - **AUTH_URL** (Optional für NextAuth v5)
+     - Value: Deine Vercel URL (wird automatisch erkannt, z.B. `https://your-app.vercel.app`)
      - Environments: Production, Preview, Development
 
-   - **NEXTAUTH_SECRET**
+   - **AUTH_SECRET** (Wichtig für NextAuth v5!)
      - Value: Ein zufälliger Secret (generiere einen mit: `openssl rand -base64 32`)
      - Environments: Production, Preview, Development
+     - **Hinweis**: Verwende den gleichen Secret wie in deiner `.env.local` Datei
 
 4. Klicke auf "Save"
 5. Gehe zu "Deployments" und redeploye dein Projekt
@@ -102,8 +103,9 @@ Nach dem ersten Deployment:
 - Prüfe die Build-Logs in Vercel
 
 ### Auth-Probleme
-- Überprüfe, ob `NEXTAUTH_URL` korrekt gesetzt ist
-- Stelle sicher, dass `NEXTAUTH_SECRET` gesetzt ist
+- Überprüfe, ob `AUTH_SECRET` in Vercel gesetzt ist (muss identisch mit `.env.local` sein)
+- Für NextAuth v5: Verwende `AUTH_SECRET` statt `NEXTAUTH_SECRET`
+- `AUTH_URL` ist optional, wird automatisch erkannt
 - Prüfe die Convex Auth-Konfiguration
 
 ### Convex-Verbindungsprobleme
