@@ -68,7 +68,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         path: "/",
         secure: process.env.NODE_ENV === "production",
         maxAge: 30 * 24 * 60 * 60,
-        domain: process.env.NODE_ENV === "production" ? undefined : undefined,
       },
     },
   },
