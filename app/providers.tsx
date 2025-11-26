@@ -15,7 +15,11 @@ export function Providers({ children }: { children: ReactNode }) {
     <AppInitializationProvider>
       <ToastProvider>
         <ReactQueryProvider>
-          <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+          <SessionProvider 
+            refetchInterval={0} 
+            refetchOnWindowFocus={false}
+            basePath="/api/auth"
+          >
             <ConvexProvider client={convex}>
               <ServiceWorkerRegister />
               {children}
