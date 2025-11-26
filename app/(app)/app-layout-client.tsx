@@ -163,7 +163,7 @@ export function AppLayoutClient({
               <header className={`sticky top-0 z-10 bg-white lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
                 isHeaderVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
               }`} style={{ boxShadow: 'none', border: 'none', borderBottom: 'none', backgroundColor: '#ffffff' }}>
-                <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: '#ffffff' }}>
                   <button
                     onClick={() => setIsSidebarOpen(true)}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] transition hover:bg-[var(--brand)]/20 overflow-hidden"
