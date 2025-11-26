@@ -431,7 +431,7 @@ export function FeedClient() {
       </header>
 
       {/* Post Composer */}
-      <div className="border-b border-slate-200 p-4">
+      <div className="p-4">
           <div className="flex gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)] overflow-hidden">
             {currentUser?.profileImage ? (
