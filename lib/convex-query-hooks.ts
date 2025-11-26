@@ -32,7 +32,7 @@ export function usePrefetchConvexQuery() {
         queryKey,
         queryFn: async () => {
           return await convexClient.query(api.posts.getUserPosts, {
-            userId,
+            userId: userId as any,
           });
         },
         staleTime: 1000 * 60 * 5,
