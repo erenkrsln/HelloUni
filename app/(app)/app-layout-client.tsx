@@ -9,6 +9,8 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { LogoMark } from "@/components/logo";
 import { usePrefetchConvexQuery } from "@/lib/convex-query-hooks";
+import { useAppInitialization } from "@/lib/app-initialization-context";
+import { SplashScreen } from "@/components/splash-screen";
 import {
   HomeIcon,
   MagnifyingGlassIcon,
@@ -48,6 +50,7 @@ export function AppLayoutClient({
   const pathname = usePathname();
   const router = useRouter();
   const prefetch = usePrefetchConvexQuery();
+  const { isInitializing } = useAppInitialization();
 
   const currentUser = useQuery(
     api.users.getUserByUsername,
@@ -76,6 +79,10 @@ export function AppLayoutClient({
   };
 
   const isActive = (path: string) => pathname === path;
+
+  if (isInitializing) {
+    return <SplashScreen />;
+  }
 
   return (
     <div className="flex h-screen justify-center overflow-hidden bg-[#f6f7fb]">
