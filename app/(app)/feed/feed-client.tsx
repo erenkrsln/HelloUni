@@ -17,12 +17,14 @@ import { useSession } from "next-auth/react";
 import { useUserData } from "../user-context";
 import { useInvalidateConvexQueries, usePrefetchConvexQuery } from "@/lib/convex-query-hooks";
 import { useToast } from "@/lib/toast-context";
-import { DeletePostModal } from "@/components/delete-post-modal";
+import dynamic from "next/dynamic";
 import { useAppInitialization } from "@/lib/app-initialization-context";
 import { PostLikeButton } from "@/components/post-like-button";
 import { formatRelativeTime } from "@/lib/format-time";
-import { ImageModal } from "@/components/image-modal";
 import { PostImage } from "@/components/post-image";
+
+const DeletePostModal = dynamic(() => import("@/components/delete-post-modal").then(mod => ({ default: mod.DeletePostModal })), { ssr: false });
+const ImageModal = dynamic(() => import("@/components/image-modal").then(mod => ({ default: mod.ImageModal })), { ssr: false });
 import { useScroll } from "@/lib/scroll-context";
 import { LogoMark } from "@/components/logo";
 import { usePathname } from "next/navigation";
@@ -62,7 +64,7 @@ export function FeedClient() {
   const posts = useQuery(api.posts.getPosts, { limit: 50 });
   const followingPosts = useQuery(
     api.posts.getFollowingPosts,
-    currentUser?._id ? { userId: currentUser._id as any, limit: 50 } : "skip"
+    currentUser?._id && feedTab === "following" ? { userId: currentUser._id as any, limit: 50 } : "skip"
   );
   const likedPostIds = useQuery(
     api.posts.getLikedPostIds,
@@ -88,11 +90,6 @@ export function FeedClient() {
     }
   }, [followingPosts, queryClient, followingPostsQueryKey]);
 
-  useEffect(() => {
-    if (!hasInitialized && !posts) {
-      queryClient.refetchQueries({ queryKey: postsQueryKey });
-    }
-  }, [hasInitialized, posts, queryClient, postsQueryKey]);
   
   const cachedPosts = queryClient.getQueryData(postsQueryKey) as typeof posts | undefined;
   const cachedFollowingPosts = followingPostsQueryKey 

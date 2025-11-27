@@ -9,35 +9,36 @@ export function ServiceWorkerRegister() {
       "serviceWorker" in navigator &&
       process.env.NODE_ENV === "production"
     ) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((registration) => {
-            console.log("Service Worker registriert:", registration.scope);
-            
-            // Prüfe auf Updates
-            registration.addEventListener("updatefound", () => {
-              const newWorker = registration.installing;
-              if (newWorker) {
-                newWorker.addEventListener("statechange", () => {
-                  if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                    // Neuer Service Worker verfügbar
-                    console.log("Neuer Service Worker verfügbar");
-                    // Optional: Zeige Benachrichtigung zum Aktualisieren
-                  }
-                });
-              }
-            });
-          })
-          .catch((error) => {
-            console.error("Service Worker Registrierung fehlgeschlagen:", error);
-          });
-      });
+      if (document.readyState === "complete") {
+        registerServiceWorker();
+      } else {
+        window.addEventListener("load", registerServiceWorker, { once: true });
+      }
     }
   }, []);
 
+  function registerServiceWorker() {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => {
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              }
+            });
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Service Worker Registrierung fehlgeschlagen:", error);
+      });
+  }
+
   return null;
 }
+
 
 
 
