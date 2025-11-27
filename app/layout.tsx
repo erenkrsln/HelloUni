@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { SplashScreenProvider } from "./splash-screen-provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -50,7 +49,6 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
-        <link rel="apple-touch-startup-image" href="/icon-512x512.png" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -63,14 +61,12 @@ export default function RootLayout({
         className={`${poppins.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}
       >
         <Providers>
-          <SplashScreenProvider>
-            <div className="relative min-h-screen overflow-x-hidden">
-              <div className="pointer-events-none absolute inset-0 opacity-60 blur-3xl">
-                <div className="mx-auto h-64 w-64 rounded-full bg-[radial-gradient(circle_at_center,_rgba(249,115,22,0.25),_transparent_60%)]" />
-              </div>
-              <div className="relative">{children}</div>
+          <div className="relative min-h-screen overflow-x-hidden">
+            <div className="pointer-events-none absolute inset-0 opacity-60 blur-3xl">
+              <div className="mx-auto h-64 w-64 rounded-full bg-[radial-gradient(circle_at_center,_rgba(249,115,22,0.25),_transparent_60%)]" />
             </div>
-          </SplashScreenProvider>
+            <div className="relative">{children}</div>
+          </div>
         </Providers>
       </body>
     </html>

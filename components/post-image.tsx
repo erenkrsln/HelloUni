@@ -31,7 +31,7 @@ export function PostImage({ src, alt, onClick }: PostImageProps) {
             isLoading ? "opacity-0" : "opacity-100 hover:opacity-90"
           }`}
           onClick={onClick}
-          loading="lazy"
+          loading="eager"
           decoding="async"
           onLoad={() => setIsLoading(false)}
           onError={() => {
@@ -44,6 +44,5 @@ export function PostImage({ src, alt, onClick }: PostImageProps) {
     </div>
   );
 }
-
 
 

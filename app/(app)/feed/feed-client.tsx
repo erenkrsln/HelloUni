@@ -85,6 +85,15 @@ export function FeedClient() {
   }, [posts, queryClient, postsQueryKey, isInitializing, setInitialized]);
 
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isInitializing) {
+        setInitialized();
+      }
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [isInitializing, setInitialized]);
+
+  useEffect(() => {
     if (followingPosts && followingPostsQueryKey) {
       queryClient.setQueryData(followingPostsQueryKey, followingPosts);
     }
@@ -416,7 +425,6 @@ export function FeedClient() {
                 src={currentUser.profileImage}
                 alt={currentUser.name || user?.username || "User"}
                 className="h-full w-full object-cover"
-                loading="lazy"
               />
             ) : (
               <span className="text-sm font-semibold">
@@ -500,7 +508,6 @@ export function FeedClient() {
                   src={selectedImage}
                   alt="Preview"
                   className="max-h-96 rounded-2xl border border-slate-200"
-                  loading="eager"
                 />
               </div>
             )}
@@ -533,7 +540,7 @@ export function FeedClient() {
 
       {/* Posts */}
       <div>
-        {filteredPosts.length === 0 && !cachedPosts && !displayPosts ? (
+        {!hasInitialized && !cachedPosts && !displayPosts && posts === undefined ? (
           <div className="py-12 text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[var(--brand)] border-t-transparent" />
             <p className="mt-4 text-slate-500">Lade Posts...</p>
@@ -570,7 +577,6 @@ export function FeedClient() {
                         src={post.author.profileImage}
                         alt={post.author.name || post.author.username || "User"}
                         className="h-full w-full object-cover"
-                        loading="lazy"
                       />
                     ) : (
                       <span className="text-sm font-semibold">
@@ -586,7 +592,6 @@ export function FeedClient() {
                         src={post.author.profileImage}
                         alt={post.author.name || post.author.username || "User"}
                         className="h-full w-full object-cover"
-                        loading="lazy"
                       />
                     ) : (
                       <span className="text-sm font-semibold">
