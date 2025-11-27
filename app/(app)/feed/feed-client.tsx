@@ -416,6 +416,7 @@ export function FeedClient() {
                 src={currentUser.profileImage}
                 alt={currentUser.name || user?.username || "User"}
                 className="h-full w-full object-cover"
+                loading="lazy"
               />
             ) : (
               <span className="text-sm font-semibold">
@@ -499,6 +500,7 @@ export function FeedClient() {
                   src={selectedImage}
                   alt="Preview"
                   className="max-h-96 rounded-2xl border border-slate-200"
+                  loading="eager"
                 />
               </div>
             )}
@@ -568,6 +570,7 @@ export function FeedClient() {
                         src={post.author.profileImage}
                         alt={post.author.name || post.author.username || "User"}
                         className="h-full w-full object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <span className="text-sm font-semibold">
@@ -583,6 +586,7 @@ export function FeedClient() {
                         src={post.author.profileImage}
                         alt={post.author.name || post.author.username || "User"}
                         className="h-full w-full object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <span className="text-sm font-semibold">
