@@ -1,0 +1,36 @@
+:root {
+  --color-primary-dark: #261708;
+  --color-primary-light: #8C531E;
+  --color-text-beige: #F4CFAB;
+  --color-text-beige-light: #EED4B0;
+  --color-gradient-start: #D08945;
+  --color-gradient-end: #F4CFAB;
+  --color-button-dark: rgba(51, 43, 43, 0.7);
+  --color-button-dark-light: rgba(51, 43, 43, 0.6);
+  --color-text-black: #000000;
+  --color-text-white: #FFFFFF;
+  
+  --border-radius-card: 39px;
+  --border-radius-button: 50px;
+  --border-radius-tab: 79px;
+  --border-radius-nav: 79px;
+  
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  --avatar-size: 57.625px;
+  --avatar-height: 47.5px;
+  --tab-width: 104px;
+  --tab-height: 35px;
+  --nav-height: 66px;
+  --nav-width: 373px;
+  --post-width: 332px;
+  --post-height: 450px;
+  --action-button-width: 49px;
+  --action-button-height: 20px;
+}
+
+
