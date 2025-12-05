@@ -28,11 +28,8 @@ export const seed = mutation({
         major: "Maschinenbau",
       });
 
-      users = [
-        { _id: user1, name: "Max Mustermann", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max", uni_name: "TU München", major: "Informatik" },
-        { _id: user2, name: "Anna Schmidt", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Anna", uni_name: "LMU München", major: "BWL" },
-        { _id: user3, name: "Tom Weber", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tom", uni_name: "TU Berlin", major: "Maschinenbau" },
-      ];
+      // Fetch the created users from database
+      users = await ctx.db.query("users").collect();
     }
 
     // Check if posts exist
