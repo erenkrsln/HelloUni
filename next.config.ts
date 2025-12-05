@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    optimizePackageImports: ["convex", "framer-motion", "lucide-react"],
+  },
 };
 
 export default nextConfig;

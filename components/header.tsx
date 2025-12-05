@@ -10,7 +10,7 @@ export function Header() {
   return (
     <header className="relative w-full" style={{ height: "94px" }}>
       <div
-        className="absolute cursor-pointer transition-opacity hover:opacity-80 active:opacity-70 flex items-center justify-center overflow-hidden touch-manipulation"
+        className="absolute flex items-center justify-center overflow-hidden"
         style={{ left: "16px", top: "-20px", width: "120px", height: "130px" }}
       >
         <img

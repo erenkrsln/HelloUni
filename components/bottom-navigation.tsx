@@ -2,12 +2,21 @@
 
 import { Home, MessageCircle, Plus, Calendar, Search } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function BottomNavigation() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (path: string) => pathname === path;
+
+  const handleCreateClick = () => {
+    if (pathname === "/create") {
+      router.push("/");
+    } else {
+      router.push("/create");
+    }
+  };
 
   return (
     <nav className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-50">
@@ -25,7 +34,7 @@ export function BottomNavigation() {
         <Link
           href="/"
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <Home
             className="transition-all"
@@ -40,7 +49,7 @@ export function BottomNavigation() {
         <Link
           href="/chat"
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <MessageCircle
             className="transition-all"
@@ -52,10 +61,10 @@ export function BottomNavigation() {
             }}
           />
         </Link>
-        <Link
-          href="/create"
-          className="flex items-center justify-center transition-transform hover:scale-125 active:scale-110 cursor-pointer touch-manipulation"
-          style={{ width: "61px", height: "58px", minWidth: "61px", minHeight: "58px" }}
+        <button
+          onClick={handleCreateClick}
+          className="flex items-center justify-center transition-transform hover:scale-125 active:scale-110 cursor-pointer touch-manipulation bg-transparent border-none"
+          style={{ width: "61px", height: "58px", minWidth: "61px", minHeight: "58px", opacity: 1 }}
         >
           <img
             src="/create-icon.png"
@@ -70,11 +79,11 @@ export function BottomNavigation() {
               transition: "transform 0.2s ease"
             }}
           />
-        </Link>
+        </button>
         <Link
           href="/search"
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <Search
             className="transition-all"
@@ -89,7 +98,7 @@ export function BottomNavigation() {
         <Link
           href="/calendar"
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <Calendar
             className="transition-all"

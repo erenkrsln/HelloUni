@@ -5,14 +5,14 @@ import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 
 const inter = Inter({ subsets: ["latin"] });
-const gloock = Gloock({ 
+const gloock = Gloock({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-gloock"
 });
 
 export const metadata: Metadata = {
-  title: "Student Social",
+  title: "HelloUni",
   description: "Social Media App für Studierende",
 };
 

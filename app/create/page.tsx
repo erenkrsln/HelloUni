@@ -17,6 +17,7 @@ export default function CreatePage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const currentUser = useQuery(api.queries.getCurrentUser);
+
     const createPost = useMutation(api.mutations.createPost);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 

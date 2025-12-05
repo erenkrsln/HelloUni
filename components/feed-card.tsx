@@ -81,7 +81,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
 
   return (
     <article
-      className="relative mb-6 transition-transform hover:scale-[1.02]"
+      className="relative mb-6"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -175,7 +175,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
           <button
             onClick={handleLike}
             disabled={!currentUserId || isLiking}
-            className="flex items-center gap-2 h-10 px-0 font-medium transition-all hover:scale-110 active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 h-10 px-0 font-medium transition-all hover:scale-110 disabled:opacity-50"
             style={{
               color: displayIsLiked ? "#f87171" : "var(--color-text-beige)"
             }}
@@ -191,7 +191,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
             <span style={{ fontSize: "13px" }}>{displayLikes}</span>
           </button>
           <button
-            className="flex items-center gap-2 h-10 px-0 font-medium transition-all hover:scale-110 active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 h-10 px-0 font-medium transition-all hover:scale-110 cursor-pointer"
             style={{ color: "var(--color-text-beige)" }}
           >
             <MessageCircle style={{ height: "18px", width: "18px" }} />
