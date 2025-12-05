@@ -17,7 +17,7 @@ export const getFeed = query({
 
         // Convert storage ID to URL if it exists
         if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = await ctx.storage.getUrl(imageUrl as any);
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
         }
 
         return {
@@ -83,7 +83,7 @@ export const getUserPosts = query({
 
         // Convert storage ID to URL if it exists
         if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = await ctx.storage.getUrl(imageUrl as any);
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
         }
 
         return {
