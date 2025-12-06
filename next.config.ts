@@ -9,7 +9,15 @@ const nextConfig: NextConfig = {
         hostname: "www.figma.com",
         pathname: "/api/mcp/asset/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.convex.cloud",
+        // Convex Storage URLs können verschiedene Pfade haben
+      },
     ],
+    // Optimierungen für bessere Performance
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60,
   },
   experimental: {
     optimizePackageImports: ["convex", "framer-motion", "lucide-react"],

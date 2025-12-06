@@ -8,6 +8,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useState } from "react";
+import Image from "next/image";
 
 interface FeedCardProps {
   post: {
@@ -28,9 +29,10 @@ interface FeedCardProps {
     } | null;
   };
   currentUserId?: Id<"users">;
+  priority?: boolean; // Für wichtige Bilder (z.B. erste im Viewport)
 }
 
-export function FeedCard({ post, currentUserId }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, priority = false }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
@@ -139,17 +141,17 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
               </p>
             )}
             {(post.user.major || post.user.uni_name) && (
-              <p
-                className="leading-tight"
-                style={{
-                  fontSize: "13px",
-                  color: "rgba(244, 207, 171, 0.8)"
-                }}
-              >
+            <p
+              className="leading-tight"
+              style={{
+                fontSize: "13px",
+                color: "rgba(244, 207, 171, 0.8)"
+              }}
+            >
                 {post.user.major && post.user.uni_name 
                   ? `${post.user.major} · ${post.user.uni_name}`
                   : post.user.major || post.user.uni_name}
-              </p>
+            </p>
             )}
           </div>
           <time
@@ -174,12 +176,18 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         </p>
 
         {post.imageUrl && (
-          <div className="mb-4">
-            <img
+          <div className="mb-4 relative" style={{ width: "100%", aspectRatio: "16/9", maxHeight: "400px" }}>
+            <Image
               src={post.imageUrl}
               alt="Post image"
-              className="w-full rounded-lg"
-              style={{ maxHeight: "400px", objectFit: "cover" }}
+              fill
+              priority={priority}
+              loading={priority ? "eager" : "lazy"}
+              className="rounded-lg"
+              style={{ objectFit: "cover" }}
+              sizes="(max-width: 428px) 100vw, 428px"
+              // Convex Storage URLs sind bereits optimiert, andere URLs können unoptimized sein
+              unoptimized={!post.imageUrl.includes("convex.cloud")}
             />
           </div>
         )}

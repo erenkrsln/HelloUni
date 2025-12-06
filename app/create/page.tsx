@@ -55,56 +55,32 @@ export default function CreatePage() {
         
         // Post im Hintergrund erstellen (ohne auf UI-Updates zu warten)
         (async () => {
-            try {
-                let imageUrl: string | undefined = undefined;
+        try {
+            let imageUrl: string | undefined = undefined;
 
                 // Bild hochladen, falls ausgewählt
                 if (postImage) {
-                    const uploadUrl = await generateUploadUrl();
-                    const result = await fetch(uploadUrl, {
-                        method: "POST",
+                const uploadUrl = await generateUploadUrl();
+                const result = await fetch(uploadUrl, {
+                    method: "POST",
                         headers: { "Content-Type": postImage.type },
                         body: postImage,
-                    });
-                    const { storageId } = await result.json();
-                    imageUrl = storageId;
-                }
+                });
+                const { storageId } = await result.json();
+                imageUrl = storageId;
+            }
 
                 // Post erstellen
-                await createPost({
-                    userId: currentUser._id,
+            await createPost({
+                userId: currentUser._id,
                     content: postContent,
-                    imageUrl,
-                });
-            } catch (error) {
+                imageUrl,
+            });
+        } catch (error) {
                 console.error("Fehler beim Erstellen des Posts:", error);
-            }
+        }
         })();
     };
-
-    if (currentUser === undefined) {
-        return (
-            <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-                <Header />
-                <div className="flex items-center justify-center py-16">
-                    <p className="text-[#F4CFAB]/60">Lädt...</p>
-                </div>
-                <BottomNavigation />
-            </main>
-        );
-    }
-
-    if (!currentUser) {
-        return (
-            <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-                <Header />
-                <div className="flex items-center justify-center py-16">
-                    <p className="text-[#F4CFAB]/60">Bitte melde dich an</p>
-                </div>
-                <BottomNavigation />
-            </main>
-        );
-    }
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">

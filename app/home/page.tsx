@@ -37,9 +37,6 @@ export default function Home() {
         >
           Discover Feed
         </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Willkommen, {session?.user?.name || "Benutzer"}
-        </p>
       </div>
       <div className="px-4">
         {!posts ? (
@@ -50,8 +47,14 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts.map((post) => (
-              <FeedCard key={post._id} post={post} currentUserId={currentUserId} />
+            {posts.map((post, index) => (
+              <FeedCard 
+                key={post._id} 
+                post={post} 
+                currentUserId={currentUserId}
+                // Erstes Bild im Feed bekommt priority für sofortiges Laden
+                priority={index === 0 && !!post.imageUrl}
+              />
             ))}
           </div>
         )}
