@@ -5,8 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface ProfileHeaderProps {
     name: string;
     image?: string;
-    uniName: string;
-    major: string;
+    uniName?: string;
+    major?: string;
 }
 
 export function ProfileHeader({ name, image, uniName, major }: ProfileHeaderProps) {
@@ -19,8 +19,8 @@ export function ProfileHeader({ name, image, uniName, major }: ProfileHeaderProp
                 </AvatarFallback>
             </Avatar>
             <h1 className="text-2xl font-bold text-[#F4CFAB] mb-1">{name}</h1>
-            <p className="text-[#F4CFAB]/80 text-sm mb-1">{uniName}</p>
-            <p className="text-[#F4CFAB]/60 text-xs">{major}</p>
+            {uniName && <p className="text-[#F4CFAB]/80 text-sm mb-1">{uniName}</p>}
+            {major && <p className="text-[#F4CFAB]/60 text-xs">{major}</p>}
         </div>
     );
 }
