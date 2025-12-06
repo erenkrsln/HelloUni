@@ -46,38 +46,40 @@ export default function CreatePage() {
 
         if (!currentUser || !content.trim() || isSubmitting) return;
 
-        setIsSubmitting(true);
-        try {
-            let imageUrl: string | undefined = undefined;
+        // Speichere die Daten, bevor wir die Weiterleitung machen
+        const postContent = content.trim();
+        const postImage = selectedImage;
+        
+        // Sofort zur /home weiterleiten
+        router.push("/home");
+        
+        // Post im Hintergrund erstellen (ohne auf UI-Updates zu warten)
+        (async () => {
+            try {
+                let imageUrl: string | undefined = undefined;
 
-            // Upload image if selected
-            if (selectedImage) {
-                const uploadUrl = await generateUploadUrl();
-                const result = await fetch(uploadUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": selectedImage.type },
-                    body: selectedImage,
+                // Bild hochladen, falls ausgewählt
+                if (postImage) {
+                    const uploadUrl = await generateUploadUrl();
+                    const result = await fetch(uploadUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": postImage.type },
+                        body: postImage,
+                    });
+                    const { storageId } = await result.json();
+                    imageUrl = storageId;
+                }
+
+                // Post erstellen
+                await createPost({
+                    userId: currentUser._id,
+                    content: postContent,
+                    imageUrl,
                 });
-                const { storageId } = await result.json();
-                imageUrl = storageId;
+            } catch (error) {
+                console.error("Fehler beim Erstellen des Posts:", error);
             }
-
-            await createPost({
-                userId: currentUser._id,
-                content: content.trim(),
-                imageUrl,
-            });
-
-            setContent("");
-            setSelectedImage(null);
-            setImagePreview(null);
-            router.push("/");
-        } catch (error) {
-            console.error("Error creating post:", error);
-            alert("Fehler beim Erstellen des Posts");
-        } finally {
-            setIsSubmitting(false);
-        }
+        })();
     };
 
     if (currentUser === undefined) {

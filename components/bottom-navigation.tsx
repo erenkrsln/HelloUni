@@ -8,11 +8,17 @@ export function BottomNavigation() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => {
+    // Sowohl "/" als auch "/home" als Startseite betrachten
+    if (path === "/home" || path === "/") {
+      return pathname === "/home" || pathname === "/";
+    }
+    return pathname === path;
+  };
 
   const handleCreateClick = () => {
     if (pathname === "/create") {
-      router.push("/");
+      router.push("/home");
     } else {
       router.push("/create");
     }
@@ -32,7 +38,8 @@ export function BottomNavigation() {
         }}
       >
         <Link
-          href="/"
+          href="/home"
+          prefetch={true}
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
@@ -42,12 +49,13 @@ export function BottomNavigation() {
               width: "40px",
               height: "40px",
               color: "#FFFFFF",
-              fill: isActive("/") ? "#FFFFFF" : "none"
+              fill: isActive("/home") ? "#FFFFFF" : "none"
             }}
           />
         </Link>
         <Link
           href="/chat"
+          prefetch={true}
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
@@ -82,6 +90,7 @@ export function BottomNavigation() {
         </button>
         <Link
           href="/search"
+          prefetch={true}
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
@@ -97,6 +106,7 @@ export function BottomNavigation() {
         </Link>
         <Link
           href="/calendar"
+          prefetch={true}
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >

@@ -6,10 +6,11 @@ import { ProfileHeader } from "@/components/profile-header";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { LoadingScreen } from "@/components/ui/spinner";
+import { useState, useEffect } from "react";
 
 export default function ProfilePage() {
     const currentUser = useQuery(api.queries.getCurrentUser);
-    // Load all posts - this should be cached from the home page
     const allPosts = useQuery(api.queries.getFeed);
 
     // Filter posts by current user
@@ -17,10 +18,15 @@ export default function ProfilePage() {
         ? allPosts?.filter(post => post.userId === currentUser._id) || []
         : [];
 
+    // Zeige Loading nur wenn Daten wirklich undefined sind (nicht gecached)
+    const isLoading = currentUser === undefined || allPosts === undefined;
+
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             <Header />
-            {currentUser ? (
+            {isLoading ? (
+                <LoadingScreen text="Profil wird geladen..." />
+            ) : currentUser ? (
                 <>
                     <ProfileHeader
                         name={currentUser.name}

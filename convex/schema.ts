@@ -4,10 +4,12 @@ import { v } from "convex/values";
 export default defineSchema({
   users: defineTable({
     name: v.string(),
+    username: v.string(), // Für Authentifizierung
+    passwordHash: v.string(), // Gehashtes Passwort
     image: v.optional(v.string()),
-    uni_name: v.string(),
-    major: v.string(),
-  }),
+    uni_name: v.optional(v.string()), // Jetzt optional für initiale Registrierung
+    major: v.optional(v.string()), // Jetzt optional für initiale Registrierung
+  }).index("by_username", ["username"]), // Index für schnelle Suche nach Benutzername
 
   posts: defineTable({
     userId: v.id("users"),

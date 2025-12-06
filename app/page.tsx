@@ -1,50 +1,49 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { FeedCard } from "@/components/feed-card";
-import { Header } from "@/components/header";
-import { BottomNavigation } from "@/components/bottom-navigation";
-import { FeedSkeleton } from "@/components/feed-skeleton";
-import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import AuthPage from "./auth-page";
 
-export default function Home() {
-  const posts = useQuery(api.queries.getFeed);
-  const [displayPosts, setDisplayPosts] = useState<typeof posts>(posts);
+/**
+ * Landing Page - Zeigt Login/Registrierung oder leitet zu /home um, wenn authentifiziert
+ */
+export default function LandingPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  // Update display posts when new data arrives
+  // Zu /home umleiten, wenn bereits authentifiziert
   useEffect(() => {
-    if (posts !== undefined) {
-      setDisplayPosts(posts);
+    if (status === "authenticated") {
+      router.push("/home");
     }
-  }, [posts]);
+  }, [status, router]);
 
-  return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-      <Header />
-      <h2
-        className="text-2xl font-normal px-4 mb-4"
-        style={{ color: "var(--color-text-beige-light)" }}
+  // Ladeindikator anzeigen, während Authentifizierung überprüft wird
+  if (status === "loading") {
+    return (
+      <div 
+        className="min-h-screen w-full flex items-center justify-center relative"
+        style={{
+          backgroundImage: "url('/feed-background-v3.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat"
+        }}
       >
-        Discover Feed
-      </h2>
-      <div className="px-4">
-        {!displayPosts ? (
-          <FeedSkeleton />
-        ) : displayPosts.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-sm text-[#F4CFAB]/60">Noch keine Posts vorhanden.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {displayPosts.map((post: typeof displayPosts[0]) => (
-              <FeedCard key={post._id} post={post} />
-            ))}
-          </div>
-        )}
+        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="text-center relative z-10">
+          <p className="text-sm text-white drop-shadow-md">Lädt...</p>
+        </div>
       </div>
-      <BottomNavigation />
-    </main >
-  );
-}
+    );
+  }
 
+  // Wenn authentifiziert, nichts anzeigen (wird umgeleitet)
+  if (session) {
+    return null;
+  }
+
+  // Authentifizierungsseite anzeigen
+  return <AuthPage />;
+}

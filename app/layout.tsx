@@ -3,6 +3,7 @@ import { Inter, Gloock } from "next/font/google";
 import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
+import { NextAuthSessionProvider } from "@/components/session-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -31,7 +32,9 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className={`${inter.className} ${gloock.variable}`}>
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <NextAuthSessionProvider>
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </NextAuthSessionProvider>
       </body>
     </html>
   );

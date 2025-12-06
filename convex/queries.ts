@@ -98,11 +98,21 @@ export const getUserPosts = query({
   },
 });
 
+// HINWEIS: Diese Query ist temporär für Testing
+// In Produktion sollte die userId von der NextAuth-Session übergeben werden
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
     const user = await ctx.db.query("users").first();
     return user;
+  },
+});
+
+// Neue Query, die userId von der Session empfängt
+export const getUserById = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.userId);
   },
 });
 

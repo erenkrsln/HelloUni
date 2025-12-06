@@ -21,9 +21,10 @@ interface FeedCardProps {
     user: {
       _id: Id<"users">;
       name: string;
+      username?: string;
       image?: string;
-      uni_name: string;
-      major: string;
+      uni_name?: string;
+      major?: string;
     } | null;
   };
   currentUserId?: Id<"users">;
@@ -126,15 +127,30 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
             >
               {post.user.name}
             </h3>
-            <p
-              className="leading-tight"
-              style={{
-                fontSize: "13px",
-                color: "rgba(244, 207, 171, 0.8)"
-              }}
-            >
-              {post.user.major} · {post.user.uni_name}
-            </p>
+            {post.user.username && (
+              <p
+                className="leading-tight mb-1"
+                style={{
+                  fontSize: "12px",
+                  color: "rgba(244, 207, 171, 0.6)"
+                }}
+              >
+                @{post.user.username}
+              </p>
+            )}
+            {(post.user.major || post.user.uni_name) && (
+              <p
+                className="leading-tight"
+                style={{
+                  fontSize: "13px",
+                  color: "rgba(244, 207, 171, 0.8)"
+                }}
+              >
+                {post.user.major && post.user.uni_name 
+                  ? `${post.user.major} · ${post.user.uni_name}`
+                  : post.user.major || post.user.uni_name}
+              </p>
+            )}
           </div>
           <time
             className="whitespace-nowrap ml-auto"
