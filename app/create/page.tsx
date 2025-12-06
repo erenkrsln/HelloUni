@@ -6,17 +6,25 @@ import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { ImagePlus, X } from "lucide-react";
+import { Id } from "@/convex/_generated/dataModel";
 
 export default function CreatePage() {
     const router = useRouter();
+    const { data: session } = useSession();
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const currentUser = useQuery(api.queries.getCurrentUser);
+    // Hole den aktuellen User anhand der Session
+    const currentUserId = (session?.user as any)?.id as Id<"users"> | undefined;
+    const currentUser = useQuery(
+        api.queries.getUserById, 
+        currentUserId ? { userId: currentUserId } : "skip"
+    );
 
     const createPost = useMutation(api.mutations.createPost);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);

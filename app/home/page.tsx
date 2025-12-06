@@ -5,11 +5,11 @@ import { api } from "@/convex/_generated/api";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
-import { FeedSkeleton } from "@/components/feed-skeleton";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Id } from "@/convex/_generated/dataModel";
 
 /**
  * Hauptseite (geschützt) - Posts-Feed
@@ -19,6 +19,9 @@ export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const posts = useQuery(api.queries.getFeed);
+  
+  // Hole aktuelle User-ID aus Session für FeedCard
+  const currentUserId = (session?.user as any)?.id as Id<"users"> | undefined;
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -52,7 +55,7 @@ export default function Home() {
         ) : (
           <div className="space-y-6">
             {posts.map((post) => (
-              <FeedCard key={post._id} post={post} />
+              <FeedCard key={post._id} post={post} currentUserId={currentUserId} />
             ))}
           </div>
         )}

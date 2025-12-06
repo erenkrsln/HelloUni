@@ -7,10 +7,18 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { Id } from "@/convex/_generated/dataModel";
 
 export default function ProfilePage() {
-    const currentUser = useQuery(api.queries.getCurrentUser);
+    const { data: session } = useSession();
+    
+    // Hole den aktuellen User anhand der Session
+    const currentUserId = (session?.user as any)?.id as Id<"users"> | undefined;
+    const currentUser = useQuery(
+        api.queries.getUserById,
+        currentUserId ? { userId: currentUserId } : "skip"
+    );
     const allPosts = useQuery(api.queries.getFeed);
 
     // Filter posts by current user
