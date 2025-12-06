@@ -7,28 +7,24 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Id } from "@/convex/_generated/dataModel";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 /**
  * Hauptseite (geschützt) - Posts-Feed
  * Nur für authentifizierte Benutzer zugänglich
  */
 export default function Home() {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const { session, currentUserId } = useCurrentUser();
   const posts = useQuery(api.queries.getFeed);
-  
-  // Hole aktuelle User-ID aus Session für FeedCard
-  const currentUserId = (session?.user as any)?.id as Id<"users"> | undefined;
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (session === null) {
       router.push("/");
     }
-  }, [status, router]);
+  }, [session, router]);
 
   // Konsistentes Layout immer beibehalten
   return (
