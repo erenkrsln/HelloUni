@@ -166,7 +166,7 @@ export default function CreatePage() {
                     <button
                         type="submit"
                         disabled={!content.trim() || isSubmitting}
-                        className="w-full py-3 px-6 rounded-full font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 px-6 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                             background: "linear-gradient(to right, #D08945 0%, #DCA067 33.226%, #F4CFAB 100%)",
                             color: "#FFFFFF"

@@ -47,7 +47,16 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(getInitialOptimisticLiked);
   const [isLiking, setIsLiking] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const lastKnownLikedState = useRef<boolean | null>(null);
+  
+  // Initialisiere lastKnownLikedState sofort aus sessionStorage beim ersten Laden
+  const getInitialLastKnownState = (): boolean | null => {
+    if (!storageKey || typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored === "true") return true;
+    if (stored === "false") return false;
+    return null;
+  };
+  const lastKnownLikedState = useRef<boolean | null>(getInitialLastKnownState());
 
   const isLiked = useQuery(
     api.queries.getUserLikes,
@@ -69,15 +78,32 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         }, 100);
         return () => clearTimeout(timeout);
       }
+    } else if (optimisticLiked === null && lastKnownLikedState.current === null) {
+      // Beim ersten Laden: Wenn Query noch lädt und kein optimistischer State vorhanden ist,
+      // prüfe sessionStorage und setze optimisticLiked entsprechend, um Flickern zu vermeiden
+      const stored = storageKey && typeof window !== "undefined" ? sessionStorage.getItem(storageKey) : null;
+      if (stored === "true" || stored === "false") {
+        setOptimisticLiked(stored === "true");
+        lastKnownLikedState.current = stored === "true";
+      }
     }
-  }, [isLiked, optimisticLiked]);
+  }, [isLiked, optimisticLiked, storageKey]);
 
   // Verwende optimistischen State nur für den visuellen Status (gefüllt/nicht gefüllt)
   // Die Like-Anzahl kommt immer direkt aus post.likesCount, da sie bereits vom Backend aktualisiert wurde
   const displayLikes = post.likesCount;
-  const displayIsLiked = optimisticLiked !== null 
-    ? optimisticLiked 
-    : (isLiked !== undefined ? isLiked : (lastKnownLikedState.current ?? false));
+  
+  // Bestimme den Like-Status: Priorisiere Query-Daten, dann optimistischen State, dann letzten bekannten State
+  // Wichtig: Beim ersten Laden (wenn isLiked === undefined) verwenden wir den optimistischen State oder
+  // den letzten bekannten State aus sessionStorage, um Flickern zu vermeiden
+  // Nur wenn beides null/undefined ist, verwenden wir false (aber das sollte nicht passieren, wenn sessionStorage gefüllt ist)
+  const displayIsLiked = isLiked !== undefined 
+    ? isLiked 
+    : (optimisticLiked !== null 
+        ? optimisticLiked 
+        : (lastKnownLikedState.current !== null 
+            ? lastKnownLikedState.current 
+            : false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
