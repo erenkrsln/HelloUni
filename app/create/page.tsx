@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { LoadingScreen } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { ImagePlus, X } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
@@ -12,6 +13,9 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 export default function CreatePage() {
     const router = useRouter();
     const { currentUser, currentUserId } = useCurrentUser();
+    
+    // Zeige Loading Spinner, wenn User-Daten noch nicht geladen sind
+    const isLoading = currentUser === undefined;
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -86,6 +90,9 @@ export default function CreatePage() {
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             <Header />
+            {isLoading ? (
+                <LoadingScreen text="Seite wird geladen..." />
+            ) : (
             <div className="px-4 py-6">
                 <h2
                     className="text-2xl font-normal mb-6"
@@ -176,6 +183,7 @@ export default function CreatePage() {
                     </button>
                 </form>
             </div>
+            )}
             <BottomNavigation />
         </main>
     );
