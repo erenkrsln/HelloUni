@@ -76,12 +76,9 @@ export const getUserLikesBatch = query({
         .query("likes")
         .collect();
       
-      // Erstelle ein Set der Post-IDs für schnelleren Lookup
-      const postIdsSet = new Set(args.postIds);
-      
       // Filtere Likes für diesen User und die relevanten Posts
       const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIdsSet.has(like.postId)
+        (like) => like.userId === args.userId && args.postIds.includes(like.postId)
       );
       
       // Erstelle eine Map: postId -> isLiked (als String-Keys für Record)

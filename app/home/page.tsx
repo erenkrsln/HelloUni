@@ -21,6 +21,7 @@ export default function Home() {
   const preloadedImages = useRef<Set<string>>(new Set());
 
   // Hole alle Like-Status in einem Batch, wenn Posts und currentUserId verfügbar sind
+  // Diese Query ist optional - wenn sie fehlschlägt, verwenden FeedCards separate Queries
   const postIds = posts?.map(post => post._id) || [];
   const likesBatch = useQuery(
     api.queries.getUserLikesBatch,
@@ -36,9 +37,9 @@ export default function Home() {
     }
   }, [session, router]);
 
-  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
-  const isLoading = posts === undefined || currentUser === undefined || 
-    (currentUserId && postIds.length > 0 && likesBatch === undefined);
+  // Prüfe, ob alle Daten geladen sind (Posts und User)
+  // Warte NICHT auf likesBatch, da es optional ist und FeedCards separate Queries als Fallback verwenden
+  const isLoading = posts === undefined || currentUser === undefined;
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -90,7 +91,11 @@ export default function Home() {
           <div className="space-y-6">
             {posts?.map((post) => {
               // Hole Like-Status aus Batch-Query (Keys sind als Strings gespeichert)
-              const isLiked = likesBatch?.[post._id as string] ?? undefined;
+              // Wenn Batch-Query fehlschlägt oder nicht verfügbar ist, wird undefined übergeben
+              // und FeedCard verwendet separate Query als Fallback
+              const isLiked = likesBatch && typeof likesBatch === 'object'
+                ? likesBatch[post._id as string] ?? undefined
+                : undefined;
               return (
                 <FeedCard 
                   key={post._id} 
