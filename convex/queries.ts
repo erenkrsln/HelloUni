@@ -20,8 +20,9 @@ export const getFeed = query({
         .collect();
       
       // Erstelle eine Map für schnelle Lookups: postId -> isLiked
+      // Konvertiere Id<"posts"> zu String für Map-Keys
       userLikes.forEach((like) => {
-        userLikesMap.set(like.postId, true);
+        userLikesMap.set(like.postId as string, true);
       });
     }
 
@@ -36,7 +37,8 @@ export const getFeed = query({
         }
 
         // Füge Like-Status hinzu, wenn userId vorhanden ist
-        const isLiked = args.userId ? userLikesMap.has(post._id) : undefined;
+        // Konvertiere Id<"posts"> zu String für Map-Lookup
+        const isLiked = args.userId ? userLikesMap.has(post._id as string) : undefined;
 
         return {
           ...post,
