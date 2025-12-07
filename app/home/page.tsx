@@ -20,16 +20,6 @@ export default function Home() {
   const posts = useQuery(api.queries.getFeed);
   const preloadedImages = useRef<Set<string>>(new Set());
 
-  // Hole alle Like-Status in einem Batch, wenn Posts und currentUserId verfügbar sind
-  // Diese Query ist optional - wenn sie fehlschlägt, verwenden FeedCards separate Queries
-  const postIds = posts?.map(post => post._id) || [];
-  const likesBatch = useQuery(
-    api.queries.getUserLikesBatch,
-    currentUserId && postIds.length > 0
-      ? { userId: currentUserId, postIds }
-      : "skip"
-  );
-
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
     if (session === null) {
@@ -38,7 +28,7 @@ export default function Home() {
   }, [session, router]);
 
   // Prüfe, ob alle Daten geladen sind (Posts und User)
-  // Warte NICHT auf likesBatch, da es optional ist und FeedCards separate Queries als Fallback verwenden
+  // Like-Status werden clientseitig in FeedCards geladen
   const isLoading = posts === undefined || currentUser === undefined;
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
@@ -89,21 +79,13 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts?.map((post) => {
-              // Hole Like-Status aus Batch-Query (Keys sind als Strings gespeichert)
-              // Wenn Batch-Query fehlschlägt oder nicht verfügbar ist, wird undefined übergeben
-              // und FeedCard verwendet separate Query als Fallback
-              const isLiked = likesBatch && typeof likesBatch === 'object'
-                ? likesBatch[post._id as string] ?? undefined
-                : undefined;
-              return (
-                <FeedCard 
-                  key={post._id} 
-                  post={{ ...post, isLiked }}
-                  currentUserId={currentUserId}
-                />
-              );
-            })}
+            {posts?.map((post) => (
+              <FeedCard 
+                key={post._id} 
+                post={post}
+                currentUserId={currentUserId}
+              />
+            ))}
           </div>
         )}
       </div>
