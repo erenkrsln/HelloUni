@@ -175,16 +175,21 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         </p>
 
         {post.imageUrl && (
-          <div className="mb-4">
+          <div 
+            className="mb-4 w-full rounded-lg overflow-hidden"
+            style={{
+              aspectRatio: "16/9",
+              maxHeight: "400px",
+              backgroundColor: "rgba(0, 0, 0, 0.1)"
+            }}
+          >
             <img
               ref={imgRef}
               src={post.imageUrl}
               alt="Post image"
-              className="w-full rounded-lg"
+              className="w-full h-full rounded-lg"
               style={{ 
-                maxHeight: "400px", 
-                objectFit: "cover", 
-                height: "auto",
+                objectFit: "cover",
                 display: "block"
               }}
               loading="eager"
