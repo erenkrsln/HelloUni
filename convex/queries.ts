@@ -2,13 +2,34 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getFeed = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { userId: v.optional(v.id("users")) },
+  handler: async (ctx, args) => {
     const posts = await ctx.db
       .query("posts")
       .withIndex("by_created")
       .order("desc")
       .collect();
+
+    // Wenn userId vorhanden ist, hole alle Like-Status in einem Batch
+    // Dies verhindert N+1 Queries und liefert die Daten beim ersten Render
+    const userLikesSet = new Set<string>();
+    if (args.userId) {
+      try {
+        // Verwende den neuen by_user Index, um alle Likes für diesen User effizient abzufragen
+        const userLikes = await ctx.db
+          .query("likes")
+          .withIndex("by_user", (q) => q.eq("userId", args.userId!))
+          .collect();
+        
+        // Erstelle ein Set für schnelle Lookups
+        userLikes.forEach((like) => {
+          userLikesSet.add(like.postId);
+        });
+      } catch (error) {
+        // Falls Abfrage fehlschlägt, fahre ohne Like-Status fort
+        // Like-Status wird dann clientseitig geladen
+      }
+    }
 
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
@@ -20,10 +41,16 @@ export const getFeed = query({
           imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
         }
 
+        // Füge Like-Status hinzu, wenn userId vorhanden ist
+        const isLiked = args.userId 
+          ? userLikesSet.has(post._id)
+          : undefined;
+
         return {
           ...post,
           imageUrl,
           user,
+          isLiked, // Like-Status direkt mitliefern
         };
       })
     );

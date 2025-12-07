@@ -27,6 +27,7 @@ export default defineSchema({
     postId: v.id("posts"),
   })
     .index("by_post", ["postId"])
+    .index("by_user", ["userId"]) // Index nur für userId, um alle Likes eines Users effizient abzufragen
     .index("by_user_post", ["userId", "postId"]),
 });
 
