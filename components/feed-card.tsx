@@ -35,6 +35,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const isLiked = useQuery(
@@ -78,6 +79,37 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Lade Bildgröße im Voraus, um Container-Größe zu bestimmen
+  useEffect(() => {
+    if (!post.imageUrl) return;
+
+    const img = new Image();
+    img.onload = () => {
+      // Berechne die Anzeigegröße basierend auf Originalgröße
+      const maxWidth = 428; // Max Breite des Containers
+      const maxHeight = 600; // Max Höhe
+      
+      let displayWidth = img.naturalWidth;
+      let displayHeight = img.naturalHeight;
+      
+      // Skaliere runter, wenn zu groß
+      if (displayWidth > maxWidth) {
+        const ratio = maxWidth / displayWidth;
+        displayWidth = maxWidth;
+        displayHeight = displayHeight * ratio;
+      }
+      
+      if (displayHeight > maxHeight) {
+        const ratio = maxHeight / displayHeight;
+        displayHeight = maxHeight;
+        displayWidth = displayWidth * ratio;
+      }
+      
+      setImageDimensions({ width: displayWidth, height: displayHeight });
+    };
+    img.src = post.imageUrl;
+  }, [post.imageUrl]);
 
   if (!post.user) return null;
 
@@ -178,23 +210,56 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
           <div 
             className="mb-4 w-full rounded-lg overflow-hidden"
             style={{
-              aspectRatio: "16/9",
-              maxHeight: "400px",
-              backgroundColor: "rgba(0, 0, 0, 0.1)"
+              // Verwende berechnete Größe oder Placeholder
+              height: imageDimensions ? `${imageDimensions.height}px` : "400px",
+              backgroundColor: "rgba(0, 0, 0, 0.05)",
+              minHeight: "200px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
             }}
           >
             <img
               ref={imgRef}
               src={post.imageUrl}
               alt="Post image"
-              className="w-full h-full rounded-lg"
+              className="rounded-lg"
               style={{ 
-                objectFit: "cover",
+                width: imageDimensions ? `${imageDimensions.width}px` : "100%",
+                height: imageDimensions ? `${imageDimensions.height}px` : "auto",
+                maxWidth: "100%",
+                maxHeight: "600px",
+                objectFit: "contain",
                 display: "block"
               }}
               loading="eager"
               fetchPriority="high"
               decoding="async"
+              onLoad={(e) => {
+                // Falls Bildgröße noch nicht gesetzt wurde
+                const img = e.target as HTMLImageElement;
+                if (!imageDimensions) {
+                  const maxWidth = 428;
+                  const maxHeight = 600;
+                  
+                  let displayWidth = img.naturalWidth;
+                  let displayHeight = img.naturalHeight;
+                  
+                  if (displayWidth > maxWidth) {
+                    const ratio = maxWidth / displayWidth;
+                    displayWidth = maxWidth;
+                    displayHeight = displayHeight * ratio;
+                  }
+                  
+                  if (displayHeight > maxHeight) {
+                    const ratio = maxHeight / displayHeight;
+                    displayHeight = maxHeight;
+                    displayWidth = displayWidth * ratio;
+                  }
+                  
+                  setImageDimensions({ width: displayWidth, height: displayHeight });
+                }
+              }}
               onError={(e) => {
                 const img = e.target as HTMLImageElement;
                 img.style.display = "none";
