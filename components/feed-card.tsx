@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, X } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -35,6 +35,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const isLiked = useQuery(
@@ -78,6 +79,26 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // ESC-Taste zum Schließen des Modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isImageModalOpen) {
+        setIsImageModalOpen(false);
+      }
+    };
+
+    if (isImageModalOpen) {
+      document.addEventListener("keydown", handleEscape);
+      // Verhindere Scrollen im Hintergrund
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
+    };
+  }, [isImageModalOpen]);
 
   if (!post.user) return null;
 
@@ -175,32 +196,74 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         </p>
 
         {post.imageUrl && (
-          <div 
-            className="mb-4 w-full rounded-lg overflow-hidden"
-            style={{
-              aspectRatio: "16/9",
-              maxHeight: "400px",
-              backgroundColor: "rgba(0, 0, 0, 0.1)"
-            }}
-          >
-            <img
-              ref={imgRef}
-              src={post.imageUrl}
-              alt="Post image"
-              className="w-full h-full rounded-lg"
-              style={{ 
-                objectFit: "cover",
-                display: "block"
+          <>
+            <div 
+              className="mb-4 w-full rounded-lg overflow-hidden cursor-pointer"
+              style={{
+                aspectRatio: "16/9",
+                maxHeight: "400px",
+                backgroundColor: "rgba(0, 0, 0, 0.1)"
               }}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement;
-                img.style.display = "none";
-              }}
-            />
-          </div>
+              onClick={() => setIsImageModalOpen(true)}
+            >
+              <img
+                ref={imgRef}
+                src={post.imageUrl}
+                alt="Post image"
+                className="w-full h-full rounded-lg"
+                style={{ 
+                  objectFit: "cover",
+                  display: "block"
+                }}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.style.display = "none";
+                }}
+              />
+            </div>
+
+            {/* Image Modal / Lightbox (wie Twitter/X) */}
+            {isImageModalOpen && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{
+                  backgroundColor: "rgba(0, 0, 0, 0.9)",
+                  backdropFilter: "blur(4px)"
+                }}
+                onClick={() => setIsImageModalOpen(false)}
+              >
+                <button
+                  className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsImageModalOpen(false);
+                  }}
+                  aria-label="Schließen"
+                >
+                  <X style={{ width: "24px", height: "24px", color: "white" }} />
+                </button>
+                
+                <div
+                  className="relative max-w-full max-h-full"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <img
+                    src={post.imageUrl}
+                    alt="Post image - Originalgröße"
+                    className="max-w-full max-h-[90vh] rounded-lg"
+                    style={{
+                      objectFit: "contain",
+                      display: "block"
+                    }}
+                    loading="eager"
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <div
