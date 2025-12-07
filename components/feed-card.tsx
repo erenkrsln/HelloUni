@@ -2,12 +2,12 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Bookmark, X, MoreHorizontal, BarChart3, Repeat2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
 interface FeedCardProps {
   post: {
@@ -35,7 +35,6 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
   const [isLiking, setIsLiking] = useState(false);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const isLiked = useQuery(
@@ -79,26 +78,6 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-
-  // ESC-Taste zum Schließen des Modals
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isImageModalOpen) {
-        setIsImageModalOpen(false);
-      }
-    };
-
-    if (isImageModalOpen) {
-      document.addEventListener("keydown", handleEscape);
-      // Verhindere Scrollen im Hintergrund
-      document.body.style.overflow = "hidden";
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
-    };
-  }, [isImageModalOpen]);
 
   if (!post.user) return null;
 
@@ -196,150 +175,33 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         </p>
 
         {post.imageUrl && (
-          <>
-            <div 
-              className="mb-4 w-full rounded-2xl overflow-hidden cursor-pointer flex items-center justify-center"
-              style={{
-                maxHeight: "600px",
-                minHeight: "200px",
-                backgroundColor: "rgba(0, 0, 0, 0.1)",
-                borderRadius: "16px"
+          <div 
+            className="mb-4 w-full rounded-2xl overflow-hidden flex items-center justify-center"
+            style={{
+              maxHeight: "600px",
+              minHeight: "200px",
+              backgroundColor: "rgba(0, 0, 0, 0.1)",
+              borderRadius: "16px"
+            }}
+          >
+            <img
+              ref={imgRef}
+              src={post.imageUrl}
+              alt="Post image"
+              className="max-w-full max-h-full rounded-2xl"
+              style={{ 
+                objectFit: "contain",
+                display: "block"
               }}
-              onClick={() => setIsImageModalOpen(true)}
-            >
-              <img
-                ref={imgRef}
-                src={post.imageUrl}
-                alt="Post image"
-                className="max-w-full max-h-full rounded-2xl"
-                style={{ 
-                  objectFit: "contain",
-                  display: "block"
-                }}
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                onError={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  img.style.display = "none";
-                }}
-              />
-            </div>
-
-            {/* Image Modal / Lightbox (wie Twitter/X) */}
-            {isImageModalOpen && (
-              <div
-                className="fixed inset-0 z-50 flex flex-col"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.95)"
-                }}
-              >
-                {/* Top Bar - X links, Menu rechts */}
-                <div
-                  className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10"
-                  style={{
-                    background: "linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent)"
-                  }}
-                >
-                  <button
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    onClick={() => setIsImageModalOpen(false)}
-                    aria-label="Schließen"
-                  >
-                    <X style={{ width: "24px", height: "24px", color: "white" }} />
-                  </button>
-                  
-                  <button
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // TODO: Menu öffnen
-                    }}
-                    aria-label="Mehr Optionen"
-                  >
-                    <MoreHorizontal style={{ width: "24px", height: "24px", color: "white" }} />
-                  </button>
-                </div>
-
-                {/* Bild - Zentriert, vollständig sichtbar */}
-                <div
-                  className="flex-1 flex items-center justify-center p-4"
-                  onClick={() => setIsImageModalOpen(false)}
-                >
-                  <div
-                    className="max-w-full max-h-full"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <img
-                      src={post.imageUrl}
-                      alt="Post image - Originalgröße"
-                      className="max-w-full max-h-full"
-                      style={{
-                        objectFit: "contain",
-                        display: "block"
-                      }}
-                      loading="eager"
-                    />
-                  </div>
-                </div>
-
-                {/* Bottom Navigation Bar - Interaktions-Icons */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-8 p-4"
-                  style={{
-                    background: "linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent)"
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    aria-label="Kommentieren"
-                  >
-                    <MessageCircle style={{ width: "24px", height: "24px", color: "white" }} />
-                  </button>
-                  
-                  <button
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    aria-label="Retweet"
-                  >
-                    <Repeat2 style={{ width: "24px", height: "24px", color: "white" }} />
-                  </button>
-                  
-                  <button
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLike();
-                    }}
-                    aria-label="Gefällt mir"
-                  >
-                    <Heart 
-                      style={{ 
-                        width: "24px", 
-                        height: "24px", 
-                        color: displayIsLiked ? "#ef4444" : "white",
-                        fill: displayIsLiked ? "#ef4444" : "none"
-                      }} 
-                    />
-                  </button>
-                  
-                  <button
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    aria-label="Ansichten"
-                  >
-                    <BarChart3 style={{ width: "24px", height: "24px", color: "white" }} />
-                  </button>
-                  
-                  <button
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    aria-label="Teilen"
-                  >
-                    <Share2 style={{ width: "24px", height: "24px", color: "white" }} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.style.display = "none";
+              }}
+            />
+          </div>
         )}
 
         <div
