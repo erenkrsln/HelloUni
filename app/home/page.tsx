@@ -6,7 +6,7 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
@@ -18,6 +18,7 @@ export default function Home() {
   const router = useRouter();
   const { session, currentUserId } = useCurrentUser();
   const posts = useQuery(api.queries.getFeed);
+  const preloadedImages = useRef<Set<string>>(new Set());
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -25,6 +26,25 @@ export default function Home() {
       router.push("/");
     }
   }, [session, router]);
+
+  // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
+  // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
+  useEffect(() => {
+    if (!posts) return;
+
+    // Alle Bilder parallel vorladen für sofortige Anzeige
+    posts.forEach((post) => {
+      if (post.imageUrl && !preloadedImages.current.has(post.imageUrl)) {
+        // Bild im Browser-Cache vorladen
+        const img = new Image();
+        img.src = post.imageUrl;
+        // Wichtig: Diese Attribute sorgen für sofortiges Laden
+        img.loading = "eager";
+        img.fetchPriority = "high";
+        preloadedImages.current.add(post.imageUrl);
+      }
+    });
+  }, [posts]);
 
   // Konsistentes Layout immer beibehalten
   return (

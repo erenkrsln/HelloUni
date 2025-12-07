@@ -179,10 +179,24 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
               src={post.imageUrl}
               alt="Post image"
               className="w-full rounded-lg"
-              style={{ maxHeight: "400px", objectFit: "cover", height: "auto" }}
+              style={{ 
+                maxHeight: "400px", 
+                objectFit: "cover", 
+                height: "auto",
+                display: "block"
+              }}
               loading="eager"
               fetchPriority="high"
               decoding="async"
+              // Verhindert Layout-Shift beim Laden
+              onLoad={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.style.opacity = "1";
+              }}
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.style.display = "none";
+              }}
             />
           </div>
         )}
