@@ -26,6 +26,7 @@ interface FeedCardProps {
       uni_name?: string;
       major?: string;
     } | null;
+    isLiked?: boolean; // Like-Status direkt aus getFeed Query (verhindert Flicker)
   };
   currentUserId?: Id<"users">;
 }
@@ -58,36 +59,42 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   };
   const lastKnownLikedState = useRef<boolean | null>(getInitialLastKnownState());
 
-  const isLiked = useQuery(
+  // Verwende Like-Status aus Post-Daten (wenn verfügbar), sonst separate Query
+  // post.isLiked kommt direkt aus getFeed Query und verhindert Flicker beim ersten Render
+  const isLikedFromQuery = useQuery(
     api.queries.getUserLikes,
-    currentUserId && post._id
+    // Nur Query ausführen, wenn post.isLiked nicht verfügbar ist (Fallback)
+    currentUserId && post._id && post.isLiked === undefined
       ? { userId: currentUserId, postId: post._id }
       : "skip"
   );
+  
+  // Priorisiere post.isLiked (aus getFeed), dann Query-Ergebnis
+  const isLiked = post.isLiked !== undefined ? post.isLiked : isLikedFromQuery;
 
-  // Beim ersten Laden: Setze optimistischen State sofort, um Flickern zu vermeiden
+  // Synchronisiere optimistischen State mit Query-Daten
+  // Da post.isLiked jetzt direkt aus getFeed kommt, ist isLiked beim ersten Render verfügbar
   useEffect(() => {
-    // Wenn Query-Daten geladen sind, aktualisiere lastKnownLikedState und sessionStorage
     if (isLiked !== undefined) {
       lastKnownLikedState.current = isLiked;
-      // Wenn optimisticLiked null ist (beim ersten Laden ohne sessionStorage), setze es sofort auf den Query-Wert
-      // Dies verhindert Flickern, da der optimistische State sofort mit den Query-Daten übereinstimmt
+      
+      // Wenn optimisticLiked null ist, setze es auf den Query-Wert (beim ersten Render)
       if (optimisticLiked === null) {
         setOptimisticLiked(isLiked);
-      } else if (optimisticLiked !== isLiked) {
-        // Wenn optimistischer State nicht mit Query-Daten übereinstimmt, aktualisiere ihn sofort
+      } 
+      // Wenn optimistischer State nicht mit Query-Daten übereinstimmt, aktualisiere ihn
+      else if (optimisticLiked !== isLiked) {
         setOptimisticLiked(isLiked);
-      } else {
-        // Wenn optimistischer State mit Query-Daten übereinstimmt, können wir ihn nach einer kurzen Verzögerung zurücksetzen
+      } 
+      // Wenn optimistischer State mit Query-Daten übereinstimmt, können wir ihn nach kurzer Verzögerung zurücksetzen
+      else {
         const timeout = setTimeout(() => {
           setOptimisticLiked(null);
         }, 100);
         return () => clearTimeout(timeout);
       }
     }
-    // Wenn Query-Daten noch nicht geladen sind und optimisticLiked null ist,
-    // verwende lastKnownLikedState aus sessionStorage, falls vorhanden
-    // WICHTIG: Setze nicht auf false, wenn sessionStorage leer ist - warte auf Query-Daten
+    // Fallback: Wenn Query-Daten noch nicht geladen sind, verwende sessionStorage
     else if (optimisticLiked === null && lastKnownLikedState.current !== null) {
       setOptimisticLiked(lastKnownLikedState.current);
     }
@@ -97,18 +104,14 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   // Die Like-Anzahl kommt immer direkt aus post.likesCount, da sie bereits vom Backend aktualisiert wurde
   const displayLikes = post.likesCount;
   
-  // Bestimme den Like-Status: Priorisiere Query-Daten, dann optimistischen State, dann letzten bekannten State
-  // Wichtig: Beim ersten Laden (wenn isLiked === undefined) verwenden wir den optimistischen State oder
-  // den letzten bekannten State aus sessionStorage, um Flickern zu vermeiden
-  // Wenn beides null/undefined ist, verwenden wir false nur als letzten Fallback
-  // (aber das sollte nicht passieren, da optimisticLiked sofort gesetzt wird, wenn Query-Daten geladen sind)
+  // Bestimme den Like-Status: Priorisiere Query-Daten (isLiked), dann optimistischen State
+  // Da post.isLiked jetzt direkt aus getFeed kommt, ist isLiked beim ersten Render verfügbar
+  // und verhindert den "weiß → rot" Flicker
   const displayIsLiked = isLiked !== undefined 
     ? isLiked 
     : (optimisticLiked !== null 
         ? optimisticLiked 
-        : (lastKnownLikedState.current !== null 
-            ? lastKnownLikedState.current 
-            : false));
+        : (lastKnownLikedState.current ?? false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
