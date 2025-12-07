@@ -89,8 +89,8 @@ export default function Home() {
         ) : (
           <div className="space-y-6">
             {posts?.map((post) => {
-              // Hole Like-Status aus Batch-Query
-              const isLiked = likesBatch?.[post._id] ?? undefined;
+              // Hole Like-Status aus Batch-Query (Keys sind als Strings gespeichert)
+              const isLiked = likesBatch?.[post._id as string] ?? undefined;
               return (
                 <FeedCard 
                   key={post._id} 
