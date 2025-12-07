@@ -28,14 +28,18 @@ export function BottomNavigation() {
   return (
     <nav className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-50">
       <div
-        className="flex items-center justify-between px-5 py-4 transition-all"
+        className="flex items-center justify-between px-5 py-4"
         style={{
           width: "100%",
           maxWidth: "373px",
           height: "66px",
           borderRadius: "79px",
           background: "linear-gradient(to right, #D08945 0%, #DCA067 33.226%, #F4CFAB 100%)",
-          opacity: 0.6
+          opacity: 0.6,
+          willChange: "transform",
+          transform: "translateZ(0)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden"
         }}
       >
         <Link
@@ -45,12 +49,14 @@ export function BottomNavigation() {
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <Home
-            className="transition-all"
             style={{
               width: "40px",
               height: "40px",
               color: "#FFFFFF",
-              fill: isActive("/home") ? "#FFFFFF" : "none"
+              fill: isActive("/home") ? "#FFFFFF" : "none",
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden"
             }}
           />
         </Link>
@@ -61,12 +67,14 @@ export function BottomNavigation() {
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <MessageCircle
-            className="transition-all"
             style={{
               width: "40px",
               height: "40px",
               color: "#FFFFFF",
-              fill: isActive("/chat") ? "#FFFFFF" : "none"
+              fill: isActive("/chat") ? "#FFFFFF" : "none",
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden"
             }}
           />
         </Link>
@@ -92,8 +100,11 @@ export function BottomNavigation() {
               height: "58px",
               objectFit: "contain",
               display: "block",
-              transform: isActive("/create") ? "rotate(45deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease"
+              transform: isActive("/create") ? "rotate(45deg) translateZ(0)" : "rotate(0deg) translateZ(0)",
+              transition: "transform 0.2s ease",
+              willChange: "transform",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
             }}
           />
         </Link>
@@ -104,12 +115,14 @@ export function BottomNavigation() {
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <Search
-            className="transition-all"
             style={{
               width: "40px",
               height: "40px",
               color: "#FFFFFF",
-              fill: isActive("/search") ? "#FFFFFF" : "none"
+              fill: isActive("/search") ? "#FFFFFF" : "none",
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden"
             }}
           />
         </Link>
@@ -120,12 +133,14 @@ export function BottomNavigation() {
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <Calendar
-            className="transition-all"
             style={{
               width: "40px",
               height: "40px",
               color: "#FFFFFF",
-              fill: isActive("/calendar") ? "#FFFFFF" : "none"
+              fill: isActive("/calendar") ? "#FFFFFF" : "none",
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden"
             }}
           />
         </Link>
