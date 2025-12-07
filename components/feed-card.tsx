@@ -7,8 +7,7 @@ import { formatTimeAgo } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
 
 interface FeedCardProps {
   post: {
@@ -27,58 +26,132 @@ interface FeedCardProps {
       uni_name?: string;
       major?: string;
     } | null;
+    isLiked?: boolean; // Like-Status direkt aus getFeed Query (verhindert Flicker)
   };
   currentUserId?: Id<"users">;
-  priority?: boolean; // Für wichtige Bilder (z.B. erste im Viewport)
 }
 
-export function FeedCard({ post, currentUserId, priority = false }: FeedCardProps) {
+export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
-  const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
-  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+  
+  // Initialisiere optimistischen State sofort aus sessionStorage, um Flickern zu vermeiden
+  const storageKey = currentUserId ? `like_${post._id}_${currentUserId}` : null;
+  const getInitialOptimisticLiked = (): boolean | null => {
+    if (!storageKey || typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored === "true" || stored === "false") {
+      return stored === "true";
+    }
+    return null;
+  };
+  
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(getInitialOptimisticLiked);
   const [isLiking, setIsLiking] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  
+  // Initialisiere lastKnownLikedState sofort aus sessionStorage beim ersten Laden
+  const getInitialLastKnownState = (): boolean | null => {
+    if (!storageKey || typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored === "true") return true;
+    if (stored === "false") return false;
+    return null;
+  };
+  const lastKnownLikedState = useRef<boolean | null>(getInitialLastKnownState());
 
-  const isLiked = useQuery(
+  // Verwende Like-Status aus Post-Daten (wenn verfügbar), sonst separate Query
+  // post.isLiked kommt direkt aus getUserLikesBatch Query und verhindert Flicker beim ersten Render
+  const isLikedFromQuery = useQuery(
     api.queries.getUserLikes,
-    currentUserId && post._id
+    // Nur Query ausführen, wenn post.isLiked nicht verfügbar ist (Fallback)
+    currentUserId && post._id && post.isLiked === undefined
       ? { userId: currentUserId, postId: post._id }
       : "skip"
   );
+  
+  // Priorisiere post.isLiked (aus Batch-Query), dann Query-Ergebnis
+  const isLiked = post.isLiked !== undefined ? post.isLiked : isLikedFromQuery;
 
-  const displayLikes = optimisticLikes !== null ? optimisticLikes : post.likesCount;
-  const displayIsLiked = optimisticLiked !== null ? optimisticLiked : (isLiked ?? false);
+  // Synchronisiere optimistischen State mit Query-Daten
+  // Da post.isLiked jetzt direkt aus getFeed kommt, ist isLiked beim ersten Render verfügbar
+  useEffect(() => {
+    if (isLiked !== undefined) {
+      lastKnownLikedState.current = isLiked;
+      
+      // Wenn optimisticLiked null ist, setze es auf den Query-Wert (beim ersten Render)
+      if (optimisticLiked === null) {
+        setOptimisticLiked(isLiked);
+      } 
+      // Wenn optimistischer State nicht mit Query-Daten übereinstimmt, aktualisiere ihn
+      else if (optimisticLiked !== isLiked) {
+        setOptimisticLiked(isLiked);
+      } 
+      // Wenn optimistischer State mit Query-Daten übereinstimmt, können wir ihn nach kurzer Verzögerung zurücksetzen
+      else {
+        const timeout = setTimeout(() => {
+          setOptimisticLiked(null);
+        }, 100);
+        return () => clearTimeout(timeout);
+      }
+    }
+    // Fallback: Wenn Query-Daten noch nicht geladen sind, verwende sessionStorage
+    else if (optimisticLiked === null && lastKnownLikedState.current !== null) {
+      setOptimisticLiked(lastKnownLikedState.current);
+    }
+  }, [isLiked, optimisticLiked, storageKey]);
+
+  // Verwende optimistischen State nur für den visuellen Status (gefüllt/nicht gefüllt)
+  // Die Like-Anzahl kommt immer direkt aus post.likesCount, da sie bereits vom Backend aktualisiert wurde
+  const displayLikes = post.likesCount;
+  
+  // Bestimme den Like-Status: Priorisiere Query-Daten (isLiked), dann optimistischen State
+  // Da post.isLiked jetzt direkt aus getFeed kommt, ist isLiked beim ersten Render verfügbar
+  // und verhindert den "weiß → rot" Flicker
+  const displayIsLiked = isLiked !== undefined 
+    ? isLiked 
+    : (optimisticLiked !== null 
+        ? optimisticLiked 
+        : (lastKnownLikedState.current ?? false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
 
     setIsLiking(true);
-    const previousLikes = post.likesCount;
     const wasLiked = isLiked ?? false;
     const newLikedState = !wasLiked;
 
     setOptimisticLiked(newLikedState);
-    setOptimisticLikes(newLikedState ? previousLikes + 1 : previousLikes - 1);
+    // Keine optimistische Like-Anzahl mehr - post.likesCount wird automatisch vom Backend aktualisiert
 
     try {
       await likePost({
         userId: currentUserId,
         postId: post._id,
       });
+      // post.likesCount wird automatisch durch Convex's reaktive Updates aktualisiert
     } catch (error) {
       setOptimisticLiked(wasLiked);
-      setOptimisticLikes(previousLikes);
       console.error("Error liking post:", error);
     } finally {
       setIsLiking(false);
-      setTimeout(() => {
-        setOptimisticLikes(null);
-        setOptimisticLiked(null);
-      }, 500);
+      // Setze optimistischen State nicht automatisch zurück
+      // Er wird zurückgesetzt, wenn Query-Daten geladen sind (siehe useEffect)
     }
   };
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Speichere optimistischen State in sessionStorage
+  useEffect(() => {
+    if (!storageKey) return;
+    if (optimisticLiked !== null) {
+      sessionStorage.setItem(storageKey, optimisticLiked.toString());
+    } else if (isLiked !== undefined) {
+      // Wenn Query-Daten geladen sind, aktualisiere sessionStorage
+      sessionStorage.setItem(storageKey, isLiked.toString());
+    }
+  }, [optimisticLiked, isLiked, storageKey]);
 
   if (!post.user) return null;
 
@@ -176,18 +249,31 @@ export function FeedCard({ post, currentUserId, priority = false }: FeedCardProp
         </p>
 
         {post.imageUrl && (
-          <div className="mb-4 relative" style={{ width: "100%", aspectRatio: "16/9", maxHeight: "400px" }}>
-            <Image
+          <div 
+            className="mb-4 w-full rounded-2xl overflow-hidden flex items-center justify-center"
+            style={{
+              maxHeight: "600px",
+              minHeight: "200px",
+              backgroundColor: "rgba(0, 0, 0, 0.1)",
+              borderRadius: "16px"
+            }}
+          >
+            <img
+              ref={imgRef}
               src={post.imageUrl}
               alt="Post image"
-              fill
-              priority={priority}
-              loading={priority ? "eager" : "lazy"}
-              className="rounded-lg"
-              style={{ objectFit: "cover" }}
-              sizes="(max-width: 428px) 100vw, 428px"
-              // Convex Storage URLs sind bereits optimiert, andere URLs können unoptimized sein
-              unoptimized={!post.imageUrl.includes("convex.cloud")}
+              className="max-w-full max-h-full rounded-2xl"
+              style={{ 
+                objectFit: "contain",
+                display: "block"
+              }}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.style.display = "none";
+              }}
             />
           </div>
         )}

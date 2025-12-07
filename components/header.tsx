@@ -22,7 +22,15 @@ export function Header() {
     <header className="relative w-full" style={{ height: "94px" }}>
       <div
         className="absolute flex items-center justify-center overflow-hidden"
-        style={{ left: "16px", top: "-20px", width: "120px", height: "130px" }}
+        style={{ 
+          left: "16px", 
+          top: "-20px", 
+          width: "120px", 
+          height: "130px",
+          willChange: "transform",
+          transform: "translateZ(0)",
+          backfaceVisibility: "hidden"
+        }}
       >
         <img
           src="/logo.svg"
@@ -33,7 +41,10 @@ export function Header() {
             width: "120px",
             height: "130px",
             objectFit: "contain",
-            display: "block"
+            display: "block",
+            willChange: "transform",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden"
           }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;

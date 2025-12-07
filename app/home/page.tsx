@@ -6,7 +6,7 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
@@ -16,8 +16,18 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
  */
 export default function Home() {
   const router = useRouter();
-  const { session, currentUserId } = useCurrentUser();
+  const { session, currentUserId, currentUser } = useCurrentUser();
   const posts = useQuery(api.queries.getFeed);
+  const preloadedImages = useRef<Set<string>>(new Set());
+
+  // Hole alle Like-Status in einem Batch, wenn Posts und currentUserId verfügbar sind
+  const postIds = posts?.map(post => post._id) || [];
+  const likesBatch = useQuery(
+    api.queries.getUserLikesBatch,
+    currentUserId && postIds.length > 0
+      ? { userId: currentUserId, postIds }
+      : "skip"
+  );
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -25,6 +35,37 @@ export default function Home() {
       router.push("/");
     }
   }, [session, router]);
+
+  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
+  const isLoading = posts === undefined || currentUser === undefined || 
+    (currentUserId && postIds.length > 0 && likesBatch === undefined);
+
+  // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
+  // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
+  useEffect(() => {
+    if (!posts) return;
+
+    // Alle Bilder parallel vorladen für sofortige Anzeige
+    posts.forEach((post) => {
+      if (post.imageUrl && !preloadedImages.current.has(post.imageUrl)) {
+        // Methode 1: Image-Objekt für Browser-Cache
+        const img = new Image();
+        img.src = post.imageUrl;
+        img.loading = "eager";
+        img.fetchPriority = "high";
+        
+        // Methode 2: Link-Preload für persistenten Cache
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
+        link.href = post.imageUrl;
+        link.fetchPriority = "high";
+        document.head.appendChild(link);
+        
+        preloadedImages.current.add(post.imageUrl);
+      }
+    });
+  }, [posts]);
 
   // Konsistentes Layout immer beibehalten
   return (
@@ -39,23 +80,25 @@ export default function Home() {
         </h2>
       </div>
       <div className="px-4">
-        {!posts ? (
+        {isLoading ? (
           <LoadingScreen text="Feed wird geladen..." />
-        ) : posts.length === 0 ? (
+        ) : posts && posts.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-sm text-[#F4CFAB]/60">Noch keine Posts vorhanden.</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {posts.map((post, index) => (
-              <FeedCard 
-                key={post._id} 
-                post={post} 
-                currentUserId={currentUserId}
-                // Erstes Bild im Feed bekommt priority für sofortiges Laden
-                priority={index === 0 && !!post.imageUrl}
-              />
-            ))}
+            {posts?.map((post) => {
+              // Hole Like-Status aus Batch-Query (Keys sind als Strings gespeichert)
+              const isLiked = likesBatch?.[post._id as string] ?? undefined;
+              return (
+                <FeedCard 
+                  key={post._id} 
+                  post={{ ...post, isLiked }}
+                  currentUserId={currentUserId}
+                />
+              );
+            })}
           </div>
         )}
       </div>

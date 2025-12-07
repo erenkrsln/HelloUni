@@ -60,6 +60,51 @@ export const getUserLikes = query({
   },
 });
 
+// Batch-Abfrage aller Like-Status für einen User und mehrere Posts
+export const getUserLikesBatch = query({
+  args: { userId: v.id("users"), postIds: v.array(v.id("posts")) },
+  handler: async (ctx, args) => {
+    // Wenn keine Post-IDs vorhanden sind, gebe leeres Objekt zurück
+    if (!args.postIds || args.postIds.length === 0) {
+      return {};
+    }
+    
+    try {
+      // Hole alle Likes und filtere nach userId und postIds
+      // Da der zusammengesetzte Index nicht nur mit userId funktioniert, holen wir alle Likes
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+      
+      // Erstelle ein Set der Post-IDs für schnelleren Lookup
+      const postIdsSet = new Set(args.postIds);
+      
+      // Filtere Likes für diesen User und die relevanten Posts
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIdsSet.has(like.postId)
+      );
+      
+      // Erstelle eine Map: postId -> isLiked (als String-Keys für Record)
+      const likesMap: Record<string, boolean> = {};
+      userLikes.forEach((like) => {
+        likesMap[like.postId as string] = true;
+      });
+      
+      // Erstelle Ergebnis-Objekt mit allen Post-IDs (als String-Keys)
+      const result: Record<string, boolean> = {};
+      args.postIds.forEach((postId) => {
+        result[postId as string] = likesMap[postId as string] ?? false;
+      });
+      
+      return result;
+    } catch (error) {
+      // Falls Abfrage fehlschlägt, gebe leeres Objekt zurück
+      // Like-Status wird dann clientseitig geladen
+      return {};
+    }
+  },
+});
+
 export const getUser = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {

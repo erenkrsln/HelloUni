@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { LoadingScreen } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { ImagePlus, X } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
@@ -12,12 +13,16 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 export default function CreatePage() {
     const router = useRouter();
     const { currentUser, currentUserId } = useCurrentUser();
+    
+    // Zeige Loading Spinner, wenn User-Daten noch nicht geladen sind
+    const isLoading = currentUser === undefined;
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Mutations werden sofort initialisiert, blockieren nicht
     const createPost = useMutation(api.mutations.createPost);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
@@ -85,6 +90,9 @@ export default function CreatePage() {
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             <Header />
+            {isLoading ? (
+                <LoadingScreen text="Seite wird geladen..." />
+            ) : (
             <div className="px-4 py-6">
                 <h2
                     className="text-2xl font-normal mb-6"
@@ -165,7 +173,7 @@ export default function CreatePage() {
                     <button
                         type="submit"
                         disabled={!content.trim() || isSubmitting}
-                        className="w-full py-3 px-6 rounded-full font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 px-6 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                             background: "linear-gradient(to right, #D08945 0%, #DCA067 33.226%, #F4CFAB 100%)",
                             color: "#FFFFFF"
@@ -175,6 +183,7 @@ export default function CreatePage() {
                     </button>
                 </form>
             </div>
+            )}
             <BottomNavigation />
         </main>
     );
