@@ -7,7 +7,7 @@ import { formatTimeAgo } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface FeedCardProps {
   post: {
@@ -36,6 +36,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
   const [isLiking, setIsLiking] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const lastKnownLikedState = useRef<boolean | null>(null);
 
   const isLiked = useQuery(
     api.queries.getUserLikes,
@@ -44,8 +45,29 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
       : "skip"
   );
 
+  // Wenn Query-Daten geladen sind, speichere den Status
+  useEffect(() => {
+    if (isLiked !== undefined) {
+      lastKnownLikedState.current = isLiked;
+      // Setze optimistischen State zurück, wenn er mit Query-Daten übereinstimmt
+      // Nur wenn Query-Daten definitiv geladen sind
+      if (optimisticLiked !== null && optimisticLiked === isLiked) {
+        // Warte kurz, bevor wir zurücksetzen, um Flickern zu vermeiden
+        const timeout = setTimeout(() => {
+          setOptimisticLiked(null);
+          setOptimisticLikes(null);
+        }, 100);
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [isLiked, optimisticLiked]);
+
+  // Verwende optimistischen State, wenn vorhanden ODER wenn Query noch lädt
+  // Das verhindert Flickern beim Zurückkehren zur Seite
   const displayLikes = optimisticLikes !== null ? optimisticLikes : post.likesCount;
-  const displayIsLiked = optimisticLiked !== null ? optimisticLiked : (isLiked ?? false);
+  const displayIsLiked = optimisticLiked !== null 
+    ? optimisticLiked 
+    : (isLiked !== undefined ? isLiked : (lastKnownLikedState.current ?? false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
@@ -69,15 +91,39 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
       console.error("Error liking post:", error);
     } finally {
       setIsLiking(false);
-      setTimeout(() => {
-        setOptimisticLikes(null);
-        setOptimisticLiked(null);
-      }, 500);
+      // Setze optimistischen State nicht automatisch zurück
+      // Er wird zurückgesetzt, wenn Query-Daten geladen sind (siehe useEffect)
     }
   };
 
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Speichere Like-Status in sessionStorage für Persistenz über Remounts
+  const storageKey = `like_${post._id}_${currentUserId}`;
+  
+  // Initialisiere optimistischen State aus sessionStorage, wenn vorhanden
+  useEffect(() => {
+    if (optimisticLiked === null && isLiked === undefined) {
+      const stored = sessionStorage.getItem(storageKey);
+      if (stored === "true" || stored === "false") {
+        setOptimisticLiked(stored === "true");
+        // Schätze Like-Anzahl basierend auf gespeichertem Status
+        const estimatedLikes = stored === "true" ? post.likesCount + 1 : post.likesCount - 1;
+        setOptimisticLikes(Math.max(0, estimatedLikes));
+      }
+    }
+  }, [storageKey, post._id, post.likesCount]);
+
+  // Speichere optimistischen State in sessionStorage
+  useEffect(() => {
+    if (optimisticLiked !== null) {
+      sessionStorage.setItem(storageKey, optimisticLiked.toString());
+    } else if (isLiked !== undefined) {
+      // Wenn Query-Daten geladen sind, aktualisiere sessionStorage
+      sessionStorage.setItem(storageKey, isLiked.toString());
+    }
+  }, [optimisticLiked, isLiked, storageKey]);
 
   if (!post.user) return null;
 
