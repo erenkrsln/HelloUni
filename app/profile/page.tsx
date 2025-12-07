@@ -8,18 +8,35 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useState, useEffect } from "react";
 
 export default function ProfilePage() {
     const { currentUser, currentUserId } = useCurrentUser();
     const allPosts = useQuery(api.queries.getFeed);
+    const [isFirstVisit, setIsFirstVisit] = useState(true);
+
+    // Prüfe, ob Seite bereits besucht wurde
+    useEffect(() => {
+        const visited = sessionStorage.getItem("profile_visited");
+        if (visited) {
+            setIsFirstVisit(false);
+        } else {
+            // Markiere Seite als besucht nach kurzer Verzögerung
+            const timer = setTimeout(() => {
+                sessionStorage.setItem("profile_visited", "true");
+                setIsFirstVisit(false);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     // Filter posts by current user
     const userPosts = currentUser
         ? allPosts?.filter(post => post.userId === currentUser._id) || []
         : [];
 
-    // Zeige Loading nur wenn Daten wirklich undefined sind (nicht gecached)
-    const isLoading = currentUser === undefined || allPosts === undefined;
+    // Zeige Loading nur beim ersten Besuch, sonst warte auf gecachte Daten
+    const isLoading = isFirstVisit && (currentUser === undefined || allPosts === undefined);
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">

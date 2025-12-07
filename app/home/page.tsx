@@ -6,7 +6,7 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
@@ -19,6 +19,7 @@ export default function Home() {
   const { session, currentUserId, currentUser } = useCurrentUser();
   const posts = useQuery(api.queries.getFeed);
   const preloadedImages = useRef<Set<string>>(new Set());
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -27,9 +28,25 @@ export default function Home() {
     }
   }, [session, router]);
 
+  // Prüfe, ob Seite bereits besucht wurde
+  useEffect(() => {
+    const visited = sessionStorage.getItem("home_visited");
+    if (visited) {
+      setIsFirstVisit(false);
+    } else {
+      // Markiere Seite als besucht nach kurzer Verzögerung
+      const timer = setTimeout(() => {
+        sessionStorage.setItem("home_visited", "true");
+        setIsFirstVisit(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // Prüfe, ob alle Daten geladen sind (Posts und User)
   // Like-Status werden clientseitig in FeedCards geladen
-  const isLoading = posts === undefined || currentUser === undefined;
+  // Zeige Loading nur beim ersten Besuch, sonst warte auf gecachte Daten
+  const isLoading = isFirstVisit && (posts === undefined || currentUser === undefined);
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
