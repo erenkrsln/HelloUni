@@ -6,10 +6,9 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Id } from "@/convex/_generated/dataModel";
 
 /**
  * Hauptseite (geschützt) - Posts-Feed
@@ -28,54 +27,9 @@ export default function Home() {
     }
   }, [session, router]);
 
-  // Lade alle Like-Status parallel für alle Posts
-  // Verwende useMemo, um sicherzustellen, dass die Array-Länge stabil bleibt
-  const postIds = useMemo(() => posts?.map(post => post._id) || [], [posts]);
-  
-  // Lade Like-Status für alle Posts parallel
-  // Queries müssen direkt aufgerufen werden (nicht in useMemo)
-  // Maximal 20 Posts gleichzeitig, um Performance-Probleme zu vermeiden
-  const maxPosts = 20;
-  const limitedPostIds = postIds.slice(0, maxPosts);
-  
-  // Lade Like-Status für alle Posts parallel
-  // useQuery gibt undefined zurück, wenn noch geladen wird, oder einen Fehler, wenn die Query fehlschlägt
-  const likeStatuses = limitedPostIds.map(postId => 
-    useQuery(
-      api.queries.getUserLikes,
-      currentUserId && postId
-        ? { userId: currentUserId, postId }
-        : "skip"
-    )
-  );
-
-  // Timeout für Loading State: Wenn nach 10 Sekunden noch nicht geladen, zeige Posts trotzdem an
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoadingTimeout(true);
-    }, 10000); // 10 Sekunden Timeout
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
-  // Ignoriere Fehler in Like-Status (zeige Posts trotzdem an)
-  // Warte nur auf die ersten maxPosts, um nicht zu lange zu warten
-  // Wenn Timeout erreicht, zeige Posts trotzdem an
-  const allLikesLoaded = limitedPostIds.length === 0 || likeStatuses.every(status => status !== undefined);
-  const isLoading = !loadingTimeout && (posts === undefined || currentUser === undefined || !allLikesLoaded);
-
-  // Erstelle Map von Post-IDs zu Like-Status
-  const likesMap = useMemo(() => {
-    const map: Record<string, boolean> = {};
-    limitedPostIds.forEach((postId, index) => {
-      const status = likeStatuses[index];
-      if (status !== undefined) {
-        map[postId] = status;
-      }
-    });
-    return map;
-  }, [limitedPostIds, likeStatuses]);
+  // Prüfe, ob alle Daten geladen sind (Posts und User)
+  // Like-Status werden clientseitig in FeedCards geladen
+  const isLoading = posts === undefined || currentUser === undefined;
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -125,17 +79,13 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts?.map((post) => {
-              // Hole Like-Status aus der Map (wenn verfügbar)
-              const isLiked = likesMap[post._id] ?? undefined;
-              return (
-                <FeedCard 
-                  key={post._id} 
-                  post={{ ...post, isLiked }}
-                  currentUserId={currentUserId}
-                />
-              );
-            })}
+            {posts?.map((post) => (
+              <FeedCard 
+                key={post._id} 
+                post={post}
+                currentUserId={currentUserId}
+              />
+            ))}
           </div>
         )}
       </div>

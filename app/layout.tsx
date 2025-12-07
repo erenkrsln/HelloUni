@@ -4,7 +4,6 @@ import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { NextAuthSessionProvider } from "@/components/session-provider";
-import { ErrorBoundary } from "@/components/error-boundary";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -33,11 +32,9 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className={`${inter.className} ${gloock.variable}`}>
-        <ErrorBoundary>
-          <NextAuthSessionProvider>
-            <ConvexClientProvider>{children}</ConvexClientProvider>
-          </NextAuthSessionProvider>
-        </ErrorBoundary>
+        <NextAuthSessionProvider>
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </NextAuthSessionProvider>
       </body>
     </html>
   );
