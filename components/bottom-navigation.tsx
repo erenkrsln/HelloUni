@@ -80,14 +80,7 @@ export function BottomNavigation() {
             height: "58px", 
             minWidth: "61px", 
             minHeight: "58px", 
-            opacity: 1,
-            transition: "transform 0.1s ease"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.25)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
+            opacity: 1
           }}
         >
           <img
