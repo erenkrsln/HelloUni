@@ -6,7 +6,7 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
@@ -27,9 +27,39 @@ export default function Home() {
     }
   }, [session, router]);
 
-  // Prüfe, ob alle Daten geladen sind (Posts und User)
-  // Like-Status werden clientseitig in FeedCards geladen
-  const isLoading = posts === undefined || currentUser === undefined;
+  // Lade alle Like-Status parallel für alle Posts, BEVOR FeedCards gerendert werden
+  // Dies verhindert, dass das Herz erst weiß und dann rot wird
+  const postIds = useMemo(() => posts?.map(post => post._id) || [], [posts]);
+  
+  // Lade Like-Status für alle Posts parallel (maximal 20 für Performance)
+  const maxPosts = 20;
+  const limitedPostIds = postIds.slice(0, maxPosts);
+  
+  const likeStatuses = limitedPostIds.map(postId => 
+    useQuery(
+      api.queries.getUserLikes,
+      currentUserId && postId
+        ? { userId: currentUserId, postId }
+        : "skip"
+    )
+  );
+
+  // Erstelle Map von Post-IDs zu Like-Status
+  const likesMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    limitedPostIds.forEach((postId, index) => {
+      const status = likeStatuses[index];
+      if (status !== undefined) {
+        map[postId] = status;
+      }
+    });
+    return map;
+  }, [limitedPostIds, likeStatuses]);
+
+  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
+  // Warte nur auf die ersten maxPosts, um nicht zu lange zu warten
+  const allLikesLoaded = limitedPostIds.length === 0 || likeStatuses.every(status => status !== undefined);
+  const isLoading = posts === undefined || currentUser === undefined || !allLikesLoaded;
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -79,13 +109,18 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts?.map((post) => (
-              <FeedCard 
-                key={post._id} 
-                post={post}
-                currentUserId={currentUserId}
-              />
-            ))}
+            {posts?.map((post) => {
+              // Hole Like-Status aus der Map (wenn verfügbar)
+              // Dies stellt sicher, dass das Herz beim ersten Render bereits rot ist, wenn geliked
+              const isLiked = likesMap[post._id] ?? undefined;
+              return (
+                <FeedCard 
+                  key={post._id} 
+                  post={{ ...post, isLiked }}
+                  currentUserId={currentUserId}
+                />
+              );
+            })}
           </div>
         )}
       </div>
