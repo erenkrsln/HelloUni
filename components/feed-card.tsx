@@ -32,7 +32,6 @@ interface FeedCardProps {
 
 export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
-  const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
   const [isLiking, setIsLiking] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -55,16 +54,15 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         // Warte kurz, bevor wir zurücksetzen, um Flickern zu vermeiden
         const timeout = setTimeout(() => {
           setOptimisticLiked(null);
-          setOptimisticLikes(null);
         }, 100);
         return () => clearTimeout(timeout);
       }
     }
   }, [isLiked, optimisticLiked]);
 
-  // Verwende optimistischen State, wenn vorhanden ODER wenn Query noch lädt
-  // Das verhindert Flickern beim Zurückkehren zur Seite
-  const displayLikes = optimisticLikes !== null ? optimisticLikes : post.likesCount;
+  // Verwende optimistischen State nur für den visuellen Status (gefüllt/nicht gefüllt)
+  // Die Like-Anzahl kommt immer direkt aus post.likesCount, da sie bereits vom Backend aktualisiert wurde
+  const displayLikes = post.likesCount;
   const displayIsLiked = optimisticLiked !== null 
     ? optimisticLiked 
     : (isLiked !== undefined ? isLiked : (lastKnownLikedState.current ?? false));
@@ -73,21 +71,20 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
     if (!currentUserId || isLiking) return;
 
     setIsLiking(true);
-    const previousLikes = post.likesCount;
     const wasLiked = isLiked ?? false;
     const newLikedState = !wasLiked;
 
     setOptimisticLiked(newLikedState);
-    setOptimisticLikes(newLikedState ? previousLikes + 1 : previousLikes - 1);
+    // Keine optimistische Like-Anzahl mehr - post.likesCount wird automatisch vom Backend aktualisiert
 
     try {
       await likePost({
         userId: currentUserId,
         postId: post._id,
       });
+      // post.likesCount wird automatisch durch Convex's reaktive Updates aktualisiert
     } catch (error) {
       setOptimisticLiked(wasLiked);
-      setOptimisticLikes(previousLikes);
       console.error("Error liking post:", error);
     } finally {
       setIsLiking(false);
@@ -107,13 +104,14 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
     if (optimisticLiked === null && isLiked === undefined) {
       const stored = sessionStorage.getItem(storageKey);
       if (stored === "true" || stored === "false") {
-        setOptimisticLiked(stored === "true");
-        // Schätze Like-Anzahl basierend auf gespeichertem Status
-        const estimatedLikes = stored === "true" ? post.likesCount + 1 : post.likesCount - 1;
-        setOptimisticLikes(Math.max(0, estimatedLikes));
+        const storedLiked = stored === "true";
+        setOptimisticLiked(storedLiked);
+        // Verwende die aktuelle post.likesCount direkt, da sie bereits vom Backend aktualisiert wurde
+        // Setze optimistischen State nur für den visuellen Status, nicht für die Anzahl
+        // Die Anzahl wird direkt aus post.likesCount genommen
       }
     }
-  }, [storageKey, post._id, post.likesCount]);
+  }, [storageKey, post._id]);
 
   // Speichere optimistischen State in sessionStorage
   useEffect(() => {
