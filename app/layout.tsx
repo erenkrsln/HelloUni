@@ -4,6 +4,8 @@ import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { NextAuthSessionProvider } from "@/components/session-provider";
+import { PageTransition } from "@/components/page-transition";
+import { NavigationProvider } from "@/components/navigation-context";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -33,7 +35,11 @@ export default function RootLayout({
     <html lang="de">
       <body className={`${inter.className} ${gloock.variable}`}>
         <NextAuthSessionProvider>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <NavigationProvider>
+              <PageTransition>{children}</PageTransition>
+            </NavigationProvider>
+          </ConvexClientProvider>
         </NextAuthSessionProvider>
       </body>
     </html>
