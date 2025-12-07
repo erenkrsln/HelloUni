@@ -59,7 +59,11 @@ export default function ProfilePage() {
                             <p className="text-center text-[#F4CFAB]/60 py-8">No posts yet.</p>
                         ) : (
                             userPosts.map((post) => (
-                                <FeedCard key={post._id} post={post} />
+                                <FeedCard 
+                                    key={post._id} 
+                                    post={post} 
+                                    currentUserId={currentUserId}
+                                />
                             ))
                         )}
                     </div>
