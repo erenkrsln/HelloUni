@@ -13,7 +13,7 @@ export const getFeed = query({
     // Wenn userId vorhanden ist, hole alle Like-Status in einem Batch
     // Dies verhindert N+1 Queries und liefert die Daten beim ersten Render
     let userLikesMap: Map<string, boolean> = new Map();
-    if (args.userId) {
+    if (args.userId !== undefined && args.userId !== null) {
       const userLikes = await ctx.db
         .query("likes")
         .withIndex("by_user_post", (q) => q.eq("userId", args.userId!))
@@ -38,7 +38,9 @@ export const getFeed = query({
 
         // Füge Like-Status hinzu, wenn userId vorhanden ist
         // Konvertiere Id<"posts"> zu String für Map-Lookup
-        const isLiked = args.userId ? userLikesMap.has(post._id as string) : undefined;
+        const isLiked = (args.userId !== undefined && args.userId !== null) 
+          ? userLikesMap.has(post._id as string) 
+          : undefined;
 
         return {
           ...post,
