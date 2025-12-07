@@ -6,9 +6,10 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { Id } from "@/convex/_generated/dataModel";
 
 /**
  * Hauptseite (geschützt) - Posts-Feed
@@ -27,9 +28,35 @@ export default function Home() {
     }
   }, [session, router]);
 
-  // Prüfe, ob alle Daten geladen sind (Posts und User)
-  // Like-Status werden clientseitig in FeedCards geladen
-  const isLoading = posts === undefined || currentUser === undefined;
+  // Lade alle Like-Status parallel für alle Posts
+  // Erstelle eine Komponente, die alle Like-Status lädt und dann die FeedCards rendert
+  const postIds = posts?.map(post => post._id) || [];
+  
+  // Lade Like-Status für alle Posts parallel
+  const likeStatuses = postIds.map(postId => 
+    useQuery(
+      api.queries.getUserLikes,
+      currentUserId && postId
+        ? { userId: currentUserId, postId }
+        : "skip"
+    )
+  );
+
+  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
+  const allLikesLoaded = likeStatuses.length === 0 || likeStatuses.every(status => status !== undefined);
+  const isLoading = posts === undefined || currentUser === undefined || !allLikesLoaded;
+
+  // Erstelle Map von Post-IDs zu Like-Status
+  const likesMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    postIds.forEach((postId, index) => {
+      const status = likeStatuses[index];
+      if (status !== undefined) {
+        map[postId] = status;
+      }
+    });
+    return map;
+  }, [postIds, likeStatuses]);
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -79,13 +106,17 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts?.map((post) => (
-              <FeedCard 
-                key={post._id} 
-                post={post}
-                currentUserId={currentUserId}
-              />
-            ))}
+            {posts?.map((post) => {
+              // Hole Like-Status aus der Map (wenn verfügbar)
+              const isLiked = likesMap[post._id] ?? undefined;
+              return (
+                <FeedCard 
+                  key={post._id} 
+                  post={{ ...post, isLiked }}
+                  currentUserId={currentUserId}
+                />
+              );
+            })}
           </div>
         )}
       </div>
