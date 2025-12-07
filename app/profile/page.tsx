@@ -11,11 +11,7 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export default function ProfilePage() {
     const { currentUser, currentUserId } = useCurrentUser();
-    // Übergebe currentUserId an getFeed, damit Like-Status direkt mitgeliefert wird
-    const allPosts = useQuery(
-        api.queries.getFeed,
-        currentUserId ? { userId: currentUserId } : {}
-    );
+    const allPosts = useQuery(api.queries.getFeed);
 
     // Filter posts by current user
     const userPosts = currentUser

@@ -17,12 +17,7 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 export default function Home() {
   const router = useRouter();
   const { session, currentUserId, currentUser } = useCurrentUser();
-  // Übergebe currentUserId an getFeed, damit Like-Status direkt mitgeliefert wird
-  // Dies verhindert Flicker beim ersten Render
-  const posts = useQuery(
-    api.queries.getFeed,
-    currentUserId ? { userId: currentUserId } : {}
-  );
+  const posts = useQuery(api.queries.getFeed);
   const preloadedImages = useRef<Set<string>>(new Set());
 
   // Zum Login umleiten, wenn nicht authentifiziert
