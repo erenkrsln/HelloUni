@@ -59,18 +59,14 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   };
   const lastKnownLikedState = useRef<boolean | null>(getInitialLastKnownState());
 
-  // Verwende Like-Status aus Post-Daten (wenn verfügbar), sonst separate Query
-  // post.isLiked kommt direkt aus getFeed Query und verhindert Flicker beim ersten Render
-  const isLikedFromQuery = useQuery(
+  // Verwende separate Query für Like-Status
+  // post.isLiked wird temporär nicht mehr mitgeliefert, um Server-Fehler zu vermeiden
+  const isLiked = useQuery(
     api.queries.getUserLikes,
-    // Nur Query ausführen, wenn post.isLiked nicht verfügbar ist (Fallback)
-    currentUserId && post._id && post.isLiked === undefined
+    currentUserId && post._id
       ? { userId: currentUserId, postId: post._id }
       : "skip"
   );
-  
-  // Priorisiere post.isLiked (aus getFeed), dann Query-Ergebnis
-  const isLiked = post.isLiked !== undefined ? post.isLiked : isLikedFromQuery;
 
   // Synchronisiere optimistischen State mit Query-Daten
   // Da post.isLiked jetzt direkt aus getFeed kommt, ist isLiked beim ersten Render verfügbar

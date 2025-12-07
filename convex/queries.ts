@@ -10,29 +10,6 @@ export const getFeed = query({
       .order("desc")
       .collect();
 
-    // Wenn userId vorhanden ist, hole alle Like-Status in einem Batch
-    // Dies verhindert N+1 Queries und liefert die Daten beim ersten Render
-    const userLikesSet = new Set<string>();
-    if (args.userId) {
-      try {
-        // Hole alle Likes und filtere nach userId
-        const allLikes = await ctx.db
-          .query("likes")
-          .collect();
-        
-        // Filtere Likes für diesen User und erstelle ein Set
-        allLikes
-          .filter((like) => like.userId === args.userId)
-          .forEach((like) => {
-            userLikesSet.add(like.postId);
-          });
-      } catch (error) {
-        // Falls Abfrage fehlschlägt, fahre ohne Like-Status fort
-        // Dies verhindert, dass die gesamte Query fehlschlägt
-        // Like-Status wird dann clientseitig geladen
-      }
-    }
-
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
@@ -43,16 +20,12 @@ export const getFeed = query({
           imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
         }
 
-        // Füge Like-Status hinzu, wenn userId vorhanden ist
-        const isLiked = args.userId 
-          ? userLikesSet.has(post._id)
-          : undefined;
-
         return {
           ...post,
           imageUrl,
           user,
-          isLiked, // Like-Status direkt mitliefern (undefined wenn userId nicht vorhanden)
+          // isLiked wird clientseitig geladen, um Server-Fehler zu vermeiden
+          // Dies kann später optimiert werden, wenn das Problem identifiziert ist
         };
       })
     );
