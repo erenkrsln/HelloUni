@@ -198,11 +198,12 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         {post.imageUrl && (
           <>
             <div 
-              className="mb-4 w-full rounded-lg overflow-hidden cursor-pointer"
+              className="mb-4 w-full rounded-2xl overflow-hidden cursor-pointer"
               style={{
                 aspectRatio: "16/9",
-                maxHeight: "400px",
-                backgroundColor: "rgba(0, 0, 0, 0.1)"
+                maxHeight: "600px",
+                backgroundColor: "rgba(0, 0, 0, 0.1)",
+                borderRadius: "16px"
               }}
               onClick={() => setIsImageModalOpen(true)}
             >
@@ -210,7 +211,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
                 ref={imgRef}
                 src={post.imageUrl}
                 alt="Post image"
-                className="w-full h-full rounded-lg"
+                className="w-full h-full"
                 style={{ 
                   objectFit: "cover",
                   display: "block"
