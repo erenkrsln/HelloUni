@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Bookmark, X } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, X, MoreHorizontal, BarChart3, Repeat2 } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -229,38 +229,113 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
             {/* Image Modal / Lightbox (wie Twitter/X) */}
             {isImageModalOpen && (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                className="fixed inset-0 z-50 flex flex-col"
                 style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.9)",
-                  backdropFilter: "blur(4px)"
+                  backgroundColor: "rgba(0, 0, 0, 0.95)"
                 }}
-                onClick={() => setIsImageModalOpen(false)}
               >
-                <button
-                  className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsImageModalOpen(false);
-                  }}
-                  aria-label="Schließen"
-                >
-                  <X style={{ width: "24px", height: "24px", color: "white" }} />
-                </button>
-                
+                {/* Top Bar - X links, Menu rechts */}
                 <div
-                  className="relative max-w-full max-h-full"
+                  className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10"
+                  style={{
+                    background: "linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent)"
+                  }}
+                >
+                  <button
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    onClick={() => setIsImageModalOpen(false)}
+                    aria-label="Schließen"
+                  >
+                    <X style={{ width: "24px", height: "24px", color: "white" }} />
+                  </button>
+                  
+                  <button
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // TODO: Menu öffnen
+                    }}
+                    aria-label="Mehr Optionen"
+                  >
+                    <MoreHorizontal style={{ width: "24px", height: "24px", color: "white" }} />
+                  </button>
+                </div>
+
+                {/* Bild - Zentriert, vollständig sichtbar */}
+                <div
+                  className="flex-1 flex items-center justify-center p-4"
+                  onClick={() => setIsImageModalOpen(false)}
+                >
+                  <div
+                    className="max-w-full max-h-full"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <img
+                      src={post.imageUrl}
+                      alt="Post image - Originalgröße"
+                      className="max-w-full max-h-full"
+                      style={{
+                        objectFit: "contain",
+                        display: "block"
+                      }}
+                      loading="eager"
+                    />
+                  </div>
+                </div>
+
+                {/* Bottom Navigation Bar - Interaktions-Icons */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-8 p-4"
+                  style={{
+                    background: "linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent)"
+                  }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <img
-                    src={post.imageUrl}
-                    alt="Post image - Originalgröße"
-                    className="max-w-full max-h-[90vh] rounded-lg"
-                    style={{
-                      objectFit: "contain",
-                      display: "block"
+                  <button
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    aria-label="Kommentieren"
+                  >
+                    <MessageCircle style={{ width: "24px", height: "24px", color: "white" }} />
+                  </button>
+                  
+                  <button
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    aria-label="Retweet"
+                  >
+                    <Repeat2 style={{ width: "24px", height: "24px", color: "white" }} />
+                  </button>
+                  
+                  <button
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLike();
                     }}
-                    loading="eager"
-                  />
+                    aria-label="Gefällt mir"
+                  >
+                    <Heart 
+                      style={{ 
+                        width: "24px", 
+                        height: "24px", 
+                        color: displayIsLiked ? "#ef4444" : "white",
+                        fill: displayIsLiked ? "#ef4444" : "none"
+                      }} 
+                    />
+                  </button>
+                  
+                  <button
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    aria-label="Ansichten"
+                  >
+                    <BarChart3 style={{ width: "24px", height: "24px", color: "white" }} />
+                  </button>
+                  
+                  <button
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    aria-label="Teilen"
+                  >
+                    <Share2 style={{ width: "24px", height: "24px", color: "white" }} />
+                  </button>
                 </div>
               </div>
             )}
