@@ -47,13 +47,11 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts.map((post, index) => (
+            {posts.map((post) => (
               <FeedCard 
                 key={post._id} 
                 post={post} 
                 currentUserId={currentUserId}
-                // Erstes Bild im Feed bekommt priority für sofortiges Laden
-                priority={index === 0 && !!post.imageUrl}
               />
             ))}
           </div>

@@ -28,10 +28,9 @@ interface FeedCardProps {
     } | null;
   };
   currentUserId?: Id<"users">;
-  priority?: boolean; // Für wichtige Bilder (z.B. erste im Viewport)
 }
 
-export function FeedCard({ post, currentUserId, priority = false }: FeedCardProps) {
+export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
@@ -181,8 +180,9 @@ export function FeedCard({ post, currentUserId, priority = false }: FeedCardProp
               alt="Post image"
               className="w-full rounded-lg"
               style={{ maxHeight: "400px", objectFit: "cover", height: "auto" }}
-              loading={priority ? "eager" : "lazy"}
-              fetchPriority={priority ? "high" : "auto"}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
           </div>
         )}
