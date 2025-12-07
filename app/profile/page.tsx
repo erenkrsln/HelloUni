@@ -35,15 +35,14 @@ export default function ProfilePage() {
         ? allPosts?.filter(post => post.userId === currentUser._id) || []
         : [];
 
-    // Zeige Loading nur beim ersten Besuch, sonst warte auf gecachte Daten
-    // Aber warte auch beim zweiten Besuch, bis currentUser geladen ist (verhindert "No user found" Flash)
+    // Zeige Loading nur beim ersten Besuch
+    // Beim zweiten Besuch: Zeige Seite sofort an, auch wenn Daten noch laden (kein Spinner)
     const isLoading = isFirstVisit && (currentUser === undefined || allPosts === undefined);
-    const isWaitingForUser = !isFirstVisit && currentUser === undefined && currentUserId !== undefined;
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             <Header />
-            {isLoading || isWaitingForUser ? (
+            {isLoading ? (
                 <LoadingScreen text="Profil wird geladen..." />
             ) : currentUser ? (
                 <>
@@ -70,11 +69,11 @@ export default function ProfilePage() {
                         )}
                     </div>
                 </>
-            ) : (
+            ) : currentUserId === undefined ? (
                 <div className="flex-1 flex items-center justify-center text-[#F4CFAB] py-16">
-                    {currentUserId === undefined ? "Bitte einloggen" : "No user found"}
+                    Bitte einloggen
                 </div>
-            )}
+            ) : null}
             <BottomNavigation />
         </main>
     );
