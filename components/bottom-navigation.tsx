@@ -16,12 +16,13 @@ export function BottomNavigation() {
     return pathname === path;
   };
 
-  const handleCreateClick = () => {
+  const handleCreateClick = (e: React.MouseEvent) => {
+    // Wenn bereits auf /create, zu /home navigieren
     if (pathname === "/create") {
+      e.preventDefault();
       router.push("/home");
-    } else {
-      router.push("/create");
     }
+    // Ansonsten lässt der Link die Navigation automatisch zu /create
   };
 
   return (
@@ -69,10 +70,25 @@ export function BottomNavigation() {
             }}
           />
         </Link>
-        <button
+        <Link
+          href="/create"
+          prefetch={true}
           onClick={handleCreateClick}
-          className="flex items-center justify-center transition-transform hover:scale-125 active:scale-110 cursor-pointer touch-manipulation bg-transparent border-none"
-          style={{ width: "61px", height: "58px", minWidth: "61px", minHeight: "58px", opacity: 1 }}
+          className="flex items-center justify-center cursor-pointer touch-manipulation"
+          style={{ 
+            width: "61px", 
+            height: "58px", 
+            minWidth: "61px", 
+            minHeight: "58px", 
+            opacity: 1,
+            transition: "transform 0.1s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.25)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+          }}
         >
           <img
             src="/create-icon.png"
@@ -87,7 +103,7 @@ export function BottomNavigation() {
               transition: "transform 0.2s ease"
             }}
           />
-        </button>
+        </Link>
         <Link
           href="/search"
           prefetch={true}

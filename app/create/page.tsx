@@ -18,6 +18,7 @@ export default function CreatePage() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Mutations werden sofort initialisiert, blockieren nicht
     const createPost = useMutation(api.mutations.createPost);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
