@@ -6,7 +6,7 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
@@ -27,59 +27,9 @@ export default function Home() {
     }
   }, [session, router]);
 
-  // Lade alle Like-Status parallel für alle Posts, BEVOR FeedCards gerendert werden
-  // Dies verhindert, dass das Herz erst weiß und dann rot wird
-  const postIds = useMemo(() => {
-    if (!posts || !Array.isArray(posts)) return [];
-    return posts.map(post => post._id);
-  }, [posts]);
-  
-  // Lade Like-Status für alle Posts parallel (maximal 20 für Performance)
-  // Stelle sicher, dass limitedPostIds immer ein Array ist
-  const maxPosts = 20;
-  const limitedPostIds = useMemo(() => {
-    if (!Array.isArray(postIds) || postIds.length === 0) return [];
-    return postIds.slice(0, maxPosts);
-  }, [postIds]);
-  
-  // Lade Like-Status für alle Posts parallel
-  // Queries müssen direkt aufgerufen werden (nicht in useMemo)
-  // Stelle sicher, dass limitedPostIds immer ein Array ist, bevor wir map verwenden
-  const likeStatuses = Array.isArray(limitedPostIds) && limitedPostIds.length > 0
-    ? limitedPostIds.map(postId => 
-        useQuery(
-          api.queries.getUserLikes,
-          currentUserId && postId
-            ? { userId: currentUserId, postId }
-            : "skip"
-        )
-      )
-    : [];
-
-  // Erstelle Map von Post-IDs zu Like-Status
-  const likesMap = useMemo(() => {
-    const map: Record<string, boolean> = {};
-    if (!Array.isArray(limitedPostIds) || !Array.isArray(likeStatuses)) return map;
-    limitedPostIds.forEach((postId, index) => {
-      if (index < likeStatuses.length) {
-        const status = likeStatuses[index];
-        if (status !== undefined) {
-          map[postId] = status;
-        }
-      }
-    });
-    return map;
-  }, [limitedPostIds, likeStatuses]);
-
-  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
-  // Warte nur auf die ersten maxPosts, um nicht zu lange zu warten
-  const allLikesLoaded = useMemo(() => {
-    if (!Array.isArray(limitedPostIds) || !Array.isArray(likeStatuses)) return true;
-    if (limitedPostIds.length === 0) return true;
-    return likeStatuses.length === limitedPostIds.length && likeStatuses.every(status => status !== undefined);
-  }, [limitedPostIds, likeStatuses]);
-  
-  const isLoading = posts === undefined || currentUser === undefined || !allLikesLoaded;
+  // Prüfe, ob alle Daten geladen sind (Posts und User)
+  // Like-Status werden clientseitig in FeedCards geladen
+  const isLoading = posts === undefined || currentUser === undefined;
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -129,18 +79,13 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts?.map((post) => {
-              // Hole Like-Status aus der Map (wenn verfügbar)
-              // Dies stellt sicher, dass das Herz beim ersten Render bereits rot ist, wenn geliked
-              const isLiked = likesMap[post._id] ?? undefined;
-              return (
-                <FeedCard 
-                  key={post._id} 
-                  post={{ ...post, isLiked }}
-                  currentUserId={currentUserId}
-                />
-              );
-            })}
+            {posts?.map((post) => (
+              <FeedCard 
+                key={post._id} 
+                post={post}
+                currentUserId={currentUserId}
+              />
+            ))}
           </div>
         )}
       </div>

@@ -34,10 +34,16 @@ interface FeedCardProps {
 export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   
-  // Initialisiere optimistischen State sofort aus sessionStorage, um Flickern zu vermeiden
+  // Initialisiere optimistischen State sofort aus localStorage (persistent) und sessionStorage, um Flickern zu vermeiden
   const storageKey = currentUserId ? `like_${post._id}_${currentUserId}` : null;
   const getInitialOptimisticLiked = (): boolean | null => {
     if (!storageKey || typeof window === "undefined") return null;
+    // Prüfe zuerst localStorage (persistent über Sessions)
+    const localStored = localStorage.getItem(storageKey);
+    if (localStored === "true" || localStored === "false") {
+      return localStored === "true";
+    }
+    // Fallback zu sessionStorage
     const stored = sessionStorage.getItem(storageKey);
     if (stored === "true" || stored === "false") {
       return stored === "true";
@@ -49,9 +55,14 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [isLiking, setIsLiking] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
   
-  // Initialisiere lastKnownLikedState sofort aus sessionStorage beim ersten Laden
+  // Initialisiere lastKnownLikedState sofort aus localStorage (persistent) und sessionStorage beim ersten Laden
   const getInitialLastKnownState = (): boolean | null => {
     if (!storageKey || typeof window === "undefined") return null;
+    // Prüfe zuerst localStorage (persistent über Sessions)
+    const localStored = localStorage.getItem(storageKey);
+    if (localStored === "true") return true;
+    if (localStored === "false") return false;
+    // Fallback zu sessionStorage
     const stored = sessionStorage.getItem(storageKey);
     if (stored === "true") return true;
     if (stored === "false") return false;
@@ -142,13 +153,17 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Speichere optimistischen State in sessionStorage
+  // Speichere optimistischen State in localStorage (persistent) und sessionStorage
   useEffect(() => {
     if (!storageKey) return;
     if (optimisticLiked !== null) {
+      // Speichere in localStorage für persistente Speicherung über Sessions
+      localStorage.setItem(storageKey, optimisticLiked.toString());
+      // Speichere auch in sessionStorage für Kompatibilität
       sessionStorage.setItem(storageKey, optimisticLiked.toString());
     } else if (isLiked !== undefined) {
-      // Wenn Query-Daten geladen sind, aktualisiere sessionStorage
+      // Wenn Query-Daten geladen sind, aktualisiere localStorage und sessionStorage
+      localStorage.setItem(storageKey, isLiked.toString());
       sessionStorage.setItem(storageKey, isLiked.toString());
     }
   }, [optimisticLiked, isLiked, storageKey]);
