@@ -44,10 +44,6 @@ export default function ProfilePage() {
             <Header />
             {isLoading ? (
                 <LoadingScreen text="Profil wird geladen..." />
-            ) : currentUserId === undefined ? (
-                <div className="flex-1 flex items-center justify-center text-[#F4CFAB] py-16">
-                    Bitte einloggen
-                </div>
             ) : currentUser ? (
                 <>
                     <ProfileHeader
@@ -73,16 +69,11 @@ export default function ProfilePage() {
                         )}
                     </div>
                 </>
-            ) : (
-                // Zeige leeren Zustand, während currentUser noch lädt (kein Spinner)
-                <>
-                    <div className="h-32 bg-transparent"></div>
-                    <div className="px-4 space-y-6">
-                        <h3 className="text-lg font-semibold text-[#F4CFAB] mb-4 border-b border-[#F4CFAB]/20 pb-2">My Posts</h3>
-                        <p className="text-center text-[#F4CFAB]/60 py-8">Lädt...</p>
-                    </div>
-                </>
-            )}
+            ) : currentUserId === undefined ? (
+                <div className="flex-1 flex items-center justify-center text-[#F4CFAB] py-16">
+                    Bitte einloggen
+                </div>
+            ) : null}
             <BottomNavigation />
         </main>
     );
