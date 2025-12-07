@@ -151,7 +151,6 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   };
 
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   // Speichere optimistischen State in localStorage (persistent) und sessionStorage
   useEffect(() => {
@@ -173,8 +172,6 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   return (
     <article
       className="relative mb-6"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         className="backdrop-blur-sm p-5 transition-all hover:bg-white/15"
@@ -300,13 +297,12 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
           <button
             onClick={handleLike}
             disabled={!currentUserId || isLiking}
-            className="flex items-center gap-2 h-10 px-0 font-medium transition-all hover:scale-110 disabled:opacity-50"
+            className="flex items-center gap-2 h-10 px-0 font-medium disabled:opacity-50"
             style={{
               color: displayIsLiked ? "#f87171" : "var(--color-text-beige)"
             }}
           >
             <Heart
-              className="transition-all"
               style={{
                 height: "18px",
                 width: "18px",
@@ -316,7 +312,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
             <span style={{ fontSize: "13px" }}>{displayLikes}</span>
           </button>
           <button
-            className="flex items-center gap-2 h-10 px-0 font-medium transition-all hover:scale-110 cursor-pointer"
+            className="flex items-center gap-2 h-10 px-0 font-medium cursor-pointer"
             style={{ color: "var(--color-text-beige)" }}
           >
             <MessageCircle style={{ height: "18px", width: "18px" }} />
