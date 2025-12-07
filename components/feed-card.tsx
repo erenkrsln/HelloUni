@@ -32,7 +32,19 @@ interface FeedCardProps {
 
 export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
-  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+  
+  // Initialisiere optimistischen State sofort aus sessionStorage, um Flickern zu vermeiden
+  const storageKey = currentUserId ? `like_${post._id}_${currentUserId}` : null;
+  const getInitialOptimisticLiked = (): boolean | null => {
+    if (!storageKey || typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored === "true" || stored === "false") {
+      return stored === "true";
+    }
+    return null;
+  };
+  
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(getInitialOptimisticLiked);
   const [isLiking, setIsLiking] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const lastKnownLikedState = useRef<boolean | null>(null);
@@ -96,25 +108,9 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Speichere Like-Status in sessionStorage für Persistenz über Remounts
-  const storageKey = `like_${post._id}_${currentUserId}`;
-  
-  // Initialisiere optimistischen State aus sessionStorage, wenn vorhanden
-  useEffect(() => {
-    if (optimisticLiked === null && isLiked === undefined) {
-      const stored = sessionStorage.getItem(storageKey);
-      if (stored === "true" || stored === "false") {
-        const storedLiked = stored === "true";
-        setOptimisticLiked(storedLiked);
-        // Verwende die aktuelle post.likesCount direkt, da sie bereits vom Backend aktualisiert wurde
-        // Setze optimistischen State nur für den visuellen Status, nicht für die Anzahl
-        // Die Anzahl wird direkt aus post.likesCount genommen
-      }
-    }
-  }, [storageKey, post._id]);
-
   // Speichere optimistischen State in sessionStorage
   useEffect(() => {
+    if (!storageKey) return;
     if (optimisticLiked !== null) {
       sessionStorage.setItem(storageKey, optimisticLiked.toString());
     } else if (isLiked !== undefined) {
