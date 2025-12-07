@@ -29,28 +29,43 @@ export default function Home() {
 
   // Lade alle Like-Status parallel für alle Posts, BEVOR FeedCards gerendert werden
   // Dies verhindert, dass das Herz erst weiß und dann rot wird
-  const postIds = useMemo(() => posts?.map(post => post._id) || [], [posts]);
+  const postIds = useMemo(() => {
+    if (!posts || !Array.isArray(posts)) return [];
+    return posts.map(post => post._id);
+  }, [posts]);
   
   // Lade Like-Status für alle Posts parallel (maximal 20 für Performance)
+  // Stelle sicher, dass limitedPostIds immer ein Array ist
   const maxPosts = 20;
-  const limitedPostIds = postIds.slice(0, maxPosts);
+  const limitedPostIds = useMemo(() => {
+    if (!Array.isArray(postIds) || postIds.length === 0) return [];
+    return postIds.slice(0, maxPosts);
+  }, [postIds]);
   
-  const likeStatuses = limitedPostIds.map(postId => 
-    useQuery(
-      api.queries.getUserLikes,
-      currentUserId && postId
-        ? { userId: currentUserId, postId }
-        : "skip"
-    )
-  );
+  // Lade Like-Status für alle Posts parallel
+  // Queries müssen direkt aufgerufen werden (nicht in useMemo)
+  // Stelle sicher, dass limitedPostIds immer ein Array ist, bevor wir map verwenden
+  const likeStatuses = Array.isArray(limitedPostIds) && limitedPostIds.length > 0
+    ? limitedPostIds.map(postId => 
+        useQuery(
+          api.queries.getUserLikes,
+          currentUserId && postId
+            ? { userId: currentUserId, postId }
+            : "skip"
+        )
+      )
+    : [];
 
   // Erstelle Map von Post-IDs zu Like-Status
   const likesMap = useMemo(() => {
     const map: Record<string, boolean> = {};
+    if (!Array.isArray(limitedPostIds) || !Array.isArray(likeStatuses)) return map;
     limitedPostIds.forEach((postId, index) => {
-      const status = likeStatuses[index];
-      if (status !== undefined) {
-        map[postId] = status;
+      if (index < likeStatuses.length) {
+        const status = likeStatuses[index];
+        if (status !== undefined) {
+          map[postId] = status;
+        }
       }
     });
     return map;
@@ -58,7 +73,12 @@ export default function Home() {
 
   // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
   // Warte nur auf die ersten maxPosts, um nicht zu lange zu warten
-  const allLikesLoaded = limitedPostIds.length === 0 || likeStatuses.every(status => status !== undefined);
+  const allLikesLoaded = useMemo(() => {
+    if (!Array.isArray(limitedPostIds) || !Array.isArray(likeStatuses)) return true;
+    if (limitedPostIds.length === 0) return true;
+    return likeStatuses.length === limitedPostIds.length && likeStatuses.every(status => status !== undefined);
+  }, [limitedPostIds, likeStatuses]);
+  
   const isLoading = posts === undefined || currentUser === undefined || !allLikesLoaded;
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
