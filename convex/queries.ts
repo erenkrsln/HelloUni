@@ -14,16 +14,23 @@ export const getFeed = query({
     // Dies verhindert N+1 Queries und liefert die Daten beim ersten Render
     let userLikesMap: Map<string, boolean> = new Map();
     if (args.userId !== undefined && args.userId !== null) {
-      const userLikes = await ctx.db
-        .query("likes")
-        .withIndex("by_user_post", (q) => q.eq("userId", args.userId!))
-        .collect();
-      
-      // Erstelle eine Map für schnelle Lookups: postId -> isLiked
-      // Konvertiere Id<"posts"> zu String für Map-Keys
-      userLikes.forEach((like) => {
-        userLikesMap.set(like.postId as string, true);
-      });
+      try {
+        // Hole alle Likes für diesen User
+        // Da der Index by_user_post zusammengesetzt ist, filtern wir manuell
+        const allLikes = await ctx.db
+          .query("likes")
+          .collect();
+        
+        // Filtere Likes für diesen User und erstelle eine Map
+        const userLikes = allLikes.filter((like) => like.userId === args.userId);
+        userLikes.forEach((like) => {
+          userLikesMap.set(like.postId as string, true);
+        });
+      } catch (error) {
+        // Falls Abfrage fehlschlägt, fahre ohne Like-Status fort
+        // Dies verhindert, dass die gesamte Query fehlschlägt
+        console.error("Error fetching user likes:", error);
+      }
     }
 
     const postsWithUsers = await Promise.all(
