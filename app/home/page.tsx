@@ -20,6 +20,15 @@ export default function Home() {
   const posts = useQuery(api.queries.getFeed);
   const preloadedImages = useRef<Set<string>>(new Set());
 
+  // Hole alle Like-Status in einem Batch, wenn Posts und currentUserId verfügbar sind
+  const postIds = posts?.map(post => post._id) || [];
+  const likesBatch = useQuery(
+    api.queries.getUserLikesBatch,
+    currentUserId && postIds.length > 0
+      ? { userId: currentUserId, postIds }
+      : "skip"
+  );
+
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
     if (session === null) {
@@ -27,8 +36,9 @@ export default function Home() {
     }
   }, [session, router]);
 
-  // Prüfe, ob alle Daten geladen sind
-  const isLoading = posts === undefined || currentUser === undefined;
+  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
+  const isLoading = posts === undefined || currentUser === undefined || 
+    (currentUserId && postIds.length > 0 && likesBatch === undefined);
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -78,13 +88,17 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts?.map((post) => (
-              <FeedCard 
-                key={post._id} 
-                post={post} 
-                currentUserId={currentUserId}
-              />
-            ))}
+            {posts?.map((post) => {
+              // Hole Like-Status aus Batch-Query
+              const isLiked = likesBatch?.[post._id] ?? undefined;
+              return (
+                <FeedCard 
+                  key={post._id} 
+                  post={{ ...post, isLiked }}
+                  currentUserId={currentUserId}
+                />
+              );
+            })}
           </div>
         )}
       </div>
