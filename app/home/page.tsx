@@ -16,7 +16,7 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
  */
 export default function Home() {
   const router = useRouter();
-  const { session, currentUserId } = useCurrentUser();
+  const { session, currentUserId, currentUser } = useCurrentUser();
   const posts = useQuery(api.queries.getFeed);
   const preloadedImages = useRef<Set<string>>(new Set());
 
@@ -26,6 +26,9 @@ export default function Home() {
       router.push("/");
     }
   }, [session, router]);
+
+  // Prüfe, ob alle Daten geladen sind
+  const isLoading = posts === undefined || currentUser === undefined;
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -67,15 +70,15 @@ export default function Home() {
         </h2>
       </div>
       <div className="px-4">
-        {!posts ? (
+        {isLoading ? (
           <LoadingScreen text="Feed wird geladen..." />
-        ) : posts.length === 0 ? (
+        ) : posts && posts.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-sm text-[#F4CFAB]/60">Noch keine Posts vorhanden.</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {posts.map((post) => (
+            {posts?.map((post) => (
               <FeedCard 
                 key={post._id} 
                 post={post} 
