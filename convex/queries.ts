@@ -2,8 +2,8 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getFeed = query({
-  args: { userId: v.optional(v.id("users")) },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
     const posts = await ctx.db
       .query("posts")
       .withIndex("by_created")
@@ -24,8 +24,6 @@ export const getFeed = query({
           ...post,
           imageUrl,
           user,
-          // isLiked wird clientseitig geladen, um Server-Fehler zu vermeiden
-          // Dies kann später optimiert werden, wenn das Problem identifiziert ist
         };
       })
     );
