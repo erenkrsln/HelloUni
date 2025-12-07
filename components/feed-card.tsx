@@ -8,7 +8,6 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useState } from "react";
-import Image from "next/image";
 
 interface FeedCardProps {
   post: {
@@ -176,18 +175,14 @@ export function FeedCard({ post, currentUserId, priority = false }: FeedCardProp
         </p>
 
         {post.imageUrl && (
-          <div className="mb-4 relative" style={{ width: "100%", aspectRatio: "16/9", maxHeight: "400px" }}>
-            <Image
+          <div className="mb-4">
+            <img
               src={post.imageUrl}
               alt="Post image"
-              fill
-              priority={priority}
+              className="w-full rounded-lg"
+              style={{ maxHeight: "400px", objectFit: "cover", height: "auto" }}
               loading={priority ? "eager" : "lazy"}
-              className="rounded-lg"
-              style={{ objectFit: "cover" }}
-              sizes="(max-width: 428px) 100vw, 428px"
-              // Convex Storage URLs sind bereits optimiert, andere URLs können unoptimized sein
-              unoptimized={!post.imageUrl.includes("convex.cloud")}
+              fetchPriority={priority ? "high" : "auto"}
             />
           </div>
         )}
