@@ -198,10 +198,10 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         {post.imageUrl && (
           <>
             <div 
-              className="mb-4 w-full rounded-2xl overflow-hidden cursor-pointer"
+              className="mb-4 w-full rounded-2xl overflow-hidden cursor-pointer flex items-center justify-center"
               style={{
-                aspectRatio: "16/9",
                 maxHeight: "600px",
+                minHeight: "200px",
                 backgroundColor: "rgba(0, 0, 0, 0.1)",
                 borderRadius: "16px"
               }}
@@ -211,9 +211,9 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
                 ref={imgRef}
                 src={post.imageUrl}
                 alt="Post image"
-                className="w-full h-full"
+                className="max-w-full max-h-full rounded-2xl"
                 style={{ 
-                  objectFit: "cover",
+                  objectFit: "contain",
                   display: "block"
                 }}
                 loading="eager"
