@@ -7,7 +7,7 @@ import { formatTimeAgo } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface FeedCardProps {
   post: {
@@ -35,6 +35,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   const [optimisticLikes, setOptimisticLikes] = useState<number | null>(null);
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   const isLiked = useQuery(
     api.queries.getUserLikes,
@@ -176,6 +177,7 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
         {post.imageUrl && (
           <div className="mb-4">
             <img
+              ref={imgRef}
               src={post.imageUrl}
               alt="Post image"
               className="w-full rounded-lg"
@@ -188,11 +190,6 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
               loading="eager"
               fetchPriority="high"
               decoding="async"
-              // Verhindert Layout-Shift beim Laden
-              onLoad={(e) => {
-                const img = e.target as HTMLImageElement;
-                img.style.opacity = "1";
-              }}
               onError={(e) => {
                 const img = e.target as HTMLImageElement;
                 img.style.display = "none";

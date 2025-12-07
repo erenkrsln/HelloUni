@@ -35,12 +35,20 @@ export default function Home() {
     // Alle Bilder parallel vorladen für sofortige Anzeige
     posts.forEach((post) => {
       if (post.imageUrl && !preloadedImages.current.has(post.imageUrl)) {
-        // Bild im Browser-Cache vorladen
+        // Methode 1: Image-Objekt für Browser-Cache
         const img = new Image();
         img.src = post.imageUrl;
-        // Wichtig: Diese Attribute sorgen für sofortiges Laden
         img.loading = "eager";
         img.fetchPriority = "high";
+        
+        // Methode 2: Link-Preload für persistenten Cache
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
+        link.href = post.imageUrl;
+        link.fetchPriority = "high";
+        document.head.appendChild(link);
+        
         preloadedImages.current.add(post.imageUrl);
       }
     });
