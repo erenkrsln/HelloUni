@@ -70,29 +70,26 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
     // Wenn Query-Daten geladen sind, aktualisiere lastKnownLikedState und sessionStorage
     if (isLiked !== undefined) {
       lastKnownLikedState.current = isLiked;
-      // Wenn optimisticLiked null ist (beim ersten Laden), setze es auf den Query-Wert
+      // Wenn optimisticLiked null ist (beim ersten Laden ohne sessionStorage), setze es sofort auf den Query-Wert
       // Dies verhindert Flickern, da der optimistische State sofort mit den Query-Daten übereinstimmt
       if (optimisticLiked === null) {
         setOptimisticLiked(isLiked);
-      } else if (optimisticLiked === isLiked) {
-        // Wenn optimistischer State mit Query-Daten übereinstimmt, können wir ihn zurücksetzen
-        // nach einer kurzen Verzögerung, um sicherzustellen, dass der Übergang glatt ist
+      } else if (optimisticLiked !== isLiked) {
+        // Wenn optimistischer State nicht mit Query-Daten übereinstimmt, aktualisiere ihn sofort
+        setOptimisticLiked(isLiked);
+      } else {
+        // Wenn optimistischer State mit Query-Daten übereinstimmt, können wir ihn nach einer kurzen Verzögerung zurücksetzen
         const timeout = setTimeout(() => {
           setOptimisticLiked(null);
-        }, 50);
+        }, 100);
         return () => clearTimeout(timeout);
       }
-    } else if (optimisticLiked === null) {
-      // Beim ersten Laden, bevor Query-Daten geladen sind: 
-      // Verwende lastKnownLikedState aus sessionStorage, falls vorhanden
-      // Sonst optimistisch false (nicht geliked) - das ist der häufigste Fall
-      if (lastKnownLikedState.current !== null) {
-        setOptimisticLiked(lastKnownLikedState.current);
-      } else {
-        // Optimistisch false setzen, um Flickern zu vermeiden
-        // Wenn der Post tatsächlich geliked ist, wird es sofort aktualisiert, wenn Query-Daten geladen sind
-        setOptimisticLiked(false);
-      }
+    }
+    // Wenn Query-Daten noch nicht geladen sind und optimisticLiked null ist,
+    // verwende lastKnownLikedState aus sessionStorage, falls vorhanden
+    // WICHTIG: Setze nicht auf false, wenn sessionStorage leer ist - warte auf Query-Daten
+    else if (optimisticLiked === null && lastKnownLikedState.current !== null) {
+      setOptimisticLiked(lastKnownLikedState.current);
     }
   }, [isLiked, optimisticLiked, storageKey]);
 
@@ -103,7 +100,8 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
   // Bestimme den Like-Status: Priorisiere Query-Daten, dann optimistischen State, dann letzten bekannten State
   // Wichtig: Beim ersten Laden (wenn isLiked === undefined) verwenden wir den optimistischen State oder
   // den letzten bekannten State aus sessionStorage, um Flickern zu vermeiden
-  // Nur wenn beides null/undefined ist, verwenden wir false (aber das sollte nicht passieren, wenn sessionStorage gefüllt ist)
+  // Wenn beides null/undefined ist, verwenden wir false nur als letzten Fallback
+  // (aber das sollte nicht passieren, da optimisticLiked sofort gesetzt wird, wenn Query-Daten geladen sind)
   const displayIsLiked = isLiked !== undefined 
     ? isLiked 
     : (optimisticLiked !== null 
