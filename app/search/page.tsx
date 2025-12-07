@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export default function SearchPage() {
     const [isFirstVisit, setIsFirstVisit] = useState(true);
+    // Lade Daten im Hintergrund, damit sie beim Navigieren zu /profile bereits im Cache sind
+    const { currentUser } = useCurrentUser();
+    const posts = useQuery(api.queries.getFeed);
 
     useEffect(() => {
         // Prüfe, ob Seite bereits besucht wurde

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
@@ -13,9 +13,25 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 export default function CreatePage() {
     const router = useRouter();
     const { currentUser, currentUserId } = useCurrentUser();
+    const [isFirstVisit, setIsFirstVisit] = useState(true);
+
+    // Prüfe, ob Seite bereits besucht wurde
+    useEffect(() => {
+        const visited = sessionStorage.getItem("create_visited");
+        if (visited) {
+            setIsFirstVisit(false);
+        } else {
+            // Markiere Seite als besucht nach kurzer Verzögerung
+            const timer = setTimeout(() => {
+                sessionStorage.setItem("create_visited", "true");
+                setIsFirstVisit(false);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, []);
     
-    // Zeige Loading Spinner, wenn User-Daten noch nicht geladen sind
-    const isLoading = currentUser === undefined;
+    // Zeige Loading Spinner nur beim ersten Besuch, sonst warte auf gecachte Daten
+    const isLoading = isFirstVisit && currentUser === undefined;
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);

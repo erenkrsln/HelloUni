@@ -6,7 +6,7 @@ import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
@@ -19,15 +19,7 @@ export default function Home() {
   const { session, currentUserId, currentUser } = useCurrentUser();
   const posts = useQuery(api.queries.getFeed);
   const preloadedImages = useRef<Set<string>>(new Set());
-
-  // Hole alle Like-Status in einem Batch, wenn Posts und currentUserId verfügbar sind
-  const postIds = posts?.map(post => post._id) || [];
-  const likesBatch = useQuery(
-    api.queries.getUserLikesBatch,
-    currentUserId && postIds.length > 0
-      ? { userId: currentUserId, postIds }
-      : "skip"
-  );
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -36,9 +28,25 @@ export default function Home() {
     }
   }, [session, router]);
 
-  // Prüfe, ob alle Daten geladen sind (Posts, User, und Like-Status)
-  const isLoading = posts === undefined || currentUser === undefined || 
-    (currentUserId && postIds.length > 0 && likesBatch === undefined);
+  // Prüfe, ob Seite bereits besucht wurde
+  useEffect(() => {
+    const visited = sessionStorage.getItem("home_visited");
+    if (visited) {
+      setIsFirstVisit(false);
+    } else {
+      // Markiere Seite als besucht nach kurzer Verzögerung
+      const timer = setTimeout(() => {
+        sessionStorage.setItem("home_visited", "true");
+        setIsFirstVisit(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Prüfe, ob alle Daten geladen sind (Posts und User)
+  // Like-Status werden clientseitig in FeedCards geladen
+  // Zeige Loading nur beim ersten Besuch, sonst warte auf gecachte Daten
+  const isLoading = isFirstVisit && (posts === undefined || currentUser === undefined);
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -88,17 +96,13 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts?.map((post) => {
-              // Hole Like-Status aus Batch-Query (Keys sind als Strings gespeichert)
-              const isLiked = likesBatch?.[post._id as string] ?? undefined;
-              return (
-                <FeedCard 
-                  key={post._id} 
-                  post={{ ...post, isLiked }}
-                  currentUserId={currentUserId}
-                />
-              );
-            })}
+            {posts?.map((post) => (
+              <FeedCard 
+                key={post._id} 
+                post={post}
+                currentUserId={currentUserId}
+              />
+            ))}
           </div>
         )}
       </div>
