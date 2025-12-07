@@ -12,24 +12,24 @@ export const getFeed = query({
 
     // Wenn userId vorhanden ist, hole alle Like-Status in einem Batch
     // Dies verhindert N+1 Queries und liefert die Daten beim ersten Render
-    let userLikesMap: Map<string, boolean> = new Map();
-    if (args.userId !== undefined && args.userId !== null) {
+    const userLikesSet = new Set<string>();
+    if (args.userId) {
       try {
-        // Hole alle Likes für diesen User
-        // Da der Index by_user_post zusammengesetzt ist, filtern wir manuell
+        // Hole alle Likes und filtere nach userId
         const allLikes = await ctx.db
           .query("likes")
           .collect();
         
-        // Filtere Likes für diesen User und erstelle eine Map
-        const userLikes = allLikes.filter((like) => like.userId === args.userId);
-        userLikes.forEach((like) => {
-          userLikesMap.set(like.postId as string, true);
-        });
+        // Filtere Likes für diesen User und erstelle ein Set
+        allLikes
+          .filter((like) => like.userId === args.userId)
+          .forEach((like) => {
+            userLikesSet.add(like.postId);
+          });
       } catch (error) {
         // Falls Abfrage fehlschlägt, fahre ohne Like-Status fort
         // Dies verhindert, dass die gesamte Query fehlschlägt
-        console.error("Error fetching user likes:", error);
+        // Like-Status wird dann clientseitig geladen
       }
     }
 
@@ -44,16 +44,15 @@ export const getFeed = query({
         }
 
         // Füge Like-Status hinzu, wenn userId vorhanden ist
-        // Konvertiere Id<"posts"> zu String für Map-Lookup
-        const isLiked = (args.userId !== undefined && args.userId !== null) 
-          ? userLikesMap.has(post._id as string) 
+        const isLiked = args.userId 
+          ? userLikesSet.has(post._id)
           : undefined;
 
         return {
           ...post,
           imageUrl,
           user,
-          isLiked, // Like-Status direkt mitliefern
+          isLiked, // Like-Status direkt mitliefern (undefined wenn userId nicht vorhanden)
         };
       })
     );
