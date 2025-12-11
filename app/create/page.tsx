@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
+import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { ImagePlus, X } from "lucide-react";
@@ -12,6 +13,7 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export default function CreatePage() {
     const router = useRouter();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { currentUser, currentUserId } = useCurrentUser();
     const [isFirstVisit, setIsFirstVisit] = useState(true);
 
@@ -105,14 +107,16 @@ export default function CreatePage() {
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-            <Header />
-            {isLoading ? (
-                <LoadingScreen text="Seite wird geladen..." />
-            ) : (
-            <div className="px-4 py-6">
+            <Header onMenuClick={() => setIsSidebarOpen(true)} />
+            {/* Mobile Sidebar */}
+            <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+                {isLoading ? (
+                    <LoadingScreen text="Seite wird geladen..." />
+                ) : (
+                <div className="px-4 py-6">
                 <h2
                     className="text-2xl font-normal mb-6"
-                    style={{ color: "var(--color-text-beige-light)" }}
+                    style={{ color: "#000000" }}
                 >
                     Neuer Post
                 </h2>
@@ -131,7 +135,7 @@ export default function CreatePage() {
                             placeholder="Was möchtest du teilen?"
                             className="w-full bg-transparent border-none outline-none resize-none"
                             style={{
-                                color: "var(--color-text-beige)",
+                                color: "#000000",
                                 fontSize: "14px",
                                 lineHeight: "1.6",
                                 minHeight: "150px"
@@ -198,7 +202,7 @@ export default function CreatePage() {
                         {isSubmitting ? "Wird gepostet..." : "Posten"}
                     </button>
                 </form>
-            </div>
+                </div>
             )}
             <BottomNavigation />
         </main>

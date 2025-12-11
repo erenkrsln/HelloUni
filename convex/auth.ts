@@ -66,7 +66,17 @@ export const getUserById = query({
     // passwordHash aus Sicherheitsgründen nicht zurückgeben
     if (user) {
       const { passwordHash, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      
+      // Convert storage ID to URL if it exists
+      let imageUrl = userWithoutPassword.image;
+      if (imageUrl && !imageUrl.startsWith('http')) {
+        imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+      }
+      
+      return {
+        ...userWithoutPassword,
+        image: imageUrl,
+      };
     }
     
     return null;

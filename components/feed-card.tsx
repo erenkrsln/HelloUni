@@ -1,13 +1,13 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
+import { Heart, MessageCircle } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 interface FeedCardProps {
   post: {
@@ -29,141 +29,79 @@ interface FeedCardProps {
     isLiked?: boolean; // Like-Status direkt aus getFeed Query (verhindert Flicker)
   };
   currentUserId?: Id<"users">;
+  showDivider?: boolean; // Zeigt Trennlinie nach den Buttons an
 }
 
-export function FeedCard({ post, currentUserId }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
-  
-  // Initialisiere optimistischen State sofort aus localStorage (persistent) und sessionStorage, um Flickern zu vermeiden
+
   const storageKey = currentUserId ? `like_${post._id}_${currentUserId}` : null;
-  const getInitialOptimisticLiked = (): boolean | null => {
+  
+  const getStoredLikeState = (): boolean | null => {
     if (!storageKey || typeof window === "undefined") return null;
-    // Prüfe zuerst localStorage (persistent über Sessions)
     const localStored = localStorage.getItem(storageKey);
-    if (localStored === "true" || localStored === "false") {
-      return localStored === "true";
-    }
-    // Fallback zu sessionStorage
+    if (localStored === "true" || localStored === "false") return localStored === "true";
     const stored = sessionStorage.getItem(storageKey);
-    if (stored === "true" || stored === "false") {
-      return stored === "true";
-    }
+    if (stored === "true" || stored === "false") return stored === "true";
     return null;
   };
-  
-  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(getInitialOptimisticLiked);
+
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(getStoredLikeState);
   const [isLiking, setIsLiking] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  
-  // Initialisiere lastKnownLikedState sofort aus localStorage (persistent) und sessionStorage beim ersten Laden
-  const getInitialLastKnownState = (): boolean | null => {
-    if (!storageKey || typeof window === "undefined") return null;
-    // Prüfe zuerst localStorage (persistent über Sessions)
-    const localStored = localStorage.getItem(storageKey);
-    if (localStored === "true") return true;
-    if (localStored === "false") return false;
-    // Fallback zu sessionStorage
-    const stored = sessionStorage.getItem(storageKey);
-    if (stored === "true") return true;
-    if (stored === "false") return false;
-    return null;
-  };
-  const lastKnownLikedState = useRef<boolean | null>(getInitialLastKnownState());
+  const lastKnownLikedState = useRef<boolean | null>(getStoredLikeState());
 
-  // Verwende Like-Status aus Post-Daten (wenn verfügbar), sonst separate Query
-  // post.isLiked kommt direkt aus getUserLikesBatch Query und verhindert Flicker beim ersten Render
   const isLikedFromQuery = useQuery(
     api.queries.getUserLikes,
-    // Nur Query ausführen, wenn post.isLiked nicht verfügbar ist (Fallback)
     currentUserId && post._id && post.isLiked === undefined
       ? { userId: currentUserId, postId: post._id }
       : "skip"
   );
-  
-  // Priorisiere post.isLiked (aus Batch-Query), dann Query-Ergebnis
+
   const isLiked = post.isLiked !== undefined ? post.isLiked : isLikedFromQuery;
 
-  // Synchronisiere optimistischen State mit Query-Daten
-  // Da post.isLiked jetzt direkt aus getFeed kommt, ist isLiked beim ersten Render verfügbar
   useEffect(() => {
     if (isLiked !== undefined) {
       lastKnownLikedState.current = isLiked;
-      
-      // Wenn optimisticLiked null ist, setze es auf den Query-Wert (beim ersten Render)
       if (optimisticLiked === null) {
         setOptimisticLiked(isLiked);
-      } 
-      // Wenn optimistischer State nicht mit Query-Daten übereinstimmt, aktualisiere ihn
-      else if (optimisticLiked !== isLiked) {
+      } else if (optimisticLiked !== isLiked) {
         setOptimisticLiked(isLiked);
-      } 
-      // Wenn optimistischer State mit Query-Daten übereinstimmt, können wir ihn nach kurzer Verzögerung zurücksetzen
-      else {
-        const timeout = setTimeout(() => {
-          setOptimisticLiked(null);
-        }, 100);
+      } else {
+        const timeout = setTimeout(() => setOptimisticLiked(null), 100);
         return () => clearTimeout(timeout);
       }
-    }
-    // Fallback: Wenn Query-Daten noch nicht geladen sind, verwende sessionStorage
-    else if (optimisticLiked === null && lastKnownLikedState.current !== null) {
+    } else if (optimisticLiked === null && lastKnownLikedState.current !== null) {
       setOptimisticLiked(lastKnownLikedState.current);
     }
-  }, [isLiked, optimisticLiked, storageKey]);
+  }, [isLiked, optimisticLiked]);
 
-  // Verwende optimistischen State nur für den visuellen Status (gefüllt/nicht gefüllt)
-  // Die Like-Anzahl kommt immer direkt aus post.likesCount, da sie bereits vom Backend aktualisiert wurde
-  const displayLikes = post.likesCount;
-  
-  // Bestimme den Like-Status: Priorisiere Query-Daten (isLiked), dann optimistischen State
-  // Da post.isLiked jetzt direkt aus getFeed kommt, ist isLiked beim ersten Render verfügbar
-  // und verhindert den "weiß → rot" Flicker
-  const displayIsLiked = isLiked !== undefined 
-    ? isLiked 
-    : (optimisticLiked !== null 
-        ? optimisticLiked 
-        : (lastKnownLikedState.current ?? false));
+  const displayIsLiked = isLiked !== undefined
+    ? isLiked
+    : (optimisticLiked !== null ? optimisticLiked : (lastKnownLikedState.current ?? false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
-
     setIsLiking(true);
     const wasLiked = isLiked ?? false;
-    const newLikedState = !wasLiked;
-
-    setOptimisticLiked(newLikedState);
-    // Keine optimistische Like-Anzahl mehr - post.likesCount wird automatisch vom Backend aktualisiert
-
+    setOptimisticLiked(!wasLiked);
     try {
-      await likePost({
-        userId: currentUserId,
-        postId: post._id,
-      });
-      // post.likesCount wird automatisch durch Convex's reaktive Updates aktualisiert
+      await likePost({ userId: currentUserId, postId: post._id });
     } catch (error) {
       setOptimisticLiked(wasLiked);
       console.error("Error liking post:", error);
     } finally {
       setIsLiking(false);
-      // Setze optimistischen State nicht automatisch zurück
-      // Er wird zurückgesetzt, wenn Query-Daten geladen sind (siehe useEffect)
     }
   };
 
-  const [isBookmarked, setIsBookmarked] = useState(false);
-
-  // Speichere optimistischen State in localStorage (persistent) und sessionStorage
   useEffect(() => {
     if (!storageKey) return;
-    if (optimisticLiked !== null) {
-      // Speichere in localStorage für persistente Speicherung über Sessions
-      localStorage.setItem(storageKey, optimisticLiked.toString());
-      // Speichere auch in sessionStorage für Kompatibilität
-      sessionStorage.setItem(storageKey, optimisticLiked.toString());
-    } else if (isLiked !== undefined) {
-      // Wenn Query-Daten geladen sind, aktualisiere localStorage und sessionStorage
-      localStorage.setItem(storageKey, isLiked.toString());
-      sessionStorage.setItem(storageKey, isLiked.toString());
+    const value = optimisticLiked !== null ? optimisticLiked : isLiked;
+    if (value !== undefined) {
+      const str = value.toString();
+      localStorage.setItem(storageKey, str);
+      sessionStorage.setItem(storageKey, str);
     }
   }, [optimisticLiked, isLiked, storageKey]);
 
@@ -171,154 +109,120 @@ export function FeedCard({ post, currentUserId }: FeedCardProps) {
 
   return (
     <article
-      className="relative mb-6"
+      className="relative px-4 py-3"
+      style={{
+        marginBottom: "0",
+        borderBottom: showDivider ? "1px solid rgba(0, 0, 0, 0.1)" : "none"
+      }}
     >
       <div
-        className="backdrop-blur-sm p-5 transition-all hover:bg-white/15"
-        style={{
-          borderRadius: "var(--border-radius-card)",
-          backgroundColor: "rgba(255, 255, 255, 0.1)"
-        }}
+        className="flex items-start gap-4"
       >
-        <div className="flex items-start gap-4 mb-4">
-          <Avatar
-            className="border-2"
-            style={{
-              height: "56px",
-              width: "56px",
-              borderColor: "rgba(244, 207, 171, 0.3)"
-            }}
+        {post.user?.username ? (
+          <Link
+            href={`/profile/${post.user.username}`}
+            className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
           >
-            <AvatarImage src={post.user.image} alt={post.user.name} />
-            <AvatarFallback
-              className="font-semibold"
+            <Avatar
               style={{
-                backgroundColor: "rgba(244, 207, 171, 0.2)",
-                color: "var(--color-text-beige)"
+                height: "56px",
+                width: "56px"
               }}
             >
-              {post.user.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <h3
-              className="font-semibold leading-snug mb-0.5"
-              style={{
-                fontSize: "15px",
-                color: "var(--color-text-beige)"
-              }}
-            >
-              {post.user.name}
-            </h3>
-            {post.user.username && (
-              <p
-                className="leading-tight mb-1"
+              <AvatarImage src={post.user.image} alt={post.user.name} />
+              <AvatarFallback
+                className="font-semibold"
                 style={{
-                  fontSize: "12px",
-                  color: "rgba(244, 207, 171, 0.6)"
+                  backgroundColor: "rgba(0, 0, 0, 0.2)",
+                  color: "#000000"
                 }}
               >
-                @{post.user.username}
-              </p>
-            )}
-            {(post.user.major || post.user.uni_name) && (
-            <p
-              className="leading-tight"
+                {post.user.name?.[0]?.toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+        ) : (
+          <div className="flex-shrink-0">
+            <Avatar
               style={{
-                fontSize: "13px",
-                color: "rgba(244, 207, 171, 0.8)"
+                height: "56px",
+                width: "56px"
               }}
             >
-                {post.user.major && post.user.uni_name 
-                  ? `${post.user.major} · ${post.user.uni_name}`
-                  : post.user.major || post.user.uni_name}
-            </p>
-            )}
-          </div>
-          <time
-            className="whitespace-nowrap ml-auto"
-            style={{
-              fontSize: "11px",
-              color: "rgba(244, 207, 171, 0.6)"
-            }}
-          >
-            {formatTimeAgo(post.createdAt)}
-          </time>
-        </div>
-        <p
-          className="mb-4 whitespace-pre-wrap"
-          style={{
-            fontSize: "14px",
-            lineHeight: "1.6",
-            color: "var(--color-text-beige)"
-          }}
-        >
-          {post.content}
-        </p>
-
-        {post.imageUrl && (
-          <div 
-            className="mb-4 w-full rounded-2xl overflow-hidden flex items-center justify-center"
-            style={{
-              maxHeight: "600px",
-              minHeight: "200px",
-              backgroundColor: "rgba(0, 0, 0, 0.1)",
-              borderRadius: "16px"
-            }}
-          >
-            <img
-              ref={imgRef}
-              src={post.imageUrl}
-              alt="Post image"
-              className="max-w-full max-h-full rounded-2xl"
-              style={{ 
-                objectFit: "contain",
-                display: "block"
-              }}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement;
-                img.style.display = "none";
-              }}
-            />
+              <AvatarImage src={post.user?.image} alt={post.user?.name} />
+              <AvatarFallback
+                className="font-semibold"
+                style={{
+                  backgroundColor: "rgba(0, 0, 0, 0.2)",
+                  color: "#000000"
+                }}
+              >
+                {post.user?.name?.[0]?.toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
           </div>
         )}
-
-        <div
-          className="flex items-center gap-6 pt-3"
-          style={{ borderTop: "1px solid rgba(244, 207, 171, 0.2)" }}
-        >
-          <button
-            onClick={handleLike}
-            disabled={!currentUserId || isLiking}
-            className="flex items-center gap-2 h-10 px-0 font-medium disabled:opacity-50"
-            style={{
-              color: displayIsLiked ? "#f87171" : "var(--color-text-beige)"
-            }}
-          >
-            <Heart
-              style={{
-                height: "18px",
-                width: "18px",
-                fill: displayIsLiked ? "currentColor" : "none"
-              }}
-            />
-            <span style={{ fontSize: "13px" }}>{displayLikes}</span>
-          </button>
-          <button
-            className="flex items-center gap-2 h-10 px-0 font-medium cursor-pointer"
-            style={{ color: "var(--color-text-beige)" }}
-          >
-            <MessageCircle style={{ height: "18px", width: "18px" }} />
-            <span style={{ fontSize: "13px" }}>{post.commentsCount}</span>
-          </button>
-        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            {post.user?.username ? (
+              <Link
+                href={`/profile/${post.user.username}`}
+                className="cursor-pointer hover:opacity-80 transition-opacity text-left"
+              >
+                <h3 className="font-semibold leading-snug inline text-[15px] text-black">
+                  {post.user.name}
+                </h3>
+                {post.user.username && (
+                  <span className="leading-tight ml-2 text-[15px] text-black/60">
+                    @{post.user.username}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <div className="text-left">
+                <h3 className="font-semibold leading-snug inline text-[15px] text-black">
+                  {post.user?.name}
+                </h3>
+              </div>
+            )}
+            <time className="whitespace-nowrap ml-auto text-[11px] text-black/60">
+              {formatTimeAgo(post.createdAt)}
+            </time>
+          </div>
+          <p className="mb-3 whitespace-pre-wrap text-[14px] leading-[1.6] text-black">
+            {post.content}
+          </p>
+          {post.imageUrl && (
+            <div className="mb-3 w-full rounded-2xl overflow-hidden flex items-center justify-center bg-black/10" style={{ maxHeight: "600px", minHeight: "200px" }}>
+              <img
+                ref={imgRef}
+                src={post.imageUrl}
+                alt="Post image"
+                className="max-w-full max-h-full rounded-2xl block"
+                style={{ objectFit: "contain" }}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
+          )}
+          <div className="flex items-center mt-3">
+            <button
+              onClick={handleLike}
+              disabled={!currentUserId || isLiking}
+              className="flex items-center gap-2 h-10 px-0 font-medium disabled:opacity-50 flex-shrink-0"
+              style={{ color: displayIsLiked ? "#f87171" : "#000000", minWidth: "60px" }}
+            >
+              <Heart style={{ height: "18px", width: "18px", fill: displayIsLiked ? "currentColor" : "none" }} />
+              <span className="text-[13px] tabular-nums">{post.likesCount}</span>
+            </button>
+            <button className="flex items-center gap-2 h-10 px-0 font-medium cursor-pointer flex-shrink-0 ml-12" style={{ color: "var(--color-text-beige)", minWidth: "60px" }}>
+              <MessageCircle style={{ height: "18px", width: "18px" }} />
+              <span className="text-[13px] tabular-nums">{post.commentsCount}</span>
+            </button>
+          </div>
+          </div>
       </div>
     </article>
   );

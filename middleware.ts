@@ -7,6 +7,14 @@ import { NextResponse } from "next/server";
  */
 export default withAuth(
   function middleware(req) {
+    // Ignoriere Requests, die wie Convex-IDs aussehen (z.B. kg283gptp92vz668wnk2t73sbs7wwpzz)
+    // Diese sollten nicht als Routen behandelt werden
+    const pathname = req.nextUrl.pathname;
+    // Convex-IDs sind typischerweise 20+ Zeichen lang und bestehen nur aus Kleinbuchstaben und Zahlen
+    if (pathname.length > 20 && pathname.length < 50 && /^\/[a-z0-9]+$/.test(pathname)) {
+      // Sieht aus wie eine Convex-ID, leite zu 404 um oder blockiere den Request
+      return new NextResponse(null, { status: 404 });
+    }
     return NextResponse.next();
   },
   {

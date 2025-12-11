@@ -41,15 +41,30 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    background: #261708;
-    background-image: url('/feed-background-v3.jpg');
+    background: #FFFFFF;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    /* iOS Safari: 100vh Problem beheben - verwende -webkit-fill-available */
     min-height: 100vh;
-    background-attachment: fixed;
+    min-height: -webkit-fill-available;
+    /* background-attachment: fixed funktioniert nicht auf iOS Safari */
+    /* Stattdessen: Hintergrund auf html-Element setzen für bessere iOS-Kompatibilität */
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    /* Verhindere Text-Skalierung auf iOS */
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* iOS Safari: Hintergrund auf html setzen, da background-attachment: fixed nicht funktioniert */
+  html {
+    background: #FFFFFF;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    height: 100%;
+    height: -webkit-fill-available;
   }
 
   button,

@@ -1,6 +1,8 @@
 "use client";
 
-import { Home, MessageCircle, Plus, Calendar, Search } from "lucide-react";
+import { Plus, Bell, User } from "lucide-react";
+import { HomeIcon } from "@/components/home-icon";
+import { SearchIcon } from "@/components/search-icon";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -26,7 +28,13 @@ export function BottomNavigation() {
   };
 
   return (
-    <nav className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-50">
+    <nav 
+      className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-50"
+      style={{
+        // iOS Safari: Safe Area für Home Indicator
+        paddingBottom: "max(1rem, env(safe-area-inset-bottom))"
+      }}
+    >
       <div
         className="flex items-center justify-between px-5 py-4"
         style={{
@@ -34,110 +42,103 @@ export function BottomNavigation() {
           maxWidth: "373px",
           height: "66px",
           borderRadius: "79px",
-          background: "linear-gradient(to right, #D08945 0%, #DCA067 33.226%, #F4CFAB 100%)",
-          opacity: 0.6,
+          backgroundColor: "#dcc6a1",
+          opacity: 1,
           willChange: "transform",
           transform: "translateZ(0)",
           backfaceVisibility: "hidden",
           WebkitBackfaceVisibility: "hidden"
         }}
       >
-        <Link
-          href="/home"
-          prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
-        >
-          <Home
-            style={{
-              width: "40px",
-              height: "40px",
-              color: "#FFFFFF",
-              fill: isActive("/home") ? "#FFFFFF" : "none",
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden"
-            }}
-          />
-        </Link>
-        <Link
-          href="/chat"
-          prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
-        >
-          <MessageCircle
-            style={{
-              width: "40px",
-              height: "40px",
-              color: "#FFFFFF",
-              fill: isActive("/chat") ? "#FFFFFF" : "none",
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden"
-            }}
-          />
-        </Link>
-        <Link
-          href="/create"
-          prefetch={true}
-          onClick={handleCreateClick}
-          className="flex items-center justify-center cursor-pointer touch-manipulation"
-          style={{ 
-            width: "61px", 
-            height: "58px", 
-            minWidth: "61px", 
-            minHeight: "58px", 
-            opacity: 1
-          }}
-        >
-          <img
-            src="/create-icon.png"
-            alt="Plus"
-            loading="eager"
-            style={{
-              width: "61px",
-              height: "58px",
-              objectFit: "contain",
-              display: "block",
-              transform: isActive("/create") ? "rotate(45deg) translateZ(0)" : "rotate(0deg) translateZ(0)",
-              transition: "transform 0.2s ease",
-              willChange: "transform",
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
-            }}
-          />
-        </Link>
+            {/* Home - ganz links */}
+            <Link
+              href="/home"
+              prefetch={true}
+              className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
+              style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+            >
+              <HomeIcon
+                isActive={isActive("/home")}
+                size={32}
+                color="#000000"
+              />
+            </Link>
+        
+        {/* Search */}
         <Link
           href="/search"
           prefetch={true}
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
-          <Search
+          <SearchIcon
+            isActive={isActive("/search")}
+            size={32}
+            color="#000000"
+          />
+        </Link>
+        
+        {/* Create */}
+        <Link
+          href="/create"
+          prefetch={true}
+          onClick={handleCreateClick}
+          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
+          style={{ 
+            width: "44px", 
+            height: "44px", 
+            minWidth: "44px", 
+            minHeight: "44px", 
+            opacity: 1
+          }}
+        >
+          <Plus
             style={{
-              width: "40px",
-              height: "40px",
-              color: "#FFFFFF",
-              fill: isActive("/search") ? "#FFFFFF" : "none",
+              width: "32px",
+              height: "32px",
+              color: "#000000",
+              fill: isActive("/create") ? "#000000" : "none",
+              transform: isActive("/create") ? "rotate(45deg) translateZ(0)" : "rotate(0deg) translateZ(0)",
+              transition: "transform 0.2s ease",
+              willChange: "transform",
+              backfaceVisibility: "hidden"
+            }}
+          />
+        </Link>
+        
+        {/* Notifications */}
+        <Link
+          href="/notifications"
+          prefetch={true}
+          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation relative"
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+        >
+          <Bell
+            style={{
+              width: "28px",
+              height: "28px",
+              color: "#000000",
+              fill: isActive("/notifications") ? "#000000" : "none",
               willChange: "transform",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden"
             }}
           />
         </Link>
+        
+        {/* Profile - ganz rechts */}
         <Link
-          href="/calendar"
+          href="/profile"
           prefetch={true}
           className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
-          <Calendar
+          <User
             style={{
-              width: "40px",
-              height: "40px",
-              color: "#FFFFFF",
-              fill: isActive("/calendar") ? "#FFFFFF" : "none",
+              width: "32px",
+              height: "32px",
+              color: "#000000",
+              fill: isActive("/profile") ? "#000000" : "none",
               willChange: "transform",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden"

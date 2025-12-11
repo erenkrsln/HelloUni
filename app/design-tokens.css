@@ -1,8 +1,8 @@
 :root {
   --color-primary-dark: #261708;
   --color-primary-light: #8C531E;
-  --color-text-beige: #F4CFAB;
-  --color-text-beige-light: #EED4B0;
+  --color-text-beige: #000000;
+  --color-text-beige-light: #000000;
   --color-gradient-start: #D08945;
   --color-gradient-end: #F4CFAB;
   --color-button-dark: rgba(51, 43, 43, 0.7);

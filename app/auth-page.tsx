@@ -3,27 +3,22 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /**
- * Authentifizierungsseite mit Tabs für Login und Registrierung
- * Ermöglicht Benutzern, sich anzumelden oder ein neues Konto zu erstellen
+ * Authentifizierungsseite mit Login/Registrierung
+ * Design basierend auf dem Screenshot: Weißer Hintergrund, beige Card, pill-shaped Inputs/Buttons
  */
 export default function AuthPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("login");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // Zustand für Login
   const [loginData, setLoginData] = useState({
     username: "",
     password: "",
   });
-  const [loginError, setLoginError] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
 
   // Zustand für Registrierung
   const [registerData, setRegisterData] = useState({
@@ -32,16 +27,15 @@ export default function AuthPage() {
     password: "",
     confirmPassword: "",
   });
-  const [registerError, setRegisterError] = useState("");
-  const [registerLoading, setRegisterLoading] = useState(false);
+
 
   /**
    * Behandelt den Login mit NextAuth
    */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError("");
-    setLoginLoading(true);
+    setError("");
+    setIsLoading(true);
 
     try {
       const result = await signIn("credentials", {
@@ -51,46 +45,45 @@ export default function AuthPage() {
       });
 
       if (result?.error) {
-        setLoginError("Benutzername oder Passwort falsch");
+        setError("Benutzername oder Passwort falsch");
       } else if (result?.ok) {
-        // Weiterleitung zu /home nach erfolgreichem Login
         router.push("/home");
         router.refresh();
       }
     } catch (error) {
-      setLoginError("Fehler beim Anmelden");
+      setError("Fehler beim Anmelden");
     } finally {
-      setLoginLoading(false);
+      setIsLoading(false);
     }
   };
 
   /**
    * Behandelt die Registrierung neuer Benutzer
    */
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRegisterError("");
+    setError("");
 
     // Felder validieren
     if (!registerData.name || !registerData.username || !registerData.password || !registerData.confirmPassword) {
-      setRegisterError("Alle Felder sind erforderlich");
+      setError("Alle Felder sind erforderlich");
       return;
     }
 
     if (registerData.password !== registerData.confirmPassword) {
-      setRegisterError("Die Passwörter stimmen nicht überein");
+      setError("Die Passwörter stimmen nicht überein");
       return;
     }
 
     if (registerData.password.length < 6) {
-      setRegisterError("Das Passwort muss mindestens 6 Zeichen lang sein");
+      setError("Das Passwort muss mindestens 6 Zeichen lang sein");
       return;
     }
 
-    setRegisterLoading(true);
+    setIsLoading(true);
 
     try {
-      // Registrierungs-API aufrufen
+      // Echte Registrierung über API-Route
       const response = await fetch("/api/register", {
         method: "POST",
         headers: {
@@ -106,7 +99,8 @@ export default function AuthPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setRegisterError(data.error || "Fehler bei der Registrierung");
+        // Fehler von der API anzeigen
+        setError(data.error || "Fehler bei der Registrierung");
         return;
       }
 
@@ -120,190 +114,192 @@ export default function AuthPage() {
       if (loginResult?.ok) {
         router.push("/home");
         router.refresh();
+      } else {
+        setError("Registrierung erfolgreich, aber Anmeldung fehlgeschlagen. Bitte melde dich manuell an.");
       }
-    } catch (error) {
-      setRegisterError("Fehler bei der Registrierung");
+    } catch (error: any) {
+      console.error("Registrierungsfehler:", error);
+      setError(error.message || "Fehler bei der Registrierung");
     } finally {
-      setRegisterLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <div 
-      className="min-h-screen w-full flex items-center justify-center p-4 relative"
+      className="min-h-screen w-full flex flex-col items-center bg-white"
       style={{
-        backgroundImage: "url('/feed-background-v3.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat"
+        paddingTop: "max(1rem, env(safe-area-inset-top))",
+        paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+        paddingLeft: "max(1rem, env(safe-area-inset-left))",
+        paddingRight: "max(1rem, env(safe-area-inset-right))",
       }}
     >
-      {/* Dunkles Overlay für bessere Lesbarkeit */}
-      <div className="absolute inset-0 bg-black/40"></div>
-      
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo/Titel */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">HelloUni</h1>
-          <p className="text-white/90 drop-shadow-md">Social Media für Studierende</p>
+      <div className="w-full max-w-md flex flex-col items-center">
+        {/* Logo - zentriert über Hello Uni */}
+        <div className="flex items-center justify-center mt-4 w-full">
+          <img 
+            src="/hellouni.svg" 
+            alt="Hello Uni Logo" 
+            className="w-56 h-56 object-contain ml-24"
+          />
         </div>
+        
+        {/* Headline - zentriert unter Logo */}
+        <h1 className="text-4xl font-semibold text-black text-center -mt-16 w-full" style={{ fontFamily: 'var(--font-poppins), sans-serif' }}>
+          Hello Uni
+        </h1>
 
-        {/* Auth-Karte */}
-        <Card className="shadow-2xl backdrop-blur-md bg-white/90 border-white/20">
-          <CardHeader>
-            <CardTitle className="text-center" style={{ color: "var(--color-text-beige-dark, #8B6F47)" }}>
-              Willkommen
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="login">Anmelden</TabsTrigger>
-                <TabsTrigger value="register">Registrieren</TabsTrigger>
-              </TabsList>
+        {/* Beige Card - fester Abstand, unabhängig von Logo/Headline-Position */}
+        <div 
+          className="rounded-3xl p-8 shadow-lg w-full"
+          style={{ backgroundColor: "rgba(220, 198, 161)", marginTop: "80px" }}
+        >
+          {/* Titel */}
+          <h2 className="text-2xl font-bold text-black mb-2 text-center">
+            {isSignUp ? "Konto erstellen" : "Anmelden"}
+          </h2>
+          <p className="text-sm text-gray-700 mb-6 text-center">
+            {isSignUp 
+              ? "Gib deine Informationen ein, um dich für diese App zu registrieren"
+              : "Gib deine Anmeldedaten ein, um dich anzumelden"
+            }
+          </p>
 
-              {/* Login-Tab */}
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-username">Benutzername</Label>
-                    <Input
-                      id="login-username"
-                      type="text"
-                      placeholder="dein_benutzername"
-                      value={loginData.username}
-                      onChange={(e) =>
-                        setLoginData({ ...loginData, username: e.target.value })
-                      }
-                      required
-                      disabled={loginLoading}
-                    />
-                  </div>
+          {/* Formular */}
+          <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
+            {/* Name-Feld nur bei Registrierung */}
+            {isSignUp && (
+              <input
+                type="text"
+                placeholder="Name"
+                value={registerData.name}
+                onChange={(e) =>
+                  setRegisterData({ ...registerData, name: e.target.value })
+                }
+                required
+                disabled={isLoading}
+                className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              />
+            )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Passwort</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={loginData.password}
-                      onChange={(e) =>
-                        setLoginData({ ...loginData, password: e.target.value })
-                      }
-                      required
-                      disabled={loginLoading}
-                    />
-                  </div>
+            {/* Benutzername */}
+            <input
+              type="text"
+              placeholder="Benutzername"
+              value={isSignUp ? registerData.username : loginData.username}
+              onChange={(e) =>
+                isSignUp
+                  ? setRegisterData({ ...registerData, username: e.target.value })
+                  : setLoginData({ ...loginData, username: e.target.value })
+              }
+              required
+              disabled={isLoading}
+              className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            />
 
-                  {loginError && (
-                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                      {loginError}
-                    </div>
-                  )}
+            {/* Passwort */}
+            <input
+              type="password"
+              placeholder="Passwort"
+              value={isSignUp ? registerData.password : loginData.password}
+              onChange={(e) =>
+                isSignUp
+                  ? setRegisterData({ ...registerData, password: e.target.value })
+                  : setLoginData({ ...loginData, password: e.target.value })
+              }
+              required
+              disabled={isLoading}
+              className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            />
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loginLoading}
+            {/* Passwort bestätigen nur bei Registrierung */}
+            {isSignUp && (
+              <input
+                type="password"
+                placeholder="Passwort bestätigen"
+                value={registerData.confirmPassword}
+                onChange={(e) =>
+                  setRegisterData({ ...registerData, confirmPassword: e.target.value })
+                }
+                required
+                disabled={isLoading}
+                className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              />
+            )}
+
+            {/* Fehleranzeige */}
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-full text-center">
+                {error}
+              </div>
+            )}
+
+            {/* Continue Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 rounded-full bg-black text-white font-medium text-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
                   >
-                    {loginLoading ? "Wird angemeldet..." : "Anmelden"}
-                  </Button>
-                </form>
-              </TabsContent>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  {isSignUp ? "Wird registriert..." : "Wird angemeldet..."}
+                </span>
+              ) : (
+                "Continue"
+              )}
+            </button>
+          </form>
 
-              {/* Registrierungs-Tab */}
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="register-name">Vollständiger Name</Label>
-                    <Input
-                      id="register-name"
-                      type="text"
-                      placeholder="Max Mustermann"
-                      value={registerData.name}
-                      onChange={(e) =>
-                        setRegisterData({ ...registerData, name: e.target.value })
-                      }
-                      required
-                      disabled={registerLoading}
-                    />
-                  </div>
+          {/* Toggle zwischen Login und Sign Up */}
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError("");
+                // Formular zurücksetzen
+                setLoginData({ username: "", password: "" });
+                setRegisterData({ name: "", username: "", password: "", confirmPassword: "" });
+              }}
+              className="text-sm text-gray-700 hover:text-black underline transition-colors"
+            >
+              {isSignUp 
+                ? "Bereits einen Account? Anmelden" 
+                : "Noch keinen Account? Registrieren"
+              }
+            </button>
+          </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="register-username">Benutzername</Label>
-                    <Input
-                      id="register-username"
-                      type="text"
-                      placeholder="dein_benutzername"
-                      value={registerData.username}
-                      onChange={(e) =>
-                        setRegisterData({ ...registerData, username: e.target.value })
-                      }
-                      required
-                      disabled={registerLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Passwort</Label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={registerData.password}
-                      onChange={(e) =>
-                        setRegisterData({ ...registerData, password: e.target.value })
-                      }
-                      required
-                      disabled={registerLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-confirm-password">
-                      Passwort bestätigen
-                    </Label>
-                    <Input
-                      id="register-confirm-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={registerData.confirmPassword}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      required
-                      disabled={registerLoading}
-                    />
-                  </div>
-
-                  {registerError && (
-                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                      {registerError}
-                    </div>
-                  )}
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={registerLoading}
-                  >
-                    {registerLoading ? "Wird registriert..." : "Konto erstellen"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {/* Fußzeile */}
-        <p className="text-center text-sm text-white/80 mt-6 drop-shadow-md">
-          Durch Fortfahren akzeptierst du unsere Nutzungsbedingungen
-        </p>
+          {/* Terms and Privacy */}
+          <p className="text-xs text-gray-600 text-center mt-6">
+            By clicking continue, you agree to our{" "}
+            <a href="#" className="underline hover:text-black">Terms of Service</a>{" "}
+            and{" "}
+            <a href="#" className="underline hover:text-black">Privacy Policy</a>.
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-
