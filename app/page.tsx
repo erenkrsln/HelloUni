@@ -22,18 +22,9 @@ export default function LandingPage() {
   // Ladeindikator anzeigen, während Authentifizierung überprüft wird
   if (status === "loading") {
     return (
-      <div 
-        className="min-h-screen w-full flex items-center justify-center relative"
-        style={{
-          backgroundImage: "url('/feed-background-v3.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat"
-        }}
-      >
-        <div className="absolute inset-0 bg-black/40"></div>
-        <div className="text-center relative z-10">
-          <p className="text-sm text-white drop-shadow-md">Lädt...</p>
+      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+        <div className="text-center">
+          <p className="text-sm text-gray-600">Lädt...</p>
         </div>
       </div>
     );

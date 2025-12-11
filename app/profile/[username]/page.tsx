@@ -1,77 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
-import { api } from "@/convex/_generated/api";
 import { ProfileHeader } from "@/components/profile-header";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen, Spinner } from "@/components/ui/spinner";
-import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
-import { profileCache } from "@/lib/cache/profileCache";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useParams } from "next/navigation";
 
-export default function ProfilePage() {
+/**
+ * User Profile Page Component
+ * 
+ * Uses useFullUserProfile hook for unified caching:
+ * - First visit: Shows loading spinner until ALL data loads
+ * - Subsequent visits: Shows cached data IMMEDIATELY (no spinner)
+ */
+export default function UserProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const router = useRouter();
-    const { currentUser, currentUserId } = useCurrentUser();
-    const allPosts = useQuery(api.queries.getFeed);
+    const params = useParams();
+    const username = params.username as string;
+    const { currentUserId } = useCurrentUser();
 
-    // Use unified hook for own profile as well (ensures caching works same way)
-    // We pass the username from currentUser if available
-    const { data: profileData, isLoading: isProfileLoading } = useFullUserProfile({
-        username: currentUser?.username || "",
+    // Use unified hook with client-side caching
+    // Returns cached data immediately on subsequent visits
+    const { data: profileData, isLoading, notFound } = useFullUserProfile({
+        username,
         currentUserId
     });
 
-    // Only show loading if we don't have profile data yet
-    // On second visit, profileData comes from cache immediately
-    const isLoading = isProfileLoading && !profileData;
+    // Fetch all posts (separate query, also cached by Convex)
+    const allPosts = useQuery(api.queries.getFeed);
 
-    // Filter posts by current user
+    // Filter posts by this user
     const userPosts = profileData?.user
-        ? allPosts?.filter(post => post.userId === profileData.user._id) || []
+        ? allPosts?.filter((post) => post.userId === profileData.user._id) || []
         : [];
-
-    const handleProfileUpdate = () => {
-        // Clear cache to force refresh
-        if (currentUser?.username) {
-            const cacheKey = profileCache.getKey(currentUser.username, currentUserId);
-            profileCache.delete(cacheKey);
-        }
-        router.refresh();
-    };
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-            <Header 
-                onMenuClick={() => setIsSidebarOpen(true)}
-                onEditClick={() => setIsEditModalOpen(true)}
-            />
+            <Header onMenuClick={() => setIsSidebarOpen(true)} />
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-            
-            {/* Edit Profile Modal */}
-            {profileData && (
-                <EditProfileModal
-                    isOpen={isEditModalOpen}
-                    onClose={() => setIsEditModalOpen(false)}
-                    userId={profileData.user._id}
-                    currentName={profileData.user.name}
-                    currentImage={profileData.user.image}
-                    currentBio={(profileData.user as any).bio}
-                    onUpdate={handleProfileUpdate}
-                />
-            )}
                 {isLoading ? (
+                // Show spinner only on first visit (no cached data)
                 <LoadingScreen text="Profil wird geladen..." />
+            ) : notFound ? (
+                // User not found
+                <div className="flex-1 flex items-center justify-center text-[#000000] py-16">
+                    Benutzer nicht gefunden
+                </div>
             ) : profileData ? (
                 <>
+                    {/* Profile header with preloaded data from cache */}
                     <ProfileHeader
                         name={profileData.user.name}
                         image={profileData.user.image}
@@ -80,10 +65,11 @@ export default function ProfilePage() {
                         bio={profileData.user.bio}
                         userId={profileData.user._id}
                         currentUserId={currentUserId}
-                        isOwnProfile={true}
+                        isOwnProfile={false}
                         postsCount={userPosts.length}
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
+                        isFollowing={profileData.isFollowing}
                     />
 
                     {/* Posts section */}

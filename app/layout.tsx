@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Gloock } from "next/font/google";
+import { Inter, Gloock, Poppins } from "next/font/google";
 import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
@@ -11,6 +11,11 @@ const gloock = Gloock({
   subsets: ["latin"],
   variable: "--font-gloock"
 });
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700", "800", "900"],
+  subsets: ["latin"],
+  variable: "--font-poppins"
+});
 
 export const metadata: Metadata = {
   title: "HelloUni",
@@ -20,8 +25,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
+  // iOS Safari: Unterstützung für Safe Area (Notch, Home Indicator)
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -31,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <body className={`${inter.className} ${gloock.variable}`}>
+      <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
         <NextAuthSessionProvider>
           <ConvexClientProvider>{children}</ConvexClientProvider>
         </NextAuthSessionProvider>

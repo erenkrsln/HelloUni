@@ -9,6 +9,7 @@ export default defineSchema({
     image: v.optional(v.string()),
     uni_name: v.optional(v.string()), // Jetzt optional für initiale Registrierung
     major: v.optional(v.string()), // Jetzt optional für initiale Registrierung
+    bio: v.optional(v.string()), // Biografie des Benutzers
   }).index("by_username", ["username"]), // Index für schnelle Suche nach Benutzername
 
   posts: defineTable({
@@ -28,6 +29,14 @@ export default defineSchema({
   })
     .index("by_post", ["postId"])
     .index("by_user_post", ["userId", "postId"]),
+
+  follows: defineTable({
+    followerId: v.id("users"), // Der User, der folgt
+    followingId: v.id("users"), // Der User, dem gefolgt wird
+  })
+    .index("by_follower", ["followerId"])
+    .index("by_following", ["followingId"])
+    .index("by_follower_following", ["followerId", "followingId"]),
 });
 
 

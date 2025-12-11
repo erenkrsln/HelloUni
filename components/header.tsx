@@ -1,29 +1,38 @@
 "use client";
 
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+  onEditClick?: () => void;
+}
+
+export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
   const [isProfileHovered, setIsProfileHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+  
+  // Profil-Icon auf allen Seiten ausblenden (wird durch Dropdown ersetzt)
+  const showProfileIcon = false;
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
   };
 
-  // Zeige Button sofort, da diese Komponente nur auf geschützten Seiten ist
-  // Verstecke ihn nur wenn explizit nicht eingeloggt
-  const showLogoutButton = status !== "unauthenticated";
+  // Logout-Button auf allen Seiten ausblenden (wird durch Dropdown ersetzt)
+  const showLogoutButton = false;
 
   return (
     <header className="relative w-full" style={{ height: "94px" }}>
       <div
         className="absolute flex items-center justify-center overflow-hidden"
         style={{ 
-          left: "16px", 
+          left: "12px", 
           top: "-20px", 
           width: "120px", 
           height: "130px",
@@ -50,42 +59,47 @@ export function Header() {
             const target = e.target as HTMLImageElement;
             target.style.display = "none";
             if (target.parentElement) {
-              target.parentElement.innerHTML = '<span class="text-2xl font-bold" style="color: var(--color-text-beige)">C</span>';
+              target.parentElement.innerHTML = '<span class="text-2xl font-bold" style="color: #000000">C</span>';
             }
           }}
         />
       </div>
-      <h1
-        className="absolute font-normal"
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "30px",
-          left: "50%",
-          top: "50px",
-          transform: "translateX(-50%)",
-          fontFamily: "var(--font-gloock), serif",
-          fontStyle: "normal",
-          fontWeight: 400,
-          fontSize: "20px",
-          lineHeight: "24px",
-          textAlign: "center",
-          color: "#F4CFAB"
-        }}
-      >
-        Startseite
-      </h1>
+      {pathname !== "/profile" && 
+       !pathname.startsWith("/profile/") && 
+       pathname !== "/search" && 
+       pathname !== "/create" && (
+        <h1
+          className="absolute font-normal"
+          style={{
+            position: "absolute",
+            width: "100%",
+            height: "30px",
+            left: "50%",
+            top: "50px",
+            transform: "translateX(-50%)",
+            fontFamily: "var(--font-gloock), serif",
+            fontStyle: "normal",
+            fontWeight: 400,
+            fontSize: "20px",
+            lineHeight: "24px",
+            textAlign: "center",
+            color: "#000000"
+          }}
+        >
+          Startseite
+        </h1>
+      )}
       
-      {/* Logout-Button - optimistisch angezeigt */}
+      {/* Logout-Button - oben rechts */}
       {showLogoutButton && (
         <button
           onClick={handleLogout}
           className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
           style={{ 
-            right: "80px", 
+            right: "28px", 
             top: "30px", 
             width: "44px", 
-            height: "44px", 
+            height: "44px",
             minWidth: "44px", 
             minHeight: "44px",
             opacity: status === "loading" ? 0.5 : 1,
@@ -101,28 +115,84 @@ export function Header() {
             style={{
               width: "32px",
               height: "32px",
-              color: isLogoutHovered ? "#F4CFAB" : "rgba(244, 207, 171, 0.7)"
+              color: isLogoutHovered ? "#000000" : "rgba(0, 0, 0, 0.7)"
             }}
           />
         </button>
       )}
 
-      <Link
-        href="/profile"
-        className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
-        style={{ right: "28px", top: "30px", width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
-        onMouseEnter={() => setIsProfileHovered(true)}
-        onMouseLeave={() => setIsProfileHovered(false)}
-      >
-        <User
-          className="transition-colors"
+      {showProfileIcon && (
+        <Link
+          href="/profile"
+          className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
+          style={{ right: "28px", top: "30px", width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
+          onMouseEnter={() => setIsProfileHovered(true)}
+          onMouseLeave={() => setIsProfileHovered(false)}
+        >
+          <User
+            className="transition-colors"
+            style={{
+              width: "40px",
+              height: "40px",
+              color: isProfileHovered ? "var(--color-text-beige-light)" : "var(--color-text-beige)"
+            }}
+          />
+        </Link>
+      )}
+
+      {/* Edit Button - nur auf eigener Profilseite */}
+      {pathname === "/profile" && onEditClick && (
+        <button
+          onClick={onEditClick}
+          className="absolute flex items-center justify-center transition-opacity hover:opacity-70 cursor-pointer"
           style={{
-            width: "40px",
-            height: "40px",
-            color: isProfileHovered ? "var(--color-text-beige-light)" : "var(--color-text-beige)"
+            right: "80px",
+            top: "30px",
+            padding: "6px 24px",
+            backgroundColor: "#000000",
+            borderRadius: "20px",
+            willChange: "opacity",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
           }}
-        />
-      </Link>
+        >
+          <span className="text-sm font-medium text-white">Edit</span>
+        </button>
+      )}
+
+      {/* Mobile Menu Button - oben rechts */}
+      {onMenuClick && (
+        <button
+          onClick={onMenuClick}
+          className="absolute flex items-center justify-center w-12 h-12 transition-opacity hover:opacity-70"
+          style={{
+            right: "20px",
+            top: "20px",
+            willChange: "opacity",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        >
+          <Menu 
+            className="w-9 h-9" 
+            style={{ 
+              color: "#000000", 
+              fill: "none", 
+              stroke: "#000000", 
+              strokeWidth: 2, 
+              strokeLinecap: "round", 
+              strokeLinejoin: "round",
+              willChange: "auto",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              imageRendering: "crisp-edges",
+              WebkitFontSmoothing: "antialiased",
+            }} 
+          />
+        </button>
+      )}
     </header>
   );
 }
