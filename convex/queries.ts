@@ -115,7 +115,7 @@ export const getUser = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
-    
+
     if (!user) {
       return null;
     }
@@ -188,7 +188,7 @@ export const getUserById = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
-    
+
     if (!user) {
       return null;
     }
@@ -214,7 +214,7 @@ export const getUserByUsername = query({
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", args.username))
       .first();
-    
+
     if (!user) {
       return null;
     }
@@ -373,5 +373,64 @@ export const getFollowing = query({
     );
 
     return following.filter((user) => user !== null);
+  },
+});
+
+export const getAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
+
+export const getConversations = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    // 1. Alle Conversations holen, an denen der User beteiligt ist
+    // Hinweis: In Convex ist das Filtern von Arrays etwas komplexer.
+    // Wir holen "alle" und filtern im Code, oder besser: Wir nutzen einen Index wenn möglich.
+    // Mit dem Index "by_participant" können wir das leider nicht direkt effizient abfragen, 
+    // da es ein Array ist. Für V1 iterieren wir über alle Conversations und filtern.
+    // (Besser wäre eine separate Relationstabelle UserConversation, aber schema.ts ist schon definiert)
+
+    const conversations = await ctx.db.query("conversations").collect();
+
+    const relevantConversations = conversations.filter(c =>
+      c.participants.includes(args.userId)
+    );
+
+    // 2. Details für die Conversations anreichern (Partner-Name, letzte Nachricht)
+    const enrichedConversations = await Promise.all(
+      relevantConversations.map(async (conv) => {
+        const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId; // Fallback auf sich selbst wenn Chat mit sich selbst
+        const partner = await ctx.db.get(partnerId);
+
+        let lastMessage = null;
+        if (conv.lastMessageId) {
+          lastMessage = await ctx.db.get(conv.lastMessageId);
+        }
+
+        return {
+          ...conv,
+          partner,
+          lastMessage,
+        };
+      })
+    );
+
+    return enrichedConversations.sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
+export const getMessages = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation_created", (q) => q.eq("conversationId", args.conversationId))
+      .order("asc")
+      .collect();
+
+    return messages;
   },
 });

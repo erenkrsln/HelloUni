@@ -149,3 +149,56 @@ export const updateUser = mutation({
     return { success: true };
   },
 });
+
+export const createConversation = mutation({
+  args: {
+    creatorId: v.id("users"),
+    partnerId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Prüfen, ob schon eine Konversation zwischen diesen beiden existiert
+    const conversations = await ctx.db.query("conversations").collect();
+
+    // Check if conversation already exists (ineffizient für viele Daten, aber ok für MVP)
+    const existing = conversations.find(c =>
+      c.participants.includes(args.creatorId) &&
+      c.participants.includes(args.partnerId) &&
+      c.participants.length === 2
+    );
+
+    if (existing) {
+      return existing._id;
+    }
+
+    const conversationId = await ctx.db.insert("conversations", {
+      participants: [args.creatorId, args.partnerId],
+      updatedAt: Date.now(),
+    });
+
+    return conversationId;
+  },
+});
+
+export const sendMessage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      senderId: args.senderId,
+      content: args.content,
+      createdAt: Date.now(),
+    });
+
+    // Update conversation: lastMessageId und updatedAt
+    await ctx.db.patch(args.conversationId, {
+      lastMessageId: messageId,
+      updatedAt: Date.now(),
+    });
+
+    return messageId;
+  },
+});
