@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle } from "lucide-react";
+import { Plus, MessageCircle, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -17,6 +17,8 @@ export default function ChatPage() {
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Id<"users">[]>([]);
   const [groupName, setGroupName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "direct" | "group">("all");
   const router = useRouter();
 
   const { currentUser } = useCurrentUser();
@@ -56,14 +58,22 @@ export default function ChatPage() {
   // Filter users to exclude current user
   const selectableUsers = allUsers?.filter(u => u._id !== currentUser?._id) || [];
 
+  const filteredConversations = conversations?.filter(conv => {
+    const matchesSearch = conv.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+    const matchesFilter =
+      filterType === "all" ? true :
+        filterType === "direct" ? !conv.isGroup :
+          filterType === "group" ? conv.isGroup : true;
+    return matchesSearch && matchesFilter;
+  });
+
   return (
     <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-white">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Chats</h1>
+        <div className="flex items-center justify-center mb-6">
           <button
             onClick={() => setIsNewChatOpen(true)}
             className="w-10 h-10 rounded-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black flex items-center justify-center active:scale-95 transition-transform"
@@ -71,35 +81,78 @@ export default function ChatPage() {
             <Plus size={24} />
           </button>
         </div>
+        <div className="flex items-center justify-center gap-2 mb-6 text-[#8C531E]">
+          <button
+            onClick={() => setFilterType("all")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
+              ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
+              : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+              }`}
+          >
+            Alle
+          </button>
+          <button
+            onClick={() => setFilterType("direct")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
+              ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
+              : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+              }`}
+          >
+            Direkt
+          </button>
+          <button
+            onClick={() => setFilterType("group")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
+              ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
+              : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+              }`}
+          >
+            Gruppen
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[#8C531E]">
+            <Search className="h-5 w-5" />
+          </div>
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-3 bg-[#FDFBF7] border border-[#EFEADD] rounded-xl outline-none focus:border-[#8C531E] text-[#8C531E] placeholder:text-[#8C531E] transition-colors"
+            placeholder="Suchen..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
 
         {/* Chat List */}
-        <div className="space-y-4">
+        <div className="flex flex-col">
           {!conversations ? (
             <div className="text-center py-8 text-gray-500">Lade Chats...</div>
-          ) : conversations.length === 0 ? (
+          ) : filteredConversations?.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
-              <p>Noch keine Chats vorhanden. Starte einen neuen Chat!</p>
+              <p>Keine Chats gefunden.</p>
             </div>
           ) : (
-            conversations.map((conv) => (
+            filteredConversations?.map((conv) => (
               <Link
                 key={conv._id}
                 href={`/chat/${conv._id}`}
-                className="flex items-center p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors active:scale-99"
+                className="flex items-center p-3 hover:bg-gray-50 transition-colors active:bg-gray-100 border-b border-gray-100 last:border-0"
               >
-                <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden mr-3 flex-shrink-0">
+                <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                   {conv.displayImage ? (
                     <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-xl bg-[#e5e5e5]">
-                      {conv.displayName?.charAt(0) || "?"}
+                    <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
+                      {conv.displayName?.charAt(0).toUpperCase() || "?"}
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold truncate pr-2">{conv.displayName}</h3>
+                    <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
                     <span className="text-xs text-gray-400 whitespace-nowrap">
                       {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -132,13 +185,6 @@ export default function ChatPage() {
               Abbrechen
             </button>
             <h2 className="text-lg font-bold flex-1 text-center">Neuer Chat</h2>
-            <button
-              onClick={handleStartChat}
-              disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName.trim())}
-              className={`font-semibold ${selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName.trim()) ? "text-gray-300" : "text-[#8C531E]"}`}
-            >
-              Fertig
-            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
@@ -167,12 +213,12 @@ export default function ChatPage() {
                     className={`w-full flex items-center p-3 rounded-xl text-left transition-all ${isSelected ? "bg-[#f6efe4] ring-1 ring-[#8C531E]" : "hover:bg-gray-50 bg-white"
                       }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mr-3 relative">
+                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                       {user.image ? (
                         <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">
-                          {user.name.charAt(0)}
+                        <div className="w-full h-full flex items-center justify-center font-semibold" style={{ color: "#000000" }}>
+                          {user.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                       {isSelected && (

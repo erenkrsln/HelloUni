@@ -66,7 +66,6 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
       </div>
       {pathname !== "/profile" &&
         !pathname.startsWith("/profile/") &&
-        pathname !== "/search" &&
         pathname !== "/create" && (
           <h1
             className="absolute font-bold"
@@ -77,13 +76,16 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
               left: "50%",
               top: "50px",
               transform: "translateX(-50%)",
-              fontSize: "36px",
+              fontSize: "30px",
               lineHeight: "24px",
               textAlign: "center",
               color: "#000000"
             }}
           >
-            HelloUni
+            {pathname === "/home" ? "Posts" :
+              pathname === "/search" ? "Suche" :
+                pathname === "/chat" ? "Chats" :
+                  "HelloUni"}
           </h1>
         )}
 

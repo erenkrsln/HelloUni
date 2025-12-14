@@ -146,14 +146,15 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {conversation ? (
                     <div className="flex items-center">
                         <div
-                            className={`w-8 h-8 rounded-full bg-gray-200 overflow-hidden mr-3 ${conversation.isGroup ? "cursor-pointer hover:opacity-80" : ""}`}
+                            className={`w-8 h-8 rounded-full overflow-hidden mr-3 ${conversation.isGroup ? "cursor-pointer hover:opacity-80" : ""}`}
+                            style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
                             onClick={() => conversation.isGroup && fileInputRef.current?.click()}
                         >
                             {conversation.displayImage ? (
                                 <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm bg-[#e5e5e5]">
-                                    {conversation.displayName?.charAt(0)}
+                                <div className="w-full h-full flex items-center justify-center font-bold text-sm" style={{ color: "#000000" }}>
+                                    {conversation.displayName?.charAt(0).toUpperCase()}
                                 </div>
                             )}
                         </div>
@@ -209,12 +210,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     {conversation?.isGroup && !isMe && (
                                         <div className="w-8 h-8 flex-shrink-0 mb-1">
                                             {!isNextSameSender ? (
-                                                <div className="w-full h-full rounded-full bg-gray-200 overflow-hidden">
+                                                <div className="w-full h-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                                                     {sender?.image ? (
                                                         <img src={sender.image} alt={sender.name} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-bold bg-[#e5e5e5]">
-                                                            {sender?.name?.charAt(0) || "?"}
+                                                        <div className="w-full h-full flex items-center justify-center text-xs font-bold" style={{ color: "#000000" }}>
+                                                            {sender?.name?.charAt(0).toUpperCase() || "?"}
                                                         </div>
                                                     )}
                                                 </div>
@@ -267,12 +268,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         }
                                     }}
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mr-3">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                                         {member.image ? (
                                             <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold bg-[#e5e5e5]">
-                                                {member.name.charAt(0)}
+                                            <div className="w-full h-full flex items-center justify-center font-bold" style={{ color: "#000000" }}>
+                                                {member.name.charAt(0).toUpperCase()}
                                             </div>
                                         )}
                                     </div>
