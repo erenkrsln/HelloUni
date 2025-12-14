@@ -20,13 +20,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const messages = useQuery(api.queries.getMessages, { conversationId });
     const sendMessage = useMutation(api.mutations.sendMessage);
 
-    // We need to fetch the partner name/image. 
-    // Ideally, we'd have a specific query for "getConversationDetails", but we can reuse getConversations for now
-    // or fetch it client side if we had the partner ID. 
-    // Let's rely on getConversations and find the current one to get the partner.
+    // We need members to show names/avatars for each message
+    const members = useQuery(api.queries.getConversationMembers, { conversationId });
+
+    // We get conversation details (name, image) from the list query
     const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
     const conversation = allConversations?.find(c => c._id === conversationId);
-    const partner = conversation?.partner;
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,10 +51,78 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         }
     };
 
+    // Helper to get member details
+    const getMember = (userId: string) => members?.find(m => m._id === userId);
+
+    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
+    const updateGroupImage = useMutation(api.mutations.updateGroupImage);
+
+    // Color palette for group members (Orange, Ocre, Brown variations)
+    const memberColors = [
+        '#F4E4BC', // Beige/Ocre Light
+        '#E6D2AF', // Tan
+        '#DCC6A1', // Original
+        '#E2B08E', // Light Orange-Brown
+        '#D6C096', // Ocre
+        '#F2DAC4', // Pale Orange
+    ];
+
+    const getMemberColor = (userId: string) => {
+        // Simple hash to pick a stable color for a user
+        let hash = 0;
+        for (let i = 0; i < userId.length; i++) {
+            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return memberColors[Math.abs(hash) % memberColors.length];
+    };
+
     if (!currentUser) return null;
 
+    const handleHeaderClick = () => {
+        if (conversation?.isGroup) {
+            setIsMembersModalOpen(true);
+        } else if (conversation && members) {
+            const partner = members.find(m => m._id !== currentUser._id);
+            if (partner?.username) {
+                router.push(`/profile/${partner.username}`);
+            }
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !conversation || !conversation.isGroup) return;
+
+        try {
+            // 1. Get Upload URL
+            const postUrl = await generateUploadUrl();
+
+            // 2. Upload File
+            const result = await fetch(postUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            const { storageId } = await result.json();
+
+            // 3. Update Conversation Image
+            await updateGroupImage({ conversationId, imageId: storageId });
+        } catch (error) {
+            console.error("Failed to upload group image:", error);
+        }
+    };
+
     return (
-        <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white">
+        <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
+                accept="image/*"
+            />
             {/* Header */}
             <div className="flex items-center px-4 py-3 border-b bg-white z-10 sticky top-0">
                 <button
@@ -65,18 +132,26 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     <ArrowLeft size={24} />
                 </button>
 
-                {partner ? (
+                {conversation ? (
                     <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden mr-3">
-                            {partner.image ? (
-                                <img src={partner.image} alt={partner.name} className="w-full h-full object-cover" />
+                        <div
+                            className={`w-8 h-8 rounded-full bg-gray-200 overflow-hidden mr-3 ${conversation.isGroup ? "cursor-pointer hover:opacity-80" : ""}`}
+                            onClick={() => conversation.isGroup && fileInputRef.current?.click()}
+                        >
+                            {conversation.displayImage ? (
+                                <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm">
-                                    {partner.name?.charAt(0)}
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm bg-[#e5e5e5]">
+                                    {conversation.displayName?.charAt(0)}
                                 </div>
                             )}
                         </div>
-                        <span className="font-semibold">{partner.name}</span>
+                        <span
+                            className="font-semibold cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={handleHeaderClick}
+                        >
+                            {conversation.displayName}
+                        </span>
                     </div>
                 ) : (
                     <div className="h-8 flex items-center">
@@ -86,7 +161,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#FDFBF7]">
                 {!messages ? (
                     <div className="text-center text-gray-400 mt-10">Loading messages...</div>
                 ) : messages.length === 0 ? (
@@ -94,23 +169,66 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         No messages yet. Say hello!
                     </div>
                 ) : (
-                    messages.map((msg) => {
+                    messages.map((msg, index) => {
                         const isMe = msg.senderId === currentUser._id;
+                        const sender = getMember(msg.senderId);
+                        const bubbleColor = isMe ? '#F4F4F5' : (conversation?.isGroup ? getMemberColor(msg.senderId) : '#FFFFFF');
+
+                        // Check next message for grouping
+                        const nextMsg = messages[index + 1];
+                        const isNextSameSender = nextMsg && nextMsg.senderId === msg.senderId;
+
+                        // Check previous message for grouping (to hide name if repeated)
+                        const prevMsg = messages[index - 1];
+                        const isPrevSameSender = prevMsg && prevMsg.senderId === msg.senderId;
+
                         return (
                             <div
                                 key={msg._id}
-                                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-1' : 'mb-4'}`}
                             >
-                                <div
-                                    className={`
-                    max-w-[75%] px-4 py-2 rounded-2xl text-sm
-                    ${isMe
-                                            ? 'bg-blue-500 text-white rounded-br-none'
-                                            : 'bg-white text-gray-900 border border-gray-100 rounded-bl-none shadow-sm'
-                                        }
-                  `}
-                                >
-                                    {msg.content}
+                                {/* Name only for first message in group */}
+                                {conversation?.isGroup && !isMe && sender && !isPrevSameSender && (
+                                    <span className="text-[10px] text-gray-500 ml-12 mb-1">
+                                        {sender.name}
+                                    </span>
+                                )}
+                                <div className={`flex items-end gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                    {/* Avatar for others - Only show on LAST message of group or if single */}
+                                    {conversation?.isGroup && !isMe && (
+                                        <div className="w-8 h-8 flex-shrink-0 mb-1">
+                                            {!isNextSameSender ? (
+                                                <div className="w-full h-full rounded-full bg-gray-200 overflow-hidden">
+                                                    {sender?.image ? (
+                                                        <img src={sender.image} alt={sender.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-bold bg-[#e5e5e5]">
+                                                            {sender?.name?.charAt(0) || "?"}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className={`
+                                            px-4 py-2 text-sm
+                                            ${isMe
+                                                ? (conversation?.isGroup
+                                                    ? 'bg-white border border-[#efeadd] text-gray-900 rounded-2xl'
+                                                    : 'bg-[#dcc6a1] text-black rounded-2xl')
+                                                : `text-black rounded-2xl shadow-sm ${!conversation?.isGroup ? 'bg-white border border-[#efeadd]' : ''}`
+                                            }
+                                            ${!isNextSameSender
+                                                ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
+                                                : '' // Normal rounded corners if followed by same sender
+                                            }
+                                        `}
+                                        style={(!isMe && conversation?.isGroup) ? { backgroundColor: bubbleColor } : {}}
+                                    >
+                                        {msg.content}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -119,25 +237,64 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Members Modal */}
+            {isMembersModalOpen && members && (
+                <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setIsMembersModalOpen(false)}>
+                    <div className="bg-white w-full max-w-[428px] rounded-t-2xl sm:rounded-2xl mx-auto overflow-hidden animate-in slide-in-from-bottom-5" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b flex items-center justify-between">
+                            <h3 className="font-bold text-lg">Group Members</h3>
+                            <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-500">Close</button>
+                        </div>
+                        <div className="max-h-[60vh] overflow-y-auto p-2">
+                            {members.map(member => (
+                                <div
+                                    key={member._id}
+                                    className="flex items-center p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors"
+                                    onClick={() => {
+                                        if (member.username) {
+                                            router.push(`/profile/${member.username}`);
+                                        }
+                                    }}
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden mr-3">
+                                        {member.image ? (
+                                            <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold bg-[#e5e5e5]">
+                                                {member.name.charAt(0)}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-semibold">{member.name}</div>
+                                        <div className="text-xs text-gray-500">@{member.username}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Input */}
-            <div className="p-3 bg-white border-t safe-area-bottom">
+            <div className="p-3 bg-white border-t border-[#f0e6d2] safe-area-bottom">
                 <form
                     onSubmit={handleSend}
-                    className="flex items-center bg-gray-100 rounded-full px-4 py-2"
+                    className="flex items-center bg-[#FDFBF7] border border-[#efeadd] rounded-full px-4 py-2"
                 >
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="flex-1 bg-transparent outline-none min-w-0"
+                        className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400"
                     />
                     <button
                         type="submit"
                         disabled={!newMessage.trim()}
                         className={`ml-2 p-2 rounded-full transition-colors ${newMessage.trim()
-                                ? 'text-blue-500 hover:bg-blue-50 active:bg-blue-100'
-                                : 'text-gray-300'
+                            ? 'text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]'
+                            : 'text-gray-300'
                             }`}
                     >
                         <Send size={20} />

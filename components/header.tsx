@@ -69,7 +69,7 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
         pathname !== "/search" &&
         pathname !== "/create" && (
           <h1
-            className="absolute font-normal"
+            className="absolute font-bold"
             style={{
               position: "absolute",
               width: "100%",
@@ -77,10 +77,7 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
               left: "50%",
               top: "50px",
               transform: "translateX(-50%)",
-              fontFamily: "var(--font-gloock), serif",
-              fontStyle: "normal",
-              fontWeight: 400,
-              fontSize: "20px",
+              fontSize: "36px",
               lineHeight: "24px",
               textAlign: "center",
               color: "#000000"

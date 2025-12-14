@@ -379,7 +379,23 @@ export const getFollowing = query({
 export const getAllUsers = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("users").collect();
+    const users = await ctx.db.query("users").collect();
+
+    // Fix image URLs for all users
+    const usersWithImages = await Promise.all(
+      users.map(async (user) => {
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+        return {
+          ...user,
+          image: imageUrl
+        };
+      })
+    );
+
+    return usersWithImages;
   },
 });
 
@@ -402,8 +418,28 @@ export const getConversations = query({
     // 2. Details für die Conversations anreichern (Partner-Name, letzte Nachricht)
     const enrichedConversations = await Promise.all(
       relevantConversations.map(async (conv) => {
-        const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId; // Fallback auf sich selbst wenn Chat mit sich selbst
-        const partner = await ctx.db.get(partnerId);
+        // Bestimme Name und Bild für die Anzeige
+        let displayName = "Unbekannt";
+        let displayImage = undefined;
+
+        if (conv.isGroup) {
+          displayName = conv.name || "Gruppenchat";
+          if (conv.image) {
+            displayImage = await ctx.storage.getUrl(conv.image as any);
+          }
+        } else {
+          // 1:1 Chat: Partner Info anzeigen
+          const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId;
+          const partner = await ctx.db.get(partnerId);
+          if (partner) {
+            displayName = partner.name;
+            let partnerImageUrl = partner.image;
+            if (partnerImageUrl && !partnerImageUrl.startsWith('http')) {
+              partnerImageUrl = (await ctx.storage.getUrl(partnerImageUrl as any)) ?? partnerImageUrl;
+            }
+            displayImage = partnerImageUrl;
+          }
+        }
 
         let lastMessage = null;
         if (conv.lastMessageId) {
@@ -412,13 +448,41 @@ export const getConversations = query({
 
         return {
           ...conv,
-          partner,
+          displayName,
+          displayImage,
           lastMessage,
         };
       })
     );
 
     return enrichedConversations.sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
+export const getConversationMembers = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) return [];
+
+    const members = await Promise.all(
+      conversation.participants.map(async (userId) => {
+        const user = await ctx.db.get(userId);
+        if (!user) return null;
+
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+
+        return {
+          ...user,
+          image: imageUrl
+        };
+      })
+    );
+
+    return members.filter((m) => m !== null);
   },
 });
 

@@ -152,30 +152,45 @@ export const updateUser = mutation({
 
 export const createConversation = mutation({
   args: {
-    creatorId: v.id("users"),
-    partnerId: v.id("users"),
+    participants: v.array(v.id("users")),
+    name: v.optional(v.string()), // Optionaler Name für Gruppen
   },
   handler: async (ctx, args) => {
-    // Prüfen, ob schon eine Konversation zwischen diesen beiden existiert
-    const conversations = await ctx.db.query("conversations").collect();
+    const isGroup = args.participants.length > 2 || !!args.name;
 
-    // Check if conversation already exists (ineffizient für viele Daten, aber ok für MVP)
-    const existing = conversations.find(c =>
-      c.participants.includes(args.creatorId) &&
-      c.participants.includes(args.partnerId) &&
-      c.participants.length === 2
-    );
-
-    if (existing) {
-      return existing._id;
+    // Nur bei 1:1 Chats prüfen wir auf Duplikate
+    if (!isGroup && args.participants.length === 2) {
+      const conversations = await ctx.db.query("conversations").collect();
+      const existing = conversations.find(c =>
+        !c.isGroup &&
+        c.participants.includes(args.participants[0]) &&
+        c.participants.includes(args.participants[1]) &&
+        c.participants.length === 2
+      );
+      if (existing) return existing._id;
     }
 
     const conversationId = await ctx.db.insert("conversations", {
-      participants: [args.creatorId, args.partnerId],
+      participants: args.participants,
+      name: args.name,
+      isGroup,
       updatedAt: Date.now(),
     });
 
     return conversationId;
+  },
+});
+
+export const updateGroupImage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    imageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Optional: Check permissions (is participant?)
+    await ctx.db.patch(args.conversationId, {
+      image: args.imageId
+    });
   },
 });
 

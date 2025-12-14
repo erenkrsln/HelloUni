@@ -40,6 +40,9 @@ export default defineSchema({
 
   conversations: defineTable({
     participants: v.array(v.id("users")), // Array von User IDs
+    name: v.optional(v.string()), // Optionaler Gruppenname
+    image: v.optional(v.string()), // Storage ID für Gruppenbild
+    isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
     lastMessageId: v.optional(v.id("messages")),
     updatedAt: v.number(),
   }).index("by_participant", ["participants"]), // Dies könnte ineffizient sein, aber für V1 ok
