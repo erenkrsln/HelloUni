@@ -217,3 +217,25 @@ export const sendMessage = mutation({
     return messageId;
   },
 });
+
+export const deleteConversation = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    // 1. Delete the conversation itself
+    await ctx.db.delete(args.conversationId);
+
+    // 2. Delete all messages associated with it
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+
+    for (const msg of messages) {
+      await ctx.db.delete(msg._id);
+    }
+
+    return { success: true };
+  },
+});

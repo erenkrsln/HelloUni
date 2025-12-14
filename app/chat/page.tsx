@@ -34,6 +34,7 @@ export default function ChatPage() {
 
   const handleStartChat = async () => {
     if (!currentUser || selectedUsers.length === 0) return;
+    if (selectedUsers.length > 1 && !groupName.trim()) return;
 
     // Add current user to participants
     const participants = [currentUser._id, ...selectedUsers];
@@ -65,7 +66,7 @@ export default function ChatPage() {
           <h1 className="text-2xl font-bold">Chats</h1>
           <button
             onClick={() => setIsNewChatOpen(true)}
-            className="w-10 h-10 rounded-full bg-[#332B2B] flex items-center justify-center text-white active:scale-95 transition-transform shadow-md"
+            className="w-10 h-10 rounded-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black flex items-center justify-center active:scale-95 transition-transform"
           >
             <Plus size={24} />
           </button>
@@ -74,11 +75,11 @@ export default function ChatPage() {
         {/* Chat List */}
         <div className="space-y-4">
           {!conversations ? (
-            <div className="text-center py-8 text-gray-500">Loading chats...</div>
+            <div className="text-center py-8 text-gray-500">Lade Chats...</div>
           ) : conversations.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
-              <p>No chats yet. Start a new one!</p>
+              <p>Noch keine Chats vorhanden. Starte einen neuen Chat!</p>
             </div>
           ) : (
             conversations.map((conv) => (
@@ -128,15 +129,15 @@ export default function ChatPage() {
               }}
               className="p-2 -ml-2 text-gray-500 active:scale-95"
             >
-              Cancel
+              Abbrechen
             </button>
-            <h2 className="text-lg font-bold flex-1 text-center">New Chat</h2>
+            <h2 className="text-lg font-bold flex-1 text-center">Neuer Chat</h2>
             <button
               onClick={handleStartChat}
-              disabled={selectedUsers.length === 0}
-              className={`font-semibold ${selectedUsers.length === 0 ? "text-gray-300" : "text-[#8C531E]"}`}
+              disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName.trim())}
+              className={`font-semibold ${selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName.trim()) ? "text-gray-300" : "text-[#8C531E]"}`}
             >
-              Done
+              Fertig
             </button>
           </div>
 
@@ -144,19 +145,19 @@ export default function ChatPage() {
             {/* Group Name Input */}
             {selectedUsers.length > 1 && (
               <div className="mb-6 animate-in slide-in-from-top-2 fade-in">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gruppenname</label>
                 <input
                   type="text"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="e.g. Study Group"
+                  placeholder="z.B. Lerngruppe"
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#8C531E] transition-colors"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <div className="text-sm font-semibold text-gray-500 mb-2">SUGGESTED</div>
+              <div className="text-sm font-semibold text-gray-500 mb-2">Vorschläge</div>
               {selectableUsers.map(user => {
                 const isSelected = selectedUsers.includes(user._id);
                 return (
@@ -176,7 +177,7 @@ export default function ChatPage() {
                       )}
                       {isSelected && (
                         <div className="absolute inset-0 bg-[#8C531E]/20 flex items-center justify-center">
-                          <div className="w-4 h-4 bg-[#8C531E] rounded-full border-2 border-white"></div>
+
                         </div>
                       )}
                     </div>
@@ -184,7 +185,6 @@ export default function ChatPage() {
                       <div className={`font-medium ${isSelected ? "text-[#8C531E]" : "text-black"}`}>{user.name}</div>
                       <div className="text-xs text-gray-500">@{user.username}</div>
                     </div>
-                    {isSelected && <div className="text-[#8C531E] font-bold text-xl ml-2">✓</div>}
                   </button>
                 );
               })}
@@ -194,13 +194,18 @@ export default function ChatPage() {
           {selectedUsers.length > 0 && (
             <div className="p-4 border-t bg-white safe-area-bottom">
               <div className="text-sm text-center text-gray-500 mb-2">
-                {selectedUsers.length} selected
+                {selectedUsers.length} ausgewählt
               </div>
               <button
                 onClick={handleStartChat}
-                className="w-full py-3 bg-[#332B2B] text-white rounded-full font-semibold active:scale-95 transition-transform"
+                disabled={selectedUsers.length > 1 && !groupName.trim()}
+                className={`w-full py-3 flex items-center justify-center rounded-full font-semibold active:scale-95 transition-transform
+                  ${selectedUsers.length > 1 && !groupName.trim()
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black"
+                  }`}
               >
-                {selectedUsers.length > 1 ? "Create Group" : "Start Chat"}
+                {selectedUsers.length > 1 ? "Gruppe erstellen" : "Chat starten"}
               </button>
             </div>
           )}

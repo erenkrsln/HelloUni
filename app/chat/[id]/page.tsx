@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +19,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const messages = useQuery(api.queries.getMessages, { conversationId });
     const sendMessage = useMutation(api.mutations.sendMessage);
+    const deleteConversation = useMutation(api.mutations.deleteConversation);
 
     // We need members to show names/avatars for each message
     const members = useQuery(api.queries.getConversationMembers, { conversationId });
@@ -59,14 +60,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateGroupImage = useMutation(api.mutations.updateGroupImage);
 
-    // Color palette for group members (Orange, Ocre, Brown variations)
     const memberColors = [
-        '#F4E4BC', // Beige/Ocre Light
-        '#E6D2AF', // Tan
-        '#DCC6A1', // Original
-        '#E2B08E', // Light Orange-Brown
-        '#D6C096', // Ocre
-        '#F2DAC4', // Pale Orange
+        '#e99f7aff',
+        '#e5ba6fff',
+        '#9a8884ff',
+        '#aabbbbff',
+        '#758d8cff',
+        '#a395aeff',
     ];
 
     const getMemberColor = (userId: string) => {
@@ -114,6 +114,17 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         }
     };
 
+    const handleDeleteGroup = async () => {
+        if (!conversationId) return;
+
+        try {
+            await deleteConversation({ conversationId });
+            router.push("/chat");
+        } catch (error) {
+            console.error("Failed to delete group:", error);
+        }
+    };
+
     return (
         <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
             <input
@@ -155,18 +166,18 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
                 ) : (
                     <div className="h-8 flex items-center">
-                        <span className="font-semibold text-gray-400">Loading...</span>
+                        <span className="font-semibold text-gray-400">Lade...</span>
                     </div>
                 )}
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#FDFBF7]">
+            <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF7]">
                 {!messages ? (
-                    <div className="text-center text-gray-400 mt-10">Loading messages...</div>
+                    <div className="text-center text-gray-400 mt-10">Lade Nachrichten...</div>
                 ) : messages.length === 0 ? (
                     <div className="text-center text-gray-400 mt-10 text-sm">
-                        No messages yet. Say hello!
+                        Noch keine Nachrichten im Chat. Schreibe deine erste Nachricht! (hier icebreaker frage?)
                     </div>
                 ) : (
                     messages.map((msg, index) => {
@@ -185,7 +196,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         return (
                             <div
                                 key={msg._id}
-                                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-1' : 'mb-4'}`}
+                                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-0.5' : 'mb-4'}`}
                             >
                                 {/* Name only for first message in group */}
                                 {conversation?.isGroup && !isMe && sender && !isPrevSameSender && (
@@ -242,8 +253,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setIsMembersModalOpen(false)}>
                     <div className="bg-white w-full max-w-[428px] rounded-t-2xl sm:rounded-2xl mx-auto overflow-hidden animate-in slide-in-from-bottom-5" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b flex items-center justify-between">
-                            <h3 className="font-bold text-lg">Group Members</h3>
-                            <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-500">Close</button>
+                            <h3 className="font-bold text-lg">Gruppenmitglieder</h3>
+                            <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-500">Schließen</button>
                         </div>
                         <div className="max-h-[60vh] overflow-y-auto p-2">
                             {members.map(member => (
@@ -272,6 +283,15 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 </div>
                             ))}
                         </div>
+                        <div className="p-4 border-t safe-area-bottom">
+                            <button
+                                onClick={handleDeleteGroup}
+                                className="w-full py-3 bg-red-50 text-red-600 rounded-xl font-semibold flex items-center justify-center active:bg-red-100 transition-colors"
+                            >
+                                <Trash2 size={20} className="mr-2" />
+                                Gruppe löschen
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -286,7 +306,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type a message..."
+                        placeholder="Schreibe eine Nachricht..."
                         className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400"
                     />
                     <button
