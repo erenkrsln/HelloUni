@@ -24,9 +24,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+          className="fixed bg-black/50 z-[55] transition-opacity"
           onClick={onClose}
           style={{
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             opacity: isOpen ? 1 : 0,
             pointerEvents: isOpen ? "auto" : "none"
           }}
@@ -35,8 +39,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
       {/* Sidebar */}
       <div
-        className="fixed top-0 right-0 h-full w-80 bg-white z-50 shadow-2xl transition-transform duration-300 ease-in-out"
+        className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
+          top: "env(safe-area-inset-top)",
+          bottom: "env(safe-area-inset-bottom)",
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
         }}
       >

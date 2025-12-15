@@ -26,8 +26,24 @@ export const getFeed = query({
           userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
         }
 
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+          
+          // Update post if count differs (async, don't wait)
+          if (actualParticipantsCount !== post.participantsCount) {
+            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
+          }
+        }
+
         return {
           ...post,
+          participantsCount: actualParticipantsCount,
           imageUrl,
           user: user ? {
             ...user,
@@ -158,8 +174,24 @@ export const getUserPosts = query({
           userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
         }
 
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+          
+          // Update post if count differs (async, don't wait)
+          if (actualParticipantsCount !== post.participantsCount) {
+            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
+          }
+        }
+
         return {
           ...post,
+          participantsCount: actualParticipantsCount,
           imageUrl,
           user: user ? {
             ...user,
@@ -279,8 +311,24 @@ export const getFollowingFeed = query({
           userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
         }
 
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+          
+          // Update post if count differs (async, don't wait)
+          if (actualParticipantsCount !== post.participantsCount) {
+            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
+          }
+        }
+
         return {
           ...post,
+          participantsCount: actualParticipantsCount,
           imageUrl,
           user: user ? {
             ...user,
@@ -373,5 +421,142 @@ export const getFollowing = query({
     );
 
     return following.filter((user) => user !== null);
+  },
+});
+
+// Check if user is participating in an event
+export const isParticipating = query({
+  args: { userId: v.id("users"), postId: v.id("posts") },
+  handler: async (ctx, args) => {
+    const participation = await ctx.db
+      .query("participants")
+      .withIndex("by_user_post", (q) =>
+        q.eq("userId", args.userId).eq("postId", args.postId)
+      )
+      .first();
+
+    return participation !== null;
+  },
+});
+
+// Get poll vote for a user
+export const getPollVote = query({
+  args: { userId: v.id("users"), postId: v.id("posts") },
+  handler: async (ctx, args) => {
+    const vote = await ctx.db
+      .query("pollVotes")
+      .withIndex("by_user_post", (q) =>
+        q.eq("userId", args.userId).eq("postId", args.postId)
+      )
+      .first();
+
+    return vote ? vote.optionIndex : null;
+  },
+});
+
+// Get poll results (vote counts per option)
+export const getPollResults = query({
+  args: { postId: v.id("posts") },
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+    if (!post || post.postType !== "poll" || !post.pollOptions) {
+      return null;
+    }
+
+    const votes = await ctx.db
+      .query("pollVotes")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+
+    // Count votes per option
+    const results = post.pollOptions.map((_, index) => {
+      return votes.filter((vote) => vote.optionIndex === index).length;
+    });
+
+    return results;
+  },
+});
+
+// Get filtered feed by tags, major, etc.
+export const getFilteredFeed = query({
+  args: {
+    tags: v.optional(v.array(v.string())),
+    major: v.optional(v.string()),
+    postType: v.optional(v.union(
+      v.literal("normal"),
+      v.literal("spontaneous_meeting"),
+      v.literal("recurring_meeting"),
+      v.literal("announcement"),
+      v.literal("poll")
+    )),
+  },
+  handler: async (ctx, args) => {
+    let posts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    // Filter by post type
+    if (args.postType) {
+      posts = posts.filter((post) => post.postType === args.postType);
+    }
+
+    // Filter by tags
+    if (args.tags && args.tags.length > 0) {
+      posts = posts.filter((post) => {
+        if (!post.tags || post.tags.length === 0) return false;
+        return args.tags!.some((tag) => post.tags!.includes(tag));
+      });
+    }
+
+    // Get posts with user info and apply major filter
+    const postsWithUsers = await Promise.all(
+      posts.map(async (post) => {
+        const user = await ctx.db.get(post.userId);
+        
+        // Filter by major if specified
+        if (args.major && user?.major !== args.major) {
+          return null;
+        }
+
+        let imageUrl = post.imageUrl;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+
+        let userImageUrl = user?.image;
+        if (userImageUrl && !userImageUrl.startsWith('http')) {
+          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+        }
+
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+          
+          // Update post if count differs (async, don't wait)
+          if (actualParticipantsCount !== post.participantsCount) {
+            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
+          }
+        }
+
+        return {
+          ...post,
+          participantsCount: actualParticipantsCount,
+          imageUrl,
+          user: user ? {
+            ...user,
+            image: userImageUrl,
+          } : null,
+        };
+      })
+    );
+
+    return postsWithUsers.filter((post) => post !== null);
   },
 });

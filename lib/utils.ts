@@ -14,15 +14,18 @@ export function formatTimeAgo(timestamp: number): string {
   const days = Math.floor(hours / 24);
 
   if (days > 0) {
-    return `vor ${days} ${days === 1 ? "Tag" : "Tagen"}`;
+    return `${days} ${days === 1 ? "Tag" : "Tagen"}`;
   }
   if (hours > 0) {
-    return `vor ${hours} ${hours === 1 ? "Std." : "Std."}`;
+    return `${hours} ${hours === 1 ? "Std." : "Std."}`;
   }
   if (minutes > 0) {
-    return `vor ${minutes} ${minutes === 1 ? "Min." : "Min."}`;
+    return `${minutes} ${minutes === 1 ? "Min." : "Min."}`;
   }
-  return "gerade eben";
+  if (seconds > 0) {
+    return `${seconds} s`;
+  }
+  return "Jetzt";
 }
 
 
