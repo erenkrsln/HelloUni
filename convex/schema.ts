@@ -55,6 +55,15 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_created", ["conversationId", "createdAt"]),
+
+  last_reads: defineTable({
+    userId: v.id("users"),
+    conversationId: v.id("conversations"),
+    lastReadAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_conversation", ["conversationId"])
+    .index("by_user_conversation", ["userId", "conversationId"]),
 });
 
 

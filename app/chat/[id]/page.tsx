@@ -20,6 +20,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const messages = useQuery(api.queries.getMessages, { conversationId });
     const sendMessage = useMutation(api.mutations.sendMessage);
     const deleteConversation = useMutation(api.mutations.deleteConversation);
+    const markAsRead = useMutation(api.mutations.markAsRead);
+
+    useEffect(() => {
+        if (conversationId && currentUser) {
+            markAsRead({ conversationId, userId: currentUser._id });
+        }
+    }, [conversationId, currentUser, messages, markAsRead]); // Mark as read when messages update too
 
     // We need members to show names/avatars for each message
     const members = useQuery(api.queries.getConversationMembers, { conversationId });

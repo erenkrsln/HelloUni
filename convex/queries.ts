@@ -415,9 +415,30 @@ export const getConversations = query({
       c.participants.includes(args.userId)
     );
 
-    // 2. Details für die Conversations anreichern (Partner-Name, letzte Nachricht)
+    // 2. Details für die Conversations anreichern
     const enrichedConversations = await Promise.all(
       relevantConversations.map(async (conv) => {
+        // Unread Count Logic
+        const lastRead = await ctx.db
+          .query("last_reads")
+          .withIndex("by_user_conversation", (q) =>
+            q.eq("userId", args.userId).eq("conversationId", conv._id)
+          )
+          .first();
+
+        const lastReadAt = lastRead?.lastReadAt || 0;
+
+        // Count messages since last read
+        const unreadMessages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation_created", (q) =>
+            q.eq("conversationId", conv._id).gt("createdAt", lastReadAt)
+          )
+          .collect();
+
+        // Don't count own messages as unread
+        const unreadCount = unreadMessages.filter(m => m.senderId !== args.userId).length;
+
         // Bestimme Name und Bild für die Anzeige
         let displayName = "Unbekannt";
         let displayImage = undefined;
@@ -451,11 +472,49 @@ export const getConversations = query({
           displayName,
           displayImage,
           lastMessage,
+          unreadCount,
         };
       })
     );
 
     return enrichedConversations.sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
+export const getUnreadCounts = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const conversations = await ctx.db.query("conversations").collect();
+    const relevantConversations = conversations.filter(c =>
+      c.participants.includes(args.userId)
+    );
+
+    let totalUnread = 0;
+
+    await Promise.all(
+      relevantConversations.map(async (conv) => {
+        const lastRead = await ctx.db
+          .query("last_reads")
+          .withIndex("by_user_conversation", (q) =>
+            q.eq("userId", args.userId).eq("conversationId", conv._id)
+          )
+          .first();
+
+        const lastReadAt = lastRead?.lastReadAt || 0;
+
+        const unreadMessages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation_created", (q) =>
+            q.eq("conversationId", conv._id).gt("createdAt", lastReadAt)
+          )
+          .collect();
+
+        const count = unreadMessages.filter(m => m.senderId !== args.userId).length;
+        totalUnread += count;
+      })
+    );
+
+    return { totalUnread };
   },
 });
 

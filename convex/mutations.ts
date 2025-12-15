@@ -239,3 +239,30 @@ export const deleteConversation = mutation({
     return { success: true };
   },
 });
+
+export const markAsRead = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("last_reads")
+      .withIndex("by_user_conversation", (q) =>
+        q.eq("userId", args.userId).eq("conversationId", args.conversationId)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        lastReadAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("last_reads", {
+        userId: args.userId,
+        conversationId: args.conversationId,
+        lastReadAt: Date.now(),
+      });
+    }
+  },
+});

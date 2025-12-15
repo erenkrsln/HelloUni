@@ -6,9 +6,16 @@ import { SearchIcon } from "@/components/search-icon";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
+import { useQuery } from "convex/react"; // Added
+import { api } from "@/convex/_generated/api"; // Added
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser"; // Added
+
 export function BottomNavigation() {
   const pathname = usePathname();
   const router = useRouter();
+  const { currentUser } = useCurrentUser();
+  const unreadData = useQuery(api.queries.getUnreadCounts, currentUser ? { userId: currentUser._id } : "skip");
+  const unreadCount = unreadData?.totalUnread || 0;
 
   const isActive = (path: string) => {
     // Sowohl "/" als auch "/home" als Startseite betrachten
@@ -124,6 +131,9 @@ export function BottomNavigation() {
               backfaceVisibility: "hidden"
             }}
           />
+          {unreadCount > 0 && (
+            <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
+          )}
         </Link>
 
         {/* Notifications */}

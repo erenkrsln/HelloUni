@@ -153,9 +153,16 @@ export default function ChatPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
-                    <span className="text-xs text-gray-400 whitespace-nowrap">
-                      {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
+                        {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {conv.unreadCount > 0 && (
+                        <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+                          {conv.unreadCount}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm text-gray-500 truncate">
                     {conv.isGroup ? (
@@ -171,94 +178,96 @@ export default function ChatPage() {
       </div>
 
       {/* New Chat Modal/Sheet */}
-      {isNewChatOpen && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-white">
-          <div className="flex items-center px-4 py-4 border-b gap-3">
-            <button
-              onClick={() => {
-                setIsNewChatOpen(false);
-                setSelectedUsers([]);
-                setGroupName("");
-              }}
-              className="p-2 -ml-2 text-gray-500 active:scale-95"
-            >
-              Abbrechen
-            </button>
-            <h2 className="text-lg font-bold flex-1 text-center">Neuer Chat</h2>
-          </div>
+      {
+        isNewChatOpen && (
+          <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+            <div className="flex items-center px-4 py-4 border-b gap-3">
+              <button
+                onClick={() => {
+                  setIsNewChatOpen(false);
+                  setSelectedUsers([]);
+                  setGroupName("");
+                }}
+                className="p-2 -ml-2 text-gray-500 active:scale-95"
+              >
+                Abbrechen
+              </button>
+              <h2 className="text-lg font-bold flex-1 text-center">Neuer Chat</h2>
+            </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            {/* Group Name Input */}
-            {selectedUsers.length > 1 && (
-              <div className="mb-6 animate-in slide-in-from-top-2 fade-in">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Gruppenname</label>
-                <input
-                  type="text"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="z.B. Lerngruppe"
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#8C531E] transition-colors"
-                />
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Group Name Input */}
+              {selectedUsers.length > 1 && (
+                <div className="mb-6 animate-in slide-in-from-top-2 fade-in">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gruppenname</label>
+                  <input
+                    type="text"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    placeholder="z.B. Lerngruppe"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#8C531E] transition-colors"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-gray-500 mb-2">Vorschläge</div>
+                {selectableUsers.map(user => {
+                  const isSelected = selectedUsers.includes(user._id);
+                  return (
+                    <button
+                      key={user._id}
+                      onClick={() => toggleUserSelection(user._id)}
+                      className={`w-full flex items-center p-3 rounded-xl text-left transition-all ${isSelected ? "bg-[#f6efe4] ring-1 ring-[#8C531E]" : "hover:bg-gray-50 bg-white"
+                        }`}
+                    >
+                      <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                        {user.image ? (
+                          <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-semibold" style={{ color: "#000000" }}>
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-[#8C531E]/20 flex items-center justify-center">
+
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className={`font-medium ${isSelected ? "text-[#8C531E]" : "text-black"}`}>{user.name}</div>
+                        <div className="text-xs text-gray-500">@{user.username}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {selectedUsers.length > 0 && (
+              <div className="p-4 border-t bg-white safe-area-bottom">
+                <div className="text-sm text-center text-gray-500 mb-2">
+                  {selectedUsers.length} ausgewählt
+                </div>
+                <button
+                  onClick={handleStartChat}
+                  disabled={selectedUsers.length > 1 && !groupName.trim()}
+                  className={`w-full py-3 flex items-center justify-center rounded-full font-semibold active:scale-95 transition-transform
+                  ${selectedUsers.length > 1 && !groupName.trim()
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black"
+                    }`}
+                >
+                  {selectedUsers.length > 1 ? "Gruppe erstellen" : "Chat starten"}
+                </button>
               </div>
             )}
-
-            <div className="space-y-2">
-              <div className="text-sm font-semibold text-gray-500 mb-2">Vorschläge</div>
-              {selectableUsers.map(user => {
-                const isSelected = selectedUsers.includes(user._id);
-                return (
-                  <button
-                    key={user._id}
-                    onClick={() => toggleUserSelection(user._id)}
-                    className={`w-full flex items-center p-3 rounded-xl text-left transition-all ${isSelected ? "bg-[#f6efe4] ring-1 ring-[#8C531E]" : "hover:bg-gray-50 bg-white"
-                      }`}
-                  >
-                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
-                      {user.image ? (
-                        <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center font-semibold" style={{ color: "#000000" }}>
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      {isSelected && (
-                        <div className="absolute inset-0 bg-[#8C531E]/20 flex items-center justify-center">
-
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className={`font-medium ${isSelected ? "text-[#8C531E]" : "text-black"}`}>{user.name}</div>
-                      <div className="text-xs text-gray-500">@{user.username}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
           </div>
-
-          {selectedUsers.length > 0 && (
-            <div className="p-4 border-t bg-white safe-area-bottom">
-              <div className="text-sm text-center text-gray-500 mb-2">
-                {selectedUsers.length} ausgewählt
-              </div>
-              <button
-                onClick={handleStartChat}
-                disabled={selectedUsers.length > 1 && !groupName.trim()}
-                className={`w-full py-3 flex items-center justify-center rounded-full font-semibold active:scale-95 transition-transform
-                  ${selectedUsers.length > 1 && !groupName.trim()
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black"
-                  }`}
-              >
-                {selectedUsers.length > 1 ? "Gruppe erstellen" : "Chat starten"}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        )
+      }
 
       <BottomNavigation />
-    </main>
+    </main >
   );
 }
