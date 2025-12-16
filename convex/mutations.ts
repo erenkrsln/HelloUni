@@ -242,7 +242,7 @@ export const joinEvent = mutation({
     }
 
     // Prüfe Teilnehmerlimit
-    if (post.participantLimit && post.participantsCount >= post.participantLimit) {
+    if (post.participantLimit && (post.participantsCount ?? 0) >= post.participantLimit) {
       throw new Error("Event is full");
     }
 
@@ -254,7 +254,7 @@ export const joinEvent = mutation({
     });
 
     await ctx.db.patch(args.postId, {
-      participantsCount: post.participantsCount + 1,
+      participantsCount: (post.participantsCount ?? 0) + 1,
     });
 
     return { success: true };
@@ -283,7 +283,7 @@ export const leaveEvent = mutation({
 
     await ctx.db.delete(existingParticipation._id);
     await ctx.db.patch(args.postId, {
-      participantsCount: Math.max(0, post.participantsCount - 1),
+      participantsCount: Math.max(0, (post.participantsCount ?? 0) - 1),
     });
 
     return { success: true };
