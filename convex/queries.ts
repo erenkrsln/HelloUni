@@ -34,11 +34,6 @@ export const getFeed = query({
             .withIndex("by_post", (q) => q.eq("postId", post._id))
             .collect();
           actualParticipantsCount = participants.length;
-          
-          // Update post if count differs (async, don't wait)
-          if (actualParticipantsCount !== post.participantsCount) {
-            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
-          }
         }
 
         return {
@@ -182,11 +177,6 @@ export const getUserPosts = query({
             .withIndex("by_post", (q) => q.eq("postId", post._id))
             .collect();
           actualParticipantsCount = participants.length;
-          
-          // Update post if count differs (async, don't wait)
-          if (actualParticipantsCount !== post.participantsCount) {
-            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
-          }
         }
 
         return {
@@ -360,11 +350,6 @@ export const getFollowingFeed = query({
             .withIndex("by_post", (q) => q.eq("postId", post._id))
             .collect();
           actualParticipantsCount = participants.length;
-          
-          // Update post if count differs (async, don't wait)
-          if (actualParticipantsCount !== post.participantsCount) {
-            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
-          }
         }
 
         return {
@@ -579,11 +564,6 @@ export const getFilteredFeed = query({
             .withIndex("by_post", (q) => q.eq("postId", post._id))
             .collect();
           actualParticipantsCount = participants.length;
-          
-          // Update post if count differs (async, don't wait)
-          if (actualParticipantsCount !== post.participantsCount) {
-            ctx.db.patch(post._id, { participantsCount: actualParticipantsCount }).catch(() => {});
-          }
         }
 
         return {
