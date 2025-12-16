@@ -139,7 +139,7 @@ export default function ChatPage() {
               <Link
                 key={conv._id}
                 href={`/chat/${conv._id}`}
-                className="flex items-center p-3 hover:bg-gray-50 transition-colors active:bg-gray-100 border-b border-gray-100 last:border-0"
+                className="flex items-center p-3 hover:bg-[#FDFBF7] transition-colors active:bg-[#FDFBF7] border-b border-[#EFEADD] last:border-0"
               >
                 <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                   {conv.displayImage ? (
