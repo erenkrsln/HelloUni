@@ -242,11 +242,12 @@ export const searchUsers = query({
       .collect();
 
     // Filter users by username (case-insensitive)
+    // Skip users without username
     const matchingUsers = allUsers
-      .filter(user => 
+      .filter(user => user.username && (
         user.username.toLowerCase().startsWith(searchLower) ||
         user.username.toLowerCase().includes(searchLower)
-      )
+      ))
       .slice(0, 10); // Limit to 10 results
 
     // Convert storage IDs to URLs
