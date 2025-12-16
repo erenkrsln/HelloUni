@@ -23,6 +23,7 @@ interface FeedCardProps {
     recurrencePattern?: string;
     pollOptions?: string[];
     tags?: string[];
+    mentions?: string[];
     likesCount: number;
     commentsCount: number;
     participantsCount?: number;
@@ -43,6 +44,65 @@ interface FeedCardProps {
 
 export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
+
+  // Render content with clickable mentions
+  const renderContentWithMentions = (content: string) => {
+    if (!content) return content;
+    
+    // Match @username (word characters after @)
+    const mentionRegex = /@(\w+)/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let keyCounter = 0;
+    
+    // Use matchAll for better compatibility
+    const matches = Array.from(content.matchAll(mentionRegex));
+    
+    if (matches.length === 0) {
+      // No mentions found, return content as-is
+      return content;
+    }
+    
+    matches.forEach((match) => {
+      if (match.index === undefined) return;
+      
+      // Add text before mention
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${keyCounter++}`}>
+            {content.substring(lastIndex, match.index)}
+          </span>
+        );
+      }
+      
+      // Add mention as link
+      const username = match[1];
+      parts.push(
+        <Link
+          key={`mention-${keyCounter++}`}
+          href={`/profile/${username}`}
+          prefetch={true}
+          className="text-[#D08945] cursor-pointer transition-all"
+          onClick={(e) => e.stopPropagation()}
+        >
+          @{username}
+        </Link>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    });
+    
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(
+        <span key={`text-${keyCounter++}`}>
+          {content.substring(lastIndex)}
+        </span>
+      );
+    }
+    
+    return <>{parts}</>;
+  };
   const joinEvent = useMutation(api.mutations.joinEvent);
   const leaveEvent = useMutation(api.mutations.leaveEvent);
   const votePoll = useMutation(api.mutations.votePoll);
@@ -435,6 +495,7 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
         {post.user?.username ? (
           <Link
             href={`/profile/${post.user.username}`}
+            prefetch={true}
             className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
           >
             <Avatar className="w-12 h-12 rounded-full">
@@ -470,17 +531,18 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
           <div className="flex items-center gap-1 mb-1 min-w-0">
             {post.user?.username ? (
               <>
-                <Link
-                  href={`/profile/${post.user.username}`}
+              <Link
+                href={`/profile/${post.user.username}`}
+                prefetch={true}
                   className="cursor-pointer hover:opacity-80 transition-opacity flex items-center min-w-0 flex-shrink"
-                >
+              >
                   <h3 className="font-bold text-[15px] text-gray-900 truncate max-w-[200px]">
-                    {post.user.name}
-                  </h3>
+                  {post.user.name}
+                </h3>
                 </Link>
                 <span className="text-[15px] text-gray-500 font-normal whitespace-nowrap flex-shrink-0">
-                  @{post.user.username}
-                </span>
+                    @{post.user.username}
+                  </span>
               </>
             ) : (
               <div className="flex items-center min-w-0 flex-shrink">
@@ -554,7 +616,7 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
           )}
 
           <p className="text-[15px] text-gray-900 leading-normal whitespace-pre-wrap">
-            {post.content}
+            {renderContentWithMentions(post.content)}
           </p>
 
           {/* Poll Options */}

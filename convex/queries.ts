@@ -238,6 +238,47 @@ export const getUserById = query({
   },
 });
 
+// Search users by username for mentions autocomplete
+export const searchUsers = query({
+  args: { searchTerm: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.searchTerm || args.searchTerm.length < 1) {
+      return [];
+    }
+
+    const searchLower = args.searchTerm.toLowerCase();
+    const allUsers = await ctx.db
+      .query("users")
+      .collect();
+
+    // Filter users by username (case-insensitive)
+    const matchingUsers = allUsers
+      .filter(user => 
+        user.username.toLowerCase().startsWith(searchLower) ||
+        user.username.toLowerCase().includes(searchLower)
+      )
+      .slice(0, 10); // Limit to 10 results
+
+    // Convert storage IDs to URLs
+    const usersWithImages = await Promise.all(
+      matchingUsers.map(async (user) => {
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+        return {
+          _id: user._id,
+          name: user.name,
+          username: user.username,
+          image: imageUrl,
+        };
+      })
+    );
+
+    return usersWithImages;
+  },
+});
+
 // Query um User nach Username zu finden
 export const getUserByUsername = query({
   args: { username: v.string() },

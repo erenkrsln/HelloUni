@@ -179,7 +179,7 @@ export default function AuthPage() {
                 }
                 required
                 disabled={isLoading}
-                className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-[#D08945] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-[#D08945] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               />
             )}
 
@@ -195,7 +195,7 @@ export default function AuthPage() {
               }
               required
               disabled={isLoading}
-              className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             />
 
             {/* Passwort */}
@@ -210,7 +210,7 @@ export default function AuthPage() {
               }
               required
               disabled={isLoading}
-              className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             />
 
             {/* Passwort bestätigen nur bei Registrierung */}
@@ -224,7 +224,7 @@ export default function AuthPage() {
                 }
                 required
                 disabled={isLoading}
-                className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-[#D08945] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-[#D08945] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               />
             )}
 

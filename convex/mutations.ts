@@ -21,6 +21,7 @@ export const createPost = mutation({
     recurrencePattern: v.optional(v.string()),
     pollOptions: v.optional(v.array(v.string())),
     tags: v.optional(v.array(v.string())),
+    mentions: v.optional(v.array(v.string())), // Array von Usernames
   },
   handler: async (ctx, args) => {
     const postId = await ctx.db.insert("posts", {
@@ -35,6 +36,7 @@ export const createPost = mutation({
       recurrencePattern: args.recurrencePattern,
       pollOptions: args.pollOptions,
       tags: args.tags,
+      mentions: args.mentions,
       likesCount: 0,
       commentsCount: 0,
       participantsCount: 0, // Always set to 0 for new posts
@@ -57,19 +59,19 @@ export const likePost = mutation({
     
     while (retries < maxRetries) {
       try {
-        const existingLike = await ctx.db
-          .query("likes")
-          .withIndex("by_user_post", (q) =>
-            q.eq("userId", args.userId).eq("postId", args.postId)
-          )
-          .first();
+    const existingLike = await ctx.db
+      .query("likes")
+      .withIndex("by_user_post", (q) =>
+        q.eq("userId", args.userId).eq("postId", args.postId)
+      )
+      .first();
 
-        const post = await ctx.db.get(args.postId);
-        if (!post) throw new Error("Post not found");
+    const post = await ctx.db.get(args.postId);
+    if (!post) throw new Error("Post not found");
 
-        if (existingLike) {
+    if (existingLike) {
           // Unlike: delete the like and recalculate count
-          await ctx.db.delete(existingLike._id);
+      await ctx.db.delete(existingLike._id);
           
           // Recalculate likesCount from actual likes to avoid race conditions
           const allLikes = await ctx.db
@@ -77,16 +79,16 @@ export const likePost = mutation({
             .withIndex("by_post", (q) => q.eq("postId", args.postId))
             .collect();
           
-          await ctx.db.patch(args.postId, {
+      await ctx.db.patch(args.postId, {
             likesCount: allLikes.length,
-          });
-          return { liked: false };
-        } else {
+      });
+      return { liked: false };
+    } else {
           // Like: insert the like and recalculate count
-          await ctx.db.insert("likes", {
-            userId: args.userId,
-            postId: args.postId,
-          });
+      await ctx.db.insert("likes", {
+        userId: args.userId,
+        postId: args.postId,
+      });
           
           // Recalculate likesCount from actual likes to avoid race conditions
           const allLikes = await ctx.db
@@ -94,11 +96,11 @@ export const likePost = mutation({
             .withIndex("by_post", (q) => q.eq("postId", args.postId))
             .collect();
           
-          await ctx.db.patch(args.postId, {
+      await ctx.db.patch(args.postId, {
             likesCount: allLikes.length,
-          });
-          return { liked: true };
-        }
+      });
+      return { liked: true };
+    }
       } catch (error: any) {
         // If it's a write conflict, retry
         if (error.message?.includes("write conflict") || error.message?.includes("conflict")) {

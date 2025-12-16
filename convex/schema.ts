@@ -34,6 +34,7 @@ export default defineSchema({
     pollOptions: v.optional(v.array(v.string())), // Array von Optionen
     // Allgemein
     tags: v.optional(v.array(v.string())), // Array von Tags
+    mentions: v.optional(v.array(v.string())), // Array von Usernames die erwähnt wurden
     likesCount: v.number(),
     commentsCount: v.number(),
     participantsCount: v.optional(v.number()), // Anzahl der Teilnehmer
