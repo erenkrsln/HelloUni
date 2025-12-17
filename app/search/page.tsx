@@ -36,7 +36,7 @@ export default function SearchPage() {
             <Header onMenuClick={() => setIsSidebarOpen(true)} />
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-                {isFirstVisit ? (
+            {isFirstVisit ? (
                 <LoadingScreen text="Seite wird geladen..." />
             ) : (
                 <div className="flex items-center justify-center py-16">

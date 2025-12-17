@@ -149,3 +149,120 @@ export const updateUser = mutation({
     return { success: true };
   },
 });
+
+export const createConversation = mutation({
+  args: {
+    participants: v.array(v.id("users")),
+    name: v.optional(v.string()), // Optionaler Name für Gruppen
+  },
+  handler: async (ctx, args) => {
+    const isGroup = args.participants.length > 2 || !!args.name;
+
+    // Nur bei 1:1 Chats prüfen wir auf Duplikate
+    if (!isGroup && args.participants.length === 2) {
+      const conversations = await ctx.db.query("conversations").collect();
+      const existing = conversations.find(c =>
+        !c.isGroup &&
+        c.participants.includes(args.participants[0]) &&
+        c.participants.includes(args.participants[1]) &&
+        c.participants.length === 2
+      );
+      if (existing) return existing._id;
+    }
+
+    const conversationId = await ctx.db.insert("conversations", {
+      participants: args.participants,
+      name: args.name,
+      isGroup,
+      updatedAt: Date.now(),
+    });
+
+    return conversationId;
+  },
+});
+
+export const updateGroupImage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    imageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Optional: Check permissions (is participant?)
+    await ctx.db.patch(args.conversationId, {
+      image: args.imageId
+    });
+  },
+});
+
+export const sendMessage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      senderId: args.senderId,
+      content: args.content,
+      createdAt: Date.now(),
+    });
+
+    // Update conversation: lastMessageId und updatedAt
+    await ctx.db.patch(args.conversationId, {
+      lastMessageId: messageId,
+      updatedAt: Date.now(),
+    });
+
+    return messageId;
+  },
+});
+
+export const deleteConversation = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    // 1. Delete the conversation itself
+    await ctx.db.delete(args.conversationId);
+
+    // 2. Delete all messages associated with it
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+
+    for (const msg of messages) {
+      await ctx.db.delete(msg._id);
+    }
+
+    return { success: true };
+  },
+});
+
+export const markAsRead = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("last_reads")
+      .withIndex("by_user_conversation", (q) =>
+        q.eq("userId", args.userId).eq("conversationId", args.conversationId)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        lastReadAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("last_reads", {
+        userId: args.userId,
+        conversationId: args.conversationId,
+        lastReadAt: Date.now(),
+      });
+    }
+  },
+});
