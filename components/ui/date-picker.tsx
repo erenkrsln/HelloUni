@@ -167,7 +167,7 @@ export function DatePicker({
   // Native Date Input für mobile Geräte (iOS/Android)
   if (isMobile) {
     return (
-      <div className="relative w-full">
+      <div className="relative w-full flex justify-start">
         <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none z-10">
           <CalendarIcon className="h-4 w-4 text-gray-500" />
         </div>
@@ -199,7 +199,7 @@ export function DatePicker({
             maxWidth: "100%",
             textAlign: "left",
             direction: "ltr",
-            paddingLeft: "2.5rem",
+            paddingLeft: "2.25rem",
             paddingRight: "1rem",
           } as React.CSSProperties}
           onFocus={(e) => {

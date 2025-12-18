@@ -56,7 +56,7 @@ export function TimePicker({
   }, []); // Nur beim ersten Mount ausführen
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full flex justify-start">
       {/* Icon immer links anzeigen (sowohl auf Mobile als auch Desktop) */}
       <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none z-10">
         <Clock className="h-4 w-4 text-gray-500" />
@@ -90,7 +90,7 @@ export function TimePicker({
           maxWidth: "100%",
           textAlign: "left",
           direction: "ltr",
-          paddingLeft: "2.5rem",
+          paddingLeft: "2.25rem",
           paddingRight: "1rem",
         } as React.CSSProperties}
         onFocus={(e) => {

@@ -91,3 +91,11 @@ input[type="time"] {
   text-align: left !important;
   direction: ltr !important;
 }
+
+/* iOS Shadow DOM: Force left alignment for date/time values */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: left !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
