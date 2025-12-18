@@ -41,14 +41,20 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       <div
         className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
-          top: "env(safe-area-inset-top)",
-          bottom: "env(safe-area-inset-bottom)",
+          top: 0,
+          height: "100vh",
+          height: "100dvh",
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
         }}
       >
         <div className="flex flex-col h-full">
           {/* Header mit Avatar, Name und Benutzername */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div 
+            className="flex items-center justify-between p-6 border-b border-gray-200"
+            style={{
+              paddingTop: "calc(1.5rem + env(safe-area-inset-top))",
+            }}
+          >
             <div className="flex items-center gap-4 flex-1">
               <Avatar className="w-12 h-12">
                 <AvatarImage src={currentUser?.image} alt={currentUser?.name || "User"} />
@@ -76,7 +82,12 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           </div>
 
           {/* Content mit Profil und Abmelde-Button */}
-          <div className="flex-1 p-6 flex flex-col gap-2">
+          <div 
+            className="flex-1 p-6 flex flex-col gap-2"
+            style={{
+              paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+            }}
+          >
             <button
               onClick={() => {
                 router.push("/profile");
