@@ -335,3 +335,57 @@ export const votePoll = mutation({
     return { success: true };
   },
 });
+
+export const deletePost = mutation({
+  args: {
+    postId: v.id("posts"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Prüfe, ob der Post existiert und dem User gehört
+    const post = await ctx.db.get(args.postId);
+    if (!post) {
+      throw new Error("Post nicht gefunden");
+    }
+    
+    if (post.userId !== args.userId) {
+      throw new Error("Nicht berechtigt, diesen Post zu löschen");
+    }
+
+    // Lösche alle zugehörigen Daten
+    // Likes löschen
+    const likes = await ctx.db
+      .query("likes")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+    
+    for (const like of likes) {
+      await ctx.db.delete(like._id);
+    }
+
+    // Participants löschen
+    const participants = await ctx.db
+      .query("participants")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+    
+    for (const participant of participants) {
+      await ctx.db.delete(participant._id);
+    }
+
+    // Poll Votes löschen
+    const pollVotes = await ctx.db
+      .query("pollVotes")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+    
+    for (const vote of pollVotes) {
+      await ctx.db.delete(vote._id);
+    }
+
+    // Post löschen
+    await ctx.db.delete(args.postId);
+
+    return { success: true };
+  },
+});

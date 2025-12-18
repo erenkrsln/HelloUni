@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Camera } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 
 interface EditProfileModalProps {
@@ -124,52 +125,53 @@ export function EditProfileModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Profil bearbeiten</DialogTitle>
+      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] overflow-y-auto flex flex-col p-6 sm:p-8">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-xl font-semibold">Profil bearbeiten</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 flex-1">
           {/* Profilbild Upload */}
           <div className="flex flex-col items-center gap-4">
-            <Avatar className="w-24 h-24">
-              <AvatarImage src={imagePreview || undefined} alt={name} />
-              <AvatarFallback className="text-2xl bg-[#000000]/20 text-[#000000]">
-                {name[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-                id="profile-image-upload"
-              />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+              id="profile-image-upload"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative cursor-pointer hover:opacity-80 transition-opacity focus:outline-none rounded-full group"
+              disabled={isSubmitting}
+            >
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={imagePreview || undefined} alt={name} />
+                <AvatarFallback className="text-2xl bg-[#000000]/20 text-[#000000]">
+                  {name[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              {/* Foto-Icon Overlay */}
+              <div className="absolute bottom-0 right-0 w-8 h-8 bg-[#D08945] rounded-full flex items-center justify-center shadow-md group-hover:bg-[#C07835] transition-colors">
+                <Camera className="w-4 h-4 text-white" />
+              </div>
+            </button>
+            {(imagePreview || currentImage) && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={isImageRemoved ? () => {
+                  setIsImageRemoved(false);
+                  setImagePreview(currentImage || null);
+                } : removeImage}
+                disabled={isSubmitting}
               >
-                Bild auswählen
+                {isImageRemoved ? "Wiederherstellen" : "Entfernen"}
               </Button>
-              {(imagePreview || currentImage) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={isImageRemoved ? () => {
-                    setIsImageRemoved(false);
-                    setImagePreview(currentImage || null);
-                  } : removeImage}
-                >
-                  {isImageRemoved ? "Wiederherstellen" : "Entfernen"}
-                </Button>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Name Input */}

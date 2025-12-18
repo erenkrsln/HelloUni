@@ -529,7 +529,7 @@ export default function CreatePage() {
                                             parts.push(
                                                 <span 
                                                     key={`mention-${keyCounter++}`} 
-                                                    style={{ 
+                        style={{
                                                         color: '#D08945',
                                                         fontWeight: 'normal',
                                                         fontStyle: 'normal',
@@ -570,21 +570,21 @@ export default function CreatePage() {
                                 })()}
                             </div>
                             
-                            <textarea
+                        <textarea
                                 ref={textareaRef}
-                                value={content}
+                            value={content}
                                 onChange={handleContentChange}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Was möchtest du teilen?"
+                            placeholder="Was möchtest du teilen?"
                                 className="relative w-full px-4 py-3 rounded-lg border border-gray-300 bg-transparent text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none transition-colors [&::selection]:bg-blue-200 [&::selection]:text-transparent"
-                                style={{ 
+                            style={{
                                     minHeight: "150px", 
                                     color: 'transparent',
                                     caretColor: '#111827',
                                     WebkitTextFillColor: 'transparent'
-                                }}
-                                maxLength={500}
-                            />
+                            }}
+                            maxLength={500}
+                        />
                             
                             {/* Mention Autocomplete Dropdown */}
                             {showMentionDropdown && mentionUsers && mentionUsers.length > 0 && (

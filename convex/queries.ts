@@ -504,6 +504,42 @@ export const getPollResults = query({
   },
 });
 
+// Get participants list for an event
+export const getParticipants = query({
+  args: { postId: v.id("posts") },
+  handler: async (ctx, args) => {
+    const participants = await ctx.db
+      .query("participants")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+
+    const participantsWithUsers = await Promise.all(
+      participants.map(async (participant) => {
+        const user = await ctx.db.get(participant.userId);
+        if (!user) return null;
+
+        // Convert storage ID to URL if it exists
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+
+        return {
+          _id: user._id,
+          name: user.name,
+          username: user.username,
+          image: imageUrl,
+          uni_name: user.uni_name,
+          major: user.major,
+          joinedAt: participant.joinedAt,
+        };
+      })
+    );
+
+    return participantsWithUsers.filter((p) => p !== null);
+  },
+});
+
 // Get filtered feed by tags, major, etc.
 export const getFilteredFeed = query({
   args: {

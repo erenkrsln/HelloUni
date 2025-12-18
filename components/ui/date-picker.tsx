@@ -23,6 +23,30 @@ interface DatePickerProps {
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const WEEKDAYS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
+// Funktion zur Erkennung mobiler Geräte
+const isMobileDevice = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  ) || (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+};
+
+// Konvertiere Date zu YYYY-MM-DD Format für input type="date"
+const formatDateForInput = (date: Date | undefined): string => {
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Konvertiere YYYY-MM-DD String zu Date
+const parseDateFromInput = (dateString: string): Date | undefined => {
+  if (!dateString) return undefined;
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? undefined : date;
+};
+
 export function DatePicker({
   value,
   onChange,
@@ -30,9 +54,28 @@ export function DatePicker({
   className,
   disabled,
 }: DatePickerProps) {
+  const [isMobile, setIsMobile] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [currentMonth, setCurrentMonth] = React.useState(value ? value.getMonth() : new Date().getMonth());
   const [currentYear, setCurrentYear] = React.useState(value ? value.getFullYear() : new Date().getFullYear());
+
+  // Prüfe beim Mount und bei Resize, ob es ein mobiles Gerät ist
+  React.useEffect(() => {
+    setIsMobile(isMobileDevice());
+    
+    const handleResize = () => {
+      setIsMobile(isMobileDevice());
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Native Date Input Handler für mobile Geräte
+  const handleNativeDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = parseDateFromInput(e.target.value);
+    onChange?.(date);
+  };
 
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -121,6 +164,47 @@ export function DatePicker({
     return days;
   };
 
+  // Native Date Input für mobile Geräte (iOS/Android)
+  if (isMobile) {
+    return (
+      <div className="relative">
+        <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none z-10">
+          <CalendarIcon className="h-4 w-4 text-gray-500" />
+        </div>
+        <input
+          type="date"
+          value={formatDateForInput(value)}
+          onChange={handleNativeDateChange}
+          disabled={disabled}
+          className={cn(
+            "w-full h-11 px-3 py-2 ps-9 text-sm rounded-lg border bg-gray-50",
+            "placeholder:text-gray-400",
+            "focus:outline-none focus:ring-2 focus:border-transparent",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            "transition-all",
+            !value && "text-gray-500",
+            // Native Icon verstecken - nur unser Icon links soll sichtbar sein
+            "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none",
+            "[&::-moz-calendar-picker-indicator]:hidden",
+            className
+          )}
+          style={{
+            borderColor: "rgba(209, 213, 219, 1)",
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = "#D08945";
+            e.target.style.boxShadow = "0 0 0 2px rgba(208, 137, 69, 0.2)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "rgba(209, 213, 219, 1)";
+            e.target.style.boxShadow = "none";
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Benutzerdefinierter Kalender für Desktop
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -133,10 +217,13 @@ export function DatePicker({
             variant="outline"
             disabled={disabled}
             className={cn(
-              "w-full justify-start text-left font-normal bg-gray-50 border-gray-300 hover:bg-gray-100 focus-visible:ring-[#D08945] focus-visible:border-[#D08945] ps-9",
+              "w-full justify-start text-left font-normal bg-gray-50 hover:bg-gray-100 focus-visible:ring-[#D08945] focus-visible:border-[#D08945] ps-9",
               !value && "text-gray-500",
               className
             )}
+            style={{
+              borderColor: "rgba(209, 213, 219, 1)",
+            }}
           >
             {value ? format(value, "PPP", { locale: de }) : <span>{placeholder}</span>}
           </Button>

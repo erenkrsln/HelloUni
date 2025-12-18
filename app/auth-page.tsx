@@ -129,7 +129,7 @@ export default function AuthPage() {
     <div 
       className="min-h-screen w-full flex flex-col items-center bg-white"
       style={{
-        paddingTop: "max(1rem, env(safe-area-inset-top))",
+        paddingTop: "0",
         paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
         paddingLeft: "max(1rem, env(safe-area-inset-left))",
         paddingRight: "max(1rem, env(safe-area-inset-right))",
@@ -137,7 +137,7 @@ export default function AuthPage() {
     >
       <div className="w-full max-w-md flex flex-col items-center">
         {/* Logo - zentriert über Hello Uni */}
-        <div className="flex items-center justify-center mt-4 w-full">
+        <div className="flex items-center justify-center mt-0 sm:mt-4 w-full">
           <img 
             src="/hellouni.svg" 
             alt="Hello Uni Logo" 
@@ -153,7 +153,7 @@ export default function AuthPage() {
         {/* Beige Card - fester Abstand, unabhängig von Logo/Headline-Position */}
         <div 
           className="rounded-3xl p-8 shadow-lg w-full"
-          style={{ backgroundColor: "rgba(220, 198, 161)", marginTop: "80px" }}
+          style={{ backgroundColor: "rgba(220, 198, 161)", marginTop: "40px" }}
         >
           {/* Titel */}
           <h2 className="text-2xl font-bold text-black mb-2 text-center">

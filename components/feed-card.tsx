@@ -1,13 +1,18 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Bookmark, Calendar, Users, Tag } from "lucide-react";
+import { Tag } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
+import { renderContentWithMentions } from "@/lib/mentions";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { PostMenu } from "./post-menu";
+import { PostActions } from "./post-actions";
+import { PollOptions } from "./poll-options";
+import { EventDetails } from "./event-details";
 
 interface FeedCardProps {
   post: {
@@ -44,65 +49,7 @@ interface FeedCardProps {
 
 export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
-
-  // Render content with clickable mentions
-  const renderContentWithMentions = (content: string) => {
-    if (!content) return content;
-    
-    // Match @username (word characters after @)
-    const mentionRegex = /@(\w+)/g;
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let keyCounter = 0;
-    
-    // Use matchAll for better compatibility
-    const matches = Array.from(content.matchAll(mentionRegex));
-    
-    if (matches.length === 0) {
-      // No mentions found, return content as-is
-      return content;
-    }
-    
-    matches.forEach((match) => {
-      if (match.index === undefined) return;
-      
-      // Add text before mention
-      if (match.index > lastIndex) {
-        parts.push(
-          <span key={`text-${keyCounter++}`}>
-            {content.substring(lastIndex, match.index)}
-          </span>
-        );
-      }
-      
-      // Add mention as link
-      const username = match[1];
-      parts.push(
-        <Link
-          key={`mention-${keyCounter++}`}
-          href={`/profile/${username}`}
-          prefetch={true}
-          className="text-[#D08945] cursor-pointer transition-all"
-          onClick={(e) => e.stopPropagation()}
-        >
-          @{username}
-        </Link>
-      );
-      
-      lastIndex = match.index + match[0].length;
-    });
-    
-    // Add remaining text
-    if (lastIndex < content.length) {
-      parts.push(
-        <span key={`text-${keyCounter++}`}>
-          {content.substring(lastIndex)}
-        </span>
-      );
-    }
-    
-    return <>{parts}</>;
-  };
+  const isOwnPost = currentUserId && post.userId === currentUserId;
   const joinEvent = useMutation(api.mutations.joinEvent);
   const leaveEvent = useMutation(api.mutations.leaveEvent);
   const votePoll = useMutation(api.mutations.votePoll);
@@ -135,6 +82,7 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
     api.queries.getPollResults,
     post.postType === "poll" ? { postId: post._id } : "skip"
   );
+
 
   const pollVoteStorageKey = currentUserId && post.postType === "poll"
     ? `pollVote_${post._id}_${currentUserId}`
@@ -364,14 +312,14 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
     }
   }, [isLiked, optimisticLiked]);
 
-  const displayIsLiked = optimisticLiked !== null
-    ? optimisticLiked
-    : (isLiked !== undefined ? isLiked : (lastKnownLikedState.current ?? false));
+  const displayIsLiked = isLiked !== undefined
+    ? isLiked
+    : (optimisticLiked !== null ? optimisticLiked : (lastKnownLikedState.current ?? false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
     setIsLiking(true);
-    const wasLiked = displayIsLiked;
+    const wasLiked = isLiked ?? false;
     setOptimisticLiked(!wasLiked);
     try {
       await likePost({ userId: currentUserId, postId: post._id });
@@ -392,6 +340,7 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
       sessionStorage.setItem(storageKey, str);
     }
   }, [optimisticLiked, isLiked, storageKey]);
+
 
   const handleJoinEvent = async () => {
     if (!currentUserId || isJoining) return;
@@ -475,11 +424,6 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
     }
   };
 
-  const formatEventDate = (timestamp?: number) => {
-    if (!timestamp) return null;
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-  };
 
   if (!post.user) return null;
 
@@ -555,6 +499,9 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             <time className="whitespace-nowrap text-[15px] text-gray-500 font-normal flex-shrink-0">
               {timeAgo}
             </time>
+            {isOwnPost && (
+              <PostMenu postId={post._id} userId={currentUserId} />
+            )}
           </div>
           
           {/* Post Type Badge */}
@@ -573,31 +520,23 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             </h4>
           )}
 
+          {/* Content - bei spontaneous_meeting VOR Event Details */}
+          {post.postType === "spontaneous_meeting" && (
+            <p className="text-[15px] text-gray-900 leading-normal whitespace-pre-wrap mb-3">
+              {renderContentWithMentions(post.content)}
+            </p>
+          )}
+
           {/* Event Details */}
           {(post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") && (
-            <div className="mb-3 space-y-1">
-              {post.eventDate && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>{formatEventDate(post.eventDate)}</span>
-                  {post.eventTime && <span>um {post.eventTime} Uhr</span>}
-                </div>
-              )}
-              {(post.participantLimit || post.participantsCount !== undefined) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Users className="w-4 h-4" />
-                  <span>
-                    {post.participantsCount || 0}
-                    {post.participantLimit && ` / ${post.participantLimit}`} Teilnehmer
-                  </span>
-                </div>
-              )}
-              {post.recurrencePattern && (
-                <div className="text-sm text-gray-600">
-                  Wiederholung: {post.recurrencePattern}
-                </div>
-              )}
-            </div>
+            <EventDetails
+              postId={post._id}
+              eventDate={post.eventDate}
+              eventTime={post.eventTime}
+              participantLimit={post.participantLimit}
+              participantsCount={post.participantsCount}
+              recurrencePattern={post.recurrencePattern}
+            />
           )}
 
           {/* Tags */}
@@ -615,68 +554,23 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             </div>
           )}
 
-          <p className="text-[15px] text-gray-900 leading-normal whitespace-pre-wrap">
-            {renderContentWithMentions(post.content)}
-          </p>
+          {/* Content - bei allen anderen Post-Typen NACH Tags */}
+          {post.postType !== "spontaneous_meeting" && (
+            <p className="text-[15px] text-gray-900 leading-normal whitespace-pre-wrap">
+              {renderContentWithMentions(post.content)}
+            </p>
+          )}
 
           {/* Poll Options */}
           {post.postType === "poll" && post.pollOptions && (
-            <div className="mt-3 space-y-2">
-              {post.pollOptions.map((option, index) => {
-                // Ensure pollResults is always an array with correct length
-                const resultsArray = pollResults && Array.isArray(pollResults) 
-                  ? pollResults 
-                  : new Array(post.pollOptions?.length || 0).fill(0);
-                
-                // Ensure index is within bounds
-                const voteCount = index >= 0 && index < resultsArray.length 
-                  ? (resultsArray[index] || 0) 
-                  : 0;
-                
-                // Calculate total votes safely
-                const totalVotes = resultsArray.reduce((sum, count) => {
-                  const num = typeof count === 'number' ? count : 0;
-                  return sum + (isNaN(num) ? 0 : num);
-                }, 0);
-                
-                // Calculate percentage safely
-                const percentage = totalVotes > 0 && !isNaN(voteCount) && !isNaN(totalVotes)
-                  ? (voteCount / totalVotes) * 100
-                  : 0;
-                
-                const isSelected = pollVote === index;
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleVotePoll(index)}
-                    disabled={isVoting}
-                    className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">{option}</span>
-                      {totalVotes > 0 && (
-                        <span className="text-xs text-gray-500">
-                          {voteCount} ({Math.round(percentage)}%)
-                        </span>
-                      )}
-                    </div>
-                    {totalVotes > 0 && (
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+            <PollOptions
+              postId={post._id}
+              pollOptions={post.pollOptions}
+              pollResults={pollResults || []}
+              pollVote={pollVote}
+              onVote={handleVotePoll}
+              isVoting={isVoting}
                         />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
           )}
           {post.imageUrl && (
             <div className="mt-3 w-full rounded-2xl overflow-hidden border border-gray-200">
@@ -714,37 +608,14 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-3 max-w-[80%]">
-            <button
-              onClick={handleLike}
-              disabled={!currentUserId || isLiking}
-              className="flex items-center gap-1 h-10 px-0 font-normal disabled:opacity-50 flex-shrink-0 group rounded-full transition-colors outline-none focus:outline-none active:outline-none touch-manipulation"
-              onTouchEnd={(e) => {
-                // Prevent focus on mobile after touch
-                e.currentTarget.blur();
-              }}
-            >
-              <Heart 
-                className={displayIsLiked ? "text-red-500" : "text-gray-500 group-hover:text-red-500"} 
-                style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px", fill: displayIsLiked ? "currentColor" : "none" }} 
-              />
-              <span className={`text-[13px] tabular-nums inline-block min-w-[1.5ch] ${displayIsLiked ? "text-red-500" : "text-gray-500 group-hover:text-red-500"}`}>
-                {post.likesCount > 0 ? post.likesCount : <span className="invisible">0</span>}
-              </span>
-            </button>
-            <button className="flex items-center gap-1 h-10 px-0 font-normal cursor-pointer flex-shrink-0 group rounded-full transition-colors">
-              <MessageCircle className="text-gray-500 group-hover:text-blue-500" style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
-              <span className="text-[13px] tabular-nums inline-block min-w-[1.5ch] text-gray-500 group-hover:text-blue-500">
-                {post.commentsCount > 0 ? post.commentsCount : <span className="invisible">0</span>}
-              </span>
-            </button>
-            <button className="flex items-center gap-1 h-10 px-0 font-normal cursor-pointer flex-shrink-0 group rounded-full transition-colors">
-              <Bookmark className="text-gray-500 group-hover:text-blue-500" style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
-              <span className="text-[13px] tabular-nums inline-block min-w-[1.5ch] invisible">
-                0
-              </span>
-            </button>
-          </div>
+          <PostActions
+            likesCount={post.likesCount}
+            commentsCount={post.commentsCount}
+            isLiked={displayIsLiked}
+            onLike={handleLike}
+            isLiking={isLiking}
+            currentUserId={currentUserId}
+          />
           </div>
       </div>
     </article>

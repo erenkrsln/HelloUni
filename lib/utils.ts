@@ -14,7 +14,7 @@ export function formatTimeAgo(timestamp: number): string {
   const days = Math.floor(hours / 24);
 
   if (days > 0) {
-    return `${days} ${days === 1 ? "Tag" : "Tagen"}`;
+    return `${days}T`;
   }
   if (hours > 0) {
     return `${hours} ${hours === 1 ? "Std." : "Std."}`;
