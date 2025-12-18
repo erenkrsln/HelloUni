@@ -67,7 +67,7 @@ export function TimePicker({
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         className={cn(
-          "block w-full max-w-full h-11 px-4 py-2 ps-9 text-base rounded-lg border bg-white",
+          "block w-full max-w-full h-11 px-4 py-2 ps-9 text-base rounded-lg border bg-white text-left",
           "placeholder:text-gray-400",
           "focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -88,6 +88,7 @@ export function TimePicker({
           minWidth: "0",
           width: "100%",
           maxWidth: "100%",
+          textAlign: "left",
         }}
         onFocus={(e) => {
           e.target.style.borderColor = "#D08945";
