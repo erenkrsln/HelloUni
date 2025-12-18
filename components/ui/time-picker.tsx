@@ -56,7 +56,7 @@ export function TimePicker({
   }, []); // Nur beim ersten Mount ausführen
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       {/* Icon immer links anzeigen (sowohl auf Mobile als auch Desktop) */}
       <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none z-10">
         <Clock className="h-4 w-4 text-gray-500" />
@@ -67,20 +67,27 @@ export function TimePicker({
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         className={cn(
-          "flex h-11 w-full rounded-lg border bg-gray-50 px-3 py-2 ps-9 text-sm",
+          "block w-full max-w-full h-11 px-4 py-2 ps-9 text-base rounded-lg border bg-white",
           "placeholder:text-gray-400",
-          "focus:outline-none focus:ring-2 focus:border-transparent",
+          "focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "transition-all",
           !value && "text-gray-500",
           // Native Icon immer verstecken (sowohl auf Mobile als auch Desktop)
           // Unser eigenes Icon wird links angezeigt
-          "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none",
+          "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer",
           "[&::-moz-calendar-picker-indicator]:hidden",
           className
         )}
         style={{
           borderColor: "rgba(209, 213, 219, 1)",
+          WebkitAppearance: "none",
+          appearance: "none",
+          MozAppearance: "textfield",
+          boxSizing: "border-box",
+          minWidth: "0",
+          width: "100%",
+          maxWidth: "100%",
         }}
         onFocus={(e) => {
           e.target.style.borderColor = "#D08945";

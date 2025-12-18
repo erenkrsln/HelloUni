@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { X, LogOut } from "lucide-react";
+import { X, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
@@ -75,8 +75,18 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </button>
           </div>
 
-          {/* Content mit Abmelde-Button */}
-          <div className="flex-1 p-6">
+          {/* Content mit Profil und Abmelde-Button */}
+          <div className="flex-1 p-6 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                router.push("/profile");
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-black"
+            >
+              <User className="w-5 h-5 text-black" />
+              <span>Profil</span>
+            </button>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Bell, User, MessageCircle } from "lucide-react";
+import { Plus, Bell, MessageCircle } from "lucide-react";
 import { HomeIcon } from "@/components/home-icon";
 import { SearchIcon } from "@/components/search-icon";
 import Link from "next/link";
@@ -114,29 +114,6 @@ export function BottomNavigation() {
           />
         </Link>
 
-        {/* Chat */}
-        <Link
-          href="/chat"
-          prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation relative"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
-        >
-          <MessageCircle
-            style={{
-              width: "28px",
-              height: "28px",
-              color: "#000000",
-              fill: isActive("/chat") ? "#000000" : "none",
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden"
-            }}
-          />
-          {unreadCount > 0 && (
-            <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
-          )}
-        </Link>
-
         {/* Notifications */}
         <Link
           href="/notifications"
@@ -157,24 +134,27 @@ export function BottomNavigation() {
           />
         </Link>
 
-        {/* Profile - ganz rechts */}
+        {/* Chat */}
         <Link
-          href="/profile"
+          href="/chat"
           prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
+          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation relative"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
-          <User
+          <MessageCircle
             style={{
-              width: "32px",
-              height: "32px",
+              width: "28px",
+              height: "28px",
               color: "#000000",
-              fill: isActive("/profile") ? "#000000" : "none",
+              fill: isActive("/chat") ? "#000000" : "none",
               willChange: "transform",
-              transform: "translateZ(0)",
+              transform: "translateY(-1px) translateZ(0)",
               backfaceVisibility: "hidden"
             }}
           />
+          {unreadCount > 0 && (
+            <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
+          )}
         </Link>
       </div>
     </nav>
