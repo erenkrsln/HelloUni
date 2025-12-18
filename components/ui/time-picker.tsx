@@ -67,7 +67,7 @@ export function TimePicker({
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         className={cn(
-          "block w-full max-w-full h-11 px-4 py-2 ps-9 text-base rounded-lg border bg-white text-left",
+          "block w-full max-w-full h-11 py-2 text-base rounded-lg border bg-white text-left",
           "placeholder:text-gray-400",
           "focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -89,7 +89,10 @@ export function TimePicker({
           width: "100%",
           maxWidth: "100%",
           textAlign: "left",
-        }}
+          direction: "ltr",
+          paddingLeft: "2.5rem",
+          paddingRight: "1rem",
+        } as React.CSSProperties}
         onFocus={(e) => {
           e.target.style.borderColor = "#D08945";
           e.target.style.boxShadow = "0 0 0 2px rgba(208, 137, 69, 0.2)";

@@ -84,3 +84,10 @@
     display: none;
   }
 }
+
+/* Force text alignment for native date/time inputs on mobile */
+input[type="date"],
+input[type="time"] {
+  text-align: left !important;
+  direction: ltr !important;
+}
