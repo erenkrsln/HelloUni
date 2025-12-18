@@ -42,7 +42,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
           top: 0,
-          height: "100vh",
           height: "100dvh",
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
         }}
