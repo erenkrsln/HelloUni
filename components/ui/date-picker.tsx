@@ -199,7 +199,7 @@ export function DatePicker({
             maxWidth: "100%",
             textAlign: "left",
             direction: "ltr",
-            paddingLeft: "2.25rem",
+            paddingLeft: "2rem",
             paddingRight: "1rem",
           } as React.CSSProperties}
           onFocus={(e) => {

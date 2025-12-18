@@ -629,7 +629,7 @@ export default function CreatePage() {
 
                         {/* Event Fields */}
                         {(postType === "spontaneous_meeting" || postType === "recurring_meeting") && (
-                            <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200" style={{ textAlign: "left" }}>
                                 <div>
                                     <label htmlFor="eventDate" className="block text-sm font-medium text-gray-700 mb-1">
                                         Datum *
