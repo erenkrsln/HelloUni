@@ -126,7 +126,7 @@ export const getUser = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
-    
+
     if (!user) {
       return null;
     }
@@ -210,7 +210,7 @@ export const getUserById = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
-    
+
     if (!user) {
       return null;
     }
@@ -278,7 +278,7 @@ export const getUserByUsername = query({
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", args.username))
       .first();
-    
+
     if (!user) {
       return null;
     }
@@ -616,5 +616,187 @@ export const getFilteredFeed = query({
     );
 
     return postsWithUsers.filter((post) => post !== null);
+  },
+});
+
+export const getAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+
+    // Fix image URLs for all users
+    const usersWithImages = await Promise.all(
+      users.map(async (user) => {
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+        return {
+          ...user,
+          image: imageUrl
+        };
+      })
+    );
+
+    return usersWithImages;
+  },
+});
+
+export const getConversations = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    // 1. Alle Conversations holen, an denen der User beteiligt ist
+    // Hinweis: In Convex ist das Filtern von Arrays etwas komplexer.
+    // Wir holen "alle" und filtern im Code, oder besser: Wir nutzen einen Index wenn möglich.
+    // Mit dem Index "by_participant" können wir das leider nicht direkt effizient abfragen, 
+    // da es ein Array ist. Für V1 iterieren wir über alle Conversations und filtern.
+    // (Besser wäre eine separate Relationstabelle UserConversation, aber schema.ts ist schon definiert)
+
+    const conversations = await ctx.db.query("conversations").collect();
+
+    const relevantConversations = conversations.filter(c =>
+      c.participants.includes(args.userId)
+    );
+
+    // 2. Details für die Conversations anreichern
+    const enrichedConversations = await Promise.all(
+      relevantConversations.map(async (conv) => {
+        // Unread Count Logic
+        const lastRead = await ctx.db
+          .query("last_reads")
+          .withIndex("by_user_conversation", (q) =>
+            q.eq("userId", args.userId).eq("conversationId", conv._id)
+          )
+          .first();
+
+        const lastReadAt = lastRead?.lastReadAt || 0;
+
+        // Count messages since last read
+        const unreadMessages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation_created", (q) =>
+            q.eq("conversationId", conv._id).gt("createdAt", lastReadAt)
+          )
+          .collect();
+
+        // Don't count own messages as unread
+        const unreadCount = unreadMessages.filter(m => m.senderId !== args.userId).length;
+
+        // Bestimme Name und Bild für die Anzeige
+        let displayName = "Unbekannt";
+        let displayImage = undefined;
+
+        if (conv.isGroup) {
+          displayName = conv.name || "Gruppenchat";
+          if (conv.image) {
+            displayImage = await ctx.storage.getUrl(conv.image as any);
+          }
+        } else {
+          // 1:1 Chat: Partner Info anzeigen
+          const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId;
+          const partner = await ctx.db.get(partnerId);
+          if (partner) {
+            displayName = partner.name;
+            let partnerImageUrl = partner.image;
+            if (partnerImageUrl && !partnerImageUrl.startsWith('http')) {
+              partnerImageUrl = (await ctx.storage.getUrl(partnerImageUrl as any)) ?? partnerImageUrl;
+            }
+            displayImage = partnerImageUrl;
+          }
+        }
+
+        let lastMessage = null;
+        if (conv.lastMessageId) {
+          lastMessage = await ctx.db.get(conv.lastMessageId);
+        }
+
+        return {
+          ...conv,
+          displayName,
+          displayImage,
+          lastMessage,
+          unreadCount,
+        };
+      })
+    );
+
+    return enrichedConversations.sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
+export const getUnreadCounts = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const conversations = await ctx.db.query("conversations").collect();
+    const relevantConversations = conversations.filter(c =>
+      c.participants.includes(args.userId)
+    );
+
+    let totalUnread = 0;
+
+    await Promise.all(
+      relevantConversations.map(async (conv) => {
+        const lastRead = await ctx.db
+          .query("last_reads")
+          .withIndex("by_user_conversation", (q) =>
+            q.eq("userId", args.userId).eq("conversationId", conv._id)
+          )
+          .first();
+
+        const lastReadAt = lastRead?.lastReadAt || 0;
+
+        const unreadMessages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation_created", (q) =>
+            q.eq("conversationId", conv._id).gt("createdAt", lastReadAt)
+          )
+          .collect();
+
+        const count = unreadMessages.filter(m => m.senderId !== args.userId).length;
+        totalUnread += count;
+      })
+    );
+
+    return { totalUnread };
+  },
+});
+
+export const getConversationMembers = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) return [];
+
+    const members = await Promise.all(
+      conversation.participants.map(async (userId) => {
+        const user = await ctx.db.get(userId);
+        if (!user) return null;
+
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+
+        return {
+          ...user,
+          image: imageUrl
+        };
+      })
+    );
+
+    return members.filter((m) => m !== null);
+  },
+});
+
+export const getMessages = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation_created", (q) => q.eq("conversationId", args.conversationId))
+      .order("asc")
+      .collect();
+
+    return messages;
   },
 });

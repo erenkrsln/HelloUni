@@ -16,7 +16,7 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  
+
   // Profil-Icon auf allen Seiten ausblenden (wird durch Dropdown ersetzt)
   const showProfileIcon = false;
 
@@ -31,10 +31,10 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
     <header className="relative w-full" style={{ height: "94px" }}>
       <div
         className="absolute flex items-center justify-center overflow-hidden"
-        style={{ 
-          left: "12px", 
-          top: "-20px", 
-          width: "120px", 
+        style={{
+          left: "12px",
+          top: "-20px",
+          width: "120px",
           height: "130px",
           willChange: "transform",
           transform: "translateZ(0)",
@@ -64,43 +64,42 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
           }}
         />
       </div>
-      {pathname !== "/profile" && 
-       !pathname.startsWith("/profile/") && 
-       pathname !== "/search" && 
-       pathname !== "/create" && (
-        <h1
-          className="absolute font-normal"
-          style={{
-            position: "absolute",
-            width: "100%",
-            height: "30px",
-            left: "50%",
-            top: "50px",
-            transform: "translateX(-50%)",
-            fontFamily: "var(--font-gloock), serif",
-            fontStyle: "normal",
-            fontWeight: 400,
-            fontSize: "20px",
-            lineHeight: "24px",
-            textAlign: "center",
-            color: "#000000"
-          }}
-        >
-          Startseite
-        </h1>
-      )}
-      
+      {pathname !== "/profile" &&
+        !pathname.startsWith("/profile/") &&
+        pathname !== "/create" && (
+          <h1
+            className="absolute font-bold"
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "30px",
+              left: "50%",
+              top: "50px",
+              transform: "translateX(-50%)",
+              fontSize: "30px",
+              lineHeight: "24px",
+              textAlign: "center",
+              color: "#000000"
+            }}
+          >
+            {pathname === "/home" ? "Posts" :
+              pathname === "/search" ? "Suche" :
+                pathname === "/chat" ? "Chats" :
+                  "HelloUni"}
+          </h1>
+        )}
+
       {/* Logout-Button - oben rechts */}
       {showLogoutButton && (
         <button
           onClick={handleLogout}
           className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
-          style={{ 
-            right: "28px", 
-            top: "30px", 
-            width: "44px", 
+          style={{
+            right: "28px",
+            top: "30px",
+            width: "44px",
             height: "44px",
-            minWidth: "44px", 
+            minWidth: "44px",
             minHeight: "44px",
             opacity: status === "loading" ? 0.5 : 1,
             transition: "opacity 0.2s"
@@ -174,14 +173,14 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          <Menu 
-            className="w-9 h-9" 
-            style={{ 
-              color: "#000000", 
-              fill: "none", 
-              stroke: "#000000", 
-              strokeWidth: 2, 
-              strokeLinecap: "round", 
+          <Menu
+            className="w-9 h-9"
+            style={{
+              color: "#000000",
+              fill: "none",
+              stroke: "#000000",
+              strokeWidth: 2,
+              strokeLinecap: "round",
               strokeLinejoin: "round",
               willChange: "auto",
               transform: "translateZ(0)",
@@ -189,7 +188,7 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
               WebkitBackfaceVisibility: "hidden",
               imageRendering: "crisp-edges",
               WebkitFontSmoothing: "antialiased",
-            }} 
+            }}
           />
         </button>
       )}

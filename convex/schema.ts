@@ -76,6 +76,33 @@ export default defineSchema({
   })
     .index("by_post", ["postId"])
     .index("by_user_post", ["userId", "postId"]),
+
+  conversations: defineTable({
+    participants: v.array(v.id("users")), // Array von User IDs
+    name: v.optional(v.string()), // Optionaler Gruppenname
+    image: v.optional(v.string()), // Storage ID für Gruppenbild
+    isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
+    lastMessageId: v.optional(v.id("messages")),
+    updatedAt: v.number(),
+  }).index("by_participant", ["participants"]), // Dies könnte ineffizient sein, aber für V1 ok
+
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"),
+    content: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_conversation_created", ["conversationId", "createdAt"]),
+
+  last_reads: defineTable({
+    userId: v.id("users"),
+    conversationId: v.id("conversations"),
+    lastReadAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_conversation", ["conversationId"])
+    .index("by_user_conversation", ["userId", "conversationId"]),
 });
 
 
