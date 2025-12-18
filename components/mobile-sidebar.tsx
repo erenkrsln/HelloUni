@@ -39,20 +39,34 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
       {/* Sidebar */}
       <div
-        className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
+        className="fixed right-0 w-80 z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
           top: 0,
           height: "100dvh",
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
         }}
       >
-        <div className="flex flex-col h-full">
+        {/* Background container that extends to top */}
+        <div 
+          className="absolute inset-0 bg-white"
+          style={{
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+          }}
+        />
+        {/* Content container with safe area padding */}
+        <div 
+          className="relative flex flex-col h-full"
+          style={{
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          }}
+        >
           {/* Header mit Avatar, Name und Benutzername */}
           <div 
             className="flex items-center justify-between p-6 border-b border-gray-200"
-            style={{
-              paddingTop: "calc(1.5rem + env(safe-area-inset-top))",
-            }}
           >
             <div className="flex items-center gap-4 flex-1">
               <Avatar className="w-12 h-12">
@@ -83,9 +97,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           {/* Content mit Profil und Abmelde-Button */}
           <div 
             className="flex-1 p-6 flex flex-col gap-2"
-            style={{
-              paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
-            }}
           >
             <button
               onClick={() => {
