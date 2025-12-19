@@ -27,6 +27,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           // Use inline style to ensure it reaches top (already in SheetContent but reinforcing)
           // and apply safe area height logic
           height: "100dvh",
+          top: 0,
         }}
       >
         {/* Scrollable content wrapper with safe-area padding */}
