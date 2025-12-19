@@ -59,10 +59,13 @@ export default function UserProfilePage() {
                     {/* Profile header with preloaded data from cache */}
                     <ProfileHeader
                         name={profileData.user.name}
+                        username={profileData.user.username}
                         image={profileData.user.image}
-                        uniName={profileData.user.uni_name}
+                        headerImage={profileData.user.headerImage}
                         major={profileData.user.major}
+                        semester={profileData.user.semester}
                         bio={profileData.user.bio}
+                        createdAt={profileData.user.createdAt}
                         userId={profileData.user._id}
                         currentUserId={currentUserId}
                         isOwnProfile={false}
@@ -73,7 +76,7 @@ export default function UserProfilePage() {
                     />
 
                     {/* Posts section */}
-                    <div>
+                    <div data-posts-section>
                         <h3 className="px-4 text-lg font-semibold text-[#000000] mb-4 border-b border-[#000000]/20 pb-2">
                             Posts
                         </h3>

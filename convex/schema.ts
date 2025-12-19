@@ -7,9 +7,12 @@ export default defineSchema({
     username: v.string(), // Für Authentifizierung
     passwordHash: v.string(), // Gehashtes Passwort
     image: v.optional(v.string()),
+    headerImage: v.optional(v.string()), // Header/Titelbild
     uni_name: v.optional(v.string()), // Jetzt optional für initiale Registrierung
     major: v.optional(v.string()), // Jetzt optional für initiale Registrierung
+    semester: v.optional(v.number()), // Semester (1-10)
     bio: v.optional(v.string()), // Biografie des Benutzers
+    createdAt: v.optional(v.number()), // Erstellungsdatum für "Joined"
   }).index("by_username", ["username"]), // Index für schnelle Suche nach Benutzername
 
   posts: defineTable({

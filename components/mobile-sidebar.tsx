@@ -21,7 +21,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay - covers entire viewport including safe areas */}
       {isOpen && (
         <div
           className="fixed bg-black/50 z-[55] transition-opacity"
@@ -37,20 +37,29 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - iOS Safe Area Compatible */}
       <div
-        className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
+        className="fixed right-0 top-0 w-[85vw] max-w-[320px] bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden"
         style={{
-          top: "env(safe-area-inset-top)",
-          bottom: "env(safe-area-inset-bottom)",
+          height: "100dvh", // Dynamic viewport height for mobile
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
         }}
       >
-        <div className="flex flex-col h-full">
+        {/* Scrollable content wrapper with safe-area padding */}
+        <div
+          className="flex flex-col h-full overflow-y-auto"
+          style={{
+            paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+            paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+            paddingLeft: "env(safe-area-inset-left, 0px)",
+            paddingRight: "calc(0.5rem + env(safe-area-inset-right, 0px))",
+            WebkitOverflowScrolling: "touch", // iOS smooth scrolling
+          }}
+        >
           {/* Header mit Avatar, Name und Benutzername */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div className="flex items-center gap-4 flex-1">
-              <Avatar className="w-12 h-12">
+          <div className="flex items-center justify-between px-6 pb-4 border-b border-gray-200">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <Avatar className="w-12 h-12 flex-shrink-0">
                 <AvatarImage src={currentUser?.image} alt={currentUser?.name || "User"} />
                 <AvatarFallback className="text-lg text-black" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                   {currentUser?.name?.[0]?.toUpperCase() || "U"}
@@ -76,7 +85,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           </div>
 
           {/* Content mit Profil und Abmelde-Button */}
-          <div className="flex-1 p-6 flex flex-col gap-2">
+          <div className="flex-1 px-6 pt-6 flex flex-col gap-2">
             <button
               onClick={() => {
                 router.push("/profile");

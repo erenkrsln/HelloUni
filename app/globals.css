@@ -99,3 +99,22 @@ input[type="time"]::-webkit-date-and-time-value {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* Style for select dropdowns with optgroups */
+select optgroup {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding: 0.5rem 0;
+}
+
+select option {
+  font-weight: normal;
+  font-size: 0.875rem;
+  color: #1f2937;
+  padding: 0.5rem;
+}
+
+select option:disabled {
+  color: #9ca3af;
+}

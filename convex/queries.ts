@@ -137,9 +137,30 @@ export const getUser = query({
       imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
     }
 
+    // Convert headerImage storage ID to URL if it exists
+    let headerImageUrl = user.headerImage;
+    if (headerImageUrl && !headerImageUrl.startsWith('http')) {
+      headerImageUrl = (await ctx.storage.getUrl(headerImageUrl as any)) ?? headerImageUrl;
+    }
+
+    // If createdAt is not set, try to get it from the first post
+    let createdAt = user.createdAt;
+    if (!createdAt) {
+      const firstPost = await ctx.db
+        .query("posts")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .order("asc") // Get oldest post first
+        .first();
+      if (firstPost) {
+        createdAt = firstPost.createdAt;
+      }
+    }
+
     return {
       ...user,
       image: imageUrl,
+      headerImage: headerImageUrl,
+      createdAt: createdAt,
     };
   },
 });
@@ -221,9 +242,30 @@ export const getUserById = query({
       imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
     }
 
+    // Convert headerImage storage ID to URL if it exists
+    let headerImageUrl = user.headerImage;
+    if (headerImageUrl && !headerImageUrl.startsWith('http')) {
+      headerImageUrl = (await ctx.storage.getUrl(headerImageUrl as any)) ?? headerImageUrl;
+    }
+
+    // If createdAt is not set, try to get it from the first post
+    let createdAt = user.createdAt;
+    if (!createdAt) {
+      const firstPost = await ctx.db
+        .query("posts")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .order("asc") // Get oldest post first
+        .first();
+      if (firstPost) {
+        createdAt = firstPost.createdAt;
+      }
+    }
+
     return {
       ...user,
       image: imageUrl,
+      headerImage: headerImageUrl,
+      createdAt: createdAt,
     };
   },
 });
@@ -289,9 +331,30 @@ export const getUserByUsername = query({
       imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
     }
 
+    // Convert headerImage storage ID to URL if it exists
+    let headerImageUrl = user.headerImage;
+    if (headerImageUrl && !headerImageUrl.startsWith('http')) {
+      headerImageUrl = (await ctx.storage.getUrl(headerImageUrl as any)) ?? headerImageUrl;
+    }
+
+    // If createdAt is not set, try to get it from the first post
+    let createdAt = user.createdAt;
+    if (!createdAt) {
+      const firstPost = await ctx.db
+        .query("posts")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .order("asc") // Get oldest post first
+        .first();
+      if (firstPost) {
+        createdAt = firstPost.createdAt;
+      }
+    }
+
     return {
       ...user,
       image: imageUrl,
+      headerImage: headerImageUrl,
+      createdAt: createdAt,
     };
   },
 });

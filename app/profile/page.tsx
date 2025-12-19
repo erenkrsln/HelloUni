@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { ProfileHeader } from "@/components/profile-header";
 import { FeedCard } from "@/components/feed-card";
-import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen, Spinner } from "@/components/ui/spinner";
@@ -49,10 +48,6 @@ export default function ProfilePage() {
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-            <Header 
-                onMenuClick={() => setIsSidebarOpen(true)}
-                onEditClick={() => setIsEditModalOpen(true)}
-            />
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             
@@ -64,7 +59,10 @@ export default function ProfilePage() {
                     userId={profileData.user._id}
                     currentName={profileData.user.name}
                     currentImage={profileData.user.image}
+                    currentHeaderImage={(profileData.user as any).headerImage}
                     currentBio={(profileData.user as any).bio}
+                    currentMajor={profileData.user.major}
+                    currentSemester={(profileData.user as any).semester}
                     onUpdate={handleProfileUpdate}
                 />
             )}
@@ -74,20 +72,25 @@ export default function ProfilePage() {
                 <>
                     <ProfileHeader
                         name={profileData.user.name}
+                        username={profileData.user.username}
                         image={profileData.user.image}
-                        uniName={profileData.user.uni_name}
+                        headerImage={(profileData.user as any).headerImage}
                         major={profileData.user.major}
+                        semester={(profileData.user as any).semester}
                         bio={profileData.user.bio}
+                        createdAt={(profileData.user as any).createdAt}
                         userId={profileData.user._id}
                         currentUserId={currentUserId}
                         isOwnProfile={true}
                         postsCount={userPosts.length}
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
+                        onHeaderImageUpdate={handleProfileUpdate}
+                        onEditClick={() => setIsEditModalOpen(true)}
                     />
 
                     {/* Posts section */}
-                    <div>
+                    <div data-posts-section>
                         <h3 className="px-4 text-lg font-semibold text-[#000000] mb-4 border-b border-[#000000]/20 pb-2">
                             Posts
                         </h3>

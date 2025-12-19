@@ -47,6 +47,7 @@ export const registerUser = mutation({
       name: args.name,
       username: args.username,
       passwordHash: args.passwordHash,
+      createdAt: Date.now(), // Erstellungsdatum setzen
       // Optionale Felder können später im Profil hinzugefügt werden
     });
 
