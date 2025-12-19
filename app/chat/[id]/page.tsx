@@ -67,23 +67,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateGroupImage = useMutation(api.mutations.updateGroupImage);
 
-    const memberColors = [
-        '#e99f7aff',
-        '#e5ba6fff',
-        '#9a8884ff',
-        '#aabbbbff',
-        '#758d8cff',
-        '#a395aeff',
-    ];
 
-    const getMemberColor = (userId: string) => {
-        // Simple hash to pick a stable color for a user
-        let hash = 0;
-        for (let i = 0; i < userId.length; i++) {
-            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return memberColors[Math.abs(hash) % memberColors.length];
-    };
 
     if (!currentUser) return null;
 
@@ -191,7 +175,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     messages.map((msg, index) => {
                         const isMe = msg.senderId === currentUser._id;
                         const sender = getMember(msg.senderId);
-                        const bubbleColor = isMe ? '#F4F4F5' : (conversation?.isGroup ? getMemberColor(msg.senderId) : '#FFFFFF');
+
 
                         // Check next message for grouping
                         const nextMsg = messages[index + 1];
@@ -234,17 +218,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         className={`
                                             px-4 py-2 text-sm
                                             ${isMe
-                                                ? (conversation?.isGroup
-                                                    ? 'bg-white border border-[#efeadd] text-gray-900 rounded-2xl'
-                                                    : 'bg-[#dcc6a1] text-black rounded-2xl')
-                                                : `text-black rounded-2xl shadow-sm ${!conversation?.isGroup ? 'bg-white border border-[#efeadd]' : ''}`
+                                                ? 'bg-[#dcc6a1] text-black rounded-2xl'
+                                                : 'text-black rounded-2xl shadow-sm bg-white border border-[#efeadd]'
                                             }
                                             ${!isNextSameSender
                                                 ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
                                                 : '' // Normal rounded corners if followed by same sender
                                             }
                                         `}
-                                        style={(!isMe && conversation?.isGroup) ? { backgroundColor: bubbleColor } : {}}
                                     >
                                         {msg.content}
                                     </div>
