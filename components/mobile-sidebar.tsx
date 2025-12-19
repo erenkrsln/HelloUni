@@ -68,8 +68,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         aria-modal="true"
         className={cn(
           "fixed inset-y-0 right-0 z-[60] bg-white shadow-2xl transition-transform duration-300 ease-out will-change-transform",
-          // Layout Specs: YouTube Style (Mirrored)
-          "w-[min(88vw,360px)] rounded-l-[28px]",
+          // Layout Specs: Squared (No Rounding)
+          "w-[min(88vw,360px)]",
           // Animation
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
