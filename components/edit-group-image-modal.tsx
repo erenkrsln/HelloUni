@@ -20,6 +20,7 @@ interface EditGroupImageModalProps {
     conversationId: Id<"conversations">;
     groupName: string;
     currentImage?: string;
+    currentUserId: Id<"users">;
 }
 
 export function EditGroupImageModal({
@@ -28,6 +29,7 @@ export function EditGroupImageModal({
     conversationId,
     groupName,
     currentImage,
+    currentUserId,
 }: EditGroupImageModalProps) {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(currentImage || null);
@@ -93,6 +95,7 @@ export function EditGroupImageModal({
                 await updateGroupImage({
                     conversationId,
                     imageId: imageUrl,
+                    userId: currentUserId,
                 });
             }
 
@@ -117,7 +120,7 @@ export function EditGroupImageModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-6 rounded-2xl">
+            <DialogContent aria-describedby={undefined} className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-6 rounded-2xl">
                 <DialogHeader className="mb-6">
                     <DialogTitle className="text-xl font-semibold text-center">Gruppenbild</DialogTitle>
                 </DialogHeader>

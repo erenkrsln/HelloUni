@@ -45,6 +45,7 @@ export default function ChatPage() {
       const conversationId = await createConversation({
         participants,
         name: selectedUsers.length > 1 && groupName ? groupName : undefined,
+        creatorId: currentUser._id,
       });
       setIsNewChatOpen(false);
       setSelectedUsers([]);

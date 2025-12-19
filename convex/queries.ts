@@ -577,7 +577,7 @@ export const getFilteredFeed = query({
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
-        
+
         // Filter by major if specified
         if (args.major && user?.major !== args.major) {
           return null;
@@ -777,9 +777,13 @@ export const getConversationMembers = query({
           imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
         }
 
+        const isCreator = conversation.creatorId === userId;
+        const isAdmin = conversation.adminIds?.includes(userId) || isCreator;
+
         return {
           ...user,
-          image: imageUrl
+          image: imageUrl,
+          role: isCreator ? "creator" : (isAdmin ? "admin" : "member")
         };
       })
     );

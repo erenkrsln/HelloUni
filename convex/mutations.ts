@@ -265,6 +265,7 @@ export const createConversation = mutation({
   args: {
     participants: v.array(v.id("users")),
     name: v.optional(v.string()), // Optionaler Name für Gruppen
+    creatorId: v.optional(v.id("users")), // Add creatorId argument
   },
   handler: async (ctx, args) => {
     const isGroup = args.participants.length > 2 || !!args.name;
@@ -285,6 +286,8 @@ export const createConversation = mutation({
       participants: args.participants,
       name: args.name,
       isGroup,
+      creatorId: args.creatorId,
+      adminIds: args.creatorId ? [args.creatorId] : undefined, // Creator is initially the only admin
       updatedAt: Date.now(),
     });
 
@@ -296,9 +299,18 @@ export const updateGroupImage = mutation({
   args: {
     conversationId: v.id("conversations"),
     imageId: v.optional(v.string()),
+    userId: v.optional(v.id("users")), // User ID of who is updating
   },
   handler: async (ctx, args) => {
-    // Optional: Check permissions (is participant?)
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    // If userId is provided, check if they are admin
+    if (args.userId && conversation.isGroup) {
+      const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+      if (!isAdmin) throw new Error("Only admins can change group image");
+    }
+
     await ctx.db.patch(args.conversationId, {
       image: args.imageId === "" ? undefined : args.imageId
     });
@@ -310,12 +322,14 @@ export const sendMessage = mutation({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"))),
   },
   handler: async (ctx, args) => {
     const messageId = await ctx.db.insert("messages", {
       conversationId: args.conversationId,
       senderId: args.senderId,
       content: args.content,
+      type: args.type || "text",
       createdAt: Date.now(),
     });
 
@@ -326,6 +340,163 @@ export const sendMessage = mutation({
     });
 
     return messageId;
+  },
+});
+
+export const addConversationMember = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    adminId: v.id("users"),
+    newMemberId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.isGroup) throw new Error("Can only add members to group chats");
+
+    // Check admin permissions
+    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    if (!isAdmin) throw new Error("Only admins can add members");
+
+    if (conversation.participants.includes(args.newMemberId)) {
+      throw new Error("User already in group");
+    }
+
+    // Add member
+    await ctx.db.patch(args.conversationId, {
+      participants: [...conversation.participants, args.newMemberId],
+    });
+
+    // Create system message
+    const adminUser = await ctx.db.get(args.adminId);
+    const newMember = await ctx.db.get(args.newMemberId);
+
+    if (adminUser && newMember) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.adminId, // System message attributed to admin
+        content: `${adminUser.name} hat ${newMember.name} hinzugefügt`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const removeConversationMember = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    adminId: v.id("users"),
+    memberIdToRemove: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    // Check admin permissions
+    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    if (!isAdmin) throw new Error("Only admins can remove members");
+
+    // Cannot remove creator
+    if (args.memberIdToRemove === conversation.creatorId) {
+      throw new Error("Cannot remove group creator");
+    }
+
+    const newParticipants = conversation.participants.filter(id => id !== args.memberIdToRemove);
+    const newAdmins = conversation.adminIds?.filter(id => id !== args.memberIdToRemove);
+
+    await ctx.db.patch(args.conversationId, {
+      participants: newParticipants,
+      adminIds: newAdmins,
+    });
+
+    // System message
+    const adminUser = await ctx.db.get(args.adminId);
+    const removedMember = await ctx.db.get(args.memberIdToRemove);
+
+    if (adminUser && removedMember) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.adminId,
+        content: `${adminUser.name} hat ${removedMember.name} entfernt`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const promoteToAdmin = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    adminId: v.id("users"), // The admin performing the action
+    memberIdToPromote: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    if (!isAdmin) throw new Error("Only admins can promote members");
+
+    const currentAdmins = conversation.adminIds || [];
+    if (!currentAdmins.includes(args.memberIdToPromote)) {
+      await ctx.db.patch(args.conversationId, {
+        adminIds: [...currentAdmins, args.memberIdToPromote],
+      });
+
+      const adminUser = await ctx.db.get(args.adminId);
+      const promotedUser = await ctx.db.get(args.memberIdToPromote);
+      if (adminUser && promotedUser) {
+        await ctx.db.insert("messages", {
+          conversationId: args.conversationId,
+          senderId: args.adminId,
+          content: `${adminUser.name} hat ${promotedUser.name} zum Admin ernannt`,
+          type: "system",
+          createdAt: Date.now(),
+        });
+      }
+    }
+  },
+});
+
+export const demoteAdmin = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    adminId: v.id("users"),
+    memberIdToDemote: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    if (!isAdmin) throw new Error("Only admins can demote members");
+
+    // Cannot demote creator
+    if (args.memberIdToDemote === conversation.creatorId) {
+      throw new Error("Cannot demote group creator");
+    }
+
+    const currentAdmins = conversation.adminIds || [];
+    const newAdmins = currentAdmins.filter(id => id !== args.memberIdToDemote);
+
+    await ctx.db.patch(args.conversationId, {
+      adminIds: newAdmins,
+    });
+
+    const adminUser = await ctx.db.get(args.adminId);
+    const demotedUser = await ctx.db.get(args.memberIdToDemote);
+    if (adminUser && demotedUser) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.adminId,
+        content: `${adminUser.name} hat ${demotedUser.name} Admin-Rechte entzogen`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
   },
 });
 
@@ -504,5 +675,32 @@ export const markAsRead = mutation({
         lastReadAt: Date.now(),
       });
     }
+  },
+});
+
+export const claimGroupOwnership = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.isGroup) throw new Error("Not a group");
+
+    const hasCreator = !!conversation.creatorId;
+    const hasAdmins = conversation.adminIds && conversation.adminIds.length > 0;
+
+    if (hasCreator || hasAdmins) {
+      throw new Error("Group already has ownership defined");
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      creatorId: args.userId,
+      adminIds: [args.userId],
+    });
+
+    return { success: true };
   },
 });

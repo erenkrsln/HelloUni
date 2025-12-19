@@ -82,6 +82,8 @@ export default defineSchema({
     name: v.optional(v.string()), // Optionaler Gruppenname
     image: v.optional(v.string()), // Storage ID für Gruppenbild
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
+    adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
+    creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
     updatedAt: v.number(),
   }).index("by_participant", ["participants"]), // Dies könnte ineffizient sein, aber für V1 ok
@@ -90,6 +92,7 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"))), // Nachrichtentyp
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])

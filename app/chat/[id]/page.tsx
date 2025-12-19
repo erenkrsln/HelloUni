@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { EditGroupImageModal } from "@/components/edit-group-image-modal";
+import { GroupMembersModal } from "@/components/group-members-modal";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -35,6 +36,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     // We get conversation details (name, image) from the list query
     const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
     const conversation = allConversations?.find(c => c._id === conversationId);
+
+    const isGroupAdmin = conversation?.isGroup && currentUser && (
+        conversation.creatorId === currentUser._id ||
+        conversation.adminIds?.includes(currentUser._id)
+    );
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -66,7 +72,23 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
+    const memberColors = [
+        '#e99f7aff',
+        '#e5ba6fff',
+        '#9a8884ff',
+        '#aabbbbff',
+        '#758d8cff',
+        '#a395aeff',
+    ];
 
+    const getMemberColor = (userId: string) => {
+        // Simple hash to pick a stable color for a user
+        let hash = 0;
+        for (let i = 0; i < userId.length; i++) {
+            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return memberColors[Math.abs(hash) % memberColors.length];
+    };
 
     if (!currentUser) return null;
 
@@ -81,8 +103,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         }
     };
 
-
-
     const handleDeleteGroup = async () => {
         if (!conversationId) return;
 
@@ -93,6 +113,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             console.error("Failed to delete group:", error);
         }
     };
+
+    if (!currentUser) return null;
 
     return (
         <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
@@ -109,9 +131,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {conversation ? (
                     <div className="flex items-center">
                         <div
-                            className={`w-8 h-8 rounded-full overflow-hidden mr-3 ${conversation.isGroup ? "cursor-pointer hover:opacity-80" : ""}`}
+                            className={`w-8 h-8 rounded-full overflow-hidden mr-3 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
                             style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                            onClick={() => conversation.isGroup && setIsImageModalOpen(true)}
+                            onClick={() => conversation.isGroup && isGroupAdmin && setIsImageModalOpen(true)}
                         >
                             {conversation.displayImage ? (
                                 <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
@@ -151,11 +173,21 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
                         // Check next message for grouping
                         const nextMsg = messages[index + 1];
-                        const isNextSameSender = nextMsg && nextMsg.senderId === msg.senderId;
+                        const isNextSameSender = nextMsg && nextMsg.senderId === msg.senderId && nextMsg.type !== "system";
 
                         // Check previous message for grouping (to hide name if repeated)
                         const prevMsg = messages[index - 1];
-                        const isPrevSameSender = prevMsg && prevMsg.senderId === msg.senderId;
+                        const isPrevSameSender = prevMsg && prevMsg.senderId === msg.senderId && prevMsg.type !== "system";
+
+                        if (msg.type === "system") {
+                            return (
+                                <div key={msg._id} className="flex justify-center my-4">
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                        {msg.content}
+                                    </span>
+                                </div>
+                            );
+                        }
 
                         return (
                             <div
@@ -210,51 +242,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Members Modal */}
-            {isMembersModalOpen && members && (
-                <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setIsMembersModalOpen(false)}>
-                    <div className="bg-white w-full max-w-[428px] rounded-t-2xl sm:rounded-2xl mx-auto overflow-hidden animate-in slide-in-from-bottom-5" onClick={e => e.stopPropagation()}>
-                        <div className="p-4 border-b flex items-center justify-between">
-                            <h3 className="font-bold text-lg">Gruppenmitglieder</h3>
-                            <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-500">Schließen</button>
-                        </div>
-                        <div className="max-h-[60vh] overflow-y-auto p-2">
-                            {members.map(member => (
-                                <div
-                                    key={member._id}
-                                    className="flex items-center p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors"
-                                    onClick={() => {
-                                        if (member.username) {
-                                            router.push(`/profile/${member.username}`);
-                                        }
-                                    }}
-                                >
-                                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
-                                        {member.image ? (
-                                            <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center font-bold" style={{ color: "#000000" }}>
-                                                {member.name.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="font-semibold">{member.name}</div>
-                                        <div className="text-xs text-gray-500">@{member.username}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="p-4 border-t safe-area-bottom">
-                            <button
-                                onClick={handleDeleteGroup}
-                                className="w-full py-3 bg-red-50 text-red-600 rounded-xl font-semibold flex items-center justify-center active:bg-red-100 transition-colors"
-                            >
-                                <Trash2 size={20} className="mr-2" />
-                                Gruppe löschen
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            {isMembersModalOpen && currentUser && (
+                <GroupMembersModal
+                    isOpen={isMembersModalOpen}
+                    onClose={() => setIsMembersModalOpen(false)}
+                    conversationId={conversationId}
+                    currentUserId={currentUser._id}
+                />
             )}
 
             {/* Edit Group Image Modal */}
@@ -265,6 +259,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     conversationId={conversationId}
                     groupName={conversation.displayName || "Gruppe"}
                     currentImage={conversation.displayImage || undefined}
+                    currentUserId={currentUser._id}
                 />
             )}
 
