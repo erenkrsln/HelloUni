@@ -38,6 +38,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="theme-color" content="#ffffff" />
+      </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
         <NextAuthSessionProvider>
           <ConvexClientProvider>{children}</ConvexClientProvider>
