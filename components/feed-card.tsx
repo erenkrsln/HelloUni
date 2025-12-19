@@ -441,14 +441,39 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             href={`/profile/${post.user.username}`}
             prefetch={true}
             className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+            style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
+            }}
           >
-            <Avatar className="w-12 h-12 rounded-full">
-              <AvatarImage src={post.user.image} alt={post.user.name} className="object-cover" />
+            <Avatar className="w-12 h-12 rounded-full" style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
+            }}>
+              <AvatarImage 
+                src={post.user.image} 
+                alt={post.user.name} 
+                className="object-cover"
+                style={{
+                  willChange: "transform",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden"
+                }}
+              />
               <AvatarFallback
                 className="font-semibold rounded-full"
                 style={{
                   backgroundColor: "rgba(0, 0, 0, 0.2)",
-                  color: "#000000"
+                  color: "#000000",
+                  willChange: "transform",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden"
                 }}
               >
                 {post.user.name?.[0]?.toUpperCase() || "U"}
@@ -456,14 +481,38 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             </Avatar>
           </Link>
         ) : (
-          <div className="flex-shrink-0">
-            <Avatar className="w-12 h-12 rounded-full">
-              <AvatarImage src={post.user?.image} alt={post.user?.name} className="object-cover" />
+          <div className="flex-shrink-0" style={{
+            willChange: "transform",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden"
+          }}>
+            <Avatar className="w-12 h-12 rounded-full" style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
+            }}>
+              <AvatarImage 
+                src={post.user?.image} 
+                alt={post.user?.name} 
+                className="object-cover"
+                style={{
+                  willChange: "transform",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden"
+                }}
+              />
               <AvatarFallback
                 className="font-semibold rounded-full"
                 style={{
                   backgroundColor: "rgba(0, 0, 0, 0.2)",
-                  color: "#000000"
+                  color: "#000000",
+                  willChange: "transform",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden"
                 }}
               >
                 {post.user?.name?.[0]?.toUpperCase() || "U"}
@@ -589,7 +638,12 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
 
           {/* Join Event Button */}
           {(post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") && currentUserId && (
-            <div className="mt-3">
+            <div className="mt-3" style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
+            }}>
               <button
                 onClick={handleJoinEvent}
                 disabled={isJoining || (post.participantLimit !== undefined && (post.participantsCount || 0) >= post.participantLimit && !isParticipating)}
@@ -598,12 +652,26 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
                     ? "bg-red-500 text-white hover:bg-red-600 hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none shadow-md"
                     : "bg-green-500 text-white hover:bg-green-600 hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none shadow-md"
                 }`}
+                style={{
+                  willChange: "transform",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden"
+                }}
               >
-                {isJoining
-                  ? "Wird verarbeitet..."
-                  : isParticipating
-                  ? "Teilnahme zurückziehen"
-                  : "Teilnehmen"}
+                <span style={{
+                  display: "inline-block",
+                  willChange: "transform",
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden"
+                }}>
+                  {isJoining
+                    ? "Wird verarbeitet..."
+                    : isParticipating
+                    ? "Teilnahme zurückziehen"
+                    : "Teilnehmen"}
+                </span>
               </button>
             </div>
           )}
