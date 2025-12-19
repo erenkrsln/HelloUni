@@ -38,7 +38,7 @@ export function BottomNavigation() {
     <nav
       className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-50"
       style={{
-        bottom: "0.5rem",
+        bottom: "0rem",
         // iOS Safari: Safe Area für Home Indicator
         paddingBottom: "max(1rem, env(safe-area-inset-bottom))"
       }}
@@ -62,7 +62,7 @@ export function BottomNavigation() {
         <Link
           href="/home"
           prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <HomeIcon
@@ -76,7 +76,7 @@ export function BottomNavigation() {
         <Link
           href="/search"
           prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <SearchIcon
@@ -91,7 +91,7 @@ export function BottomNavigation() {
           href="/create"
           prefetch={true}
           onClick={handleCreateClick}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation"
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
           style={{
             width: "44px",
             height: "44px",
@@ -118,7 +118,7 @@ export function BottomNavigation() {
         <Link
           href="/notifications"
           prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation relative"
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <Bell
@@ -138,17 +138,17 @@ export function BottomNavigation() {
         <Link
           href="/chat"
           prefetch={true}
-          className="flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer touch-manipulation relative"
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
           <MessageCircle
             style={{
-              width: "28px",
-              height: "28px",
+              width: "27px",
+              height: "27px",
               color: "#000000",
               fill: isActive("/chat") ? "#000000" : "none",
               willChange: "transform",
-              transform: "translateY(-1px) translateZ(0)",
+              transform: "translateY(-2px) translateZ(0)",
               backfaceVisibility: "hidden"
             }}
           />
@@ -160,4 +160,3 @@ export function BottomNavigation() {
     </nav>
   );
 }
-
