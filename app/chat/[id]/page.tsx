@@ -7,6 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { EditGroupImageModal } from "@/components/edit-group-image-modal";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -63,9 +64,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const getMember = (userId: string) => members?.find(m => m._id === userId);
 
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
-    const updateGroupImage = useMutation(api.mutations.updateGroupImage);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
 
 
@@ -82,28 +81,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         }
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !conversation || !conversation.isGroup) return;
 
-        try {
-            // 1. Get Upload URL
-            const postUrl = await generateUploadUrl();
-
-            // 2. Upload File
-            const result = await fetch(postUrl, {
-                method: "POST",
-                headers: { "Content-Type": file.type },
-                body: file,
-            });
-            const { storageId } = await result.json();
-
-            // 3. Update Conversation Image
-            await updateGroupImage({ conversationId, imageId: storageId });
-        } catch (error) {
-            console.error("Failed to upload group image:", error);
-        }
-    };
 
     const handleDeleteGroup = async () => {
         if (!conversationId) return;
@@ -118,13 +96,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     return (
         <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                className="hidden"
-                accept="image/*"
-            />
+
             {/* Header */}
             <div className="flex items-center px-4 py-3 border-b bg-white z-10 sticky top-0">
                 <button
@@ -139,7 +111,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         <div
                             className={`w-8 h-8 rounded-full overflow-hidden mr-3 ${conversation.isGroup ? "cursor-pointer hover:opacity-80" : ""}`}
                             style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                            onClick={() => conversation.isGroup && fileInputRef.current?.click()}
+                            onClick={() => conversation.isGroup && setIsImageModalOpen(true)}
                         >
                             {conversation.displayImage ? (
                                 <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
@@ -283,6 +255,17 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Edit Group Image Modal */}
+            {conversation && (
+                <EditGroupImageModal
+                    isOpen={isImageModalOpen}
+                    onClose={() => setIsImageModalOpen(false)}
+                    conversationId={conversationId}
+                    groupName={conversation.displayName || "Gruppe"}
+                    currentImage={conversation.displayImage || undefined}
+                />
             )}
 
             {/* Input */}

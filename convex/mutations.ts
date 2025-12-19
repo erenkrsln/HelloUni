@@ -56,51 +56,51 @@ export const likePost = mutation({
     // Use a retry loop to handle write conflicts
     let retries = 0;
     const maxRetries = 5;
-    
+
     while (retries < maxRetries) {
       try {
-    const existingLike = await ctx.db
-      .query("likes")
-      .withIndex("by_user_post", (q) =>
-        q.eq("userId", args.userId).eq("postId", args.postId)
-      )
-      .first();
+        const existingLike = await ctx.db
+          .query("likes")
+          .withIndex("by_user_post", (q) =>
+            q.eq("userId", args.userId).eq("postId", args.postId)
+          )
+          .first();
 
-    const post = await ctx.db.get(args.postId);
-    if (!post) throw new Error("Post not found");
+        const post = await ctx.db.get(args.postId);
+        if (!post) throw new Error("Post not found");
 
-    if (existingLike) {
+        if (existingLike) {
           // Unlike: delete the like and recalculate count
-      await ctx.db.delete(existingLike._id);
-          
+          await ctx.db.delete(existingLike._id);
+
           // Recalculate likesCount from actual likes to avoid race conditions
           const allLikes = await ctx.db
             .query("likes")
             .withIndex("by_post", (q) => q.eq("postId", args.postId))
             .collect();
-          
-      await ctx.db.patch(args.postId, {
+
+          await ctx.db.patch(args.postId, {
             likesCount: allLikes.length,
-      });
-      return { liked: false };
-    } else {
+          });
+          return { liked: false };
+        } else {
           // Like: insert the like and recalculate count
-      await ctx.db.insert("likes", {
-        userId: args.userId,
-        postId: args.postId,
-      });
-          
+          await ctx.db.insert("likes", {
+            userId: args.userId,
+            postId: args.postId,
+          });
+
           // Recalculate likesCount from actual likes to avoid race conditions
           const allLikes = await ctx.db
             .query("likes")
             .withIndex("by_post", (q) => q.eq("postId", args.postId))
             .collect();
-          
-      await ctx.db.patch(args.postId, {
+
+          await ctx.db.patch(args.postId, {
             likesCount: allLikes.length,
-      });
-      return { liked: true };
-    }
+          });
+          return { liked: true };
+        }
       } catch (error: any) {
         // If it's a write conflict, retry
         if (error.message?.includes("write conflict") || error.message?.includes("conflict")) {
@@ -116,7 +116,7 @@ export const likePost = mutation({
         throw error;
       }
     }
-    
+
     throw new Error("Failed to like post after multiple retries");
   },
 });
@@ -295,12 +295,12 @@ export const createConversation = mutation({
 export const updateGroupImage = mutation({
   args: {
     conversationId: v.id("conversations"),
-    imageId: v.string(),
+    imageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Optional: Check permissions (is participant?)
     await ctx.db.patch(args.conversationId, {
-      image: args.imageId
+      image: args.imageId === "" ? undefined : args.imageId
     });
   },
 });
@@ -437,7 +437,7 @@ export const deletePost = mutation({
     if (!post) {
       throw new Error("Post nicht gefunden");
     }
-    
+
     if (post.userId !== args.userId) {
       throw new Error("Nicht berechtigt, diesen Post zu löschen");
     }
@@ -448,7 +448,7 @@ export const deletePost = mutation({
       .query("likes")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
-    
+
     for (const like of likes) {
       await ctx.db.delete(like._id);
     }
@@ -458,7 +458,7 @@ export const deletePost = mutation({
       .query("participants")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
-    
+
     for (const participant of participants) {
       await ctx.db.delete(participant._id);
     }
@@ -468,7 +468,7 @@ export const deletePost = mutation({
       .query("pollVotes")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
-    
+
     for (const vote of pollVotes) {
       await ctx.db.delete(vote._id);
     }
