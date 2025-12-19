@@ -67,11 +67,11 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         role="dialog"
         aria-modal="true"
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] bg-white shadow-2xl transition-transform duration-300 ease-out will-change-transform",
-          // Layout Specs: YouTube Style
-          "w-[min(88vw,360px)] rounded-r-[28px]",
+          "fixed inset-y-0 right-0 z-[60] bg-white shadow-2xl transition-transform duration-300 ease-out will-change-transform",
+          // Layout Specs: Standard Right Sidebar
+          "w-[min(85vw,360px)] border-l border-gray-100",
           // Animation
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "translate-x-full"
         )}
         style={{
           // Ensure full viewport height including browser chrome
