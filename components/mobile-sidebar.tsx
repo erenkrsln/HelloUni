@@ -1,10 +1,9 @@
-"use client";
-
 import { signOut } from "next-auth/react";
-import { X, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -20,93 +19,80 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   };
 
   return (
-    <>
-      {/* Overlay - covers entire viewport including safe areas */}
-      {isOpen && (
-        <div
-          className="fixed bg-black/50 z-[55] transition-opacity"
-          onClick={onClose}
-          style={{
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            opacity: isOpen ? 1 : 0,
-            pointerEvents: isOpen ? "auto" : "none"
-          }}
-        />
-      )}
-
-      {/* Sidebar - iOS Safe Area Compatible */}
-      <div
-        className="fixed right-0 top-0 w-[85vw] max-w-[320px] bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden"
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent
+        side="right"
+        className="p-0 rounded-l-[32px] border-l border-border w-[85vw] max-w-[320px] bg-white overflow-hidden flex flex-col shadow-2xl"
         style={{
-          height: "100dvh", // Dynamic viewport height for mobile
-          transform: isOpen ? "translateX(0)" : "translateX(100%)",
+          // Use inline style to ensure it reaches top (already in SheetContent but reinforcing)
+          // and apply safe area height logic
+          height: "100dvh",
         }}
       >
         {/* Scrollable content wrapper with safe-area padding */}
         <div
-          className="flex flex-col h-full overflow-y-auto"
+          className="flex-1 flex flex-col overflow-y-auto"
           style={{
-            paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+            paddingTop: "calc(env(safe-area-inset-top, 0px))", // Just safe area, no extra padding needed as Avatar has its own margin
             paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
             paddingLeft: "env(safe-area-inset-left, 0px)",
-            paddingRight: "calc(0.5rem + env(safe-area-inset-right, 0px))",
-            WebkitOverflowScrolling: "touch", // iOS smooth scrolling
+            paddingRight: "env(safe-area-inset-right, 0px)",
+            WebkitOverflowScrolling: "touch",
           }}
         >
-          {/* Header mit Avatar, Name und Benutzername */}
-          <div className="flex items-center justify-between px-6 pb-4 border-b border-gray-200">
+          {/* Header Section */}
+          <div className="flex items-center justify-between px-6 pt-6 pb-6 border-b border-gray-100">
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              <Avatar className="w-12 h-12 flex-shrink-0">
+              <Avatar className="w-12 h-12 flex-shrink-0 border border-gray-100">
                 <AvatarImage src={currentUser?.image} alt={currentUser?.name || "User"} />
-                <AvatarFallback className="text-lg text-black" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                <AvatarFallback className="text-lg text-black bg-gray-100">
                   {currentUser?.name?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col flex-1 min-w-0">
-                <h2 className="text-lg font-semibold text-black truncate">
+                <h2 className="text-lg font-semibold text-black truncate leading-tight">
                   {currentUser?.name || "Benutzer"}
                 </h2>
                 {currentUser?.username && (
-                  <p className="text-sm text-gray-600 truncate">
+                  <p className="text-sm text-gray-500 truncate">
                     @{currentUser.username}
                   </p>
                 )}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors ml-2 flex-shrink-0"
-            >
-              <X className="w-6 h-6 text-black" />
-            </button>
+            {/* Sheet automatically adds Close button, but we can keep layout clean */}
           </div>
 
-          {/* Content mit Profil und Abmelde-Button */}
-          <div className="flex-1 px-6 pt-6 flex flex-col gap-2">
+          {/* Navigation Links */}
+          <div className="flex-1 px-4 py-4 flex flex-col gap-1">
             <button
               onClick={() => {
                 router.push("/profile");
                 onClose();
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-black"
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-black group"
             >
-              <User className="w-5 h-5 text-black" />
-              <span>Profil</span>
+              <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-white flex items-center justify-center transition-colors">
+                <User className="w-4 h-4 text-black" />
+              </div>
+              <span className="font-medium">Profil</span>
             </button>
+
+            <div className="h-px bg-gray-100 my-2 mx-4" />
+
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600"
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-red-50 active:bg-red-100 transition-colors text-red-600 group"
             >
-              <LogOut className="w-5 h-5 text-red-600" />
-              <span>Abmelden</span>
+              <div className="w-8 h-8 rounded-full bg-red-50 group-hover:bg-white flex items-center justify-center transition-colors">
+                <LogOut className="w-4 h-4 text-red-600" />
+              </div>
+              <span className="font-medium">Abmelden</span>
             </button>
           </div>
         </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }
 
