@@ -13,6 +13,13 @@ import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
 import { profileCache } from "@/lib/cache/profileCache";
+import { Viewport } from "next";
+
+export const viewport: Viewport = {
+    themeColor: "#0a0a0a",
+    viewportFit: "cover",
+};
+
 
 export default function ProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
