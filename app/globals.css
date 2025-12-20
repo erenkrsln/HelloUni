@@ -124,3 +124,33 @@ select option:disabled {
 main {
   padding-top: calc(94px + env(safe-area-inset-top, 0px));
 }
+
+/* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
+.safe-area-padding {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+
+/* Safe Area Padding Top - Nur oben */
+.safe-area-padding-top {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+
+/* Safe Area Padding Bottom - Nur unten */
+.safe-area-padding-bottom {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Safe Area Padding Horizontal - Links und Rechts */
+.safe-area-padding-x {
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+
+/* Safe Area Padding Vertical - Oben und Unten */
+.safe-area-padding-y {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
