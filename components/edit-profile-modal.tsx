@@ -416,11 +416,34 @@ export function EditProfileModal({
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
+              className="min-w-[100px]"
+              style={{
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden"
+              }}
             >
               Abbrechen
             </Button>
-            <Button type="submit" disabled={isSubmitting || !name.trim()}>
-              {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !name.trim()}
+              className="min-w-[100px]"
+              style={{
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden"
+              }}
+            >
+              <span style={{ 
+                display: "inline-block",
+                minWidth: "80px",
+                textAlign: "center"
+              }}>
+                {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+              </span>
             </Button>
           </div>
         </form>

@@ -142,7 +142,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 accept="image/*"
             />
             {/* Header */}
-            <div className="flex items-center px-4 py-3 border-b bg-white z-10 sticky top-0">
+            <div 
+                className="flex items-center px-4 py-3 border-b bg-white z-10 sticky top-0"
+                style={{
+                    paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
+                    top: 0
+                }}
+            >
                 <button
                     onClick={() => router.back()}
                     className="mr-3 p-2 -ml-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
