@@ -156,18 +156,45 @@ export function ProfileHeader({
 
     return (
         <div className="relative w-full">
-            {/* Header Image - Twitter/X Style (3:1 aspect ratio) */}
-            <div className="relative w-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group" style={{ aspectRatio: '3/1', minHeight: '120px' }}>
+            {/* Header Image - Twitter/X Style (3:1 aspect ratio) - erstreckt sich über Safe Area */}
+            <div 
+                className="relative w-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group" 
+                style={{ 
+                    aspectRatio: '3/1', 
+                    minHeight: '120px',
+                    // Erstreckt sich über Safe Area hinaus
+                    marginTop: `calc(-1 * env(safe-area-inset-top, 0px))`,
+                    paddingTop: `env(safe-area-inset-top, 0px)`,
+                    height: `calc(100% + env(safe-area-inset-top, 0px))`
+                }}
+            >
                 {headerImage ? (
                     <img
                         src={headerImage}
                         alt="Header"
                         className="w-full h-full object-cover"
+                        style={{
+                            position: 'absolute',
+                            top: `calc(-1 * env(safe-area-inset-top, 0px))`,
+                            left: 0,
+                            right: 0,
+                            height: `calc(100% + env(safe-area-inset-top, 0px))`,
+                            objectFit: 'cover'
+                        }}
                     />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
+                    <div 
+                        className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20"
+                        style={{
+                            position: 'absolute',
+                            top: `calc(-1 * env(safe-area-inset-top, 0px))`,
+                            left: 0,
+                            right: 0,
+                            height: `calc(100% + env(safe-area-inset-top, 0px))`
+                        }}
+                    />
                 )}
-                {/* Edit Header Image Button - only visible on own profile */}
+                {/* Edit Header Image Button - only visible on own profile - unter Safe Area positioniert */}
                 {isOwnProfile && (
                     <>
                         <input
@@ -180,7 +207,11 @@ export function ProfileHeader({
                         />
                         <button
                             onClick={() => headerImageInputRef.current?.click()}
-                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            className="absolute w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            style={{
+                                top: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
+                                right: '0.75rem'
+                            }}
                             aria-label="Titelbild ändern"
                         >
                             <Camera className="w-4 h-4 text-white" />
