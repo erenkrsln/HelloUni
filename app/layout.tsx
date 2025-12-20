@@ -20,6 +20,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "HelloUni",
   description: "Social Media App für Studierende",
+  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {
