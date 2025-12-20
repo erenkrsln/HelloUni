@@ -50,7 +50,7 @@ export default function ProfilePage() {
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-            
+
             {/* Edit Profile Modal */}
             {profileData && (
                 <EditProfileModal
@@ -66,7 +66,7 @@ export default function ProfilePage() {
                     onUpdate={handleProfileUpdate}
                 />
             )}
-                {isLoading ? (
+            {isLoading ? (
                 <LoadingScreen text="Profil wird geladen..." />
             ) : profileData ? (
                 <>
@@ -87,6 +87,7 @@ export default function ProfilePage() {
                         followingCount={profileData.followingCount}
                         onHeaderImageUpdate={handleProfileUpdate}
                         onEditClick={() => setIsEditModalOpen(true)}
+                        onMenuClick={() => setIsSidebarOpen(true)}
                     />
 
                     {/* Posts section */}

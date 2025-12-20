@@ -5,7 +5,7 @@ import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil } from "lucide-react";
+import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, ChevronLeft, Menu } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
@@ -31,6 +31,7 @@ interface ProfileHeaderProps {
     isFollowing?: boolean;
     onHeaderImageUpdate?: () => void;
     onEditClick?: () => void;
+    onMenuClick?: () => void;
 }
 
 export function ProfileHeader({
@@ -51,6 +52,7 @@ export function ProfileHeader({
     isFollowing: preloadedIsFollowing,
     onHeaderImageUpdate,
     onEditClick,
+    onMenuClick,
 }: ProfileHeaderProps) {
     const headerImageInputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
@@ -157,7 +159,7 @@ export function ProfileHeader({
     return (
         <div className="relative w-full">
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) */}
-            <div className="relative w-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group pt-safe-top" style={{ aspectRatio: '3/1', minHeight: '120px' }}>
+            <div className="relative w-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group" style={{ aspectRatio: '3/1', minHeight: '120px' }}>
                 {headerImage ? (
                     <img
                         src={headerImage}
@@ -167,6 +169,33 @@ export function ProfileHeader({
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
                 )}
+
+                {/* Navigation Buttons over Header Image */}
+                <div
+                    className="absolute top-0 left-0 right-0 flex items-center justify-between px-4"
+                    style={{ paddingTop: 'env(safe-area-inset-top, 0px)', height: 'calc(44px + env(safe-area-inset-top, 0px))' }}
+                >
+                    {!isOwnProfile ? (
+                        <button
+                            onClick={() => window.history.back()}
+                            className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white"
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
+                    ) : (
+                        <div /> // Left spacer if own profile
+                    )}
+
+                    {onMenuClick && (
+                        <button
+                            onClick={onMenuClick}
+                            className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white"
+                        >
+                            <Menu className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+
                 {/* Edit Header Image Button - only visible on own profile */}
                 {isOwnProfile && (
                     <>
@@ -180,7 +209,7 @@ export function ProfileHeader({
                         />
                         <button
                             onClick={() => headerImageInputRef.current?.click()}
-                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200"
                             aria-label="Titelbild ändern"
                         >
                             <Camera className="w-4 h-4 text-white" />

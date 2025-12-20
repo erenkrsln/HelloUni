@@ -43,10 +43,9 @@ export default function UserProfilePage() {
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-            <Header onMenuClick={() => setIsSidebarOpen(true)} />
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-                {isLoading ? (
+            {isLoading ? (
                 // Show spinner only on first visit (no cached data)
                 <LoadingScreen text="Profil wird geladen..." />
             ) : notFound ? (
@@ -73,6 +72,7 @@ export default function UserProfilePage() {
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
                         isFollowing={profileData.isFollowing}
+                        onMenuClick={() => setIsSidebarOpen(true)}
                     />
 
                     {/* Posts section */}
