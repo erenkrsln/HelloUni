@@ -12,12 +12,6 @@ import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams } from "next/navigation";
-import { Viewport } from "next";
-
-export const viewport: Viewport = {
-    themeColor: "#0a0a0a",
-    viewportFit: "cover",
-};
 
 
 /**
