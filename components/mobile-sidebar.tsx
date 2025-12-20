@@ -44,31 +44,31 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   return (
     <>
-      {/* Overlay - Full-bleed, erstreckt sich über Safe Area */}
+      {/* Overlay - Full-bleed, erstreckt sich über Status Bar */}
       {isOpen && (
         <div
           className="fixed bg-black/50 z-[55] transition-opacity"
           onClick={onClose}
           style={{
-            top: 0,
+            top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar
             left: 0,
             right: 0,
             bottom: 0,
-            height: "100dvh", // Moderne Viewport-Höhe für Mobile
+            height: `calc(100dvh + env(safe-area-inset-top, 0px))`, // Volle Höhe + Status Bar
             opacity: isOpen ? 1 : 0,
             pointerEvents: isOpen ? "auto" : "none"
           }}
         />
       )}
 
-      {/* Sidebar Container - Full-bleed, erstreckt sich über Safe Area */}
+      {/* Sidebar Container - Erstreckt sich über Status Bar */}
       <div
         className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
-          top: 0,
+          top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar
           bottom: 0,
           left: "auto",
-          height: "100dvh", // Moderne Viewport-Höhe für Mobile (fallback: 100vh)
+          height: `calc(100dvh + env(safe-area-inset-top, 0px))`, // Volle Höhe + Status Bar
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
           willChange: "transform",
           backfaceVisibility: "hidden",
