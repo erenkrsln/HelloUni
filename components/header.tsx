@@ -28,7 +28,15 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
   const showLogoutButton = false;
 
   return (
-    <header className="relative w-full" style={{ height: "94px" }}>
+    <header 
+      className="relative w-full" 
+      style={{ 
+        height: "94px",
+        // Auf Mobile: Header nach unten verschieben, um Status Bar zu vermeiden
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        minHeight: "calc(94px + env(safe-area-inset-top, 0px))"
+      }}
+    >
       <div
         className="absolute flex items-center justify-center overflow-hidden"
         style={{
