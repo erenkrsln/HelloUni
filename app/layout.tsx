@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   title: "HelloUni",
   description: "Social Media App für Studierende",
   manifest: "/site.webmanifest",
+  appleWebApp: {
+    title: "HelloUni",
+    statusBarStyle: "black-translucent",
+    capable: true,
+  },
 };
 
 export const viewport: Viewport = {

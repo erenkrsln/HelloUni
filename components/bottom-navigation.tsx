@@ -36,15 +36,7 @@ export function BottomNavigation() {
 
   return (
     <nav
-      className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-40"
-      style={{
-        bottom: "0rem",
-        // iOS Safari: Safe Area für Home Indicator
-        paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-        // Bottom Navigation sitzt auf App-Hintergrund-Ebene, nicht auf transparentem Layer
-        position: "fixed",
-        isolation: "isolate", // Erstellt neuen Stacking Context
-      }}
+      className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4"
     >
       <div
         className="flex items-center justify-between px-5 py-4"
