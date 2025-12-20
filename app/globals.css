@@ -123,11 +123,7 @@ select option:disabled {
 /* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
 
 @media screen and (display-mode: standalone) {
-
   /* In Standalone-Modus (Home Screen) brauchen wir oft Anpassungen */
-  main {
-    padding-top: calc(94px + env(safe-area-inset-top, 0px));
-  }
 }
 
 /* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
