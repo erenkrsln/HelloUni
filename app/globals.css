@@ -160,3 +160,24 @@ select option:disabled {
 .header-spacing {
   padding-top: calc(94px + env(safe-area-inset-top, 0px));
 }
+
+/* Responsive Header Image - Full width on mobile, limited on desktop */
+.header-image-responsive {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+@media (min-width: 640px) {
+  .header-image-responsive {
+    width: 100%;
+    max-width: 428px;
+    left: auto;
+    right: auto;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

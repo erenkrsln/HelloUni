@@ -59,6 +59,7 @@ export function ProfileHeader({
     // State for crop modal
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const [selectedImageSrc, setSelectedImageSrc] = useState<string>("");
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleHeaderImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -70,10 +71,14 @@ export function ProfileHeader({
             setSelectedImageSrc(reader.result as string);
             setIsCropModalOpen(true);
         };
+        reader.onerror = () => {
+            alert("Fehler beim Lesen der Datei");
+        };
         reader.readAsDataURL(file);
     };
 
     const handleCropComplete = async (croppedBlob: Blob) => {
+        setIsUploading(true);
         try {
             // Upload cropped image
             const uploadUrl = await generateUploadUrl();
@@ -102,6 +107,7 @@ export function ProfileHeader({
             console.error("Fehler beim Hochladen des Titelbilds:", error);
             alert("Fehler beim Hochladen des Titelbilds");
         } finally {
+            setIsUploading(false);
             // Reset input
             if (headerImageInputRef.current) {
                 headerImageInputRef.current.value = "";
@@ -110,6 +116,7 @@ export function ProfileHeader({
     };
 
     const handleCropCancel = () => {
+        if (isUploading) return; // Prevent closing during upload
         setIsCropModalOpen(false);
         setSelectedImageSrc("");
         // Reset input
@@ -162,11 +169,13 @@ export function ProfileHeader({
                 style={{ backgroundColor: '#0a0a0a' }}
             />
 
-            {/* Header Image - Twitter/X Style (3:1 aspect ratio) */}
-            <div
-                className={`relative w-full bg-[#0a0a0a] overflow-hidden group ${isOwnProfile ? 'cursor-pointer' : ''}`}
-                style={{ aspectRatio: '3/1', minHeight: '120px' }}
-                onClick={() => isOwnProfile && headerImageInputRef.current?.click()}
+            {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
+            <div 
+                className="relative bg-[#0a0a0a] overflow-hidden group header-image-responsive" 
+                style={{ 
+                    aspectRatio: '3/1', 
+                    minHeight: '120px'
+                }}
             >
                 {headerImage ? (
                     <img
@@ -175,9 +184,7 @@ export function ProfileHeader({
                         className="w-full h-full object-cover"
                     />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20 flex items-center justify-center">
-                        <Camera className="w-8 h-8 text-black/20" />
-                    </div>
+                    <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
                 )}
 
                 {/* Edit Header Image Button - only visible on own profile */}
@@ -192,18 +199,28 @@ export function ProfileHeader({
                             id="header-image-upload-inline"
                         />
                         <button
-                            onClick={() => headerImageInputRef.current?.click()}
-                            className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 active:scale-95 flex items-center justify-center transition-all duration-200 shadow-lg border border-white/20"
+                            type="button"
+                            onClick={() => {
+                                console.log("Button geklickt, öffne File-Dialog...");
+                                if (headerImageInputRef.current) {
+                                    headerImageInputRef.current.click();
+                                    console.log("File-Input geklickt");
+                                } else {
+                                    console.error("File-Input ref ist null!");
+                                }
+                            }}
+                            className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                            style={{ zIndex: 50 }}
                             aria-label="Titelbild ändern"
                         >
-                            <Camera className="w-5 h-5 text-white" />
+                            <Camera className="w-5 h-5 text-white pointer-events-none" />
                         </button>
                     </>
                 )}
             </div>
 
             {/* Profile Picture - overlapping header (Twitter/X Style) */}
-            <div className="relative px-4">
+            <div className="relative px-4 z-10">
                 <div className="flex items-end justify-between -mt-12 sm:-mt-20 mb-2">
                     {/* Profile Picture - overlaps header by ~50%, thick white border */}
                     <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-white shadow-xl" style={{ backgroundColor: 'white' }}>
@@ -328,6 +345,7 @@ export function ProfileHeader({
                     onClose={handleCropCancel}
                     imageSrc={selectedImageSrc}
                     onCropComplete={handleCropComplete}
+                    isUploading={isUploading}
                 />
             )}
         </div>

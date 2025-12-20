@@ -17,6 +17,7 @@ interface HeaderImageCropModalProps {
     onClose: () => void;
     imageSrc: string;
     onCropComplete: (croppedImageBlob: Blob) => void;
+    isUploading?: boolean;
 }
 
 export function HeaderImageCropModal({
@@ -24,6 +25,7 @@ export function HeaderImageCropModal({
     onClose,
     imageSrc,
     onCropComplete,
+    isUploading = false,
 }: HeaderImageCropModalProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -54,19 +56,27 @@ export function HeaderImageCropModal({
     );
 
     const handleApply = async () => {
-        if (!croppedAreaPixels) return;
+        if (!croppedAreaPixels || isProcessing || isUploading) return;
 
         setIsProcessing(true);
         try {
             const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
             onCropComplete(croppedBlob);
+            // Don't reset isProcessing here - it will be handled by isUploading state
+            // Keep processing state until upload completes
         } catch (error) {
             console.error("Error cropping image:", error);
             alert("Fehler beim Zuschneiden des Bildes");
-        } finally {
             setIsProcessing(false);
         }
     };
+
+    // Reset processing state when upload completes
+    React.useEffect(() => {
+        if (!isUploading && isProcessing) {
+            setIsProcessing(false);
+        }
+    }, [isUploading, isProcessing]);
 
     const handleCancel = () => {
         // Reset state
@@ -136,17 +146,17 @@ export function HeaderImageCropModal({
                             type="button"
                             variant="outline"
                             onClick={handleCancel}
-                            disabled={isProcessing}
+                            disabled={isProcessing || isUploading}
                         >
                             Abbrechen
                         </Button>
                         <Button
                             type="button"
                             onClick={handleApply}
-                            disabled={isProcessing}
-                            className="bg-[#D08945] hover:bg-[#C07835] text-white"
+                            disabled={isProcessing || isUploading}
+                            className="bg-[#D08945] hover:bg-[#C07835] text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isProcessing ? "Wird verarbeitet..." : "Anwenden"}
+                            {isProcessing || isUploading ? "Wird verarbeitet..." : "Anwenden"}
                         </Button>
                     </div>
                 </div>
