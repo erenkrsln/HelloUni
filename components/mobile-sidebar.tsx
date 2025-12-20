@@ -23,56 +23,33 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   // Body-Lock: Verhindere Scrollen des Body, wenn Sidebar offen ist
   useEffect(() => {
     if (isOpen) {
-      // Speichere den aktuellen Scroll-Offset
-      const scrollY = window.scrollY;
-      // Setze overflow hidden auf body
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
+      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
 
       return () => {
-        // Stelle den Scroll-Offset wieder her
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.width = "";
-        document.body.style.overflow = "";
-        window.scrollTo(0, scrollY);
+        document.body.style.overflow = originalOverflow;
       };
     }
   }, [isOpen]);
 
   return (
     <>
-      {/* Overlay - Full-bleed, erstreckt sich über Status Bar und Home Indicator */}
+      {/* Overlay - Full-bleed */}
       {isOpen && (
         <div
-          className="fixed bg-black/50 z-[55] transition-opacity"
+          className="fixed inset-0 bg-black/50 z-[55] transition-opacity"
           onClick={onClose}
           style={{
-            position: "fixed",
-            top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar hinaus
-            left: 0,
-            right: 0,
-            bottom: `calc(-1 * env(safe-area-inset-bottom, 0px))`, // Erstreckt sich über Home Indicator hinaus
-            height: `calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))`, // Volle Höhe + beide Safe Areas
             opacity: isOpen ? 1 : 0,
             pointerEvents: isOpen ? "auto" : "none"
           }}
         />
       )}
 
-      {/* Sidebar Container - Erstreckt sich über Status Bar */}
+      {/* Sidebar Container */}
       <div
-        className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
+        className="fixed top-0 right-0 bottom-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
-          position: "fixed",
-          top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar hinaus
-          right: 0,
-          bottom: `calc(-1 * env(safe-area-inset-bottom, 0px))`, // Erstreckt sich über Home Indicator hinaus
-          left: "auto",
-          width: "20rem", // w-80 = 320px
-          height: `calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))`, // Volle Höhe + beide Safe Areas
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
           willChange: "transform",
           backfaceVisibility: "hidden",
