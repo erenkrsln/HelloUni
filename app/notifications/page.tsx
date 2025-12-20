@@ -28,7 +28,7 @@ export default function NotificationsPage() {
     }, []);
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
+        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden header-spacing">
             <Header onMenuClick={() => setIsSidebarOpen(true)} />
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
