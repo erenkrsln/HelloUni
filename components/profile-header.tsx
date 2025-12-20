@@ -179,13 +179,13 @@ export function ProfileHeader({
                     minHeight: '120px'
                 }}
             >
-                {/* Back Arrow Button - top left */}
+                {/* Back Arrow Button - bottom left on mobile, top left on desktop with iOS safe area */}
                 <button
                     onClick={() => router.push("/home")}
-                    className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                    className="absolute bottom-12 left-3 sm:bottom-auto sm:left-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
                     aria-label="Zurück zur Startseite"
                 >
-                    <ArrowLeft className="w-4 h-4 text-white" />
+                    <ArrowLeft className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white" />
                 </button>
 
                 {headerImage ? (
@@ -220,11 +220,11 @@ export function ProfileHeader({
                                     console.error("File-Input ref ist null!");
                                 }
                             }}
-                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                            className="absolute bottom-12 right-3 sm:bottom-auto sm:right-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
                             style={{ zIndex: 50 }}
                             aria-label="Titelbild ändern"
                         >
-                            <Camera className="w-4 h-4 text-white pointer-events-none" />
+                            <Camera className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white pointer-events-none" />
                         </button>
                     </>
                 )}

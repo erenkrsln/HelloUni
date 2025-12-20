@@ -161,6 +161,13 @@ select option:disabled {
   padding-top: calc(94px + env(safe-area-inset-top, 0px));
 }
 
+/* Profile header buttons - safe area aware on iOS */
+@media (min-width: 640px) {
+  .profile-header-button {
+    top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
 /* Responsive Header Image - Full width on mobile, limited on desktop */
 .header-image-responsive {
   width: 100vw;
