@@ -25,7 +25,7 @@ export default function UserProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const params = useParams();
     const username = params.username as string;
-    const { currentUserId } = useCurrentUser();
+    const { currentUserId, currentUser } = useCurrentUser();
 
     // Use unified hook with client-side caching
     // Returns cached data immediately on subsequent visits
@@ -33,6 +33,9 @@ export default function UserProfilePage() {
         username,
         currentUserId
     });
+
+    // Check if this is the current user's own profile
+    const isOwnProfile = profileData?.user?._id === currentUserId;
 
     // Fetch all posts (separate query, also cached by Convex)
     const allPosts = useQuery(api.queries.getFeed);
@@ -68,7 +71,7 @@ export default function UserProfilePage() {
                         createdAt={profileData.user.createdAt}
                         userId={profileData.user._id}
                         currentUserId={currentUserId}
-                        isOwnProfile={false}
+                        isOwnProfile={isOwnProfile}
                         postsCount={userPosts.length}
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}

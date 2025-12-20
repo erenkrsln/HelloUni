@@ -5,11 +5,12 @@ import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil } from "lucide-react";
+import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
 
 interface ProfileHeaderProps {
@@ -52,6 +53,7 @@ export function ProfileHeader({
     onHeaderImageUpdate,
     onEditClick,
 }: ProfileHeaderProps) {
+    const router = useRouter();
     const headerImageInputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateUser = useMutation(api.mutations.updateUser);
@@ -177,6 +179,15 @@ export function ProfileHeader({
                     minHeight: '120px'
                 }}
             >
+                {/* Back Arrow Button - top left */}
+                <button
+                    onClick={() => router.push("/home")}
+                    className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                    aria-label="Zurück zur Startseite"
+                >
+                    <ArrowLeft className="w-4 h-4 text-white" />
+                </button>
+
                 {headerImage ? (
                     <img
                         src={headerImage}
@@ -209,11 +220,11 @@ export function ProfileHeader({
                                     console.error("File-Input ref ist null!");
                                 }
                             }}
-                            className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
                             style={{ zIndex: 50 }}
                             aria-label="Titelbild ändern"
                         >
-                            <Camera className="w-5 h-5 text-white pointer-events-none" />
+                            <Camera className="w-4 h-4 text-white pointer-events-none" />
                         </button>
                     </>
                 )}
