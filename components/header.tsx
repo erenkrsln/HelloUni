@@ -29,12 +29,18 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
 
   return (
     <header 
-      className="relative w-full" 
+      className="fixed top-0 left-0 right-0 w-full bg-white z-50" 
       style={{ 
-        height: "94px",
-        // Auf Mobile: Header nach unten verschieben, um Status Bar zu vermeiden
+        // Header erstreckt sich über Safe Area hinaus, Hintergrund geht bis ganz nach oben
+        top: "0",
+        height: `calc(94px + env(safe-area-inset-top, 0px))`,
+        minHeight: `calc(94px + env(safe-area-inset-top, 0px))`,
+        // Inhalt wird durch paddingTop unter die Safe Area verschoben
         paddingTop: "env(safe-area-inset-top, 0px)",
-        minHeight: "calc(94px + env(safe-area-inset-top, 0px))"
+        position: "fixed",
+        left: 0,
+        right: 0,
+        backgroundColor: "#ffffff"
       }}
     >
       <div

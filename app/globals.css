@@ -119,3 +119,8 @@ select option {
 select option:disabled {
   color: #9ca3af;
 }
+
+/* Content-Abstand für fixed Header mit Safe Area */
+main {
+  padding-top: calc(94px + env(safe-area-inset-top, 0px));
+}
