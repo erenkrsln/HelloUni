@@ -311,7 +311,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Input */}
-            <div className="p-3 bg-white border-t border-[#f0e6d2] safe-area-bottom">
+            <div 
+                className="p-3 bg-white border-t border-[#f0e6d2]"
+                style={{
+                    paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
+                }}
+            >
                 <form
                     onSubmit={handleSend}
                     className="flex items-center bg-[#FDFBF7] border border-[#efeadd] rounded-full px-4 py-2"
