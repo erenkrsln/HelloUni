@@ -45,6 +45,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   return (
     <>
       {/* Overlay - Full-bleed, erstreckt sich über Status Bar und Home Indicator */}
+      {/* Overlay muss über Bottom Navigation (z-40) und Header (z-50) liegen */}
       {isOpen && (
         <div
           className="fixed bg-black/50 z-[55] transition-opacity"
@@ -57,12 +58,16 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             bottom: `calc(-1 * env(safe-area-inset-bottom, 0px))`, // Erstreckt sich über Home Indicator hinaus
             height: `calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))`, // Volle Höhe + beide Safe Areas
             opacity: isOpen ? 1 : 0,
-            pointerEvents: isOpen ? "auto" : "none"
+            pointerEvents: isOpen ? "auto" : "none",
+            // Verhindere Click-Through zu Bottom Navigation
+            zIndex: 55,
+            isolation: "isolate", // Erstellt neuen Stacking Context über Bottom Navigation
           }}
         />
       )}
 
       {/* Sidebar Container - Erstreckt sich über Status Bar */}
+      {/* Sidebar muss über Overlay (z-55) liegen und ist topmost interactive layer */}
       <div
         className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
@@ -77,6 +82,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           willChange: "transform",
           backfaceVisibility: "hidden",
           WebkitBackfaceVisibility: "hidden",
+          zIndex: 60, // Explizit über Overlay (z-55) und Bottom Navigation (z-40)
+          isolation: "isolate", // Erstellt neuen Stacking Context
         }}
       >
         {/* Innerer Content-Wrapper mit Safe Area Padding */}
