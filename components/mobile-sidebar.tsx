@@ -81,8 +81,12 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       >
         {/* Innerer Content-Wrapper mit Safe Area Padding */}
         <div
-          className="flex flex-col h-full overflow-y-auto pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))]"
+          className="flex flex-col h-full overflow-y-auto"
           style={{
+            paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+            paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+            paddingLeft: "calc(1rem + env(safe-area-inset-left, 0px))",
+            paddingRight: "calc(1rem + env(safe-area-inset-right, 0px))",
             // Smooth Scrolling für iOS
             WebkitOverflowScrolling: "touch",
             overflowY: "auto",

@@ -35,6 +35,7 @@ export const viewport: Viewport = {
   userScalable: true,
   // iOS Safari: Unterstützung für Safe Area (Notch, Home Indicator)
   viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({

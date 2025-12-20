@@ -120,9 +120,14 @@ select option:disabled {
   color: #9ca3af;
 }
 
-/* Content-Abstand für fixed Header mit Safe Area */
-main {
-  padding-top: calc(94px + env(safe-area-inset-top, 0px));
+/* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
+
+@media screen and (display-mode: standalone) {
+
+  /* In Standalone-Modus (Home Screen) brauchen wir oft Anpassungen */
+  main {
+    padding-top: calc(94px + env(safe-area-inset-top, 0px));
+  }
 }
 
 /* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
@@ -153,4 +158,9 @@ main {
 .safe-area-padding-y {
   padding-top: calc(1rem + env(safe-area-inset-top, 0px));
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Base utility for top spacing that accounts for fixed header */
+.header-spacing {
+  padding-top: calc(94px + env(safe-area-inset-top, 0px));
 }

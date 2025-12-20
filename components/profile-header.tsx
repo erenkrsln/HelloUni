@@ -157,7 +157,7 @@ export function ProfileHeader({
     return (
         <div className="relative w-full">
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) */}
-            <div className="relative w-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group" style={{ aspectRatio: '3/1', minHeight: '120px' }}>
+            <div className="relative w-full bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden group pt-safe-top" style={{ aspectRatio: '3/1', minHeight: '120px' }}>
                 {headerImage ? (
                     <img
                         src={headerImage}

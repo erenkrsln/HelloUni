@@ -71,7 +71,7 @@ export default function Home() {
         img.src = post.imageUrl;
         img.loading = "eager";
         img.fetchPriority = "high";
-        
+
         // Methode 2: Link-Preload für persistenten Cache
         const link = document.createElement("link");
         link.rel = "preload";
@@ -79,7 +79,7 @@ export default function Home() {
         link.href = post.imageUrl;
         link.fetchPriority = "high";
         document.head.appendChild(link);
-        
+
         preloadedImages.current.add(post.imageUrl);
       }
     });
@@ -87,30 +87,28 @@ export default function Home() {
 
   // Konsistentes Layout immer beibehalten
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
+    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
-        {/* Mobile Sidebar */}
-        <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <div className="px-4 mb-4">
+      {/* Mobile Sidebar */}
+      <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <div className="px-4 mb-4">
         {/* Feed Toggle Buttons - Zentriert nach Figma Design */}
         <div className="flex items-center justify-center gap-2 mb-4 mt-4">
           <button
             onClick={() => setFeedType("all")}
-            className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${
-              feedType === "all"
+            className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${feedType === "all"
                 ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
                 : "bg-[#261708] border border-[#000000] text-white"
-            }`}
+              }`}
           >
             Für Dich
           </button>
           <button
             onClick={() => setFeedType("following")}
-            className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${
-              feedType === "following"
+            className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${feedType === "following"
                 ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
                 : "bg-[#261708] border border-[#000000] text-white"
-            }`}
+              }`}
           >
             Folge Ich
           </button>
@@ -132,7 +130,7 @@ export default function Home() {
         ) : (
           <div style={{ gap: "0", margin: "0", padding: "0" }}>
             {posts?.map((post, index) => (
-              <FeedCard 
+              <FeedCard
                 key={post._id}
                 post={post}
                 currentUserId={currentUserId}
