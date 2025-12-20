@@ -44,17 +44,18 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   return (
     <>
-      {/* Overlay - Full-bleed, erstreckt sich über Status Bar */}
+      {/* Overlay - Full-bleed, erstreckt sich über Status Bar und Home Indicator */}
       {isOpen && (
         <div
           className="fixed bg-black/50 z-[55] transition-opacity"
           onClick={onClose}
           style={{
-            top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar
+            position: "fixed",
+            top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar hinaus
             left: 0,
             right: 0,
-            bottom: 0,
-            height: `calc(100dvh + env(safe-area-inset-top, 0px))`, // Volle Höhe + Status Bar
+            bottom: `calc(-1 * env(safe-area-inset-bottom, 0px))`, // Erstreckt sich über Home Indicator hinaus
+            height: `calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))`, // Volle Höhe + beide Safe Areas
             opacity: isOpen ? 1 : 0,
             pointerEvents: isOpen ? "auto" : "none"
           }}
@@ -65,10 +66,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       <div
         className="fixed right-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
-          top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar
-          bottom: 0,
+          position: "fixed",
+          top: `calc(-1 * env(safe-area-inset-top, 0px))`, // Erstreckt sich über Status Bar hinaus
+          right: 0,
+          bottom: `calc(-1 * env(safe-area-inset-bottom, 0px))`, // Erstreckt sich über Home Indicator hinaus
           left: "auto",
-          height: `calc(100dvh + env(safe-area-inset-top, 0px))`, // Volle Höhe + Status Bar
+          width: "20rem", // w-80 = 320px
+          height: `calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))`, // Volle Höhe + beide Safe Areas
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
           willChange: "transform",
           backfaceVisibility: "hidden",
