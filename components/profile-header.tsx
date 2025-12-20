@@ -163,7 +163,11 @@ export function ProfileHeader({
             />
 
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) */}
-            <div className="relative w-full bg-[#0a0a0a] overflow-hidden group" style={{ aspectRatio: '3/1', minHeight: '120px' }}>
+            <div
+                className={`relative w-full bg-[#0a0a0a] overflow-hidden group ${isOwnProfile ? 'cursor-pointer' : ''}`}
+                style={{ aspectRatio: '3/1', minHeight: '120px' }}
+                onClick={() => isOwnProfile && headerImageInputRef.current?.click()}
+            >
                 {headerImage ? (
                     <img
                         src={headerImage}
@@ -171,7 +175,9 @@ export function ProfileHeader({
                         className="w-full h-full object-cover"
                     />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
+                    <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20 flex items-center justify-center">
+                        <Camera className="w-8 h-8 text-black/20" />
+                    </div>
                 )}
 
                 {/* Edit Header Image Button - only visible on own profile */}
@@ -187,10 +193,10 @@ export function ProfileHeader({
                         />
                         <button
                             onClick={() => headerImageInputRef.current?.click()}
-                            className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200"
+                            className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 active:scale-95 flex items-center justify-center transition-all duration-200 shadow-lg border border-white/20"
                             aria-label="Titelbild ändern"
                         >
-                            <Camera className="w-4 h-4 text-white" />
+                            <Camera className="w-5 h-5 text-white" />
                         </button>
                     </>
                 )}
