@@ -72,7 +72,6 @@ export default function UserProfilePage() {
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
                         isFollowing={profileData.isFollowing}
-                        onMenuClick={() => setIsSidebarOpen(true)}
                     />
 
                     {/* Posts section */}

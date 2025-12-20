@@ -87,7 +87,6 @@ export default function ProfilePage() {
                         followingCount={profileData.followingCount}
                         onHeaderImageUpdate={handleProfileUpdate}
                         onEditClick={() => setIsEditModalOpen(true)}
-                        onMenuClick={() => setIsSidebarOpen(true)}
                     />
 
                     {/* Posts section */}
