@@ -527,9 +527,9 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
               <Link
                 href={`/profile/${post.user.username}`}
                 prefetch={true}
-                  className="cursor-pointer hover:opacity-80 transition-opacity flex items-center min-w-0 flex-shrink"
+                  className="cursor-pointer hover:opacity-80 transition-opacity flex items-center flex-shrink-0"
               >
-                  <h3 className="font-bold text-[15px] text-gray-900 truncate max-w-[200px]">
+                  <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
                   {post.user.name}
                 </h3>
                 </Link>
@@ -538,8 +538,8 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
                   </span>
               </>
             ) : (
-              <div className="flex items-center min-w-0 flex-shrink">
-                <h3 className="font-bold text-[15px] text-gray-900 truncate max-w-[200px]">
+              <div className="flex items-center flex-shrink-0">
+                <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
                   {post.user?.name}
                 </h3>
               </div>
