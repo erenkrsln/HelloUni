@@ -112,10 +112,7 @@ export function GroupMembersModal({
                 conversationId,
                 userId: currentUserId,
             });
-            onClose(); // Close modal
-            // Maybe redirect? Or let page handle update. 
-            // Page will update and show "You left". 
-            // Better to force close modal.
+            onClose();
         } catch (error) {
             console.error("Failed to leave group:", error);
             alert("Fehler beim Verlassen der Gruppe.");

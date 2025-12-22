@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
@@ -11,6 +11,7 @@ import { Plus, MessageCircle, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
+import { LoadingScreen } from "@/components/ui/spinner";
 
 export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -22,6 +23,23 @@ export default function ChatPage() {
   const router = useRouter();
 
   const { currentUser } = useCurrentUser();
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
+
+  useEffect(() => {
+    const visited = sessionStorage.getItem("chat_visited");
+    if (visited) {
+      setIsFirstVisit(false);
+    } else {
+      const timer = setTimeout(() => {
+        sessionStorage.setItem("chat_visited", "true");
+        setIsFirstVisit(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const isLoading = isFirstVisit && currentUser === undefined;
+
   const conversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
   const allUsers = useQuery(api.queries.getAllUsers);
   const createConversation = useMutation(api.mutations.createConversation);
@@ -74,136 +92,140 @@ export default function ChatPage() {
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="px-4 py-6">
-        <div className="flex items-center justify-center mb-6">
-          <button
-            onClick={() => setIsNewChatOpen(true)}
-            className="w-10 h-10 rounded-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black flex items-center justify-center active:scale-95 transition-transform"
-          >
-            <Plus size={24} />
-          </button>
-        </div>
-        <div className="flex items-center justify-center gap-2 mb-6 text-[#8C531E]">
-          <button
-            onClick={() => setFilterType("all")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
-              ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-              : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
-              }`}
-          >
-            Alle
-          </button>
-          <button
-            onClick={() => setFilterType("direct")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
-              ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-              : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
-              }`}
-          >
-            Direkt
-          </button>
-          <button
-            onClick={() => setFilterType("group")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
-              ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-              : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
-              }`}
-          >
-            Gruppen
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[#8C531E]">
-            <Search className="h-5 w-5" />
+      {isLoading ? (
+        <LoadingScreen text="Chats werden geladen..." />
+      ) : (
+        <div className="px-4 py-6">
+          <div className="flex items-center justify-center mb-6">
+            <button
+              onClick={() => setIsNewChatOpen(true)}
+              className="w-10 h-10 rounded-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Plus size={24} />
+            </button>
           </div>
-          <input
-            type="text"
-            className="w-full pl-10 pr-4 py-3 bg-[#FDFBF7] border border-[#EFEADD] rounded-xl outline-none focus:border-[#8C531E] text-[#8C531E] placeholder:text-[#8C531E] transition-colors"
-            placeholder="Suchen..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+          <div className="flex items-center justify-center gap-2 mb-6 text-[#8C531E]">
+            <button
+              onClick={() => setFilterType("all")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
+                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
+                : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+                }`}
+            >
+              Alle
+            </button>
+            <button
+              onClick={() => setFilterType("direct")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
+                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
+                : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+                }`}
+            >
+              Direkt
+            </button>
+            <button
+              onClick={() => setFilterType("group")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
+                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
+                : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+                }`}
+            >
+              Gruppen
+            </button>
+          </div>
 
-        {/* Chat List */}
-        <div className="flex flex-col">
-          {!conversations ? (
-            <div className="text-center py-8 text-gray-500">Lade Chats...</div>
-          ) : filteredConversations?.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
-              <p>Keine Chats gefunden.</p>
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[#8C531E]">
+              <Search className="h-5 w-5" />
             </div>
-          ) : (
-            filteredConversations?.map((conv) => {
-              // Cast conv to any to access membership property if types are not generated yet
-              const membership = (conv as any).membership;
-              const isLeft = membership === "left";
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-3 bg-[#FDFBF7] border border-[#EFEADD] rounded-xl outline-none focus:border-[#8C531E] text-[#8C531E] placeholder:text-[#8C531E] transition-colors"
+              placeholder="Suchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-              return (
-                <div key={conv._id} className="relative group">
-                  <Link
-                    href={`/chat/${conv._id}`}
-                    className={`flex items-center p-3 hover:bg-[#FDFBF7] transition-colors active:bg-[#FDFBF7] border-b border-[#EFEADD] last:border-0 ${isLeft ? "opacity-75" : ""}`}
-                  >
+          {/* Chat List */}
+          <div className="flex flex-col">
+            {!conversations ? (
+              <LoadingScreen />
+            ) : filteredConversations?.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                <p>Keine Chats gefunden.</p>
+              </div>
+            ) : (
+              filteredConversations?.map((conv) => {
+                // Cast conv to any to access membership property if types are not generated yet
+                const membership = (conv as any).membership;
+                const isLeft = membership === "left";
 
-                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
-                      {conv.displayImage ? (
-                        <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
-                          {conv.displayName?.charAt(0).toUpperCase() || "?"}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
-                        <div className="flex flex-col items-end">
-                          <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
-                            {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          {conv.unreadCount > 0 && (
-                            <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
-                              {conv.unreadCount}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-500 truncate">
-                        {conv.isGroup ? (
-                          <span className="font-semibold mr-1">{/* Optional sender name if available */}</span>
-                        ) : null}
-                        {conv.lastMessage?.content || "No messages yet"}
-                      </p>
-                    </div>
-                  </Link>
-                  {isLeft && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault(); // Prevent navigation
-                        e.stopPropagation();
-                        if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
-                          deleteConversationFromList({
-                            conversationId: conv._id,
-                            userId: currentUser!._id
-                          });
-                        }
-                      }}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-red-100 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-200"
-                      title="Chat löschen"
+                return (
+                  <div key={conv._id} className="relative group">
+                    <Link
+                      href={`/chat/${conv._id}`}
+                      className={`flex items-center p-3 hover:bg-[#FDFBF7] transition-colors active:bg-[#FDFBF7] border-b border-[#EFEADD] last:border-0 ${isLeft ? "opacity-75" : ""}`}
                     >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              );
-            })
-          )}
+
+                      <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                        {conv.displayImage ? (
+                          <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
+                            {conv.displayName?.charAt(0).toUpperCase() || "?"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
+                              {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {conv.unreadCount > 0 && (
+                              <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+                                {conv.unreadCount}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-500 truncate">
+                          {conv.isGroup ? (
+                            <span className="font-semibold mr-1">{/* Optional sender name if available */}</span>
+                          ) : null}
+                          {conv.lastMessage?.content || "No messages yet"}
+                        </p>
+                      </div>
+                    </Link>
+                    {isLeft && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault(); // Prevent navigation
+                          e.stopPropagation();
+                          if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
+                            deleteConversationFromList({
+                              conversationId: conv._id,
+                              userId: currentUser!._id
+                            });
+                          }
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-red-100 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-200"
+                        title="Chat löschen"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* New Chat Modal/Sheet */}
       {
