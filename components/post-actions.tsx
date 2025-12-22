@@ -30,7 +30,15 @@ export function PostActions({
         }}
       >
         <Heart 
-          style={{ height: "18px", width: "18px", fill: isLiked ? "currentColor" : "none" }} 
+          key={`heart-${isLiked ? 'liked' : 'unliked'}-${likesCount}`}
+          style={{ 
+            height: "18px", 
+            width: "18px", 
+            fill: isLiked ? "currentColor" : "none",
+            stroke: "currentColor",
+            strokeWidth: 2,
+            color: isLiked ? "#ef4444" : "#6b7280"
+          }} 
           className={isLiked ? "text-red-500" : "text-gray-500 group-hover:text-red-500"} 
         />
         <span className={`text-[13px] tabular-nums inline-block min-w-[1.5ch] ${isLiked ? "text-red-500" : "text-gray-500 group-hover:text-red-500"}`}>
