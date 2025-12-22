@@ -655,12 +655,15 @@ export const getConversations = query({
     const conversations = await ctx.db.query("conversations").collect();
 
     const relevantConversations = conversations.filter(c =>
-      c.participants.includes(args.userId)
+      c.participants.includes(args.userId) || c.leftParticipants?.includes(args.userId)
     );
 
     // 2. Details für die Conversations anreichern
     const enrichedConversations = await Promise.all(
       relevantConversations.map(async (conv) => {
+        // Membership status
+        const isLeft = conv.leftParticipants?.includes(args.userId) || false;
+        const membership = isLeft ? "left" : "active";
         // Unread Count Logic
         const lastRead = await ctx.db
           .query("last_reads")
@@ -721,6 +724,7 @@ export const getConversations = query({
           displayImage,
           lastMessage,
           unreadCount,
+          membership,
         };
       })
     );
@@ -784,8 +788,15 @@ export const getConversationMembers = query({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) return [];
 
+    const allParticipantIds = [
+      ...conversation.participants,
+      ...(conversation.leftParticipants || [])
+    ];
+    // Unique IDs
+    const uniqueIds = Array.from(new Set(allParticipantIds));
+
     const members = await Promise.all(
-      conversation.participants.map(async (userId) => {
+      uniqueIds.map(async (userId) => {
         const user = await ctx.db.get(userId);
         if (!user) return null;
 
@@ -794,13 +805,17 @@ export const getConversationMembers = query({
           imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
         }
 
-        const isCreator = conversation.creatorId === userId;
-        const isAdmin = conversation.adminIds?.includes(userId) || isCreator;
+        const userIdString = userId.toString();
+        const creatorIdString = conversation.creatorId?.toString();
+        const adminIdsStrings = conversation.adminIds?.map(id => id.toString()) || [];
+        const leftParticipantsStrings = conversation.leftParticipants?.map(id => id.toString()) || [];
 
         return {
           ...user,
           image: imageUrl,
-          role: isCreator ? "creator" : (isAdmin ? "admin" : "member")
+          role: creatorIdString === userIdString ? "creator" :
+            adminIdsStrings.includes(userIdString) ? "admin" :
+              leftParticipantsStrings.includes(userIdString) ? "left" : "member",
         };
       })
     );

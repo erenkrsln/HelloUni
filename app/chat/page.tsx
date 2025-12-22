@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -25,6 +25,7 @@ export default function ChatPage() {
   const conversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
   const allUsers = useQuery(api.queries.getAllUsers);
   const createConversation = useMutation(api.mutations.createConversation);
+  const deleteConversationFromList = useMutation(api.mutations.deleteConversationFromList);
 
   const toggleUserSelection = (userId: Id<"users">) => {
     setSelectedUsers(prev =>
@@ -136,44 +137,70 @@ export default function ChatPage() {
               <p>Keine Chats gefunden.</p>
             </div>
           ) : (
-            filteredConversations?.map((conv) => (
-              <Link
-                key={conv._id}
-                href={`/chat/${conv._id}`}
-                className="flex items-center p-3 hover:bg-[#FDFBF7] transition-colors active:bg-[#FDFBF7] border-b border-[#EFEADD] last:border-0"
-              >
-                <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
-                  {conv.displayImage ? (
-                    <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
-                      {conv.displayName?.charAt(0).toUpperCase() || "?"}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
-                    <div className="flex flex-col items-end">
-                      <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
-                        {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      {conv.unreadCount > 0 && (
-                        <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
-                          {conv.unreadCount}
+            filteredConversations?.map((conv) => {
+              // Cast conv to any to access membership property if types are not generated yet
+              const membership = (conv as any).membership;
+              const isLeft = membership === "left";
+
+              return (
+                <div key={conv._id} className="relative group">
+                  <Link
+                    href={`/chat/${conv._id}`}
+                    className={`flex items-center p-3 hover:bg-[#FDFBF7] transition-colors active:bg-[#FDFBF7] border-b border-[#EFEADD] last:border-0 ${isLeft ? "opacity-75" : ""}`}
+                  >
+
+                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                      {conv.displayImage ? (
+                        <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
+                          {conv.displayName?.charAt(0).toUpperCase() || "?"}
                         </div>
                       )}
                     </div>
-                  </div>
-                  <p className="text-sm text-gray-500 truncate">
-                    {conv.isGroup ? (
-                      <span className="font-semibold mr-1">{/* Optional sender name if available */}</span>
-                    ) : null}
-                    {conv.lastMessage?.content || "No messages yet"}
-                  </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
+                        <div className="flex flex-col items-end">
+                          <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
+                            {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {conv.unreadCount > 0 && (
+                            <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+                              {conv.unreadCount}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 truncate">
+                        {conv.isGroup ? (
+                          <span className="font-semibold mr-1">{/* Optional sender name if available */}</span>
+                        ) : null}
+                        {conv.lastMessage?.content || "No messages yet"}
+                      </p>
+                    </div>
+                  </Link>
+                  {isLeft && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault(); // Prevent navigation
+                        e.stopPropagation();
+                        if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
+                          deleteConversationFromList({
+                            conversationId: conv._id,
+                            userId: currentUser!._id
+                          });
+                        }
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-red-100 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-200"
+                      title="Chat löschen"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
-              </Link>
-            ))
+              );
+            })
           )}
         </div>
       </div>

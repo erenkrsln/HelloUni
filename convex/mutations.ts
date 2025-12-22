@@ -364,8 +364,13 @@ export const addConversationMember = mutation({
     }
 
     // Add member
+    // Add member and remove from leftParticipants if present
+    const leftParticipants = conversation.leftParticipants || [];
+    const newLeftParticipants = leftParticipants.filter(id => id !== args.newMemberId);
+
     await ctx.db.patch(args.conversationId, {
       participants: [...conversation.participants, args.newMemberId],
+      leftParticipants: newLeftParticipants,
     });
 
     // Create system message
@@ -413,9 +418,16 @@ export const removeConversationMember = mutation({
     const newParticipants = conversation.participants.filter(id => id !== args.memberIdToRemove);
     const newAdmins = conversation.adminIds?.filter(id => id !== args.memberIdToRemove);
 
+    // Ensure uniqueness in leftParticipants
+    const currentLeft = conversation.leftParticipants || [];
+    const newLeftParticipants = currentLeft.includes(args.memberIdToRemove)
+      ? currentLeft
+      : [...currentLeft, args.memberIdToRemove];
+
     await ctx.db.patch(args.conversationId, {
       participants: newParticipants,
       adminIds: newAdmins,
+      leftParticipants: newLeftParticipants,
     });
 
     // System message
@@ -428,10 +440,83 @@ export const removeConversationMember = mutation({
         senderId: args.adminId,
         content: `${adminUser.name} hat ${removedMember.name} entfernt`,
         type: "system",
+        visibleTo: [...newParticipants, args.memberIdToRemove], // Visible to remaining members + removed user (as final msg)
         createdAt: Date.now(),
       });
     }
   },
+});
+
+export const leaveGroup = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.participants.includes(args.userId)) {
+      throw new Error("User not in group");
+    }
+
+    // Prevent creator from leaving (simplification)
+    if (conversation.creatorId === args.userId) {
+      throw new Error("Creator cannot leave group");
+    }
+
+    const newParticipants = conversation.participants.filter(id => id !== args.userId);
+    const newAdmins = conversation.adminIds?.filter(id => id !== args.userId);
+
+    // Ensure uniqueness in leftParticipants
+    const currentLeft = conversation.leftParticipants || [];
+    const newLeftParticipants = currentLeft.includes(args.userId)
+      ? currentLeft
+      : [...currentLeft, args.userId];
+
+    await ctx.db.patch(args.conversationId, {
+      participants: newParticipants,
+      adminIds: newAdmins,
+      leftParticipants: newLeftParticipants,
+    });
+
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: `${user.name} hat die Gruppe verlassen`,
+        type: "system",
+        visibleTo: [...newParticipants, args.userId],
+        createdAt: Date.now(),
+      });
+    }
+  }
+});
+
+export const deleteConversationFromList = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    // Only allow if user is in leftParticipants
+    if (!conversation.leftParticipants?.includes(args.userId)) {
+      // Or if they are in participants? If they delete active chat -> implies leaving?
+      // User requirement: "after leaving... or being removed... list option to delete".
+      // So strict check for leftParticipants is safer.
+      throw new Error("Cannot delete active conversation. Leave first.");
+    }
+
+    const newLeftParticipants = conversation.leftParticipants.filter(id => id !== args.userId);
+
+    await ctx.db.patch(args.conversationId, {
+      leftParticipants: newLeftParticipants
+    });
+  }
 });
 
 export const promoteToAdmin = mutation({

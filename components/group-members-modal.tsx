@@ -43,9 +43,12 @@ export function GroupMembersModal({
     const iAmAdmin = myself?.role === "admin" || myself?.role === "creator";
 
     // Filter users for "Add Member" view
-    // Exclude current members
+    // Exclude current members, BUT include previous members (role === 'left') so they can be re-added
+    // Actually, `members` list contains EVERYONE including left.
+    // So we should exclude only those where `m._id === u._id` AND `m.role !== 'left'`.
+    // If m.role === 'left', we WANT to show them in the add list.
     const availableUsers = allUsers?.filter(u =>
-        !members?.some(m => m._id === u._id) &&
+        !members?.some(m => m._id === u._id && m.role !== 'left') &&
         (u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             u.username.toLowerCase().includes(searchQuery.toLowerCase()))
     ) || [];
@@ -100,6 +103,25 @@ export function GroupMembersModal({
         }
     };
 
+    const leaveGroup = useMutation(api.mutations.leaveGroup);
+
+    const handleLeave = async () => {
+        if (!confirm("Möchtest du die Gruppe wirklich verlassen? Du kannst danach keine Nachrichten mehr senden.")) return;
+        try {
+            await leaveGroup({
+                conversationId,
+                userId: currentUserId,
+            });
+            onClose(); // Close modal
+            // Maybe redirect? Or let page handle update. 
+            // Page will update and show "You left". 
+            // Better to force close modal.
+        } catch (error) {
+            console.error("Failed to leave group:", error);
+            alert("Fehler beim Verlassen der Gruppe.");
+        }
+    };
+
     const handleClaim = async () => {
         try {
             await claimGroup({
@@ -131,7 +153,6 @@ export function GroupMembersModal({
                     {view === "list" ? (
                         <div className="flex items-center gap-2">
                             <DialogTitle className="text-lg font-bold">Gruppenmitglieder</DialogTitle>
-                            <span className="text-sm text-gray-500">({members.length})</span>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
@@ -169,7 +190,11 @@ export function GroupMembersModal({
                                 </button>
                             )}
 
-                            {members.map(member => (
+                            {/* Active Members */}
+                            <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Aktuelle Mitglieder
+                            </div>
+                            {members.filter(m => m.role !== 'left').map(member => (
                                 <div key={member._id} className="flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 last:border-0">
                                     <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                                         {member.image ? (
@@ -223,6 +248,34 @@ export function GroupMembersModal({
                                     )}
                                 </div>
                             ))}
+
+                            {/* Previous Members */}
+                            {members.some(m => m.role === 'left') && (
+                                <>
+                                    <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-2">
+                                        Ehemalige Mitglieder
+                                    </div>
+                                    {members.filter(m => m.role === 'left').map(member => (
+                                        <div key={member._id} className="flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 last:border-0 opacity-60">
+                                            <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                                                {member.image ? (
+                                                    <img src={member.image} alt={member.name} className="w-full h-full object-cover grayscale" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-500" style={{ color: "#000000" }}>
+                                                        {member.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0 mr-2">
+                                                <div className="flex items-center gap-1">
+                                                    <span className="font-semibold truncate text-gray-600">{member.name}</span>
+                                                </div>
+                                                <div className="text-xs text-gray-500">@{member.username}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="flex flex-col h-full">
@@ -274,6 +327,14 @@ export function GroupMembersModal({
                         </div>
                     )}
                 </div>
+
+                {view === "list" && !iAmAdmin && members.some(m => m._id === currentUserId && m.role !== "creator") && (
+                    <div className="p-4 border-t bg-gray-50">
+                        <Button onClick={handleLeave} variant="destructive" className="w-full bg-red-100 text-red-600 hover:bg-red-200 border-0">
+                            Gruppe verlassen
+                        </Button>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );

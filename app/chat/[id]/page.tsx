@@ -78,7 +78,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     if (!currentUser) return null;
 
+    const isLeft = (conversation as any)?.membership === "left";
+
     const handleHeaderClick = () => {
+        if (isLeft) return;
+
         if (conversation?.isGroup) {
             setIsMembersModalOpen(true);
         } else if (conversation && members) {
@@ -278,7 +282,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Input */}
-            <div className="p-3 bg-white border-t border-[#f0e6d2] safe-area-bottom">
+            <div className={`p-3 bg-white border-t border-[#f0e6d2] safe-area-bottom ${isLeft ? "hidden" : ""}`}>
                 <form
                     onSubmit={handleSend}
                     className="flex items-center bg-[#FDFBF7] border border-[#efeadd] rounded-full px-4 py-2"
@@ -302,6 +306,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     </button>
                 </form>
             </div>
+            {isLeft && (
+                <div className="p-4 bg-gray-50 text-center text-gray-500 text-sm border-t">
+                    Du bist kein Mitglied dieser Gruppe mehr.
+                </div>
+            )}
         </main>
     );
 }
