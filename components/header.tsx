@@ -28,170 +28,178 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
   const showLogoutButton = false;
 
   return (
-    <header className="relative w-full" style={{ height: "94px" }}>
-      <div
-        className="absolute flex items-center justify-center overflow-hidden"
-        style={{
-          left: "12px",
-          top: "-20px",
-          width: "120px",
-          height: "130px",
-          willChange: "transform",
-          transform: "translateZ(0)",
-          backfaceVisibility: "hidden"
-        }}
-      >
-        <img
-          src="/logo.svg"
-          alt="Logo"
-          width={120}
-          height={130}
+    <header
+      className="fixed top-0 left-0 right-0 w-full bg-white z-50 pt-safe-top"
+      style={{
+        height: `calc(94px + env(safe-area-inset-top, 0px))`,
+        minHeight: `calc(94px + env(safe-area-inset-top, 0px))`
+      }}
+    >
+      <div className="relative w-full h-[94px]">
+        <div
+          className="absolute flex items-center justify-center overflow-hidden"
           style={{
+            left: "12px",
+            top: "-20px",
             width: "120px",
             height: "130px",
-            objectFit: "contain",
-            display: "block",
             willChange: "transform",
             transform: "translateZ(0)",
             backfaceVisibility: "hidden"
           }}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.style.display = "none";
-            if (target.parentElement) {
-              target.parentElement.innerHTML = '<span class="text-2xl font-bold" style="color: #000000">C</span>';
-            }
-          }}
-        />
-      </div>
-      {pathname !== "/profile" &&
-        !pathname.startsWith("/profile/") &&
-        pathname !== "/create" && (
-          <h1
-            className="absolute font-bold"
+        >
+          <img
+            src="/logo.svg"
+            alt="Logo"
+            width={120}
+            height={130}
             style={{
-              position: "absolute",
-              width: "100%",
-              height: "30px",
-              left: "50%",
-              top: "50px",
-              transform: "translateX(-50%)",
-              fontSize: "30px",
-              lineHeight: "24px",
-              textAlign: "center",
-              color: "#000000"
+              width: "120px",
+              height: "130px",
+              objectFit: "contain",
+              display: "block",
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden"
             }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = "none";
+              if (target.parentElement) {
+                target.parentElement.innerHTML = '<span class="text-2xl font-bold" style="color: #000000">C</span>';
+              }
+            }}
+          />
+        </div>
+        {pathname !== "/profile" &&
+          !pathname.startsWith("/profile/") &&
+          pathname !== "/create" && (
+            <h1
+              className="absolute font-bold"
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: "30px",
+                left: "50%",
+                top: "50px",
+                transform: "translateX(-50%)",
+                fontSize: "30px",
+                lineHeight: "24px",
+                textAlign: "center",
+                color: "#000000"
+              }}
+            >
+              {pathname === "/home" ? "Posts" :
+                pathname === "/search" ? "Suche" :
+                  pathname === "/chat" ? "Chats" :
+                    "HelloUni"}
+            </h1>
+          )}
+
+        {/* Logout-Button - oben rechts */}
+        {showLogoutButton && (
+          <button
+            onClick={handleLogout}
+            className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
+            style={{
+              right: "28px",
+              top: "30px",
+              width: "44px",
+              height: "44px",
+              minWidth: "44px",
+              minHeight: "44px",
+              opacity: status === "loading" ? 0.5 : 1,
+              transition: "opacity 0.2s"
+            }}
+            onMouseEnter={() => setIsLogoutHovered(true)}
+            onMouseLeave={() => setIsLogoutHovered(false)}
+            title="Abmelden"
+            disabled={status === "loading"}
           >
-            {pathname === "/home" ? "Posts" :
-              pathname === "/search" ? "Suche" :
-                pathname === "/chat" ? "Chats" :
-                  "HelloUni"}
-          </h1>
+            <LogOut
+              className="transition-colors"
+              style={{
+                width: "32px",
+                height: "32px",
+                color: isLogoutHovered ? "#000000" : "rgba(0, 0, 0, 0.7)"
+              }}
+            />
+          </button>
         )}
 
-      {/* Logout-Button - oben rechts */}
-      {showLogoutButton && (
-        <button
-          onClick={handleLogout}
-          className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
-          style={{
-            right: "28px",
-            top: "30px",
-            width: "44px",
-            height: "44px",
-            minWidth: "44px",
-            minHeight: "44px",
-            opacity: status === "loading" ? 0.5 : 1,
-            transition: "opacity 0.2s"
-          }}
-          onMouseEnter={() => setIsLogoutHovered(true)}
-          onMouseLeave={() => setIsLogoutHovered(false)}
-          title="Abmelden"
-          disabled={status === "loading"}
-        >
-          <LogOut
-            className="transition-colors"
+        {showProfileIcon && (
+          <Link
+            href="/profile"
+            className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
+            style={{ right: "28px", top: "30px", width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
+            onMouseEnter={() => setIsProfileHovered(true)}
+            onMouseLeave={() => setIsProfileHovered(false)}
+          >
+            <User
+              className="transition-colors"
+              style={{
+                width: "40px",
+                height: "40px",
+                color: isProfileHovered ? "var(--color-text-beige-light)" : "var(--color-text-beige)"
+              }}
+            />
+          </Link>
+        )}
+
+        {/* Edit Button - nur auf eigener Profilseite */}
+        {pathname === "/profile" && onEditClick && (
+          <button
+            onClick={onEditClick}
+            className="absolute flex items-center justify-center transition-opacity hover:opacity-70 cursor-pointer"
             style={{
-              width: "32px",
-              height: "32px",
-              color: isLogoutHovered ? "#000000" : "rgba(0, 0, 0, 0.7)"
+              right: "80px",
+              top: "30px",
+              padding: "6px 24px",
+              backgroundColor: "#000000",
+              borderRadius: "20px",
+              willChange: "opacity",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
             }}
-          />
-        </button>
-      )}
+          >
+            <span className="text-sm font-medium text-white">Edit</span>
+          </button>
+        )}
 
-      {showProfileIcon && (
-        <Link
-          href="/profile"
-          className="absolute flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 touch-manipulation"
-          style={{ right: "28px", top: "30px", width: "44px", height: "44px", minWidth: "44px", minHeight: "44px" }}
-          onMouseEnter={() => setIsProfileHovered(true)}
-          onMouseLeave={() => setIsProfileHovered(false)}
-        >
-          <User
-            className="transition-colors"
+        {/* Mobile Menu Button - oben rechts */}
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="absolute flex items-center justify-center w-12 h-12 transition-opacity hover:opacity-70"
             style={{
-              width: "40px",
-              height: "40px",
-              color: isProfileHovered ? "var(--color-text-beige-light)" : "var(--color-text-beige)"
-            }}
-          />
-        </Link>
-      )}
-
-      {/* Edit Button - nur auf eigener Profilseite */}
-      {pathname === "/profile" && onEditClick && (
-        <button
-          onClick={onEditClick}
-          className="absolute flex items-center justify-center transition-opacity hover:opacity-70 cursor-pointer"
-          style={{
-            right: "80px",
-            top: "30px",
-            padding: "6px 24px",
-            backgroundColor: "#000000",
-            borderRadius: "20px",
-            willChange: "opacity",
-            transform: "translateZ(0)",
-            backfaceVisibility: "hidden",
-          }}
-        >
-          <span className="text-sm font-medium text-white">Edit</span>
-        </button>
-      )}
-
-      {/* Mobile Menu Button - oben rechts */}
-      {onMenuClick && (
-        <button
-          onClick={onMenuClick}
-          className="absolute flex items-center justify-center w-12 h-12 transition-opacity hover:opacity-70"
-          style={{
-            right: "20px",
-            top: "20px",
-            willChange: "opacity",
-            transform: "translateZ(0)",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-          }}
-        >
-          <Menu
-            className="w-9 h-9"
-            style={{
-              color: "#000000",
-              fill: "none",
-              stroke: "#000000",
-              strokeWidth: 2,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-              willChange: "auto",
+              right: "20px",
+              top: "20px",
+              willChange: "opacity",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
-              imageRendering: "crisp-edges",
-              WebkitFontSmoothing: "antialiased",
             }}
-          />
-        </button>
-      )}
+          >
+            <Menu
+              className="w-9 h-9"
+              style={{
+                color: "#000000",
+                fill: "none",
+                stroke: "#000000",
+                strokeWidth: 2,
+                strokeLinecap: "round",
+                strokeLinejoin: "round",
+                willChange: "auto",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
+                imageRendering: "crisp-edges",
+                WebkitFontSmoothing: "antialiased",
+              }}
+            />
+          </button>
+        )}
+      </div>
     </header>
   );
 }

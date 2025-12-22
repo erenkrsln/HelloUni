@@ -68,7 +68,7 @@ export default function ChatPage() {
   });
 
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-white">
+    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-white header-spacing">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -181,7 +181,12 @@ export default function ChatPage() {
       {
         isNewChatOpen && (
           <div className="fixed inset-0 z-[60] flex flex-col bg-white">
-            <div className="flex items-center px-4 py-4 border-b gap-3">
+            <div 
+              className="flex items-center px-4 py-4 border-b gap-3"
+              style={{
+                paddingTop: `calc(1rem + env(safe-area-inset-top, 0px))`
+              }}
+            >
               <button
                 onClick={() => {
                   setIsNewChatOpen(false);
@@ -246,7 +251,12 @@ export default function ChatPage() {
             </div>
 
             {selectedUsers.length > 0 && (
-              <div className="p-4 border-t bg-white safe-area-bottom">
+              <div 
+                className="p-4 border-t bg-white"
+                style={{
+                  paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
+                }}
+              >
                 <div className="text-sm text-center text-gray-500 mb-2">
                   {selectedUsers.length} ausgewählt
                 </div>

@@ -32,11 +32,11 @@ export default function CalendarPage() {
     }, []);
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
+        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden header-spacing">
             <Header onMenuClick={() => setIsSidebarOpen(true)} />
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-                {isFirstVisit ? (
+            {isFirstVisit ? (
                 <LoadingScreen text="Seite wird geladen..." />
             ) : (
                 <div className="flex items-center justify-center py-16">

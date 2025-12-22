@@ -61,15 +61,15 @@ export function FollowButton({ currentUserId, targetUserId, preloadedIsFollowing
             onClick={handleFollowToggle}
             disabled={isLoading || isFollowing === undefined}
             className={`
-                px-6 py-2 rounded-full font-semibold transition-all duration-200
+                h-10 px-6 rounded-full font-semibold transition-all duration-200 shadow-sm flex-shrink-0 min-w-[100px]
                 ${isFollowing
                     ? "!bg-none !bg-[#261708] !border !border-[#EED6B5] !text-[#EED6B5] hover:!bg-[#261708]/80 !shadow-none"
-                    : "bg-[#F4CFAB] text-[#1A1A1A] hover:bg-[#F4CFAB]/90"
+                    : "bg-[#D08945] text-white hover:bg-[#C07835]"
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed
             `}
         >
-            {isFollowing ? "Folge ich" : "Folgen"}
+            {isFollowing ? "Gefolgt" : "Folgen"}
         </Button>
     );
 }

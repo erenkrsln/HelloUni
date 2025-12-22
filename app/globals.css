@@ -48,6 +48,7 @@
     background-repeat: no-repeat;
     /* iOS Safari: 100vh Problem beheben - verwende -webkit-fill-available */
     min-height: 100vh;
+    min-height: 100dvh;
     min-height: -webkit-fill-available;
     /* background-attachment: fixed funktioniert nicht auf iOS Safari */
     /* Stattdessen: Hintergrund auf html-Element setzen für bessere iOS-Kompatibilität */
@@ -55,8 +56,11 @@
     touch-action: manipulation;
     /* Verhindere Text-Skalierung auf iOS */
     -webkit-text-size-adjust: 100%;
+    /* Overscroll-Prävention für Twitter/X-ähnliches Verhalten */
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
   }
-  
+
   /* iOS Safari: Hintergrund auf html setzen, da background-attachment: fixed nicht funktioniert */
   html {
     background: #FFFFFF;
@@ -65,7 +69,11 @@
     background-repeat: no-repeat;
     background-attachment: fixed;
     height: 100%;
+    height: 100dvh;
     height: -webkit-fill-available;
+    /* Overscroll-Prävention - verhindert Rubber-Banding auf iOS/Android */
+    overscroll-behavior-y: none;
+    overflow-x: hidden;
   }
 
   button,
@@ -80,6 +88,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -98,4 +107,122 @@ input[type="time"]::-webkit-date-and-time-value {
   text-align: left !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* Style for select dropdowns with optgroups */
+select optgroup {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding: 0.5rem 0;
+}
+
+select option {
+  font-weight: normal;
+  font-size: 0.875rem;
+  color: #1f2937;
+  padding: 0.5rem;
+}
+
+select option:disabled {
+  color: #9ca3af;
+}
+
+/* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
+
+@media screen and (display-mode: standalone) {
+  /* In Standalone-Modus (Home Screen) brauchen wir oft Anpassungen */
+}
+
+/* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
+.safe-area-padding {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+
+/* Safe Area Padding Top - Nur oben */
+.safe-area-padding-top {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+
+/* Safe Area Padding Bottom - Nur unten */
+.safe-area-padding-bottom {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Safe Area Padding Horizontal - Links und Rechts */
+.safe-area-padding-x {
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+}
+
+/* Safe Area Padding Vertical - Oben und Unten */
+.safe-area-padding-y {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Base utility for top spacing that accounts for fixed header */
+.header-spacing {
+  padding-top: calc(94px + env(safe-area-inset-top, 0px));
+}
+
+/* Profile header buttons - safe area aware on iOS */
+@media (min-width: 640px) {
+  .profile-header-button {
+    top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
+/* Responsive Header Image - Full width on mobile, limited on desktop */
+.header-image-responsive {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+@media (min-width: 640px) {
+  .header-image-responsive {
+    width: 100%;
+    max-width: 428px;
+    left: auto;
+    right: auto;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Profile Header Sticky - Twitter/X Style */
+.profile-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* Verhindere weiße Lücken beim Overscroll - Füllt den Raum über dem Header */
+.profile-header-sticky::before {
+  content: '';
+  position: absolute;
+  top: -100vh;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  background-color: #0a0a0a;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Sicherstellen, dass der Header-Container keine Lücken hat */
+.profile-header-sticky > div:first-child {
+  margin-top: 0;
+  padding-top: 0;
 }

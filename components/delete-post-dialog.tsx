@@ -30,11 +30,14 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
     setIsDeleting(true);
     try {
       await deletePost({ postId, userId });
-      onOpenChange(false);
+      // Warte kurz, bevor der Dialog geschlossen wird, um Flackern zu vermeiden
+      setTimeout(() => {
+        onOpenChange(false);
+        setIsDeleting(false);
+      }, 100);
     } catch (error) {
       console.error("Fehler beim Löschen des Posts:", error);
       alert("Fehler beim Löschen des Posts");
-    } finally {
       setIsDeleting(false);
     }
   };
@@ -56,6 +59,12 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
               variant="outline" 
               disabled={isDeleting}
               className="min-w-[100px]"
+              style={{
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden"
+              }}
             >
               Abbrechen
             </Button>
@@ -65,14 +74,31 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
             onClick={handleDelete}
             disabled={isDeleting}
             className="min-w-[100px] font-medium"
+            style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
+            }}
           >
-            {isDeleting ? "Wird gelöscht..." : "Löschen"}
+            <span style={{ 
+              display: "inline-block",
+              minWidth: "80px",
+              textAlign: "center"
+            }}>
+              {isDeleting ? "Wird gelöscht..." : "Löschen"}
+            </span>
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+
+
+
+
 
 
 

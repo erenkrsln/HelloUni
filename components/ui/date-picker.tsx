@@ -228,7 +228,7 @@ export function DatePicker({
             variant="outline"
             disabled={disabled}
             className={cn(
-              "w-full justify-start text-left font-normal text-base bg-white hover:bg-gray-50 focus-visible:ring-[#D08945] focus-visible:border-[#D08945] ps-9",
+              "w-full justify-start text-left font-normal text-sm bg-white hover:bg-gray-50 focus-visible:ring-[#D08945] focus-visible:border-[#D08945] ps-8",
               !value && "text-gray-500",
               className
             )}
