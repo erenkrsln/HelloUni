@@ -9,7 +9,7 @@ import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil,
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
 
@@ -163,121 +163,6 @@ export function ProfileHeader({
 
     const majorDisplay = getMajorDisplay();
 
-    // Twitter/X Stretch-Effekt: Überwache Scroll für Overscroll-Erkennung
-    const headerImageRef = useRef<HTMLDivElement>(null);
-    const imageRef = useRef<HTMLImageElement>(null);
-    const [stretchScale, setStretchScale] = useState(1);
-    const [isOverscrolling, setIsOverscrolling] = useState(false);
-    const lastScrollTop = useRef(0);
-    const overscrollAmount = useRef(0);
-
-    useEffect(() => {
-        // Touch-Events für Overscroll-Erkennung auf Mobile (Twitter/X Stretch-Effekt)
-        let touchStartY = 0;
-        let touchStartScrollTop = 0;
-        let isTouching = false;
-        let animationFrameId: number | null = null;
-
-        const handleTouchStart = (e: TouchEvent) => {
-            touchStartY = e.touches[0].clientY;
-            touchStartScrollTop = window.scrollY || document.documentElement.scrollTop;
-            isTouching = true;
-        };
-
-        const updateStretch = () => {
-            if (!isTouching) return;
-            
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            
-            // Nur am oberen Rand (scrollTop === 0) Overscroll erkennen
-            if (scrollTop === 0 && touchStartScrollTop === 0) {
-                // Berechne Overscroll basierend auf Touch-Position
-                // Da wir scrollTop nicht direkt ändern können, nutzen wir die Touch-Distanz
-                const currentTouchY = touchStartY; // Wird in touchmove aktualisiert
-                
-                // Verwende requestAnimationFrame für flüssige Animation
-                animationFrameId = requestAnimationFrame(() => {
-                    if (isOverscrolling) {
-                        // Sanft zurück zum Normalzustand wenn nicht mehr am oberen Rand
-                        setStretchScale(1);
-                        setIsOverscrolling(false);
-                    }
-                });
-            }
-        };
-
-        const handleTouchMove = (e: TouchEvent) => {
-            if (!isTouching) return;
-            
-            const touchY = e.touches[0].clientY;
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            
-            // Wenn am oberen Rand (scrollTop === 0) und nach unten gezogen wird
-            if (scrollTop === 0 && touchStartScrollTop === 0 && touchY > touchStartY) {
-                const overscroll = touchY - touchStartY;
-                overscrollAmount.current = overscroll;
-                
-                if (overscroll > 0) {
-                    setIsOverscrolling(true);
-                    
-                    // Scale basierend auf Overscroll
-                    // Maximal 1.15x (15% größer) bei ~150px Overscroll
-                    const maxOverscroll = 150;
-                    const scale = 1 + Math.min(overscroll / maxOverscroll * 0.15, 0.15);
-                    setStretchScale(scale);
-                }
-            } else {
-                // Reset wenn nicht mehr am oberen Rand oder nach oben gescrollt
-                if (isOverscrolling) {
-                    setIsOverscrolling(false);
-                    setStretchScale(1);
-                    overscrollAmount.current = 0;
-                }
-            }
-        };
-
-        const handleTouchEnd = () => {
-            isTouching = false;
-            // Sanft zurück zum Normalzustand
-            if (isOverscrolling) {
-                setIsOverscrolling(false);
-                setStretchScale(1);
-                overscrollAmount.current = 0;
-            }
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-        };
-
-        // Scroll-Handler als Fallback für Desktop/Programmatisches Scrollen
-        const handleScroll = () => {
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            
-            // Reset wenn nicht mehr am oberen Rand
-            if (scrollTop > 0 && isOverscrolling) {
-                setIsOverscrolling(false);
-                setStretchScale(1);
-                overscrollAmount.current = 0;
-            }
-            
-            lastScrollTop.current = scrollTop;
-        };
-
-        window.addEventListener('touchstart', handleTouchStart, { passive: true });
-        window.addEventListener('touchmove', handleTouchMove, { passive: true });
-        window.addEventListener('touchend', handleTouchEnd, { passive: true });
-        window.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => {
-            window.removeEventListener('touchstart', handleTouchStart);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleTouchEnd);
-            window.removeEventListener('scroll', handleScroll);
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-        };
-    }, [isOverscrolling]);
 
     return (
         <div 
@@ -288,13 +173,10 @@ export function ProfileHeader({
         >
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
             <div 
-                ref={headerImageRef}
                 className="relative bg-[#0a0a0a] overflow-hidden group header-image-responsive" 
                 style={{ 
                     aspectRatio: '3/1', 
                     minHeight: '120px',
-                    transformOrigin: 'top center',
-                    willChange: isOverscrolling ? 'transform' : 'auto',
                 }}
             >
                 {/* Back Arrow Button - bottom left on mobile, top left on desktop with iOS safe area */}
@@ -308,27 +190,12 @@ export function ProfileHeader({
 
                 {headerImage ? (
                     <img
-                        ref={imageRef}
                         src={headerImage}
                         alt="Header"
                         className="w-full h-full object-cover"
-                        style={{
-                            transform: `scale(${stretchScale})`,
-                            transformOrigin: 'top center',
-                            transition: isOverscrolling ? 'none' : 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            willChange: isOverscrolling ? 'transform' : 'auto',
-                        }}
                     />
                 ) : (
-                    <div 
-                        className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20"
-                        style={{
-                            transform: `scale(${stretchScale})`,
-                            transformOrigin: 'top center',
-                            transition: isOverscrolling ? 'none' : 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            willChange: isOverscrolling ? 'transform' : 'auto',
-                        }}
-                    />
+                    <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
                 )}
 
                 {/* Edit Header Image Button - only visible on own profile */}
