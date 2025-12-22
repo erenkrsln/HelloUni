@@ -164,17 +164,16 @@ export function ProfileHeader({
     const majorDisplay = getMajorDisplay();
 
     return (
-        <div className="relative w-full bg-[#0a0a0a]">
-            {/* iOS Overscroll Filler: Verhindert weißen Spalt beim Herunterziehen und Überscrollen nach oben */}
+        <div className="relative w-full">
+            {/* iOS Overscroll Filler: Verhindert weißen Spalt beim Herunterziehen */}
             <div
-                className="fixed top-0 left-0 right-0 h-[200vh] -translate-y-full z-0 pointer-events-none"
+                className="absolute top-0 left-0 right-0 h-[100vh] -translate-y-full z-0"
                 style={{ backgroundColor: '#0a0a0a' }}
             />
 
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
-            {/* Sticky position to prevent white space when scrolling up */}
             <div 
-                className="sticky top-0 relative bg-[#0a0a0a] overflow-hidden group header-image-responsive z-10" 
+                className="relative bg-[#0a0a0a] overflow-hidden group header-image-responsive" 
                 style={{ 
                     aspectRatio: '3/1', 
                     minHeight: '120px'
