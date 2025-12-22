@@ -5,10 +5,11 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, Trash2, FolderOpen, Paperclip, FileIcon, X } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { EditGroupImageModal } from "@/components/edit-group-image-modal";
 import { GroupMembersModal } from "@/components/group-members-modal";
+import { ChatFilesModal } from "@/components/chat-files-modal";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -32,6 +33,45 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             markAsRead({ conversationId, userId: currentUser._id });
         }
     }, [conversationId, currentUser, messages, markAsRead]); // Mark as read when messages update too
+
+    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
+    const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !currentUser) return;
+
+        try {
+            // Get upload URL
+            const postUrl = await generateUploadUrl();
+
+            // Upload file
+            const result = await fetch(postUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            const { storageId } = await result.json();
+
+            // Send message
+            await sendMessage({
+                conversationId,
+                senderId: currentUser._id,
+                content: file.name, // Display filename as content fallback
+                type: file.type.startsWith("image/") ? "image" : "pdf",
+                storageId,
+                fileName: file.name,
+                contentType: file.type,
+            });
+        } catch (error) {
+            console.error("Failed to upload file:", error);
+            alert("Fehler beim Hochladen der Datei.");
+        } finally {
+            // Reset input
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
 
     // We need members to show names/avatars for each message
     const members = useQuery(api.queries.getConversationMembers, { conversationId });
@@ -74,6 +114,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
 
     if (!currentUser) return null;
@@ -139,6 +180,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         >
                             {conversation.displayName}
                         </span>
+
+                        <button
+                            className="ml-auto p-2 text-gray-400 hover:text-[#8C531E] hover:bg-[#f6efe4] rounded-full transition-colors"
+                            onClick={() => setIsFilesModalOpen(true)}
+                            title="Geteilte Dateien"
+                        >
+                            <FolderOpen size={20} />
+                        </button>
                     </div>
                 ) : (
                     <div className="h-8 flex items-center">
@@ -249,7 +298,31 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                             }
                                         `}
                                     >
-                                        {msg.content}
+                                        {msg.type === "image" && (msg as any).url ? (
+                                            <div className="max-w-[200px] max-h-[200px] overflow-hidden rounded-lg">
+                                                <img
+                                                    src={(msg as any).url}
+                                                    alt="Bild"
+                                                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                    onClick={() => setSelectedImage((msg as any).url)}
+                                                />
+                                            </div>
+                                        ) : msg.type === "pdf" ? (
+                                            <a
+                                                href={(msg as any).url || "#"}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
+                                                    <FileIcon size={24} />
+                                                </div>
+                                                <span className="underline truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
+                                            </a>
+                                        ) : (
+                                            msg.content
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -281,12 +354,29 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 />
             )}
 
+            {/* Chat Files Modal */}
+            {currentUser && (
+                <ChatFilesModal
+                    isOpen={isFilesModalOpen}
+                    onClose={() => setIsFilesModalOpen(false)}
+                    conversationId={conversationId}
+                    currentUserId={currentUser._id}
+                />
+            )}
+
             {/* Input */}
             <div className={`p-3 bg-white border-t border-[#f0e6d2] safe-area-bottom ${isLeft ? "hidden" : ""}`}>
                 <form
                     onSubmit={handleSend}
                     className="flex items-center bg-[#FDFBF7] border border-[#efeadd] rounded-full px-4 py-2"
                 >
+                    <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                    />
                     <input
                         type="text"
                         value={newMessage}
@@ -295,9 +385,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400"
                     />
                     <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mr-2 text-gray-400 hover:text-[#8C531E] transition-colors"
+                    >
+                        <Paperclip size={20} />
+                    </button>
+                    <button
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className={`ml-2 p-2 rounded-full transition-colors ${newMessage.trim()
+                        className={`p-2 rounded-full transition-colors ${newMessage.trim()
                             ? 'text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]'
                             : 'text-gray-300'
                             }`}
@@ -309,6 +406,26 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {isLeft && (
                 <div className="p-4 bg-gray-50 text-center text-gray-500 text-sm border-t">
                     Du bist kein Mitglied dieser Gruppe mehr.
+                </div>
+            )}
+
+            {/* Image Preview Overlay */}
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <button
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <X size={32} />
+                    </button>
+                    <img
+                        src={selectedImage}
+                        alt="Vorschau"
+                        className="max-w-full max-h-[90vh] object-contain rounded-md"
+                    />
                 </div>
             )}
         </main>

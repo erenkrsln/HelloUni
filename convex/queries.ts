@@ -684,6 +684,18 @@ export const getConversations = query({
 
         // Don't count own messages as unread
         const unreadCount = unreadMessages.filter(m => {
+          // Check if message is after user left
+          if (isLeft) {
+            let leftAt = Infinity;
+            if (conv.leftMetadata) {
+              const userMeta = conv.leftMetadata.find(m => m.userId === args.userId);
+              if (userMeta) {
+                leftAt = userMeta.leftAt;
+              }
+            }
+            if (m.createdAt > leftAt) return false;
+          }
+
           if (m.senderId === args.userId) return false;
           if (m.type === "system") return false;
           if (m.visibleTo && !m.visibleTo.includes(args.userId)) return false;
@@ -716,6 +728,28 @@ export const getConversations = query({
         let lastMessage = null;
         if (conv.lastMessageId) {
           lastMessage = await ctx.db.get(conv.lastMessageId);
+        }
+
+        // Context-aware last message for left users
+        if (isLeft && lastMessage) {
+          let leftAt = Infinity;
+          if (conv.leftMetadata) {
+            const userMeta = conv.leftMetadata.find(m => m.userId === args.userId);
+            if (userMeta) {
+              leftAt = userMeta.leftAt;
+            }
+          }
+
+          // If the current global last message is newer than when they left, find the correct one
+          if (lastMessage.createdAt > leftAt) {
+            lastMessage = await ctx.db
+              .query("messages")
+              .withIndex("by_conversation_created", (q) =>
+                q.eq("conversationId", conv._id).lte("createdAt", leftAt)
+              )
+              .order("desc")
+              .first();
+          }
         }
 
         return {
@@ -824,6 +858,64 @@ export const getConversationMembers = query({
   },
 });
 
+export const getConversationFiles = query({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users") // active user checking files
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) return [];
+
+    // Check access: participant OR leftParticipant
+    const isParticipant = conversation.participants.includes(args.userId);
+    const isLeft = conversation.leftParticipants?.includes(args.userId);
+
+    if (!isParticipant && !isLeft) {
+      return []; // No access
+    }
+
+    // Determine cutoff time for left users
+    let leftAt = Infinity;
+    if (isLeft && !isParticipant) {
+      // If they are NOT in current participants but ARE in leftParticipants
+      if (conversation.leftMetadata) {
+        const userMeta = conversation.leftMetadata.find(m => m.userId === args.userId);
+        if (userMeta) {
+          leftAt = userMeta.leftAt;
+        }
+      }
+    }
+
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation_created", (q) =>
+        q.eq("conversationId", args.conversationId)
+      )
+      .order("desc") // Newest first
+      .take(100);
+
+    const visibleMessages = messages.filter(m => m.createdAt <= leftAt);
+
+    const files = await Promise.all(
+      visibleMessages
+        .filter(m => m.type === "image" || m.type === "pdf")
+        .map(async (m) => {
+          let url = null;
+          if (m.storageId) {
+            url = await ctx.storage.getUrl(m.storageId);
+          }
+          return {
+            ...m,
+            url
+          };
+        })
+    );
+
+    return files;
+  }
+});
+
 export const getMessages = query({
   args: {
     conversationId: v.id("conversations"),
@@ -836,13 +928,52 @@ export const getMessages = query({
       .order("asc")
       .collect();
 
-    // Filter messages based on visibility
+    // Filter messages based on visibility & resolve URLs
     const currentUserId = args.activeUserId;
 
-    return messages.filter(msg => {
+    // Check if user has left the group and get timestamp
+    let leftAt = Infinity;
+    if (currentUserId) {
+      const conversation = await ctx.db.get(args.conversationId);
+      if (conversation && conversation.leftMetadata) {
+        const userMeta = conversation.leftMetadata.find(m => m.userId === currentUserId);
+        if (userMeta) {
+          leftAt = userMeta.leftAt;
+        } else if (conversation.leftParticipants?.includes(currentUserId)) {
+          // Fallback for legacy data (before metadata): user left but no timestamp known.
+          // We could fetch ALL or NONE. Let's assume full history for kindness, but stop new ones?
+          // Actually, if we want to restrict "future" messages, and we don't know when they left,
+          // we can't reliably filter. 
+          // However, the requirement is "messages sent AFTER... should not be received".
+          // If no timestamp, we can't enforce this for old exits, but new ones will have it.
+        }
+      }
+    }
+
+    const visibleMessages = messages.filter(msg => {
+      // 1. Time-based access control for left members
+      if (msg.createdAt > leftAt) return false;
+
       if (!msg.visibleTo) return true; // Public message
       if (!currentUserId) return false; // Private message but no user logged in
       return msg.visibleTo.includes(currentUserId);
     });
+
+    // Resolve URLs for files
+    const messagesWithUrls = await Promise.all(
+      visibleMessages.map(async (msg) => {
+        let url = null;
+        if (msg.storageId) {
+          url = await ctx.storage.getUrl(msg.storageId);
+        }
+        return {
+          ...msg,
+          url
+        };
+      })
+    );
+
+    return messagesWithUrls;
+
   },
 });

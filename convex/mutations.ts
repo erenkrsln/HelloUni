@@ -317,19 +317,36 @@ export const updateGroupImage = mutation({
   },
 });
 
+
+
 export const sendMessage = mutation({
   args: {
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"))),
+    storageId: v.optional(v.id("_storage")),
+    fileName: v.optional(v.string()),
+    contentType: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Validate membership
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    // Explicitly check if user is a participant (security best practice)
+    if (!conversation.participants.includes(args.senderId)) {
+      throw new Error("User is not a participant of this conversation");
+    }
+
     const messageId = await ctx.db.insert("messages", {
       conversationId: args.conversationId,
       senderId: args.senderId,
       content: args.content,
       type: args.type || "text",
+      storageId: args.storageId,
+      fileName: args.fileName,
+      contentType: args.contentType,
       createdAt: Date.now(),
     });
 
@@ -371,6 +388,8 @@ export const addConversationMember = mutation({
     await ctx.db.patch(args.conversationId, {
       participants: [...conversation.participants, args.newMemberId],
       leftParticipants: newLeftParticipants,
+      // Remove from leftMetadata if present
+      leftMetadata: (conversation.leftMetadata || []).filter(m => m.userId !== args.newMemberId),
     });
 
     // Create system message
@@ -424,10 +443,19 @@ export const removeConversationMember = mutation({
       ? currentLeft
       : [...currentLeft, args.memberIdToRemove];
 
+    // Update leftMetadata
+    const currentMetadata = conversation.leftMetadata || [];
+    // Remove old entry if exists (though unlikely for active member) and add new one
+    const newMetadata = [
+      ...currentMetadata.filter(m => m.userId !== args.memberIdToRemove),
+      { userId: args.memberIdToRemove, leftAt: Date.now() }
+    ];
+
     await ctx.db.patch(args.conversationId, {
       participants: newParticipants,
       adminIds: newAdmins,
       leftParticipants: newLeftParticipants,
+      leftMetadata: newMetadata,
     });
 
     // System message
@@ -474,10 +502,18 @@ export const leaveGroup = mutation({
       ? currentLeft
       : [...currentLeft, args.userId];
 
+    // Update leftMetadata
+    const currentMetadata = conversation.leftMetadata || [];
+    const newMetadata = [
+      ...currentMetadata.filter(m => m.userId !== args.userId),
+      { userId: args.userId, leftAt: Date.now() }
+    ];
+
     await ctx.db.patch(args.conversationId, {
       participants: newParticipants,
       adminIds: newAdmins,
       leftParticipants: newLeftParticipants,
+      leftMetadata: newMetadata,
     });
 
     const user = await ctx.db.get(args.userId);
@@ -512,9 +548,11 @@ export const deleteConversationFromList = mutation({
     }
 
     const newLeftParticipants = conversation.leftParticipants.filter(id => id !== args.userId);
+    const newMetadata = (conversation.leftMetadata || []).filter(m => m.userId !== args.userId);
 
     await ctx.db.patch(args.conversationId, {
-      leftParticipants: newLeftParticipants
+      leftParticipants: newLeftParticipants,
+      leftMetadata: newMetadata,
     });
   }
 });
