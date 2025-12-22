@@ -164,10 +164,10 @@ export function ProfileHeader({
     const majorDisplay = getMajorDisplay();
 
     return (
-        <div className="relative w-full">
-            {/* iOS Overscroll Filler: Verhindert weißen Spalt beim Herunterziehen */}
+        <div className="relative w-full bg-[#0a0a0a]">
+            {/* iOS Overscroll Filler: Verhindert weißen Spalt beim Herunterziehen und Überscrollen nach oben */}
             <div
-                className="absolute top-0 left-0 right-0 h-[100vh] -translate-y-full z-0"
+                className="fixed top-0 left-0 right-0 h-[200vh] -translate-y-full z-0 pointer-events-none"
                 style={{ backgroundColor: '#0a0a0a' }}
             />
 
