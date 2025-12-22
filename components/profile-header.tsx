@@ -172,8 +172,9 @@ export function ProfileHeader({
             />
 
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
+            {/* Sticky position to prevent white space when scrolling up */}
             <div 
-                className="relative bg-[#0a0a0a] overflow-hidden group header-image-responsive" 
+                className="sticky top-0 relative bg-[#0a0a0a] overflow-hidden group header-image-responsive z-10" 
                 style={{ 
                     aspectRatio: '3/1', 
                     minHeight: '120px'

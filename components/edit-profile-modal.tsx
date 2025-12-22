@@ -391,7 +391,7 @@ export function EditProfileModal({
               rows={4}
               maxLength={150}
               disabled={isSubmitting}
-              className="w-full px-3 py-2 rounded-lg border bg-white text-sm resize-none focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full px-3 py-2 rounded-lg border bg-white text-base resize-none focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:cursor-not-allowed disabled:opacity-50"
               style={{
                 borderColor: "rgba(208, 137, 69, 0.3)",
               }}
