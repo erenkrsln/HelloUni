@@ -680,7 +680,12 @@ export const getConversations = query({
           .collect();
 
         // Don't count own messages as unread
-        const unreadCount = unreadMessages.filter(m => m.senderId !== args.userId).length;
+        const unreadCount = unreadMessages.filter(m => {
+          if (m.senderId === args.userId) return false;
+          if (m.type === "system") return false;
+          if (m.visibleTo && !m.visibleTo.includes(args.userId)) return false;
+          return true;
+        }).length;
 
         // Bestimme Name und Bild für die Anzeige
         let displayName = "Unbekannt";
@@ -752,7 +757,19 @@ export const getUnreadCounts = query({
           )
           .collect();
 
-        const count = unreadMessages.filter(m => m.senderId !== args.userId).length;
+        // Filter messages
+        const count = unreadMessages.filter(m => {
+          // 1. Own messages are read
+          if (m.senderId === args.userId) return false;
+
+          // 2. System messages don't count
+          if (m.type === "system") return false;
+
+          // 3. Check visibility
+          if (m.visibleTo && !m.visibleTo.includes(args.userId)) return false;
+
+          return true;
+        }).length;
         totalUnread += count;
       })
     );
@@ -793,7 +810,10 @@ export const getConversationMembers = query({
 });
 
 export const getMessages = query({
-  args: { conversationId: v.id("conversations") },
+  args: {
+    conversationId: v.id("conversations"),
+    activeUserId: v.optional(v.id("users")) // Passed from client because auth is via NextAuth
+  },
   handler: async (ctx, args) => {
     const messages = await ctx.db
       .query("messages")
@@ -801,6 +821,13 @@ export const getMessages = query({
       .order("asc")
       .collect();
 
-    return messages;
+    // Filter messages based on visibility
+    const currentUserId = args.activeUserId;
+
+    return messages.filter(msg => {
+      if (!msg.visibleTo) return true; // Public message
+      if (!currentUserId) return false; // Private message but no user logged in
+      return msg.visibleTo.includes(currentUserId);
+    });
   },
 });

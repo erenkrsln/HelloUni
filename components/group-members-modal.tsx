@@ -157,7 +157,7 @@ export function GroupMembersModal({
                                 </div>
                             )}
 
-                            {iAmAdmin && (
+                            {iAmAdmin && allUsers && members && allUsers.filter(u => !members.some(m => m._id === u._id)).length > 0 && (
                                 <button
                                     onClick={() => setView("add")}
                                     className="flex items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 text-[#8C531E] font-medium"

@@ -19,7 +19,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const messages = useQuery(api.queries.getMessages, { conversationId });
+    const messages = useQuery(api.queries.getMessages, {
+        conversationId,
+        activeUserId: currentUser?._id
+    });
     const sendMessage = useMutation(api.mutations.sendMessage);
     const deleteConversation = useMutation(api.mutations.deleteConversation);
     const markAsRead = useMutation(api.mutations.markAsRead);
@@ -72,23 +75,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-    const memberColors = [
-        '#e99f7aff',
-        '#e5ba6fff',
-        '#9a8884ff',
-        '#aabbbbff',
-        '#758d8cff',
-        '#a395aeff',
-    ];
-
-    const getMemberColor = (userId: string) => {
-        // Simple hash to pick a stable color for a user
-        let hash = 0;
-        for (let i = 0; i < userId.length; i++) {
-            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return memberColors[Math.abs(hash) % memberColors.length];
-    };
 
     if (!currentUser) return null;
 
@@ -183,7 +169,35 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             return (
                                 <div key={msg._id} className="flex justify-center my-4">
                                     <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                                        {msg.content}
+                                        {(() => {
+                                            let content = msg.content;
+                                            if (currentUser) {
+                                                // Personalize "promoted to admin" message
+                                                const promotedMatch = content.match(/(.*) hat (.*) zum Admin ernannt/);
+                                                if (promotedMatch) {
+                                                    const [_, adminName, targetName] = promotedMatch;
+                                                    if (targetName === currentUser.name) {
+                                                        return `${adminName === currentUser.name ? "Du hast dich" : adminName + " hat dich"} zum Admin ernannt`;
+                                                    }
+                                                    if (adminName === currentUser.name) {
+                                                        return `Du hast ${targetName} zum Admin ernannt`;
+                                                    }
+                                                }
+
+                                                // Personalize "demoted from admin" message
+                                                const demotedMatch = content.match(/(.*) hat (.*) Admin-Rechte entzogen/);
+                                                if (demotedMatch) {
+                                                    const [_, adminName, targetName] = demotedMatch;
+                                                    if (targetName === currentUser.name) {
+                                                        return `${adminName === currentUser.name ? "Du hast dir" : adminName + " hat dir"} Admin-Rechte entzogen`;
+                                                    }
+                                                    if (adminName === currentUser.name) {
+                                                        return `Du hast ${targetName} Admin-Rechte entzogen`;
+                                                    }
+                                                }
+                                            }
+                                            return content;
+                                        })()}
                                     </span>
                                 </div>
                             );

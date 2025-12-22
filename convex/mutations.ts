@@ -381,6 +381,13 @@ export const addConversationMember = mutation({
         createdAt: Date.now(),
       });
     }
+
+    // Initialize last_reads for the new member so they don't see old messages as unread
+    await ctx.db.insert("last_reads", {
+      userId: args.newMemberId,
+      conversationId: args.conversationId,
+      lastReadAt: Date.now(),
+    });
   },
 });
 
@@ -454,6 +461,7 @@ export const promoteToAdmin = mutation({
           senderId: args.adminId,
           content: `${adminUser.name} hat ${promotedUser.name} zum Admin ernannt`,
           type: "system",
+          visibleTo: [args.adminId, args.memberIdToPromote], // Only visible to involved parties
           createdAt: Date.now(),
         });
       }
@@ -494,6 +502,7 @@ export const demoteAdmin = mutation({
         senderId: args.adminId,
         content: `${adminUser.name} hat ${demotedUser.name} Admin-Rechte entzogen`,
         type: "system",
+        visibleTo: [args.adminId, args.memberIdToDemote], // Only visible to involved parties
         createdAt: Date.now(),
       });
     }

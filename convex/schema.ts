@@ -93,6 +93,7 @@ export default defineSchema({
     senderId: v.id("users"),
     content: v.string(),
     type: v.optional(v.union(v.literal("text"), v.literal("system"))), // Nachrichtentyp
+    visibleTo: v.optional(v.array(v.id("users"))), // Array von User IDs, die die Nachricht sehen dürfen (wenn leer/undefined -> alle)
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])
