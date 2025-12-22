@@ -105,14 +105,14 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 router.push("/profile");
                 onClose();
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors text-black text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
             >
               <User className="w-5 h-5 text-black flex-shrink-0" />
               <span>Profil</span>
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 transition-colors text-red-600 text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 active:bg-transparent focus:bg-transparent transition-colors text-red-600 text-left"
             >
               <LogOut className="w-5 h-5 text-red-600 flex-shrink-0" />
               <span>Abmelden</span>

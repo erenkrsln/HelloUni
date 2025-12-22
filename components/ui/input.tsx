@@ -13,24 +13,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          "flex h-11 w-full rounded-lg border bg-white px-3 py-2 text-base",
+          "flex h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base shadow-sm",
           "placeholder:text-gray-400",
-          "focus:outline-none focus:ring-2 focus:border-transparent",
+          "focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "transition-all",
+          "hover:bg-gray-50",
           className
         )}
-        style={{
-          borderColor: "rgba(208, 137, 69, 0.3)",
-        }}
-        onFocus={(e) => {
-          e.target.style.borderColor = "#D08945";
-          e.target.style.boxShadow = "0 0 0 2px rgba(208, 137, 69, 0.2)";
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = "rgba(208, 137, 69, 0.3)";
-          e.target.style.boxShadow = "none";
-        }}
         ref={ref}
         {...props}
       />

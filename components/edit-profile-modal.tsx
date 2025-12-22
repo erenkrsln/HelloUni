@@ -314,8 +314,8 @@ export function EditProfileModal({
                           setMajor(program);
                           setIsMajorOpen(false);
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all ${
-                          major === program ? "bg-gradient-to-r from-[#D08945] via-[#DCA067] to-[#F4CFAB] text-white" : ""
+                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${
+                          major === program ? "" : ""
                         }`}
                       >
                         {program}
@@ -365,8 +365,8 @@ export function EditProfileModal({
                           setSemester(sem);
                           setIsSemesterOpen(false);
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all ${
-                          semester === sem ? "bg-gradient-to-r from-[#D08945] via-[#DCA067] to-[#F4CFAB] text-white" : ""
+                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${
+                          semester === sem ? "" : ""
                         }`}
                       >
                         {sem}. Semester
@@ -391,18 +391,7 @@ export function EditProfileModal({
               rows={4}
               maxLength={150}
               disabled={isSubmitting}
-              className="w-full px-3 py-2 rounded-lg border bg-white text-base resize-none focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:cursor-not-allowed disabled:opacity-50"
-              style={{
-                borderColor: "rgba(208, 137, 69, 0.3)",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#D08945";
-                e.target.style.boxShadow = "0 0 0 2px rgba(208, 137, 69, 0.2)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "rgba(208, 137, 69, 0.3)";
-                e.target.style.boxShadow = "none";
-              }}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-base resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             />
             <p className="text-xs text-gray-500 mt-1 text-right">
               {bio.length}/150
