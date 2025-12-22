@@ -38,10 +38,10 @@ export default function ChatPage() {
     }
   }, []);
 
-  const isLoading = isFirstVisit && currentUser === undefined;
-
   const conversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
   const allUsers = useQuery(api.queries.getAllUsers);
+
+  const isLoading = isFirstVisit && (currentUser === undefined || conversations === undefined);
   const createConversation = useMutation(api.mutations.createConversation);
   const deleteConversationFromList = useMutation(api.mutations.deleteConversationFromList);
 
@@ -150,9 +150,7 @@ export default function ChatPage() {
 
           {/* Chat List */}
           <div className="flex flex-col">
-            {!conversations ? (
-              <LoadingScreen />
-            ) : filteredConversations?.length === 0 ? (
+            {filteredConversations?.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
                 <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
                 <p>Keine Chats gefunden.</p>
