@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Trash2, FolderOpen, Paperclip, FileIcon, X } from "lucide-react";
+import { ArrowLeft, Send, Trash2, FolderOpen, Paperclip, FileIcon, X, FolderRootIcon, FolderIcon } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { EditGroupImageModal } from "@/components/edit-group-image-modal";
 import { GroupMembersModal } from "@/components/group-members-modal";
@@ -171,17 +171,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         }
     };
 
-    const handleDeleteGroup = async () => {
-        if (!conversationId) return;
-
-        try {
-            await deleteConversation({ conversationId });
-            router.push("/chat");
-        } catch (error) {
-            console.error("Failed to delete group:", error);
-        }
-    };
-
     if (!currentUser) return null;
 
     return (
@@ -189,53 +178,60 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
             {/* Header */}
             <div
-                className="flex items-center px-4 py-3 border-b bg-white z-10 sticky top-0"
+                className="flex items-center justify-between px-4 py-3 border-b bg-white z-10 sticky top-0"
                 style={{
                     paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
                     top: 0
                 }}
             >
-                <button
-                    onClick={() => router.back()}
-                    className="mr-3 p-2 -ml-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
-                >
-                    <ArrowLeft size={24} />
-                </button>
+                {/* Linke Seite: Zurück-Button + Avatar + Name */}
+                <div className="flex items-center flex-1">
+                    <button
+                        onClick={() => router.back()}
+                        className="mr-3 p-2 -ml-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
 
-                {conversation ? (
-                    <div className="flex items-center">
-                        <div
-                            className={`w-8 h-8 rounded-full overflow-hidden mr-3 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
-                            style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                            onClick={() => conversation.isGroup && isGroupAdmin && setIsImageModalOpen(true)}
-                        >
-                            {conversation.displayImage ? (
-                                <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center font-bold text-sm" style={{ color: "#000000" }}>
-                                    {conversation.displayName?.charAt(0).toUpperCase()}
-                                </div>
-                            )}
+                    {conversation ? (
+                        <div className="flex items-center min-w-0"> {/* min-w-0 verhindert Überlauf */}
+                            <div
+                                className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
+                                style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
+                                onClick={() => conversation.isGroup && isGroupAdmin && setIsImageModalOpen(true)}
+                            >
+                                {conversation.displayImage ? (
+                                    <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center font-bold text-sm text-black">
+                                        {conversation.displayName?.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+
+                            <span
+                                className="font-semibold truncate cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={handleHeaderClick}
+                            >
+                                {conversation.displayName}
+                            </span>
                         </div>
-                        <span
-                            className="font-semibold cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={handleHeaderClick}
-                        >
-                            {conversation.displayName}
-                        </span>
+                    ) : (
+                        <div className="h-8 flex items-center">
+                            <span className="font-semibold text-gray-400">Lade...</span>
+                        </div>
+                    )}
+                </div>
 
-                        <button
-                            className="ml-auto p-2 text-gray-400 hover:text-[#8C531E] hover:bg-[#f6efe4] rounded-full transition-colors"
-                            onClick={() => setIsFilesModalOpen(true)}
-                            title="Geteilte Dateien"
-                        >
-                            <FolderOpen size={20} />
-                        </button>
-                    </div>
-                ) : (
-                    <div className="h-8 flex items-center">
-                        <span className="font-semibold text-gray-400">Lade...</span>
-                    </div>
+                {/* Rechte Seite: FolderOpen-Button – ganz rechts */}
+                {conversation && (
+                    <button
+                        className="p-2 text-gray-400 hover:text-[#8C531E] hover:bg-[#f6efe4] rounded-full transition-colors"
+                        onClick={() => setIsFilesModalOpen(true)}
+                        title="Geteilte Dateien"
+                    >
+                        <FolderIcon size={20} />
+                    </button>
                 )}
             </div>
 
@@ -480,7 +476,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 >
                     <form
                         onSubmit={handleSend}
-                        className="flex items-end bg-[#FDFBF7] border border-[#efeadd] rounded-3xl px-4 py-2 gap-2"
+                        className="flex items-end bg-[#FDFBF7] border border-[#efeadd] rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:border-[#8C531E] focus-within:shadow-md focus-within:ring-2 focus-within:ring-[#8C531E]/30"
                     >
                         <input
                             type="file"
@@ -489,6 +485,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             ref={fileInputRef}
                             onChange={handleFileSelect}
                         />
+
                         <textarea
                             ref={textareaRef}
                             value={newMessage}
@@ -500,23 +497,27 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 }
                             }}
                             placeholder="Schreibe eine Nachricht..."
-                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto"
+                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
                             rows={1}
                             style={{ minHeight: '24px' }}
                         />
+
+                        {/* Paperclip Button – jetzt einheitlich mit Send-Button-Stil */}
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-gray-400 hover:text-[#8C531E] transition-colors flex-shrink-0 pb-1"
+                            className="p-2 rounded-full transition-all flex-shrink-0 text-gray-300 hover:text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]"
                         >
                             <Paperclip size={20} />
                         </button>
+
+                        {/* Send Button */}
                         <button
                             type="submit"
                             disabled={!newMessage.trim()}
-                            className={`p-2 rounded-full transition-colors flex-shrink-0 ${newMessage.trim()
+                            className={`p-2 rounded-full transition-all flex-shrink-0 ${newMessage.trim()
                                 ? 'text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]'
-                                : 'text-gray-300'
+                                : 'text-gray-300 cursor-not-allowed'
                                 }`}
                         >
                             <Send size={20} />
