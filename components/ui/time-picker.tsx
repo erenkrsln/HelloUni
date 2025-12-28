@@ -67,7 +67,7 @@ export function TimePicker({
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         className={cn(
-          "block w-full max-w-full h-11 py-2 text-base rounded-lg border bg-white text-left",
+          "block w-full max-w-full h-11 py-2 text-base md:text-sm rounded-lg border bg-white text-left",
           "placeholder:text-gray-400",
           "focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent",
           "disabled:cursor-not-allowed disabled:opacity-50",

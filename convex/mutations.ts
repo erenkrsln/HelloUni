@@ -188,7 +188,10 @@ export const updateUser = mutation({
     userId: v.id("users"),
     name: v.optional(v.string()),
     image: v.optional(v.string()),
+    headerImage: v.optional(v.string()),
     bio: v.optional(v.string()),
+    major: v.optional(v.string()),
+    semester: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
@@ -196,7 +199,7 @@ export const updateUser = mutation({
       throw new Error("User not found");
     }
 
-    const updates: { name?: string; image?: string; bio?: string } = {};
+    const updates: { name?: string; image?: string; headerImage?: string; bio?: string; major?: string; semester?: number } = {};
     if (args.name !== undefined) {
       updates.name = args.name;
     }
@@ -204,10 +207,21 @@ export const updateUser = mutation({
       // If image is empty string, set to undefined to delete it
       updates.image = args.image === "" ? undefined : args.image;
     }
+    if (args.headerImage !== undefined) {
+      // If headerImage is empty string, set to undefined to delete it
+      updates.headerImage = args.headerImage === "" ? undefined : args.headerImage;
+    }
     if (args.bio !== undefined) {
       // If bio is empty string, set to empty string (will be treated as deleted in UI)
       const trimmedBio = args.bio.trim();
       updates.bio = trimmedBio;
+    }
+    if (args.major !== undefined) {
+      // If major is empty string, set to undefined to delete it
+      updates.major = args.major === "" ? undefined : args.major;
+    }
+    if (args.semester !== undefined) {
+      updates.semester = args.semester;
     }
 
     await ctx.db.patch(args.userId, updates);

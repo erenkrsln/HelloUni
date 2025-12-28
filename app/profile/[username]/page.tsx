@@ -13,6 +13,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams } from "next/navigation";
 
+
 /**
  * User Profile Page Component
  * 
@@ -24,7 +25,7 @@ export default function UserProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const params = useParams();
     const username = params.username as string;
-    const { currentUserId } = useCurrentUser();
+    const { currentUserId, currentUser } = useCurrentUser();
 
     // Use unified hook with client-side caching
     // Returns cached data immediately on subsequent visits
@@ -32,6 +33,9 @@ export default function UserProfilePage() {
         username,
         currentUserId
     });
+
+    // Check if this is the current user's own profile
+    const isOwnProfile = profileData?.user?._id === currentUserId;
 
     // Fetch all posts (separate query, also cached by Convex)
     const allPosts = useQuery(api.queries.getFeed);
@@ -42,11 +46,16 @@ export default function UserProfilePage() {
         : [];
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-            <Header onMenuClick={() => setIsSidebarOpen(true)} />
+        <main 
+            className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden"
+            style={{
+                overscrollBehaviorY: 'none',
+                minHeight: '100dvh',
+            }}
+        >
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-                {isLoading ? (
+            {isLoading ? (
                 // Show spinner only on first visit (no cached data)
                 <LoadingScreen text="Profil wird geladen..." />
             ) : notFound ? (
@@ -59,13 +68,16 @@ export default function UserProfilePage() {
                     {/* Profile header with preloaded data from cache */}
                     <ProfileHeader
                         name={profileData.user.name}
+                        username={profileData.user.username}
                         image={profileData.user.image}
-                        uniName={profileData.user.uni_name}
+                        headerImage={profileData.user.headerImage}
                         major={profileData.user.major}
+                        semester={profileData.user.semester}
                         bio={profileData.user.bio}
+                        createdAt={profileData.user.createdAt}
                         userId={profileData.user._id}
                         currentUserId={currentUserId}
-                        isOwnProfile={false}
+                        isOwnProfile={isOwnProfile}
                         postsCount={userPosts.length}
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
@@ -73,7 +85,7 @@ export default function UserProfilePage() {
                     />
 
                     {/* Posts section */}
-                    <div>
+                    <div data-posts-section>
                         <h3 className="px-4 text-lg font-semibold text-[#000000] mb-4 border-b border-[#000000]/20 pb-2">
                             Posts
                         </h3>

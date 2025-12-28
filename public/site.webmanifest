@@ -1,0 +1,16 @@
+{
+  "name": "HelloUni",
+  "short_name": "HelloUni",
+  "description": "Social Media App für Studierende",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

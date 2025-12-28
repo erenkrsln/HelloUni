@@ -1,3 +1,4 @@
+// Test commit for verification
 import type { Metadata, Viewport } from "next";
 import { Inter, Gloock, Poppins } from "next/font/google";
 import "./globals.css";
@@ -20,6 +21,12 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "HelloUni",
   description: "Social Media App für Studierende",
+  manifest: "/site.webmanifest",
+  appleWebApp: {
+    title: "HelloUni",
+    statusBarStyle: "black-translucent",
+    capable: true,
+  },
 };
 
 export const viewport: Viewport = {
@@ -29,6 +36,7 @@ export const viewport: Viewport = {
   userScalable: true,
   // iOS Safari: Unterstützung für Safe Area (Notch, Home Indicator)
   viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
