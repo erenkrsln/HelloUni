@@ -417,10 +417,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
+                                                <div className="w-10 h-10 bg-[#f6efe4] rounded-lg flex items-center justify-center text-[#8C531E]">
                                                     <FileIcon size={24} />
                                                 </div>
-                                                <span className="underline truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
+                                                <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
                                             </a>
                                         ) : (
                                             linkifyText(msg.content)
