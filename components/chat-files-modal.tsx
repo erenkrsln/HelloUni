@@ -53,25 +53,22 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className={selectedImage
-                ? "w-[100vw] h-[100vh] max-w-none p-0 border-none bg-black/95 flex items-center justify-center overflow-hidden"
+                ? "p-0 border-0 rounded-none max-w-none w-screen h-screen bg-transparent"
                 : "w-[90vw] sm:w-[80vw] max-w-[600px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white"
             }>
                 {selectedImage ? (
-                    <div className="relative w-full h-full flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
+                    <div className="fixed inset-0 bg-black flex items-center justify-center">
                         <button
-                            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-50"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedImage(null);
-                            }}
+                            className="absolute top-8 right-8 text-white hover:text-gray-200 z-50"
+                            onClick={() => setSelectedImage(null)}
                         >
-                            <X size={32} />
+                            <X size={40} />
                         </button>
                         <img
                             src={selectedImage}
-                            alt="Vorschau"
-                            className="max-w-full max-h-full object-contain"
-                            onClick={(e) => e.stopPropagation()}
+                            alt="Vollbild"
+                            className="max-w-full max-h-full object-contain select-none"
+                            draggable={false}
                         />
                     </div>
                 ) : (
