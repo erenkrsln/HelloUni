@@ -221,7 +221,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     <div className="text-center text-gray-400 mt-10">Lade Nachrichten...</div>
                 ) : messages.length === 0 ? (
                     <div className="text-center text-gray-400 mt-10 text-sm">
-                        Noch keine Nachrichten im Chat. Schreibe deine erste Nachricht! (hier icebreaker frage?)
+                        Noch keine Nachrichten im Chat. Schreibe deine erste Nachricht!
                     </div>
                 ) : (
                     messages.map((msg, index) => {
@@ -244,6 +244,64 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         {(() => {
                                             let content = msg.content;
                                             if (currentUser) {
+                                                // Personalize "left group" message
+                                                const leftMatch = content.match(/(.*) hat die Gruppe verlassen/);
+                                                if (leftMatch) {
+                                                    const [_, userName] = leftMatch;
+                                                    if (userName === currentUser.name) {
+                                                        return "Du hast die Gruppe verlassen";
+                                                    }
+                                                    return content;
+                                                }
+
+                                                // Personalize "removed from group" message
+                                                const removedMatch = content.match(/(.*) hat (.*) entfernt/);
+                                                if (removedMatch) {
+                                                    const [_, adminName, removedName] = removedMatch;
+                                                    if (removedName === currentUser.name && adminName === currentUser.name) {
+                                                        return "Du hast dich entfernt";
+                                                    }
+                                                    if (removedName === currentUser.name) {
+                                                        return `${adminName} hat dich entfernt`;
+                                                    }
+                                                    if (adminName === currentUser.name) {
+                                                        return `Du hast ${removedName} entfernt`;
+                                                    }
+                                                    return content;
+                                                }
+
+                                                // Personalize "added to group" message
+                                                const addedMatch = content.match(/(.*) hat (.*) hinzugefügt/);
+                                                if (addedMatch) {
+                                                    const [_, adminName, addedName] = addedMatch;
+                                                    if (addedName === currentUser.name && adminName === currentUser.name) {
+                                                        return "Du hast dich hinzugefügt";
+                                                    }
+                                                    if (addedName === currentUser.name) {
+                                                        return `${adminName} hat dich hinzugefügt`;
+                                                    }
+                                                    if (adminName === currentUser.name) {
+                                                        return `Du hast ${addedName} hinzugefügt`;
+                                                    }
+                                                    return content;
+                                                }
+
+                                                // Personalize "creator transfer" message
+                                                const transferMatch = content.match(/(.*) hat die Gruppenleitung an (.*) übertragen/);
+                                                if (transferMatch) {
+                                                    const [_, oldCreator, newCreator] = transferMatch;
+                                                    if (oldCreator === currentUser.name && newCreator === currentUser.name) {
+                                                        return "Du hast die Gruppenleitung an dich übertragen";
+                                                    }
+                                                    if (oldCreator === currentUser.name) {
+                                                        return `Du hast die Gruppenleitung an ${newCreator} übertragen`;
+                                                    }
+                                                    if (newCreator === currentUser.name) {
+                                                        return `${oldCreator} hat die Gruppenleitung an dich übertragen`;
+                                                    }
+                                                    return content;
+                                                }
+
                                                 // Personalize "promoted to admin" message
                                                 const promotedMatch = content.match(/(.*) hat (.*) zum Admin ernannt/);
                                                 if (promotedMatch) {
