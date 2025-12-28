@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Trash2, FolderOpen, Paperclip, FileIcon, X, FolderRootIcon, FolderIcon } from "lucide-react";
+import { ArrowLeft, Send, Trash2, FolderOpen, Paperclip, FileIcon, X, FolderRootIcon, FolderIcon, Folder } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { EditGroupImageModal } from "@/components/edit-group-image-modal";
 import { GroupMembersModal } from "@/components/group-members-modal";
@@ -230,7 +230,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         onClick={() => setIsFilesModalOpen(true)}
                         title="Geteilte Dateien"
                     >
-                        <FolderIcon size={20} />
+                        <Folder size={20} />
                     </button>
                 )}
             </div>

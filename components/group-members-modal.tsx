@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, UserPlus, Shield, ShieldOff, Trash2, X, Crown } from "lucide-react";
+import { Search, UserPlus, Shield, ShieldOff, Trash2, X, Crown, UserStar, UserLock, Star, StarOff, Sparkles } from "lucide-react";
 
 interface GroupMembersModalProps {
     isOpen: boolean;
@@ -241,13 +241,28 @@ export function GroupMembersModal({
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex-1 min-w-0 mr-2">
-                                        <div className="flex items-center gap-1">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <span className="font-semibold truncate">{member.name}</span>
-                                            {member.role === "creator" && <span className="text-[10px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">Inhaber</span>}
-                                            {member.role === "admin" && <span className="text-[10px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded-full">Admin</span>}
+
+                                            {/* Inhaber Badge */}
+                                            {member.role === "creator" && (
+                                                <div className="flex items-center gap-1 bg-[#f6efe4] px-2 py-0.5 rounded-full">
+                                                    <Sparkles size={13} className="text-[#8C531E]" />
+                                                    <span className="text-xs font-medium text-[#8C531E]">Inhaber</span>
+                                                </div>
+                                            )}
+
+                                            {/* Admin Badge */}
+                                            {member.role === "admin" && (
+                                                <div className="flex items-center gap-1 bg-[#f6efe4] px-2 py-0.5 rounded-full">
+                                                    <Star size={13} className="text-[#8C531E]" />
+                                                    <span className="text-xs font-medium text-[#8C531E]">Admin</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="text-xs text-gray-500">@{member.username}</div>
+
+                                        <div className="text-xs text-gray-500 mt-0.5">@{member.username}</div>
                                     </div>
 
                                     {/* Admin Actions */}
@@ -260,25 +275,25 @@ export function GroupMembersModal({
                                                     className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
                                                     title="Gruppenleitung übertragen"
                                                 >
-                                                    <Crown size={18} />
+                                                    <Sparkles size={18} />
                                                 </button>
                                             )}
                                             {member.role === "member" && (
                                                 <button
                                                     onClick={() => handlePromote(member._id)}
-                                                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                                                    className="p-2 text-gray-400 hover:text-[#8C531E] hover:bg-[#f6efe4] rounded-full transition-colors"
                                                     title="Zum Admin machen"
                                                 >
-                                                    <Shield size={18} />
+                                                    <Star size={18} />
                                                 </button>
                                             )}
                                             {member.role === "admin" && (
                                                 <button
                                                     onClick={() => handleDemote(member._id)}
-                                                    className="p-2 text-green-600 hover:text-gray-500 hover:bg-gray-50 rounded-full transition-colors"
+                                                    className="p-2 text-[#8C531E] hover:text-gray-500 hover:bg-[#f6efe4] rounded-full transition-colors"
                                                     title="Admin entfernen"
                                                 >
-                                                    <ShieldOff size={18} />
+                                                    <StarOff size={18} />
                                                 </button>
                                             )}
                                             {member.role !== "creator" && (
