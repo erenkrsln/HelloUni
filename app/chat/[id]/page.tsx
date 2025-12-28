@@ -384,7 +384,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
                                     <div
                                         className={`
-                                            px-4 py-2 text-sm
+                                            ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
                                             ${isMe
                                                 ? 'bg-[#dcc6a1] text-black rounded-2xl'
                                                 : 'text-black rounded-2xl shadow-sm bg-white border border-[#efeadd]'
@@ -401,7 +401,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         }}
                                     >
                                         {msg.type === "image" && (msg as any).url ? (
-                                            <div className="max-w-[200px] max-h-[200px] overflow-hidden rounded-lg">
+                                            <div className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px]">
                                                 <img
                                                     src={(msg as any).url}
                                                     alt="Bild"
