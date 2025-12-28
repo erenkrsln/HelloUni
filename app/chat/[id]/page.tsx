@@ -125,6 +125,30 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     // Helper to get member details
     const getMember = (userId: string) => members?.find(m => m._id === userId);
 
+    // Helper to linkify URLs in text
+    const linkifyText = (text: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const parts = text.split(urlRegex);
+
+        return parts.map((part, index) => {
+            if (part.match(urlRegex)) {
+                return (
+                    <a
+                        key={index}
+                        href={part}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white hover:text-grey-200 underline break-all"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {part}
+                    </a>
+                );
+            }
+            return part;
+        });
+    };
+
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -403,7 +427,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                 <span className="underline truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
                                             </a>
                                         ) : (
-                                            msg.content
+                                            linkifyText(msg.content)
                                         )}
                                     </div>
                                 </div>
