@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, UserPlus, Shield, ShieldOff, Trash2, X } from "lucide-react";
+import { Search, UserPlus, Shield, ShieldOff, Trash2, X, Crown } from "lucide-react";
 
 interface GroupMembersModalProps {
     isOpen: boolean;
@@ -38,8 +38,10 @@ export function GroupMembersModal({
     const promoteToAdmin = useMutation(api.mutations.promoteToAdmin);
     const demoteAdmin = useMutation(api.mutations.demoteAdmin);
     const claimGroup = useMutation(api.mutations.claimGroupOwnership);
+    const transferCreator = useMutation(api.mutations.transferCreator);
 
     const myself = members?.find(m => m._id === currentUserId);
+    const iAmCreator = myself?.role === "creator";
     const iAmAdmin = myself?.role === "admin" || myself?.role === "creator";
 
     // Filter users for "Add Member" view
@@ -119,6 +121,21 @@ export function GroupMembersModal({
         }
     };
 
+    const handleTransferCreator = async (userId: Id<"users">, userName: string) => {
+        if (!confirm(`Möchtest du die Gruppenleitung wirklich an ${userName} übertragen? Diese Aktion kann nicht rückgängig gemacht werden und du verlierst deine Inhaber-Rechte.`)) return;
+        try {
+            await transferCreator({
+                conversationId,
+                currentCreatorId: currentUserId,
+                newCreatorId: userId,
+            });
+            window.location.reload(); // Force reload to update permissions properly
+        } catch (error) {
+            console.error("Failed to transfer creator:", error);
+            alert("Fehler beim Übertragen der Gruppenleitung.");
+        }
+    };
+
     const handleClaim = async () => {
         try {
             await claimGroup({
@@ -175,7 +192,7 @@ export function GroupMembersModal({
                                 </div>
                             )}
 
-                            {iAmAdmin && allUsers && members && allUsers.filter(u => !members.some(m => m._id === u._id)).length > 0 && (
+                            {iAmAdmin && allUsers && members && allUsers.filter(u => !members.some(m => m._id === u._id && m.role !== 'left')).length > 0 && (
                                 <button
                                     onClick={() => setView("add")}
                                     className="flex items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 text-[#8C531E] font-medium"
@@ -214,6 +231,16 @@ export function GroupMembersModal({
                                     {/* Admin Actions */}
                                     {iAmAdmin && member._id !== currentUserId && (
                                         <div className="flex items-center gap-1">
+                                            {/* Transfer Creator (only visible to creator) */}
+                                            {iAmCreator && member.role !== "creator" && (
+                                                <button
+                                                    onClick={() => handleTransferCreator(member._id, member.name)}
+                                                    className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
+                                                    title="Gruppenleitung übertragen"
+                                                >
+                                                    <Crown size={18} />
+                                                </button>
+                                            )}
                                             {member.role === "member" && (
                                                 <button
                                                     onClick={() => handlePromote(member._id)}

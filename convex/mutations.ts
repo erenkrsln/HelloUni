@@ -502,9 +502,9 @@ export const leaveGroup = mutation({
       throw new Error("User not in group");
     }
 
-    // Prevent creator from leaving (simplification)
+    // If user is the creator, they must transfer creator status first
     if (conversation.creatorId === args.userId) {
-      throw new Error("Creator cannot leave group");
+      throw new Error("Creator must transfer creator status before leaving the group");
     }
 
     const newParticipants = conversation.participants.filter(id => id !== args.userId);
@@ -821,6 +821,69 @@ export const markAsRead = mutation({
         lastReadAt: Date.now(),
       });
     }
+  },
+});
+
+export const transferCreator = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    currentCreatorId: v.id("users"),
+    newCreatorId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.isGroup) throw new Error("Not a group");
+
+    // Validate that the current user is actually the creator
+    if (conversation.creatorId !== args.currentCreatorId) {
+      throw new Error("Only the creator can transfer creator status");
+    }
+
+    // Cannot transfer to self
+    if (args.currentCreatorId === args.newCreatorId) {
+      throw new Error("Cannot transfer creator status to yourself");
+    }
+
+    // Validate that the new creator is an active participant
+    if (!conversation.participants.includes(args.newCreatorId)) {
+      throw new Error("New creator must be an active member of the group");
+    }
+
+    // Validate that the new creator is not in leftParticipants
+    const leftParticipants = conversation.leftParticipants || [];
+    if (leftParticipants.includes(args.newCreatorId)) {
+      throw new Error("Cannot transfer creator status to a user who has left the group");
+    }
+
+    // Update adminIds: ensure new creator is in adminIds
+    const currentAdmins = conversation.adminIds || [];
+    const newAdmins = currentAdmins.includes(args.newCreatorId)
+      ? currentAdmins
+      : [...currentAdmins, args.newCreatorId];
+
+    // Transfer creator status
+    await ctx.db.patch(args.conversationId, {
+      creatorId: args.newCreatorId,
+      adminIds: newAdmins,
+    });
+
+    // Create system message
+    const oldCreator = await ctx.db.get(args.currentCreatorId);
+    const newCreator = await ctx.db.get(args.newCreatorId);
+
+    if (oldCreator && newCreator) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.currentCreatorId,
+        content: `${oldCreator.name} hat die Gruppenleitung an ${newCreator.name} übertragen`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+
+    return { success: true };
   },
 });
 

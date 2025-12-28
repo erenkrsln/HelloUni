@@ -371,51 +371,57 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Input */}
-            <div
-                className="p-3 bg-white border-t border-[#f0e6d2]"
-                style={{
-                    paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
-                }}
-            >
-                <form
-                    onSubmit={handleSend}
-                    className="flex items-center bg-[#FDFBF7] border border-[#efeadd] rounded-full px-4 py-2"
+            {!isLeft ? (
+                <div
+                    className="p-3 bg-white border-t border-[#f0e6d2]"
+                    style={{
+                        paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
+                    }}
                 >
-                    <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleFileSelect}
-                    />
-                    <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Schreibe eine Nachricht..."
-                        className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400"
-                    />
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="mr-2 text-gray-400 hover:text-[#8C531E] transition-colors"
+                    <form
+                        onSubmit={handleSend}
+                        className="flex items-center bg-[#FDFBF7] border border-[#efeadd] rounded-full px-4 py-2"
                     >
-                        <Paperclip size={20} />
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={!newMessage.trim()}
-                        className={`p-2 rounded-full transition-colors ${newMessage.trim()
-                            ? 'text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]'
-                            : 'text-gray-300'
-                            }`}
-                    >
-                        <Send size={20} />
-                    </button>
-                </form>
-            </div>
-            {isLeft && (
-                <div className="p-4 bg-gray-50 text-center text-gray-500 text-sm border-t">
+                        <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleFileSelect}
+                        />
+                        <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Schreibe eine Nachricht..."
+                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="mr-2 text-gray-400 hover:text-[#8C531E] transition-colors"
+                        >
+                            <Paperclip size={20} />
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!newMessage.trim()}
+                            className={`p-2 rounded-full transition-colors ${newMessage.trim()
+                                ? 'text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]'
+                                : 'text-gray-300'
+                                }`}
+                        >
+                            <Send size={20} />
+                        </button>
+                    </form>
+                </div>
+            ) : (
+                <div
+                    className="p-4 bg-gray-50 text-center text-gray-500 text-sm border-t"
+                    style={{
+                        paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
+                    }}
+                >
                     Du bist kein Mitglied dieser Gruppe mehr.
                 </div>
             )}
