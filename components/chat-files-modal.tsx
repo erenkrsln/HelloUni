@@ -57,7 +57,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                 : "w-[90vw] sm:w-[80vw] max-w-[600px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white"
             }>
                 {selectedImage ? (
-                    <div className="fixed inset-0 bg-black flex items-center justify-center">
+                    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2">
                         <button
                             className="absolute top-8 right-8 text-white hover:text-gray-200 z-50"
                             onClick={() => setSelectedImage(null)}

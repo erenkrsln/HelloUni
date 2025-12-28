@@ -537,7 +537,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Image Preview Overlay */}
             {selectedImage && (
                 <div
-                    className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm"
+                    className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2"
                     onClick={() => setSelectedImage(null)}
                 >
                     <button
@@ -549,7 +549,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     <img
                         src={selectedImage}
                         alt="Vorschau"
-                        className="max-w-full max-h-[90vh] object-contain rounded-md"
+                        className="max-w-full max-h-[90vh] object-contain"
                     />
                 </div>
             )}
