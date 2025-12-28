@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2 } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -191,11 +191,27 @@ export default function ChatPage() {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className="text-sm text-gray-500 truncate flex items-center gap-1">
                           {conv.isGroup ? (
                             <span className="font-semibold mr-1">{/* Optional sender name if available */}</span>
                           ) : null}
-                          {conv.lastMessage?.content || "No messages yet"}
+                          {conv.lastMessage ? (
+                            (conv.lastMessage as any).type === "image" ? (
+                              <>
+                                <Image size={14} className="flex-shrink-0" />
+                                <span>Foto</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "pdf" ? (
+                              <>
+                                <FileIcon size={14} className="flex-shrink-0" />
+                                <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
+                              </>
+                            ) : (
+                              conv.lastMessage.content
+                            )
+                          ) : (
+                            "No messages yet"
+                          )}
                         </p>
                       </div>
                     </Link>
@@ -229,7 +245,7 @@ export default function ChatPage() {
       {
         isNewChatOpen && (
           <div className="fixed inset-0 z-[60] flex flex-col bg-white">
-            <div 
+            <div
               className="flex items-center px-4 py-4 border-b gap-3"
               style={{
                 paddingTop: `calc(1rem + env(safe-area-inset-top, 0px))`
@@ -299,7 +315,7 @@ export default function ChatPage() {
             </div>
 
             {selectedUsers.length > 0 && (
-              <div 
+              <div
                 className="p-4 border-t bg-white"
                 style={{
                   paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`

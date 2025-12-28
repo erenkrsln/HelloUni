@@ -649,12 +649,20 @@ export const demoteAdmin = mutation({
 export const deleteConversation = mutation({
   args: {
     conversationId: v.id("conversations"),
+    userId: v.optional(v.id("users")), // Optional user ID for authorization check
   },
   handler: async (ctx, args) => {
-    // 1. Delete the conversation itself
-    await ctx.db.delete(args.conversationId);
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
 
-    // 2. Delete all messages associated with it
+    // If userId is provided and this is a group, check that user is the creator
+    if (args.userId && conversation.isGroup) {
+      if (conversation.creatorId !== args.userId) {
+        throw new Error("Only the group creator can delete the group");
+      }
+    }
+
+    // 1. Delete all messages associated with the conversation
     const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
@@ -663,6 +671,19 @@ export const deleteConversation = mutation({
     for (const msg of messages) {
       await ctx.db.delete(msg._id);
     }
+
+    // 2. Delete all last_reads associated with the conversation
+    const lastReads = await ctx.db
+      .query("last_reads")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+
+    for (const read of lastReads) {
+      await ctx.db.delete(read._id);
+    }
+
+    // 3. Delete the conversation itself
+    await ctx.db.delete(args.conversationId);
 
     return { success: true };
   },

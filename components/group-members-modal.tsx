@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useRouter } from "next/navigation";
 import {
     Dialog,
     DialogContent,
@@ -27,6 +28,7 @@ export function GroupMembersModal({
     conversationId,
     currentUserId,
 }: GroupMembersModalProps) {
+    const router = useRouter();
     const [view, setView] = useState<"list" | "add">("list");
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -39,6 +41,7 @@ export function GroupMembersModal({
     const demoteAdmin = useMutation(api.mutations.demoteAdmin);
     const claimGroup = useMutation(api.mutations.claimGroupOwnership);
     const transferCreator = useMutation(api.mutations.transferCreator);
+    const deleteConversation = useMutation(api.mutations.deleteConversation);
 
     const myself = members?.find(m => m._id === currentUserId);
     const iAmCreator = myself?.role === "creator";
@@ -146,6 +149,25 @@ export function GroupMembersModal({
         } catch (error) {
             console.error("Failed to claim group:", error);
             alert("Fehler beim Übernehmen der Gruppe. Möglicherweise hat sie bereits einen Admin.");
+        }
+    };
+
+    const handleDeleteGroup = async () => {
+        if (!confirm("Möchtest du diese Gruppe wirklich PERMANENT löschen? Diese Aktion kann nicht rückgängig gemacht werden und löscht alle Nachrichten und Daten für ALLE Mitglieder.")) return;
+
+        // Double confirmation for extra safety
+        if (!confirm("Bist du SICHER? Die Gruppe und alle Nachrichten werden unwiderruflich gelöscht!")) return;
+
+        try {
+            await deleteConversation({
+                conversationId,
+                userId: currentUserId,
+            });
+            onClose();
+            router.push("/chat");
+        } catch (error) {
+            console.error("Failed to delete group:", error);
+            alert("Fehler beim Löschen der Gruppe.");
         }
     };
 
@@ -356,6 +378,14 @@ export function GroupMembersModal({
                     <div className="p-4 border-t bg-gray-50">
                         <Button onClick={handleLeave} variant="destructive" className="w-full bg-red-100 text-red-600 hover:bg-red-200 border-0">
                             Gruppe verlassen
+                        </Button>
+                    </div>
+                )}
+
+                {view === "list" && iAmCreator && (
+                    <div className="p-4 border-t bg-gray-50">
+                        <Button onClick={handleDeleteGroup} variant="destructive" className="w-full bg-red-600 text-white hover:bg-red-700">
+                            Gruppe löschen
                         </Button>
                     </div>
                 )}

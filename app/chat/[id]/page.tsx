@@ -19,6 +19,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const { currentUser } = useCurrentUser();
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const messages = useQuery(api.queries.getMessages, {
         conversationId,
@@ -33,6 +34,18 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             markAsRead({ conversationId, userId: currentUser._id });
         }
     }, [conversationId, currentUser, messages, markAsRead]); // Mark as read when messages update too
+
+    // Auto-resize textarea
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Calculate new height (max 5 lines, approximately 120px)
+            const newHeight = Math.min(textarea.scrollHeight, 120);
+            textarea.style.height = `${newHeight}px`;
+        }
+    }, [newMessage]);
 
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
@@ -303,6 +316,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                 : '' // Normal rounded corners if followed by same sender
                                             }
                                         `}
+                                        style={{
+                                            wordBreak: 'break-word',
+                                            overflowWrap: 'break-word',
+                                            whiteSpace: 'pre-wrap'
+                                        }}
                                     >
                                         {msg.type === "image" && (msg as any).url ? (
                                             <div className="max-w-[200px] max-h-[200px] overflow-hidden rounded-lg">
@@ -380,7 +398,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 >
                     <form
                         onSubmit={handleSend}
-                        className="flex items-center bg-[#FDFBF7] border border-[#efeadd] rounded-full px-4 py-2"
+                        className="flex items-end bg-[#FDFBF7] border border-[#efeadd] rounded-3xl px-4 py-2 gap-2"
                     >
                         <input
                             type="file"
@@ -389,24 +407,32 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             ref={fileInputRef}
                             onChange={handleFileSelect}
                         />
-                        <input
-                            type="text"
+                        <textarea
+                            ref={textareaRef}
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
                             placeholder="Schreibe eine Nachricht..."
-                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400"
+                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto"
+                            rows={1}
+                            style={{ minHeight: '24px' }}
                         />
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="mr-2 text-gray-400 hover:text-[#8C531E] transition-colors"
+                            className="text-gray-400 hover:text-[#8C531E] transition-colors flex-shrink-0 pb-1"
                         >
                             <Paperclip size={20} />
                         </button>
                         <button
                             type="submit"
                             disabled={!newMessage.trim()}
-                            className={`p-2 rounded-full transition-colors ${newMessage.trim()
+                            className={`p-2 rounded-full transition-colors flex-shrink-0 ${newMessage.trim()
                                 ? 'text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]'
                                 : 'text-gray-300'
                                 }`}
