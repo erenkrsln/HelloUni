@@ -956,24 +956,43 @@ export const getConversationFiles = query({
         q.eq("conversationId", args.conversationId)
       )
       .order("desc") // Newest first
-      .take(100);
+      .take(200);
 
     const visibleMessages = messages.filter(m => m.createdAt <= leftAt);
 
-    const files = await Promise.all(
-      visibleMessages
-        .filter(m => m.type === "image" || m.type === "pdf")
-        .map(async (m) => {
-          let url = null;
-          if (m.storageId) {
-            url = await ctx.storage.getUrl(m.storageId);
-          }
-          return {
-            ...m,
-            url
-          };
-        })
-    );
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    const files: any[] = [];
+
+    for (const m of visibleMessages) {
+      if (m.type === "image" || m.type === "pdf") {
+        let url = null;
+        if (m.storageId) {
+          url = await ctx.storage.getUrl(m.storageId);
+        }
+        files.push({
+          ...m,
+          url
+        });
+      } else if (!m.type || m.type === "text") {
+        // Search for links in text messages
+        const content = m.content;
+        const matches = content.match(urlRegex);
+        if (matches) {
+          matches.forEach((matchedUrl, index) => {
+            files.push({
+              _id: `${m._id}_link_${index}`, // Unique virtual ID
+              conversationId: m.conversationId,
+              senderId: m.senderId,
+              content: matchedUrl,
+              type: "link",
+              url: matchedUrl,
+              createdAt: m.createdAt,
+            });
+          });
+        }
+      }
+    }
 
     return files;
   }
