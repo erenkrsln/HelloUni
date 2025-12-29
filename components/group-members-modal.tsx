@@ -5,15 +5,9 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, UserPlus, Shield, ShieldOff, Trash2, X, Crown, UserStar, UserLock, Star, StarOff, Sparkles } from "lucide-react";
+import { Search, UserPlus, Trash2, X, Star, StarOff, Sparkles } from "lucide-react";
 
 interface GroupMembersModalProps {
     isOpen: boolean;
@@ -47,11 +41,6 @@ export function GroupMembersModal({
     const iAmCreator = myself?.role === "creator";
     const iAmAdmin = myself?.role === "admin" || myself?.role === "creator";
 
-    // Filter users for "Add Member" view
-    // Exclude current members, BUT include previous members (role === 'left') so they can be re-added
-    // Actually, `members` list contains EVERYONE including left.
-    // So we should exclude only those where `m._id === u._id` AND `m.role !== 'left'`.
-    // If m.role === 'left', we WANT to show them in the add list.
     const availableUsers = allUsers?.filter(u =>
         !members?.some(m => m._id === u._id && m.role !== 'left') &&
         (u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -132,7 +121,7 @@ export function GroupMembersModal({
                 currentCreatorId: currentUserId,
                 newCreatorId: userId,
             });
-            window.location.reload(); // Force reload to update permissions properly
+            window.location.reload();
         } catch (error) {
             console.error("Failed to transfer creator:", error);
             alert("Fehler beim Übertragen der Gruppenleitung.");
@@ -145,7 +134,7 @@ export function GroupMembersModal({
                 conversationId,
                 userId: currentUserId,
             });
-            window.location.reload(); // Force reload to update permissions properly
+            window.location.reload();
         } catch (error) {
             console.error("Failed to claim group:", error);
             alert("Fehler beim Übernehmen der Gruppe. Möglicherweise hat sie bereits einen Admin.");
@@ -155,7 +144,6 @@ export function GroupMembersModal({
     const handleDeleteGroup = async () => {
         if (!confirm("Möchtest du diese Gruppe wirklich PERMANENT löschen? Diese Aktion kann nicht rückgängig gemacht werden und löscht alle Nachrichten und Daten für ALLE Mitglieder.")) return;
 
-        // Double confirmation for extra safety
         if (!confirm("Bist du SICHER? Die Gruppe und alle Nachrichten werden unwiderruflich gelöscht!")) return;
 
         try {
@@ -171,7 +159,6 @@ export function GroupMembersModal({
         }
     };
 
-    // Check if group is "orphaned" (no creator, no admins) - simplified check based on loaded members
     const hasAdmins = members?.some(m => m.role === "admin" || m.role === "creator");
 
     const handleClose = () => {
@@ -184,11 +171,11 @@ export function GroupMembersModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent aria-describedby={undefined} className="w-[90vw] sm:w-[80vw] max-w-[428px] max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl">
+            <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] overflow-y-auto flex flex-col p-3 sm:p-6">
                 <div className="p-4 border-b flex items-center justify-between bg-white z-10">
                     {view === "list" ? (
                         <div className="flex items-center gap-2">
-                            <DialogTitle className="text-lg font-bold">Gruppenmitglieder</DialogTitle>
+                            <DialogTitle className="text-xl font-semibold">Gruppenmitglieder</DialogTitle>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
@@ -199,7 +186,7 @@ export function GroupMembersModal({
                         </div>
                     )}
 
-                    <button onClick={handleClose} className="text-gray-500">Schließen</button>
+
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-0 bg-white">
@@ -217,9 +204,9 @@ export function GroupMembersModal({
                             {iAmAdmin && allUsers && members && allUsers.filter(u => !members.some(m => m._id === u._id && m.role !== 'left')).length > 0 && (
                                 <button
                                     onClick={() => setView("add")}
-                                    className="flex items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 text-[#8C531E] font-medium"
+                                    className="flex items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 text-black font-medium"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-[#f6efe4] flex items-center justify-center mr-3">
+                                    <div className="w-10 h-10 rounded-full bg-[#D08945] text-white flex items-center justify-center mr-3">
                                         <UserPlus size={20} />
                                     </div>
                                     Mitglied hinzufügen
@@ -247,17 +234,17 @@ export function GroupMembersModal({
 
                                             {/* Inhaber Badge */}
                                             {member.role === "creator" && (
-                                                <div className="flex items-center gap-1 bg-[#f6efe4] px-2 py-0.5 rounded-full">
-                                                    <Sparkles size={13} className="text-[#8C531E]" />
-                                                    <span className="text-xs font-medium text-[#8C531E]">Inhaber</span>
+                                                <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
+                                                    <Sparkles size={13} />
+                                                    <span className="text-xs font-medium">Inhaber</span>
                                                 </div>
                                             )}
 
                                             {/* Admin Badge */}
                                             {member.role === "admin" && (
-                                                <div className="flex items-center gap-1 bg-[#f6efe4] px-2 py-0.5 rounded-full">
-                                                    <Star size={13} className="text-[#8C531E]" />
-                                                    <span className="text-xs font-medium text-[#8C531E]">Admin</span>
+                                                <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
+                                                    <Star size={13} />
+                                                    <span className="text-xs font-medium">Admin</span>
                                                 </div>
                                             )}
                                         </div>
@@ -281,7 +268,7 @@ export function GroupMembersModal({
                                             {member.role === "member" && (
                                                 <button
                                                     onClick={() => handlePromote(member._id)}
-                                                    className="p-2 text-gray-400 hover:text-[#8C531E] hover:bg-[#f6efe4] rounded-full transition-colors"
+                                                    className="p-2 text-gray-400 hover:text-[#D08945] "
                                                     title="Zum Admin machen"
                                                 >
                                                     <Star size={18} />
@@ -290,7 +277,7 @@ export function GroupMembersModal({
                                             {member.role === "admin" && (
                                                 <button
                                                     onClick={() => handleDemote(member._id)}
-                                                    className="p-2 text-[#8C531E] hover:text-gray-500 hover:bg-[#f6efe4] rounded-full transition-colors"
+                                                    className="p-2 text-[#D08945]"
                                                     title="Admin entfernen"
                                                 >
                                                     <StarOff size={18} />
@@ -299,7 +286,7 @@ export function GroupMembersModal({
                                             {member.role !== "creator" && (
                                                 <button
                                                     onClick={() => handleRemoveMember(member._id)}
-                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                                    className="p-2 text-gray-400 hover:text-[#D08945]"
                                                     title="Entfernen"
                                                 >
                                                     <Trash2 size={18} />
@@ -378,7 +365,7 @@ export function GroupMembersModal({
                                                 <div className="font-medium text-black">{user.name}</div>
                                                 <div className="text-xs text-gray-500">@{user.username}</div>
                                             </div>
-                                            <div className="w-8 h-8 rounded-full bg-[#f6efe4] text-[#8C531E] flex items-center justify-center">
+                                            <div className="w-8 h-8 rounded-full bg-[#D08945] text-white flex items-center justify-center">
                                                 <UserPlus size={16} />
                                             </div>
                                         </button>
