@@ -739,7 +739,7 @@ export function CommentDrawer({
         {currentUserId && (
           <div 
             className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0"
-            style={{ paddingBottom: `calc(0.625rem + env(safe-area-inset-bottom))` }}
+            style={{ paddingBottom: `max(0.5rem, env(safe-area-inset-bottom))` }}
           >
             {replyingTo && (
               <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
