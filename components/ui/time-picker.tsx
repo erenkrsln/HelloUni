@@ -55,6 +55,40 @@ export function TimePicker({
     }
   }, []); // Nur beim ersten Mount ausführen
 
+  // Ref für das Input-Element, um Styles direkt zu setzen
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Stelle sicher, dass alle Teile des Time-Inputs normal dargestellt werden
+  React.useEffect(() => {
+    if (inputRef.current) {
+      // Setze explizit fontWeight auf normal für alle Segmente
+      inputRef.current.style.fontWeight = "400";
+      inputRef.current.style.fontStyle = "normal";
+      
+      // Für WebKit: Setze Styles für alle Pseudo-Elemente (nur einmal global)
+      const styleId = "time-picker-font-weight-fix";
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.textContent = `
+          input[type="time"] {
+            font-weight: 400 !important;
+            font-style: normal !important;
+          }
+          input[type="time"]::-webkit-datetime-edit-hour-field,
+          input[type="time"]::-webkit-datetime-edit-minute-field,
+          input[type="time"]::-webkit-datetime-edit-second-field,
+          input[type="time"]::-webkit-datetime-edit-millisecond-field,
+          input[type="time"]::-webkit-datetime-edit-ampm-field {
+            font-weight: 400 !important;
+            font-style: normal !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
+
   return (
     <div className="relative w-full flex justify-start">
       {/* Icon immer links anzeigen (sowohl auf Mobile als auch Desktop) */}
@@ -62,12 +96,13 @@ export function TimePicker({
         <Clock className="h-4 w-4 text-gray-500" />
       </div>
       <input
+        ref={inputRef}
         type="time"
         value={value || ""}
         onChange={(e) => onChange?.(e.target.value)}
         disabled={disabled}
         className={cn(
-          "block w-full max-w-full h-11 py-2 text-base md:text-sm rounded-lg border bg-white text-left",
+          "block w-full max-w-full h-11 py-2 text-base md:text-sm rounded-lg border bg-white text-left font-normal",
           "placeholder:text-gray-400",
           "focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -92,6 +127,9 @@ export function TimePicker({
           direction: "ltr",
           paddingLeft: "2rem",
           paddingRight: "1rem",
+          fontWeight: "400",
+          fontStyle: "normal",
+          fontVariantNumeric: "normal",
         } as React.CSSProperties}
         onFocus={(e) => {
           e.target.style.borderColor = "#D08945";

@@ -208,13 +208,13 @@ export default function Home() {
       
       <div className="px-4 mb-4">
         {/* Feed Filter Links */}
-        <div className="flex items-center justify-center gap-6 mb-4 mt-4 flex-wrap">
+        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto">
           <button
             onClick={() => setFeedType("all")}
-            className={`text-sm font-medium transition-opacity cursor-pointer ${
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
               feedType === "all"
-                ? "underline underline-offset-8 decoration-[#D08945]"
-                : "hover:opacity-70"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
             }`}
           >
             Alle
@@ -222,20 +222,20 @@ export default function Home() {
           <button
             onClick={() => setFeedType("major")}
             disabled={isMajorDisabled}
-            className={`text-sm font-medium transition-opacity ${
+            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
               feedType === "major"
-                ? "underline underline-offset-8 decoration-[#D08945]"
-                : "hover:opacity-70"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
             } ${isMajorDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             Studiengang
           </button>
           <button
             onClick={() => setFeedType("following")}
-            className={`text-sm font-medium transition-opacity cursor-pointer ${
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
               feedType === "following"
-                ? "underline underline-offset-8 decoration-[#D08945]"
-                : "hover:opacity-70"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
             }`}
           >
             Folge Ich
@@ -243,10 +243,10 @@ export default function Home() {
           <button
             onClick={() => setFeedType("interests")}
             disabled={isInterestsDisabled}
-            className={`text-sm font-medium transition-opacity ${
+            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
               feedType === "interests"
-                ? "underline underline-offset-8 decoration-[#D08945]"
-                : "hover:opacity-70"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
             } ${isInterestsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             Interesse

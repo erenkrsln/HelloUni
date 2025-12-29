@@ -8,6 +8,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogOverlay,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -18,6 +19,7 @@ interface HeaderImageCropModalProps {
     imageSrc: string;
     onCropComplete: (croppedImageBlob: Blob) => void;
     isUploading?: boolean;
+    className?: string;
 }
 
 export function HeaderImageCropModal({
@@ -26,6 +28,7 @@ export function HeaderImageCropModal({
     imageSrc,
     onCropComplete,
     isUploading = false,
+    className,
 }: HeaderImageCropModalProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -86,17 +89,60 @@ export function HeaderImageCropModal({
         onClose();
     };
 
+    // Set z-index for overlay and content when used in drawer
+    React.useEffect(() => {
+        if (className && isOpen) {
+            const setZIndex = () => {
+                // Find overlay and content elements by various selectors
+                const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [class*="Overlay"]');
+                const contents = document.querySelectorAll('[data-radix-dialog-content], [class*="Content"]');
+                
+                overlays.forEach((overlay) => {
+                    const el = overlay as HTMLElement;
+                    el.style.zIndex = '70';
+                    el.style.setProperty('z-index', '70', 'important');
+                });
+                
+                contents.forEach((content) => {
+                    const el = content as HTMLElement;
+                    el.style.zIndex = '70';
+                    el.style.setProperty('z-index', '70', 'important');
+                });
+            };
+            
+            // Set immediately and also after delays to catch portal rendering
+            setZIndex();
+            const timeout1 = setTimeout(setZIndex, 50);
+            const timeout2 = setTimeout(setZIndex, 200);
+            
+            // Also use MutationObserver to catch when elements are added
+            const observer = new MutationObserver(() => {
+                setZIndex();
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+            
+            return () => {
+                clearTimeout(timeout1);
+                clearTimeout(timeout2);
+                observer.disconnect();
+            };
+        }
+    }, [className, isOpen]);
+
     return (
         <Dialog open={isOpen} onOpenChange={handleCancel}>
-            <DialogContent className="max-w-4xl w-[95vw] p-0 overflow-hidden">
-                <DialogHeader className="p-4 pb-2 border-b">
-                    <DialogTitle className="text-lg font-semibold">
+            <DialogContent 
+                className={`max-w-2xl w-[90vw] p-0 overflow-hidden ${className ? "!z-[70]" : ""}`}
+                style={className ? { zIndex: 70 } : undefined}
+            >
+                <DialogHeader className="p-3 pb-2 border-b">
+                    <DialogTitle className="text-base font-semibold">
                         Titelbild bearbeiten
                     </DialogTitle>
                 </DialogHeader>
 
                 {/* Crop Area */}
-                <div className="relative w-full bg-black" style={{ height: "60vh", minHeight: "400px" }}>
+                <div className="relative w-full bg-black" style={{ height: "40vh", minHeight: "300px" }}>
                     <Cropper
                         image={imageSrc}
                         crop={crop}
@@ -121,7 +167,7 @@ export function HeaderImageCropModal({
                 </div>
 
                 {/* Controls */}
-                <div className="p-4 space-y-4 bg-white">
+                <div className="p-3 space-y-3 bg-white">
                     {/* Zoom Slider - Desktop only */}
                     <div className="hidden sm:block">
                         <label className="text-sm font-medium mb-2 block">Zoom</label>
