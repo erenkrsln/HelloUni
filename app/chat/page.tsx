@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
 import { LoadingScreen } from "@/components/ui/spinner";
+import { formatChatTimestamp } from "@/lib/utils";
 
 export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -182,7 +183,7 @@ export default function ChatPage() {
                           <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
                           <div className="flex flex-col items-end">
                             <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
-                              {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formatChatTimestamp(conv.updatedAt)}
                             </span>
                             {conv.unreadCount > 0 && (
                               <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">

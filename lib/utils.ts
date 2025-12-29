@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { isToday, format } from "date-fns";
+import { de } from "date-fns/locale";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -26,6 +28,14 @@ export function formatTimeAgo(timestamp: number): string {
     return `${seconds} s`;
   }
   return "Jetzt";
+}
+
+export function formatChatTimestamp(timestamp: number): string {
+  const date = new Date(timestamp);
+  if (isToday(date)) {
+    return format(date, "HH:mm");
+  }
+  return format(date, "dd.MM.yy", { locale: de });
 }
 
 
