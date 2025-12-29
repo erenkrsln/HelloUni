@@ -144,9 +144,22 @@ export function CommentDrawer({
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
+      // Fixiere den Body, um Viewport-Verschiebung bei Tastatur zu verhindern
+      const scrollY = window.scrollY;
       document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.top = `-${scrollY}px`;
     } else {
+      // Stelle den Body wieder her
+      const scrollY = document.body.style.top;
       document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
       setCommentText("");
       setReplyingTo(null);
       setSortMode("neueste"); // Reset filter to default when drawer closes
@@ -156,6 +169,9 @@ export function CommentDrawer({
     }
     return () => {
       document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
     };
   }, [isOpen]);
 
@@ -622,6 +638,12 @@ export function CommentDrawer({
         } h-[75vh] overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          // Verhindere Verschiebung bei Tastatur auf Mobile
+          willChange: "transform",
         }}
       >
         {/* Header */}
@@ -706,7 +728,7 @@ export function CommentDrawer({
 
         {/* Sticky Input */}
         {currentUserId && (
-          <div className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 relative" style={{ transform: 'translateY(-12px)' }}>
+          <div className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 relative" style={{ transform: 'translateY(-16px)' }}>
             {/* Horizontale Linie */}
             <div className="absolute top-0 left-0 right-0 border-t border-gray-200"></div>
             {replyingTo && (
