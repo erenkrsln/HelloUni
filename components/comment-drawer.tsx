@@ -144,9 +144,35 @@ export function CommentDrawer({
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
+      // Verhindere Scrollen im Hintergrund
       document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.touchAction = "none";
+      
+      // Verhindere Touch-Scroll-Events im Hintergrund
+      const preventScroll = (e: TouchEvent) => {
+        // Erlaube Scrollen nur innerhalb des Drawers
+        const target = e.target as HTMLElement;
+        if (!drawerRef.current?.contains(target)) {
+          e.preventDefault();
+        }
+      };
+      
+      document.addEventListener("touchmove", preventScroll, { passive: false });
+      
+      return () => {
+        document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.width = "";
+        document.body.style.touchAction = "";
+        document.removeEventListener("touchmove", preventScroll);
+      };
     } else {
       document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.touchAction = "";
       setCommentText("");
       setReplyingTo(null);
       setSortMode("neueste"); // Reset filter to default when drawer closes
@@ -154,9 +180,6 @@ export function CommentDrawer({
       // Clear time ago cache when drawer closes, so it recalculates on next open
       timeAgoCacheRef.current.clear();
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [isOpen]);
 
   // Close drawer on outside click
@@ -440,11 +463,11 @@ export function CommentDrawer({
 
     return (
       <div 
-        className={`py-2.5 border-b border-gray-100 last:border-b-0 ${isReply ? "" : "px-4"}`}
+        className={`py-2.5 border-b border-gray-100 last:border-b-0 overflow-x-hidden ${isReply ? "" : "px-4"}`}
         style={isReply ? { marginLeft: 0, marginRight: 0, paddingLeft: 0, paddingRight: 0 } : {}}
       >
         <div 
-          className="flex gap-2.5"
+          className="flex gap-2.5 overflow-x-hidden"
           style={isReply ? { marginLeft: 0, marginRight: 0, paddingLeft: 0, paddingRight: 0 } : {}}
         >
           {/* Avatar */}
@@ -612,6 +635,11 @@ export function CommentDrawer({
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
+        onTouchMove={(e) => {
+          // Verhindere Scrollen auf dem Backdrop
+          e.preventDefault();
+        }}
+        style={{ touchAction: "none" }}
       />
 
       {/* Drawer */}
@@ -619,7 +647,7 @@ export function CommentDrawer({
         ref={drawerRef}
         className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
-        } h-[75vh]`}
+        } h-[75vh] overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
         }}
@@ -686,7 +714,10 @@ export function CommentDrawer({
         </div>
 
         {/* Comments List */}
-        <div className="flex-1 overflow-y-auto py-1">
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden py-1"
+          style={{ touchAction: "pan-y" }}
+        >
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner size="md" />
@@ -706,7 +737,10 @@ export function CommentDrawer({
 
         {/* Sticky Input */}
         {currentUserId && (
-          <div className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0">
+          <div 
+            className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0"
+            style={{ paddingBottom: `calc(0.625rem + env(safe-area-inset-bottom))` }}
+          >
             {replyingTo && (
               <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
                 <span className="text-xs text-gray-600">

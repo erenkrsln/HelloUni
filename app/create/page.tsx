@@ -375,13 +375,20 @@ export default function CreatePage() {
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             
-            {/* Custom Header with Abbrechen and Posten */}
-            <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200" style={{ maxWidth: "428px", margin: "0 auto" }}>
+            {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
+            <div 
+                className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200" 
+                style={{ 
+                    maxWidth: "428px", 
+                    margin: "0 auto",
+                    paddingTop: "env(safe-area-inset-top)",
+                }}
+            >
                 <div className="flex items-center justify-between px-4 h-16">
                     <button
                         type="button"
                         onClick={() => router.push("/home")}
-                        className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
+                        className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity cursor-pointer touch-manipulation"
                     >
                         Abbrechen
                     </button>
@@ -389,14 +396,14 @@ export default function CreatePage() {
                         type="submit"
                         form="create-post-form"
                         disabled={!content.trim()}
-                        className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
                     >
                         Posten
                     </button>
                 </div>
             </div>
 
-            <div className="pt-16">
+            <div className="pt-16" style={{ paddingTop: `calc(4rem + env(safe-area-inset-top))` }}>
             {isLoading ? (
                 <LoadingScreen text="Seite wird geladen..." />
             ) : (
