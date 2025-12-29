@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -99,35 +99,35 @@ export default function ChatPage() {
           <div className="flex items-center justify-center mb-6">
             <button
               onClick={() => setIsNewChatOpen(true)}
-              className="w-10 h-10 rounded-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black flex items-center justify-center active:scale-95 transition-transform"
+              className="w-10 h-10 rounded-full bg-[#d08945] text-white font-medium flex items-center justify-center active:scale-95 transition-transform"
             >
               <Plus size={24} />
             </button>
           </div>
-          <div className="flex items-center justify-center gap-2 mb-6 text-[#8C531E]">
+          <div className="flex items-center justify-center gap-2 mb-6">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
-                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-                : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+              className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
+                ? "bg-[#d08945] text-white"
+                : "bg-gray-100 text-gray-700"
                 }`}
             >
               Alle
             </button>
             <button
               onClick={() => setFilterType("direct")}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
-                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-                : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+              className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
+                ? "bg-[#d08945] text-white"
+                : "bg-gray-100 text-gray-700"
                 }`}
             >
               Direkt
             </button>
             <button
               onClick={() => setFilterType("group")}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
-                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-                : "bg-[#FDFBF7] border border-[#EFEADD] text-[#8C531E] hover:bg-[#F6EFE4]"
+              className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
+                ? "bg-[#d08945] text-white"
+                : "bg-gray-100 text-gray-700"
                 }`}
             >
               Gruppen
@@ -136,12 +136,12 @@ export default function ChatPage() {
 
           {/* Search Bar */}
           <div className="relative mb-6">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[#8C531E]">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
               <Search className="h-5 w-5" />
             </div>
             <input
               type="text"
-              className="w-full pl-10 pr-4 py-3 bg-[#FDFBF7] border border-[#EFEADD] rounded-xl outline-none focus:border-[#8C531E] text-[#8C531E] placeholder:text-[#8C531E] transition-colors"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
               placeholder="Suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -210,7 +210,7 @@ export default function ChatPage() {
                               conv.lastMessage.content
                             )
                           ) : (
-                            "No messages yet"
+                            "Noch keine Nachrichten"
                           )}
                         </p>
                       </div>
@@ -257,11 +257,11 @@ export default function ChatPage() {
                   setSelectedUsers([]);
                   setGroupName("");
                 }}
-                className="p-2 -ml-2 text-gray-500 active:scale-95"
+                className="mr-3 p-2 -ml-2 rounded-full"
               >
-                Abbrechen
+                <ArrowLeft size={24} />
               </button>
-              <h2 className="text-lg font-bold flex-1 text-center">Neuer Chat</h2>
+              <h2 className="text-lg font-medium flex-1 text-center">Neuer Chat</h2>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
@@ -274,7 +274,7 @@ export default function ChatPage() {
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
                     placeholder="z.B. Lerngruppe"
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#8C531E] transition-colors"
+                    className="w-full pl-4 pr-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
                   />
                 </div>
               )}
@@ -287,7 +287,7 @@ export default function ChatPage() {
                     <button
                       key={user._id}
                       onClick={() => toggleUserSelection(user._id)}
-                      className={`w-full flex items-center p-3 rounded-xl text-left transition-all ${isSelected ? "bg-[#f6efe4] ring-1 ring-[#8C531E]" : "hover:bg-gray-50 bg-white"
+                      className={`w-full flex items-center p-3 rounded-xl text-left transition-all ${isSelected ? "ring-2 ring-[#D08945]" : "bg-white"
                         }`}
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
@@ -298,14 +298,10 @@ export default function ChatPage() {
                             {user.name.charAt(0).toUpperCase()}
                           </div>
                         )}
-                        {isSelected && (
-                          <div className="absolute inset-0 bg-[#8C531E]/20 flex items-center justify-center">
 
-                          </div>
-                        )}
                       </div>
                       <div className="flex-1">
-                        <div className={`font-medium ${isSelected ? "text-[#8C531E]" : "text-black"}`}>{user.name}</div>
+                        <div className={`font-medium ${isSelected ? "text-[#D08945]" : "text-black"}`}>{user.name}</div>
                         <div className="text-xs text-gray-500">@{user.username}</div>
                       </div>
                     </button>
@@ -321,16 +317,14 @@ export default function ChatPage() {
                   paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
                 }}
               >
-                <div className="text-sm text-center text-gray-500 mb-2">
-                  {selectedUsers.length} ausgewählt
-                </div>
+
                 <button
                   onClick={handleStartChat}
                   disabled={selectedUsers.length > 1 && !groupName.trim()}
                   className={`w-full py-3 flex items-center justify-center rounded-full font-semibold active:scale-95 transition-transform
                   ${selectedUsers.length > 1 && !groupName.trim()
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black"
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-[#D08945] text-white"
                     }`}
                 >
                   {selectedUsers.length > 1 ? "Gruppe erstellen" : "Chat starten"}

@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Trash2, FolderOpen, Paperclip, FileIcon, X, FolderRootIcon, FolderIcon, Folder } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Search, X, Folder, FileText } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { EditGroupImageModal } from "@/components/edit-group-image-modal";
 import { GroupMembersModal } from "@/components/group-members-modal";
@@ -33,15 +33,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         if (conversationId && currentUser) {
             markAsRead({ conversationId, userId: currentUser._id });
         }
-    }, [conversationId, currentUser, messages, markAsRead]); // Mark as read when messages update too
+    }, [conversationId, currentUser, messages, markAsRead]);
 
     // Auto-resize textarea
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            // Reset height to auto to get the correct scrollHeight
             textarea.style.height = 'auto';
-            // Calculate new height (max 5 lines, approximately 120px)
             const newHeight = Math.min(textarea.scrollHeight, 120);
             textarea.style.height = `${newHeight}px`;
         }
@@ -56,10 +54,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         if (!file || !currentUser) return;
 
         try {
-            // Get upload URL
             const postUrl = await generateUploadUrl();
 
-            // Upload file
             const result = await fetch(postUrl, {
                 method: "POST",
                 headers: { "Content-Type": file.type },
@@ -67,11 +63,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             });
             const { storageId } = await result.json();
 
-            // Send message
             await sendMessage({
                 conversationId,
                 senderId: currentUser._id,
-                content: file.name, // Display filename as content fallback
+                content: file.name,
                 type: file.type.startsWith("image/") ? "image" : "pdf",
                 storageId,
                 fileName: file.name,
@@ -81,15 +76,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             console.error("Failed to upload file:", error);
             alert("Fehler beim Hochladen der Datei.");
         } finally {
-            // Reset input
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
-    // We need members to show names/avatars for each message
     const members = useQuery(api.queries.getConversationMembers, { conversationId });
 
-    // We get conversation details (name, image) from the list query
     const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
     const conversation = allConversations?.find(c => c._id === conversationId);
 
@@ -122,10 +114,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         }
     };
 
-    // Helper to get member details
     const getMember = (userId: string) => members?.find(m => m._id === userId);
 
-    // Helper to linkify URLs in text
     const linkifyText = (text: string) => {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const parts = text.split(urlRegex);
@@ -138,7 +128,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         href={part}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-white hover:text-grey-200 underline break-all"
+                        className="text-[#8C531E] underline break-all"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {part}
@@ -178,23 +168,23 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
             {/* Header */}
             <div
-                className="flex items-center justify-between px-4 py-3 border-b bg-white z-10 sticky top-0"
+                className="flex items-center justify-between px-4 py-3 border-b border-[#efeadd] bg-white z-10 sticky top-0"
                 style={{
                     paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
                     top: 0
                 }}
             >
-                {/* Linke Seite: Zurück-Button + Avatar + Name */}
+                {/* Left side */}
                 <div className="flex items-center flex-1">
                     <button
                         onClick={() => router.back()}
-                        className="mr-3 p-2 -ml-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                        className="mr-3 p-2 -ml-2 rounded-full"
                     >
                         <ArrowLeft size={24} />
                     </button>
 
                     {conversation ? (
-                        <div className="flex items-center min-w-0"> {/* min-w-0 verhindert Überlauf */}
+                        <div className="flex items-center min-w-0">
                             <div
                                 className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
                                 style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
@@ -223,10 +213,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     )}
                 </div>
 
-                {/* Rechte Seite: FolderOpen-Button – ganz rechts */}
+                {/* Right side */}
                 {conversation && (
                     <button
-                        className="p-2 text-gray-400 hover:text-[#8C531E] hover:bg-[#f6efe4] rounded-full transition-colors"
+                        className="p-2 text-[#D08945]"
                         onClick={() => setIsFilesModalOpen(true)}
                         title="Geteilte Dateien"
                     >
@@ -238,33 +228,31 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF7]">
                 {!messages ? (
-                    <div className="text-center text-gray-400 mt-10">Lade Nachrichten...</div>
+                    <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
                 ) : messages.length === 0 ? (
-                    <div className="text-center text-gray-400 mt-10 text-sm">
-                        Noch keine Nachrichten im Chat. Schreibe deine erste Nachricht!
+                    <div className="text-center text-[#D08945] mt-10 text-sm">
+                        Noch keine Nachrichten im Chat. <br /> Schreibe deine erste Nachricht!
                     </div>
                 ) : (
                     messages.map((msg, index) => {
                         const isMe = msg.senderId === currentUser._id;
                         const sender = getMember(msg.senderId);
 
-
-                        // Check next message for grouping
                         const nextMsg = messages[index + 1];
                         const isNextSameSender = nextMsg && nextMsg.senderId === msg.senderId && nextMsg.type !== "system";
 
-                        // Check previous message for grouping (to hide name if repeated)
                         const prevMsg = messages[index - 1];
                         const isPrevSameSender = prevMsg && prevMsg.senderId === msg.senderId && prevMsg.type !== "system";
 
+                        // System messages
                         if (msg.type === "system") {
                             return (
                                 <div key={msg._id} className="flex justify-center my-4">
-                                    <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                    <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
                                         {(() => {
                                             let content = msg.content;
                                             if (currentUser) {
-                                                // Personalize "left group" message
+
                                                 const leftMatch = content.match(/(.*) hat die Gruppe verlassen/);
                                                 if (leftMatch) {
                                                     const [_, userName] = leftMatch;
@@ -274,7 +262,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     return content;
                                                 }
 
-                                                // Personalize "removed from group" message
                                                 const removedMatch = content.match(/(.*) hat (.*) entfernt/);
                                                 if (removedMatch) {
                                                     const [_, adminName, removedName] = removedMatch;
@@ -290,7 +277,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     return content;
                                                 }
 
-                                                // Personalize "added to group" message
                                                 const addedMatch = content.match(/(.*) hat (.*) hinzugefügt/);
                                                 if (addedMatch) {
                                                     const [_, adminName, addedName] = addedMatch;
@@ -306,7 +292,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     return content;
                                                 }
 
-                                                // Personalize "creator transfer" message
                                                 const transferMatch = content.match(/(.*) hat die Gruppenleitung an (.*) übertragen/);
                                                 if (transferMatch) {
                                                     const [_, oldCreator, newCreator] = transferMatch;
@@ -322,7 +307,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     return content;
                                                 }
 
-                                                // Personalize "promoted to admin" message
                                                 const promotedMatch = content.match(/(.*) hat (.*) zum Admin ernannt/);
                                                 if (promotedMatch) {
                                                     const [_, adminName, targetName] = promotedMatch;
@@ -334,7 +318,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     }
                                                 }
 
-                                                // Personalize "demoted from admin" message
                                                 const demotedMatch = content.match(/(.*) hat (.*) Admin-Rechte entzogen/);
                                                 if (demotedMatch) {
                                                     const [_, adminName, targetName] = demotedMatch;
@@ -358,14 +341,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 key={msg._id}
                                 className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-0.5' : 'mb-4'}`}
                             >
-                                {/* Name only for first message in group */}
+
                                 {conversation?.isGroup && !isMe && sender && !isPrevSameSender && (
-                                    <span className="text-[10px] text-gray-500 ml-12 mb-1">
+                                    <span className="text-[10px] text-[#8C531E] ml-12 mb-1">
                                         {sender.name}
                                     </span>
                                 )}
                                 <div className={`flex items-end gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                                    {/* Avatar for others - Only show on LAST message of group or if single */}
+
                                     {conversation?.isGroup && !isMe && (
                                         <div className="w-8 h-8 flex-shrink-0 mb-1">
                                             {!isNextSameSender ? (
@@ -386,12 +369,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         className={`
                                             ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
                                             ${isMe
-                                                ? 'bg-[#dcc6a1] text-black rounded-2xl'
-                                                : 'text-black rounded-2xl shadow-sm bg-white border border-[#efeadd]'
+                                                ? 'bg-[#dcc6a1] text-black rounded-2xl border border-[#efeadd]'
+                                                : 'text-black rounded-2xl bg-white border border-[#efeadd]'
                                             }
                                             ${!isNextSameSender
                                                 ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
-                                                : '' // Normal rounded corners if followed by same sender
+                                                : ''
                                             }
                                         `}
                                         style={{
@@ -405,7 +388,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                 <img
                                                     src={(msg as any).url}
                                                     alt="Bild"
-                                                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                    className="w-full h-full object-cover cursor-pointer"
                                                     onClick={() => setSelectedImage((msg as any).url)}
                                                 />
                                             </div>
@@ -417,8 +400,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <div className="w-10 h-10 bg-[#f6efe4] rounded-lg flex items-center justify-center text-[#8C531E]">
-                                                    <FileIcon size={24} />
+                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945]">
+                                                    <FileText size={24} />
                                                 </div>
                                                 <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
                                             </a>
@@ -469,14 +452,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Input */}
             {!isLeft ? (
                 <div
-                    className="p-3 bg-white border-t border-[#f0e6d2]"
+                    className="p-3 bg-white border-t border-[#efeadd]"
                     style={{
                         paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
                     }}
                 >
                     <form
                         onSubmit={handleSend}
-                        className="flex items-end bg-[#FDFBF7] border border-[#efeadd] rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:border-[#8C531E] focus-within:shadow-md focus-within:ring-2 focus-within:ring-[#8C531E]/30"
+                        className="flex items-end border border-gray-300 rounded-full px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                     >
                         <input
                             type="file"
@@ -497,27 +480,25 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 }
                             }}
                             placeholder="Schreibe eine Nachricht..."
-                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder:text-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
+                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
                             rows={1}
                             style={{ minHeight: '24px' }}
                         />
 
-                        {/* Paperclip Button – jetzt einheitlich mit Send-Button-Stil */}
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="p-2 rounded-full transition-all flex-shrink-0 text-gray-300 hover:text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]"
+                            className="p-2 rounded-full transition-all flex-shrink-0 text-[#D08945]"
                         >
                             <Paperclip size={20} />
                         </button>
 
-                        {/* Send Button */}
                         <button
                             type="submit"
                             disabled={!newMessage.trim()}
                             className={`p-2 rounded-full transition-all flex-shrink-0 ${newMessage.trim()
-                                ? 'text-[#8C531E] hover:bg-[#f6efe4] active:bg-[#ede4d3]'
-                                : 'text-gray-300 cursor-not-allowed'
+                                ? 'text-[#D08945]'
+                                : 'text-gray-400 cursor-not-allowed'
                                 }`}
                         >
                             <Send size={20} />
@@ -526,7 +507,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
             ) : (
                 <div
-                    className="p-4 bg-gray-50 text-center text-gray-500 text-sm border-t"
+                    className="p-4 bg-gray-100 text-center text-gray-700 text-sm border-t border-[#EFEADD]"
                     style={{
                         paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
                     }}
