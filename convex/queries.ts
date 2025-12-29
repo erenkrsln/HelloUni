@@ -6,9 +6,9 @@ import { Id } from "./_generated/dataModel";
 async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
   const allComments = await ctx.db
     .query("comments")
-    .withIndex("by_post", (q) => q.eq("postId", postId))
+    .withIndex("by_post", (q: any) => q.eq("postId", postId))
     .collect();
-  return allComments.filter(c => !c.parentCommentId).length;
+  return allComments.filter((c: any) => !c.parentCommentId).length;
 }
 
 export const getFeed = query({
