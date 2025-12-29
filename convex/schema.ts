@@ -82,9 +82,16 @@ export default defineSchema({
 
   conversations: defineTable({
     participants: v.array(v.id("users")), // Array von User IDs
+    leftParticipants: v.optional(v.array(v.id("users"))), // Ehemalige Teilnehmer (Read-Only)
+    leftMetadata: v.optional(v.array(v.object({
+      userId: v.id("users"),
+      leftAt: v.number()
+    }))), // Metadaten wann User die Gruppe verlassen haben
     name: v.optional(v.string()), // Optionaler Gruppenname
     image: v.optional(v.string()), // Storage ID für Gruppenbild
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
+    adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
+    creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
     updatedAt: v.number(),
   }).index("by_participant", ["participants"]), // Dies könnte ineffizient sein, aber für V1 ok
@@ -93,6 +100,11 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"))), // Nachrichtentyp
+    storageId: v.optional(v.id("_storage")), // Für Dateien
+    fileName: v.optional(v.string()), // Originaldateiname
+    contentType: v.optional(v.string()), // MIME-Type
+    visibleTo: v.optional(v.array(v.id("users"))), // Array von User IDs, die die Nachricht sehen dürfen (wenn leer/undefined -> alle)
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])

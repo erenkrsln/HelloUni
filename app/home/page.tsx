@@ -97,8 +97,8 @@ export default function Home() {
           <button
             onClick={() => setFeedType("all")}
             className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${feedType === "all"
-                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-                : "bg-[#261708] border border-[#000000] text-white"
+              ? "bg-[#d08945] text-white"
+              : "bg-gray-100 text-gray-700"
               }`}
           >
             Für Dich
@@ -106,8 +106,8 @@ export default function Home() {
           <button
             onClick={() => setFeedType("following")}
             className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${feedType === "following"
-                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-                : "bg-[#261708] border border-[#000000] text-white"
+              ? "bg-[#d08945] text-white"
+              : "bg-gray-100 text-gray-700"
               }`}
           >
             Folge Ich
