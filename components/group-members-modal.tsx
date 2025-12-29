@@ -214,7 +214,7 @@ export function GroupMembersModal({
                             )}
 
                             {/* Active Members */}
-                            <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <div className="px-4 py-2 bg-gray-100 text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                 Aktuelle Mitglieder
                             </div>
                             {members.filter(m => m.role !== 'left').map(member => (
@@ -300,7 +300,7 @@ export function GroupMembersModal({
                             {/* Previous Members */}
                             {members.some(m => m.role === 'left') && (
                                 <>
-                                    <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-2">
+                                    <div className="px-4 py-2 bg-gray-100 text-xs font-semibold text-gray-700 uppercase tracking-wider mt-2">
                                         Ehemalige Mitglieder
                                     </div>
                                     {members.filter(m => m.role === 'left').map(member => (
