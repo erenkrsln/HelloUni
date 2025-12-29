@@ -706,7 +706,7 @@ export function CommentDrawer({
 
         {/* Sticky Input */}
         {currentUserId && (
-          <div className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0">
+          <div className="border-t border-gray-200 bg-white px-4 py-1 flex-shrink-0">
             {replyingTo && (
               <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
                 <span className="text-xs text-gray-600">
