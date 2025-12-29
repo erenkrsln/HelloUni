@@ -740,7 +740,6 @@ export function CommentDrawer({
           <div 
             className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0"
             style={{ 
-              paddingBottom: `env(safe-area-inset-bottom)`,
               paddingTop: `calc(0.625rem + 0.5rem)`
             }}
           >
