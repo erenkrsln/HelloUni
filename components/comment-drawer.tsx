@@ -740,7 +740,7 @@ export function CommentDrawer({
           <div 
             className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0"
             style={{ 
-              paddingTop: `calc(0.625rem + 0.5rem)`
+              paddingTop: `calc(0.625rem + 1rem)`
             }}
           >
             {replyingTo && (
@@ -772,35 +772,33 @@ export function CommentDrawer({
                   {currentUser?.name?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 flex gap-2 items-center">
-                <textarea
-                  ref={textareaRef}
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
-                  className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-hidden"
-                  rows={1}
-                  style={{
-                    maxHeight: "100px",
-                    minHeight: "36px",
-                    fontSize: "16px", // Verhindert automatisches Zoomen auf iOS
-                  }}
-                  disabled={isSubmitting}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      // Let the form onSubmit handle it - don't prevent default
-                      // This allows the form to submit naturally, preventing double submission
-                    }
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !commentText.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#D08945] rounded-full hover:bg-[#B8753A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 touch-manipulation"
-                >
-                  {isSubmitting ? "..." : "Posten"}
-                </button>
-              </div>
+              <textarea
+                ref={textareaRef}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
+                className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-hidden"
+                rows={1}
+                style={{
+                  maxHeight: "100px",
+                  minHeight: "36px",
+                  fontSize: "16px", // Verhindert automatisches Zoomen auf iOS
+                }}
+                disabled={isSubmitting}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    // Let the form onSubmit handle it - don't prevent default
+                    // This allows the form to submit naturally, preventing double submission
+                  }
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting || !commentText.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#D08945] rounded-full hover:bg-[#B8753A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 touch-manipulation"
+              >
+                {isSubmitting ? "..." : "Posten"}
+              </button>
             </form>
           </div>
         )}
