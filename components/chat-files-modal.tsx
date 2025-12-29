@@ -74,7 +74,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                 ) : (
                     <>
                         <div className="p-4 border-b flex items-center justify-between bg-white z-10">
-                            <DialogTitle className="text-lg font-bold">Geteilte Medien</DialogTitle>
+                            <DialogTitle className="text-lg font-semibold">Geteilte Medien</DialogTitle>
                             <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
                                 <X size={20} />
                             </button>
@@ -85,7 +85,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                             <button
                                 onClick={() => setActiveTab("images")}
                                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === "images"
-                                    ? "text-[#8C531E] border-b-2 border-[#8C531E]"
+                                    ? "text-[#D08945] border-b-2 border-[#D08945]"
                                     : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
@@ -94,7 +94,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                             <button
                                 onClick={() => setActiveTab("pdfs")}
                                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === "pdfs"
-                                    ? "text-[#8C531E] border-b-2 border-[#8C531E]"
+                                    ? "text-[#D08945] border-b-2 border-[#D08945]"
                                     : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
@@ -103,7 +103,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                             <button
                                 onClick={() => setActiveTab("links")}
                                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === "links"
-                                    ? "text-[#8C531E] border-b-2 border-[#8C531E]"
+                                    ? "text-[#D08945] border-b-2 border-[#D08945]"
                                     : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
@@ -111,7 +111,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF7]">
+                        <div className="flex-1 overflow-y-auto p-4 bg-white">
                             {!files ? (
                                 <div className="text-center text-gray-400 py-8">Lade Dateien...</div>
                             ) : currentCount === 0 ? (
@@ -129,7 +129,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                 {filesForDate.map((file) => (
                                                     <div
                                                         key={file._id}
-                                                        className={`bg-white rounded-lg shadow-sm border border-[#efeadd] overflow-hidden flex transition-shadow cursor-pointer hover:shadow-md ${activeTab === "links" ? "flex-row items-center p-3" : "flex-col"}`}
+                                                        className={`bg-white rounded-lg border border-gray-300 overflow-hidden flex transition-shadow cursor-pointer hover:shadow-md ${activeTab === "links" ? "flex-row items-center p-3" : "flex-col"}`}
                                                         onClick={() => {
                                                             if (file.type === "image" && file.url) {
                                                                 setSelectedImage(file.url);
@@ -140,11 +140,11 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                     >
                                                         {activeTab === "links" ? (
                                                             <>
-                                                                <div className="w-10 h-10 rounded-lg bg-[#f6efe4] flex items-center justify-center text-[#8C531E] mr-3 flex-shrink-0">
-                                                                    <ExternalLink size={20} />
+                                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945] mr-3 flex-shrink-0">
+                                                                    <ExternalLink size={30} />
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="text-sm font-medium text-gray-900 truncate" title={file.url}>
+                                                                    <p className="text-sm font-medium truncate" title={file.url}>
                                                                         {file.url}
                                                                     </p>
                                                                     <p className="text-[10px] text-gray-400">
@@ -157,7 +157,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <div className="w-full pt-[100%] relative bg-gray-100 overflow-hidden">
+                                                                <div className="w-full pt-[100%] relative overflow-hidden">
                                                                     <div className="absolute inset-0 flex items-center justify-center">
                                                                         {file.type === "image" && file.url ? (
                                                                             <img
@@ -166,13 +166,13 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                                                 className="w-full h-full object-cover"
                                                                             />
                                                                         ) : (
-                                                                            <FileText size={40} className="text-[#8C531E] opacity-50" />
+                                                                            <FileText size={60} className="text-[#D08945]" />
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                                 <div className="p-2 border-t border-[#efeadd]">
                                                                     <div className="w-full">
-                                                                        <p className="text-xs font-medium truncate text-gray-700" title={file.fileName}>
+                                                                        <p className="text-xs font-medium truncate" title={file.fileName}>
                                                                             {file.fileName || (file.type === "image" ? "Bild" : "Dokument")}
                                                                         </p>
                                                                         <p className="text-[10px] text-gray-400">

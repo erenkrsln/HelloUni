@@ -401,7 +401,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945]">
-                                                    <FileText size={24} />
+                                                    <FileText size={34} />
                                                 </div>
                                                 <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
                                             </a>
