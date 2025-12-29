@@ -57,6 +57,13 @@ export function ProfileHeader({
     const headerImageInputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateUser = useMutation(api.mutations.updateUser);
+    const createConversation = useMutation(api.mutations.createConversation);
+    
+    // Get conversations to check if a direct message already exists
+    const conversations = useQuery(
+        api.queries.getConversations,
+        currentUserId ? { userId: currentUserId } : "skip"
+    );
 
     // State for crop modal
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
@@ -197,37 +204,6 @@ export function ProfileHeader({
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
                 )}
-
-                {/* Edit Header Image Button - only visible on own profile */}
-                {isOwnProfile && (
-                    <>
-                        <input
-                            ref={headerImageInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleHeaderImageSelect}
-                            className="hidden"
-                            id="header-image-upload-inline"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => {
-                                console.log("Button geklickt, öffne File-Dialog...");
-                                if (headerImageInputRef.current) {
-                                    headerImageInputRef.current.click();
-                                    console.log("File-Input geklickt");
-                                } else {
-                                    console.error("File-Input ref ist null!");
-                                }
-                            }}
-                            className="absolute bottom-12 right-3 sm:bottom-auto sm:right-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
-                            style={{ zIndex: 50 }}
-                            aria-label="Titelbild ändern"
-                        >
-                            <Camera className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white pointer-events-none" />
-                        </button>
-                    </>
-                )}
             </div>
 
             {/* Profile Picture - overlapping header (Twitter/X Style) */}
@@ -243,24 +219,55 @@ export function ProfileHeader({
 
                     {/* Action Buttons - right side, aligned with profile picture */}
                     {!isOwnProfile && (
-                        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 -mb-2 sm:mb-0 -ml-2 sm:-ml-6">
+                        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 -mb-2 sm:mb-0 -ml-2 sm:-ml-6" style={{ marginLeft: "-2px" }}>
                             <button
                                 className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
+                                style={{ flexShrink: 0 }}
                                 aria-label="Mehr Optionen"
                             >
                                 <MoreHorizontal className="w-5 h-5 text-gray-700" />
                             </button>
                             <button
+                                onClick={async () => {
+                                    if (!currentUserId || !userId) return;
+                                    
+                                    // Check if a direct message conversation already exists
+                                    const existingConversation = conversations?.find(conv => {
+                                        // Direct message: exactly 2 participants and not a group
+                                        return !conv.isGroup && 
+                                               conv.participants.length === 2 &&
+                                               conv.participants.includes(currentUserId) &&
+                                               conv.participants.includes(userId);
+                                    });
+                                    
+                                    if (existingConversation) {
+                                        // Navigate to existing conversation
+                                        router.push(`/chat/${existingConversation._id}`);
+                                    } else {
+                                        // Create new direct message conversation
+                                        try {
+                                            const conversationId = await createConversation({
+                                                participants: [currentUserId, userId],
+                                            });
+                                            router.push(`/chat/${conversationId}`);
+                                        } catch (error) {
+                                            console.error("Failed to create conversation:", error);
+                                        }
+                                    }
+                                }}
                                 className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
+                                style={{ flexShrink: 0 }}
                                 aria-label="Nachricht senden"
                             >
                                 <MessageCircle className="w-5 h-5 text-gray-700" />
                             </button>
-                            <FollowButton
-                                currentUserId={currentUserId}
-                                targetUserId={userId}
-                                preloadedIsFollowing={preloadedIsFollowing}
-                            />
+                            <div style={{ flexShrink: 0 }}>
+                                <FollowButton
+                                    currentUserId={currentUserId}
+                                    targetUserId={userId}
+                                    preloadedIsFollowing={preloadedIsFollowing}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -314,7 +321,7 @@ export function ProfileHeader({
                 </div>
 
                 {/* Stats - Follower, Following (Twitter/X Style) */}
-                <div className="flex items-center gap-4 -mt-1">
+                <div className="flex items-center gap-4 -mt-1" style={{ marginLeft: "-15px" }}>
                     {/* Follower Stat */}
                     <button
                         className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
@@ -323,7 +330,7 @@ export function ProfileHeader({
                             console.log("Open followers list");
                         }}
                     >
-                        <span className="font-semibold">
+                        <span className="font-semibold inline-block min-w-[3ch] text-right">
                             {followerCount ?? 0}
                         </span>
                         <span className="text-[#000000]/60">
@@ -339,7 +346,7 @@ export function ProfileHeader({
                             console.log("Open following list");
                         }}
                     >
-                        <span className="font-semibold">
+                        <span className="font-semibold inline-block min-w-[3ch] text-right">
                             {followingCount ?? 0}
                         </span>
                         <span className="text-[#000000]/60">

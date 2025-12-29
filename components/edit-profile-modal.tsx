@@ -1,19 +1,14 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Camera, ChevronDown } from "lucide-react";
+import { Camera, ChevronDown, X } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
+import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -127,6 +122,13 @@ export function EditProfileModal({
   const [imagePreview, setImagePreview] = useState<string | null>(currentImage || null);
   const [isImageRemoved, setIsImageRemoved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedHeaderImage, setSelectedHeaderImage] = useState<File | null>(null);
+  const [headerImagePreview, setHeaderImagePreview] = useState<string | null>(currentHeaderImage || null);
+  const [isHeaderImageRemoved, setIsHeaderImageRemoved] = useState(false);
+  const headerImageInputRef = useRef<HTMLInputElement>(null);
+  const [isHeaderCropModalOpen, setIsHeaderCropModalOpen] = useState(false);
+  const [selectedHeaderImageSrc, setSelectedHeaderImageSrc] = useState<string>("");
+  const [isHeaderUploading, setIsHeaderUploading] = useState(false);
   const [isMajorOpen, setIsMajorOpen] = useState(false);
   const [isSemesterOpen, setIsSemesterOpen] = useState(false);
   const [isInterestsOpen, setIsInterestsOpen] = useState(false);
@@ -188,6 +190,60 @@ export function EditProfileModal({
     }
   };
 
+  const handleHeaderImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Create a preview URL for the crop modal
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedHeaderImageSrc(reader.result as string);
+      setIsHeaderCropModalOpen(true);
+    };
+    reader.onerror = () => {
+      alert("Fehler beim Lesen der Datei");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleHeaderCropComplete = async (croppedBlob: Blob) => {
+    setIsHeaderUploading(true);
+    try {
+      // Create preview from cropped blob
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setHeaderImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(croppedBlob);
+      
+      // Store the blob for later upload
+      const file = new File([croppedBlob], "header-image.jpg", { type: "image/jpeg" });
+      setSelectedHeaderImage(file);
+      setIsHeaderImageRemoved(false);
+      
+      // Close modal
+      setIsHeaderCropModalOpen(false);
+      setSelectedHeaderImageSrc("");
+    } catch (error) {
+      console.error("Fehler beim Verarbeiten des Header-Bilds:", error);
+      alert("Fehler beim Verarbeiten des Header-Bilds");
+    } finally {
+      setIsHeaderUploading(false);
+      if (headerImageInputRef.current) {
+        headerImageInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleHeaderCropCancel = () => {
+    if (isHeaderUploading) return; // Prevent closing during upload
+    setIsHeaderCropModalOpen(false);
+    setSelectedHeaderImageSrc("");
+    if (headerImageInputRef.current) {
+      headerImageInputRef.current.value = "";
+    }
+  };
+
   const removeImage = () => {
     setSelectedImage(null);
     setImagePreview(null);
@@ -201,9 +257,10 @@ export function EditProfileModal({
     e.preventDefault();
     if (!name.trim() || isSubmitting) return;
 
-    setIsSubmitting(true);
+      setIsSubmitting(true);
     try {
       let imageUrl: string | undefined = undefined;
+      let headerImageUrl: string | undefined = undefined;
 
       // Profilbild hochladen, falls ein neues ausgewählt wurde
       if (selectedImage) {
@@ -220,11 +277,27 @@ export function EditProfileModal({
         imageUrl = "";
       }
 
+      // Header-Bild hochladen, falls ein neues ausgewählt wurde
+      if (selectedHeaderImage) {
+        const uploadUrl = await generateUploadUrl();
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": selectedHeaderImage.type },
+          body: selectedHeaderImage,
+        });
+        const { storageId } = await result.json();
+        headerImageUrl = storageId;
+      } else if (isHeaderImageRemoved) {
+        // Header-Bild wurde entfernt, setze auf leeren String
+        headerImageUrl = "";
+      }
+
       // User aktualisieren
       await updateUser({
         userId,
         name: name.trim(),
         image: imageUrl, // undefined = behalten, "" = löschen, string = neues Bild
+        headerImage: headerImageUrl, // undefined = behalten, "" = löschen, string = neues Bild
         bio: bio.trim() || "", // Send empty string to delete bio
         major: major || undefined, // Send undefined if empty
         semester: semester || undefined, // Send undefined if not set
@@ -255,25 +328,116 @@ export function EditProfileModal({
     setSelectedImage(null);
     setImagePreview(currentImage || null);
     setIsImageRemoved(false);
+    setSelectedHeaderImage(null);
+    setHeaderImagePreview(currentHeaderImage || null);
+    setIsHeaderImageRemoved(false);
     setIsMajorOpen(false);
     setIsSemesterOpen(false);
     setIsInterestsOpen(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    if (headerImageInputRef.current) {
+      headerImageInputRef.current.value = "";
+    }
     onClose();
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] overflow-y-auto flex flex-col p-6 sm:p-8">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Profil bearbeiten</DialogTitle>
-        </DialogHeader>
+  // Body-Lock: Verhindere Scrollen des Body, wenn Drawer offen ist
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
 
-        <form onSubmit={handleSubmit} className="space-y-6 flex-1">
-          {/* Profilbild Upload */}
-          <div className="flex flex-col items-center gap-4">
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={handleClose}
+      />
+
+      {/* Drawer */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
+          isOpen ? "translate-y-0" : "translate-y-full"
+        } h-[100vh] overflow-hidden`}
+        style={{
+          pointerEvents: isOpen ? "auto" : "none",
+        }}
+      >
+        {/* Header */}
+        <div 
+          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0"
+          style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))" }}
+        >
+          <button
+            onClick={handleClose}
+            className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
+          >
+            Abbrechen
+          </button>
+          <h2 className="text-lg font-semibold text-gray-900">Profil bearbeiten</h2>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleSubmit(e as any);
+            }}
+            disabled={isSubmitting || !name.trim()}
+            className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+          </button>
+        </div>
+
+        {/* Header Image */}
+        <div 
+          className="relative bg-[#0a0a0a] overflow-hidden"
+          style={{ 
+            aspectRatio: '3/1', 
+            minHeight: '120px',
+          }}
+        >
+          {headerImagePreview ? (
+            <img
+              src={headerImagePreview}
+              alt="Header"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
+          )}
+          
+          {/* Edit Header Image Button */}
+          <input
+            ref={headerImageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleHeaderImageSelect}
+            className="hidden"
+            id="header-image-upload"
+          />
+          <button
+            type="button"
+            onClick={() => headerImageInputRef.current?.click()}
+            className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+            disabled={isSubmitting}
+          >
+            <Camera className="w-4 h-4 text-white pointer-events-none" />
+          </button>
+        </div>
+
+        {/* Profile Picture - overlapping header */}
+        <div className="relative px-4 z-10 -mt-12 sm:-mt-20">
+          <div className="flex flex-col items-start gap-4">
             <input
               ref={fileInputRef}
               type="file"
@@ -285,12 +449,17 @@ export function EditProfileModal({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="relative cursor-pointer hover:opacity-80 transition-opacity focus:outline-none rounded-full group"
+              className="relative cursor-pointer focus:outline-none rounded-full group"
               disabled={isSubmitting}
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+              }}
+              onMouseDown={(e) => e.preventDefault()}
             >
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={imagePreview || undefined} alt={name} />
-                <AvatarFallback className="text-2xl bg-[#000000]/20 text-[#000000]">
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white shadow-xl" style={{ backgroundColor: 'white' }}>
+                <AvatarImage src={imagePreview || undefined} alt={name} className="object-cover" />
+                <AvatarFallback className="text-xl sm:text-2xl bg-[#000000]/20 text-[#000000] font-semibold">
                   {name[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -299,23 +468,13 @@ export function EditProfileModal({
                 <Camera className="w-4 h-4 text-white" />
               </div>
             </button>
-            {(imagePreview || currentImage) && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={isImageRemoved ? () => {
-                  setIsImageRemoved(false);
-                  setImagePreview(currentImage || null);
-                } : removeImage}
-                disabled={isSubmitting}
-              >
-                {isImageRemoved ? "Wiederherstellen" : "Entfernen"}
-              </Button>
-            )}
           </div>
+        </div>
 
-          {/* Name Input */}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-6">
+          <form onSubmit={handleSubmit} className="space-y-6 flex-1">
+            {/* Name Input */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium mb-2">
               Name
@@ -533,47 +692,22 @@ export function EditProfileModal({
               {bio.length}/150
             </p>
           </div>
-
-          {/* Buttons */}
-          <div className="flex gap-3 justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="min-w-[100px]"
-              style={{
-                willChange: "transform",
-                transform: "translateZ(0)",
-                backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden"
-              }}
-            >
-              Abbrechen
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || !name.trim()}
-              className="min-w-[100px]"
-              style={{
-                willChange: "transform",
-                transform: "translateZ(0)",
-                backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden"
-              }}
-            >
-              <span style={{ 
-                display: "inline-block",
-                minWidth: "80px",
-                textAlign: "center"
-              }}>
-                {isSubmitting ? "Wird gespeichert..." : "Speichern"}
-              </span>
-            </Button>
-          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+
+      {/* Header Image Crop Modal */}
+      {isHeaderCropModalOpen && selectedHeaderImageSrc && (
+        <HeaderImageCropModal
+          isOpen={isHeaderCropModalOpen}
+          onClose={handleHeaderCropCancel}
+          imageSrc={selectedHeaderImageSrc}
+          onCropComplete={handleHeaderCropComplete}
+          isUploading={isHeaderUploading}
+          className="drawer-crop-modal"
+        />
+      )}
+    </>
   );
 }
 
