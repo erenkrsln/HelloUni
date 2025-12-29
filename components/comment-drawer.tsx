@@ -144,35 +144,9 @@ export function CommentDrawer({
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
-      // Verhindere Scrollen im Hintergrund
       document.body.style.overflow = "hidden";
-      document.body.style.position = "fixed";
-      document.body.style.width = "100%";
-      document.body.style.touchAction = "none";
-      
-      // Verhindere Touch-Scroll-Events im Hintergrund
-      const preventScroll = (e: TouchEvent) => {
-        // Erlaube Scrollen nur innerhalb des Drawers
-        const target = e.target as HTMLElement;
-        if (!drawerRef.current?.contains(target)) {
-          e.preventDefault();
-        }
-      };
-      
-      document.addEventListener("touchmove", preventScroll, { passive: false });
-      
-      return () => {
-        document.body.style.overflow = "";
-        document.body.style.position = "";
-        document.body.style.width = "";
-        document.body.style.touchAction = "";
-        document.removeEventListener("touchmove", preventScroll);
-      };
     } else {
       document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.width = "";
-      document.body.style.touchAction = "";
       setCommentText("");
       setReplyingTo(null);
       setSortMode("neueste"); // Reset filter to default when drawer closes
@@ -180,6 +154,9 @@ export function CommentDrawer({
       // Clear time ago cache when drawer closes, so it recalculates on next open
       timeAgoCacheRef.current.clear();
     }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
 
   // Close drawer on outside click
@@ -635,11 +612,6 @@ export function CommentDrawer({
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
-        onTouchMove={(e) => {
-          // Verhindere Scrollen auf dem Backdrop
-          e.preventDefault();
-        }}
-        style={{ touchAction: "none" }}
       />
 
       {/* Drawer */}
@@ -714,10 +686,7 @@ export function CommentDrawer({
         </div>
 
         {/* Comments List */}
-        <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden py-1"
-          style={{ touchAction: "pan-y" }}
-        >
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner size="md" />
@@ -737,12 +706,7 @@ export function CommentDrawer({
 
         {/* Sticky Input */}
         {currentUserId && (
-          <div 
-            className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0"
-            style={{ 
-              paddingBottom: `calc(env(safe-area-inset-bottom) + 0.25rem)`
-            }}
-          >
+          <div className="border-t border-gray-200 bg-white px-4 py-2.5 flex-shrink-0">
             {replyingTo && (
               <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
                 <span className="text-xs text-gray-600">
@@ -772,33 +736,35 @@ export function CommentDrawer({
                   {currentUser?.name?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
-              <textarea
-                ref={textareaRef}
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
-                className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-hidden"
-                rows={1}
-                style={{
-                  maxHeight: "100px",
-                  minHeight: "36px",
-                  fontSize: "16px", // Verhindert automatisches Zoomen auf iOS
-                }}
-                disabled={isSubmitting}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    // Let the form onSubmit handle it - don't prevent default
-                    // This allows the form to submit naturally, preventing double submission
-                  }
-                }}
-              />
-              <button
-                type="submit"
-                disabled={isSubmitting || !commentText.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-[#D08945] rounded-full hover:bg-[#B8753A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 touch-manipulation"
-              >
-                {isSubmitting ? "..." : "Posten"}
-              </button>
+              <div className="flex-1 flex gap-2 items-center">
+                <textarea
+                  ref={textareaRef}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
+                  className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-hidden"
+                  rows={1}
+                  style={{
+                    maxHeight: "100px",
+                    minHeight: "36px",
+                    fontSize: "16px", // Verhindert automatisches Zoomen auf iOS
+                  }}
+                  disabled={isSubmitting}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      // Let the form onSubmit handle it - don't prevent default
+                      // This allows the form to submit naturally, preventing double submission
+                    }
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !commentText.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#D08945] rounded-full hover:bg-[#B8753A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 touch-manipulation"
+                >
+                  {isSubmitting ? "..." : "Posten"}
+                </button>
+              </div>
             </form>
           </div>
         )}
