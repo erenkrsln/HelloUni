@@ -3,12 +3,7 @@
 import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
@@ -122,7 +117,7 @@ export function EditGroupImageModal({
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent aria-describedby={undefined} className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-6 rounded-2xl">
                 <DialogHeader className="mb-6">
-                    <DialogTitle className="text-xl font-semibold text-center">Gruppenbild</DialogTitle>
+                    <DialogTitle className="text-xl font-semibold text-center">Gruppenbild bearbeiten</DialogTitle>
                 </DialogHeader>
 
                 <div className="flex flex-col items-center gap-6">
@@ -138,9 +133,9 @@ export function EditGroupImageModal({
                         className="relative group cursor-pointer active:scale-95 transition-transform"
                         disabled={isSubmitting}
                     >
-                        <Avatar className="w-32 h-32 shadow-lg">
+                        <Avatar className="w-32 h-32">
                             <AvatarImage src={imagePreview || undefined} alt={groupName} className="object-cover" />
-                            <AvatarFallback className="text-4xl bg-gray-100 text-gray-400">
+                            <AvatarFallback className=" bg-gray-100 text-gray-400">
                                 {groupName.charAt(0).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
@@ -158,21 +153,49 @@ export function EditGroupImageModal({
                                     setIsImageRemoved(false);
                                     setImagePreview(currentImage || null);
                                 } : removeImage}
-                                className={isImageRemoved ? "text-green-600 border-green-200" : "text-red-500 hover:text-red-600 hover:bg-red-50 border-red-100"}
+
                                 disabled={isSubmitting}
                             >
-                                {isImageRemoved ? "Rückgängig" : "Entfernen"}
+                                {isImageRemoved ? "Wiederherstellen" : "Entfernen"}
                             </Button>
                         )}
                     </div>
                 </div>
 
-                <div className="flex gap-3 justify-end mt-8">
-                    <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
+                <div className="flex gap-3 justify-center mt-8">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleClose}
+                        disabled={isSubmitting}
+                        className="min-w-[100px]"
+                        style={{
+                            willChange: "transform",
+                            transform: "translateZ(0)",
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden"
+                        }}
+                    >
                         Abbrechen
                     </Button>
-                    <Button onClick={handleSubmit} disabled={isSubmitting}>
-                        {isSubmitting ? "Speichern..." : "Speichern"}
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="min-w-[100px]"
+                        style={{
+                            willChange: "transform",
+                            transform: "translateZ(0)",
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden"
+                        }}
+                    >
+                        <span style={{
+                            display: "inline-block",
+                            minWidth: "80px",
+                            textAlign: "center"
+                        }}>
+                            {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+                        </span>
                     </Button>
                 </div>
             </DialogContent>
