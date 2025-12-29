@@ -706,7 +706,9 @@ export function CommentDrawer({
 
         {/* Sticky Input */}
         {currentUserId && (
-          <div className="border-t border-gray-200 bg-white px-4 py-1 flex-shrink-0">
+          <div className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 relative" style={{ transform: 'translateY(-12px)' }}>
+            {/* Horizontale Linie */}
+            <div className="absolute top-0 left-0 right-0 border-t border-gray-200"></div>
             {replyingTo && (
               <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
                 <span className="text-xs text-gray-600">
