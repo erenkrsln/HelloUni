@@ -25,13 +25,13 @@ export function PostMenu({ postId, userId }: PostMenuProps) {
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="ml-auto flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
           >
             <MoreHorizontal className="w-4 h-4 text-gray-500" />
           </button>
         </PopoverTrigger>
-        <PopoverContent 
-          className="w-40 p-1" 
+        <PopoverContent
+          className="w-40 p-1"
           align="end"
           onClick={(e) => {
             e.stopPropagation();

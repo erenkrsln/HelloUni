@@ -13,8 +13,11 @@ export default function SearchPage() {
     const [isFirstVisit, setIsFirstVisit] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     // Lade Daten im Hintergrund, damit sie beim Navigieren zu /profile bereits im Cache sind
-    const { currentUser } = useCurrentUser();
-    const posts = useQuery(api.queries.getFeed);
+    const { currentUser, currentUserId } = useCurrentUser();
+    const posts = useQuery(
+      api.queries.getFeed,
+      currentUserId ? { userId: currentUserId } : {}
+    );
 
     useEffect(() => {
         // Prüfe, ob Seite bereits besucht wurde

@@ -12,6 +12,7 @@ export default defineSchema({
     major: v.optional(v.string()), // Jetzt optional für initiale Registrierung
     semester: v.optional(v.number()), // Semester (1-10)
     bio: v.optional(v.string()), // Biografie des Benutzers
+    interests: v.optional(v.array(v.string())), // Interessen/Tags des Benutzers
     createdAt: v.optional(v.number()), // Erstellungsdatum für "Joined"
   }).index("by_username", ["username"]), // Index für schnelle Suche nach Benutzername
 
@@ -79,6 +80,34 @@ export default defineSchema({
   })
     .index("by_post", ["postId"])
     .index("by_user_post", ["userId", "postId"]),
+
+  comments: defineTable({
+    userId: v.id("users"),
+    postId: v.id("posts"),
+    parentCommentId: v.optional(v.id("comments")), // Für verschachtelte Antworten
+    content: v.string(),
+    imageUrl: v.optional(v.string()), // Bild-URL für Kommentare
+    likesCount: v.number(),
+    repliesCount: v.number(), // Anzahl der Antworten
+    createdAt: v.number(),
+  })
+    .index("by_post", ["postId"])
+    .index("by_post_created", ["postId", "createdAt"])
+    .index("by_parent", ["parentCommentId"]),
+
+  commentLikes: defineTable({
+    userId: v.id("users"),
+    commentId: v.id("comments"),
+  })
+    .index("by_comment", ["commentId"])
+    .index("by_user_comment", ["userId", "commentId"]),
+
+  commentDislikes: defineTable({
+    userId: v.id("users"),
+    commentId: v.id("comments"),
+  })
+    .index("by_comment", ["commentId"])
+    .index("by_user_comment", ["userId", "commentId"]),
 
   conversations: defineTable({
     participants: v.array(v.id("users")), // Array von User IDs

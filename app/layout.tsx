@@ -5,6 +5,7 @@ import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { NextAuthSessionProvider } from "@/components/session-provider";
+import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -26,6 +27,11 @@ export const metadata: Metadata = {
     title: "HelloUni",
     statusBarStyle: "black-translucent",
     capable: true,
+    startupImage: "/hellouni.svg",
+  },
+  icons: {
+    icon: "/logo.svg",
+    apple: "/hellouni.svg",
   },
 };
 
@@ -46,9 +52,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
+      <head>
+        {/* PWA Meta Tags für bessere Installation */}
+        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="apple-touch-icon" href="/hellouni.svg" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="HelloUni" />
+      </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
         <NextAuthSessionProvider>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <PostsCacheWrapper>{children}</PostsCacheWrapper>
+          </ConvexClientProvider>
         </NextAuthSessionProvider>
       </body>
     </html>

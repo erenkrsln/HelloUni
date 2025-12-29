@@ -19,7 +19,6 @@ export default function ProfilePage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const router = useRouter();
     const { currentUser, currentUserId } = useCurrentUser();
-    const allPosts = useQuery(api.queries.getFeed);
 
     // Use unified hook for own profile as well (ensures caching works same way)
     // We pass the username from currentUser if available
@@ -27,6 +26,11 @@ export default function ProfilePage() {
         username: currentUser?.username || "",
         currentUserId
     });
+
+    const allPosts = useQuery(
+      api.queries.getFeed,
+      currentUserId ? { userId: currentUserId } : {}
+    );
 
     // Only show loading if we don't have profile data yet
     // On second visit, profileData comes from cache immediately
@@ -45,6 +49,7 @@ export default function ProfilePage() {
         }
         router.refresh();
     };
+
 
     return (
         <main 
@@ -69,6 +74,7 @@ export default function ProfilePage() {
                     currentBio={(profileData.user as any).bio}
                     currentMajor={profileData.user.major}
                     currentSemester={(profileData.user as any).semester}
+                    currentInterests={(profileData.user as any).interests}
                     onUpdate={handleProfileUpdate}
                 />
             )}

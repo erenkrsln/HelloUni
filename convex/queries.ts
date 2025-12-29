@@ -1,14 +1,43 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+
+// Helper function to calculate actual comments count for a post
+async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
+  const allComments = await ctx.db
+    .query("comments")
+    .withIndex("by_post", (q) => q.eq("postId", postId))
+    .collect();
+  return allComments.filter(c => !c.parentCommentId).length;
+}
 
 export const getFeed = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
     const posts = await ctx.db
       .query("posts")
       .withIndex("by_created")
       .order("desc")
       .collect();
+
+    // Batch-Abfrage aller Likes für diesen User
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = posts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+      
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+      
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
 
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
@@ -36,10 +65,15 @@ export const getFeed = query({
           actualParticipantsCount = participants.length;
         }
 
+        // Calculate actual comments count (only top-level comments)
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
         return {
           ...post,
           participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
           imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
             image: userImageUrl,
@@ -174,6 +208,23 @@ export const getUserPosts = query({
       .order("desc")
       .collect();
 
+    // Batch-Abfrage aller Likes für diesen User
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = posts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+      
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+      
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
@@ -200,10 +251,15 @@ export const getUserPosts = query({
           actualParticipantsCount = participants.length;
         }
 
+        // Calculate actual comments count (only top-level comments)
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
         return {
           ...post,
           participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
           imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
             image: userImageUrl,
@@ -389,6 +445,23 @@ export const getFollowingFeed = query({
       followingIds.includes(post.userId)
     );
 
+    // Batch-Abfrage aller Likes für diesen User
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = followingPosts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+      
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+      
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
     // Erweitere Posts mit User-Informationen
     const postsWithUsers = await Promise.all(
       followingPosts.map(async (post) => {
@@ -416,10 +489,15 @@ export const getFollowingFeed = query({
           actualParticipantsCount = participants.length;
         }
 
+        // Calculate actual comments count (only top-level comments)
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
         return {
           ...post,
           participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
           imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
             image: userImageUrl,
@@ -603,11 +681,12 @@ export const getParticipants = query({
   },
 });
 
-// Get filtered feed by tags, major, etc.
+// Get filtered feed by tags, major, interests, etc.
 export const getFilteredFeed = query({
   args: {
     tags: v.optional(v.array(v.string())),
     major: v.optional(v.string()),
+    interests: v.optional(v.array(v.string())),
     postType: v.optional(v.union(
       v.literal("normal"),
       v.literal("spontaneous_meeting"),
@@ -615,6 +694,8 @@ export const getFilteredFeed = query({
       v.literal("announcement"),
       v.literal("poll")
     )),
+    sortBy: v.optional(v.union(v.literal("newest"), v.literal("oldest"), v.literal("mostLikes"), v.literal("mostComments"))),
+    userId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
     let posts = await ctx.db
@@ -636,6 +717,23 @@ export const getFilteredFeed = query({
       });
     }
 
+    // Batch-Abfrage aller Likes für diesen User
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = posts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+      
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+      
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
     // Get posts with user info and apply major filter
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
@@ -644,6 +742,16 @@ export const getFilteredFeed = query({
         // Filter by major if specified
         if (args.major && user?.major !== args.major) {
           return null;
+        }
+
+        // Filter by interests if specified
+        // User must have at least one matching interest
+        if (args.interests && args.interests.length > 0) {
+          const userInterests = (user as any)?.interests || [];
+          const hasMatchingInterest = args.interests.some(interest => userInterests.includes(interest));
+          if (!hasMatchingInterest) {
+            return null;
+          }
         }
 
         let imageUrl = post.imageUrl;
@@ -666,10 +774,15 @@ export const getFilteredFeed = query({
           actualParticipantsCount = participants.length;
         }
 
+        // Calculate actual comments count (only top-level comments)
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
         return {
           ...post,
           participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
           imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
             image: userImageUrl,
@@ -678,7 +791,33 @@ export const getFilteredFeed = query({
       })
     );
 
-    return postsWithUsers.filter((post) => post !== null);
+    let filteredPosts = postsWithUsers.filter((post) => post !== null);
+
+    // Apply sorting
+    if (args.sortBy) {
+      switch (args.sortBy) {
+        case "newest":
+          filteredPosts.sort((a, b) => b.createdAt - a.createdAt);
+          break;
+        case "oldest":
+          filteredPosts.sort((a, b) => a.createdAt - b.createdAt);
+          break;
+        case "mostLikes":
+          filteredPosts.sort((a, b) => b.likesCount - a.likesCount);
+          break;
+        case "mostComments":
+          filteredPosts.sort((a, b) => b.commentsCount - a.commentsCount);
+          break;
+        default:
+          // Default to newest (desc order)
+          filteredPosts.sort((a, b) => b.createdAt - a.createdAt);
+      }
+    } else {
+      // Default to newest if no sort specified
+      filteredPosts.sort((a, b) => b.createdAt - a.createdAt);
+    }
+
+    return filteredPosts;
   },
 });
 
@@ -848,6 +987,95 @@ export const getConversationMembers = query({
     );
 
     return members.filter((m) => m !== null);
+  },
+});
+
+export const getComments = query({
+  args: {
+    postId: v.id("posts"),
+    userId: v.optional(v.id("users")), // Für Like-Status
+  },
+  handler: async (ctx, args) => {
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_post_created", (q) => q.eq("postId", args.postId))
+      .order("asc")
+      .collect();
+
+    // Batch-Abfrage aller Likes für diesen User
+    let userCommentLikesMap: Record<string, boolean> = {};
+    let userCommentDislikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const commentIds = comments.map((c) => c._id);
+      const allCommentLikes = await ctx.db
+        .query("commentLikes")
+        .collect();
+      
+      const userCommentLikes = allCommentLikes.filter(
+        (like) => like.userId === args.userId && commentIds.includes(like.commentId)
+      );
+      
+      userCommentLikes.forEach((like) => {
+        userCommentLikesMap[like.commentId as string] = true;
+      });
+
+      // Batch-Abfrage aller Dislikes für diesen User
+      const allCommentDislikes = await ctx.db
+        .query("commentDislikes")
+        .collect();
+      
+      const userCommentDislikes = allCommentDislikes.filter(
+        (dislike) => dislike.userId === args.userId && commentIds.includes(dislike.commentId)
+      );
+      
+      userCommentDislikes.forEach((dislike) => {
+        userCommentDislikesMap[dislike.commentId as string] = true;
+      });
+    }
+
+    const commentsWithUsers = await Promise.all(
+      comments.map(async (comment) => {
+        const user = await ctx.db.get(comment.userId);
+        if (!user) return null;
+
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+
+        // Convert comment image storage ID to URL if it exists
+        let commentImageUrl = comment.imageUrl;
+        if (commentImageUrl && !commentImageUrl.startsWith('http')) {
+          commentImageUrl = (await ctx.storage.getUrl(commentImageUrl as any)) ?? commentImageUrl;
+        }
+
+        return {
+          _id: comment._id,
+          userId: comment.userId,
+          postId: comment.postId,
+          parentCommentId: comment.parentCommentId,
+          content: comment.content,
+          imageUrl: commentImageUrl,
+          likesCount: comment.likesCount,
+          repliesCount: comment.repliesCount,
+          createdAt: comment.createdAt,
+          isLiked: args.userId ? (userCommentLikesMap[comment._id as string] ?? false) : false,
+          isDisliked: args.userId ? (userCommentDislikesMap[comment._id as string] ?? false) : false,
+          user: {
+            _id: user._id,
+            name: user.name,
+            username: user.username,
+            image: imageUrl,
+          },
+        };
+      })
+    );
+
+    // Filter out null comments (but keep disliked comments - they will be shown with a message)
+    const filteredComments = commentsWithUsers
+      .filter((c): c is NonNullable<typeof c> => c !== null);
+
+    return filteredComments;
   },
 });
 

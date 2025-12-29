@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
@@ -42,6 +41,7 @@ export default function CreatePage() {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     // Mention autocomplete state
     const [showMentionDropdown, setShowMentionDropdown] = useState(false);
@@ -138,28 +138,35 @@ export default function CreatePage() {
             }
         }
 
-        // Speichere die Daten, bevor wir die Weiterleitung machen
-        const postContent = content.trim();
-        const postImage = selectedImage;
+        // Nur bei Bild-Upload: Progress initialisieren
+        if (selectedImage) {
+            sessionStorage.setItem("uploadProgress", "0");
+        }
 
-        // Sofort zur /home weiterleiten
+        // Sofort zur Home navigieren
         router.push("/home");
 
-        // Post im Hintergrund erstellen (ohne auf UI-Updates zu warten)
+        // Upload im Hintergrund durchführen
         (async () => {
             try {
                 let imageUrl: string | undefined = undefined;
 
-                // Bild hochladen, falls ausgewählt
-                if (postImage) {
+                // Bild hochladen mit Progress-Tracking über sessionStorage
+                if (selectedImage) {
+                    sessionStorage.setItem("uploadProgress", "10");
                     const uploadUrl = await generateUploadUrl();
+                    sessionStorage.setItem("uploadProgress", "30");
+                    
                     const result = await fetch(uploadUrl, {
                         method: "POST",
-                        headers: { "Content-Type": postImage.type },
-                        body: postImage,
+                        headers: { "Content-Type": selectedImage.type },
+                        body: selectedImage,
                     });
+                    sessionStorage.setItem("uploadProgress", "60");
+                    
                     const { storageId } = await result.json();
                     imageUrl = storageId;
+                    sessionStorage.setItem("uploadProgress", "80");
                 }
 
                 // Event-Datum konvertieren
@@ -176,19 +183,23 @@ export default function CreatePage() {
                     : undefined;
 
                 // Tags aus Content extrahieren
-                const extractedTags = extractTags(postContent);
+                const extractedTags = extractTags(content.trim());
                 const validTags = extractedTags.length > 0 ? extractedTags : undefined;
 
                 // Mentions aus Content extrahieren
-                const extractedMentions = extractMentions(postContent);
+                const extractedMentions = extractMentions(content.trim());
                 const validMentions = extractedMentions.length > 0 ? extractedMentions : undefined;
+
+                if (selectedImage) {
+                    sessionStorage.setItem("uploadProgress", "90");
+                }
 
                 // Post erstellen
                 await createPost({
                     userId: currentUser._id,
                     postType,
                     title: title.trim() || undefined,
-                    content: postContent,
+                    content: content.trim(),
                     imageUrl,
                     eventDate: eventDateTimestamp,
                     eventTime: eventTime || undefined,
@@ -198,8 +209,18 @@ export default function CreatePage() {
                     tags: validTags,
                     mentions: validMentions,
                 });
+
+                if (selectedImage) {
+                    sessionStorage.setItem("uploadProgress", "100");
+                    // Kurze Verzögerung damit User den vollen Progress sieht
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                // Upload abgeschlossen
+                sessionStorage.removeItem("uploadProgress");
             } catch (error) {
                 console.error("Fehler beim Erstellen des Posts:", error);
+                sessionStorage.removeItem("uploadProgress");
             }
         })();
     };
@@ -350,20 +371,38 @@ export default function CreatePage() {
     }, [showMentionDropdown]);
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden header-spacing">
-            <Header onMenuClick={() => setIsSidebarOpen(true)} />
+        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            
+            {/* Custom Header with Abbrechen and Posten */}
+            <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200" style={{ maxWidth: "428px", margin: "0 auto" }}>
+                <div className="flex items-center justify-between px-4 h-16">
+                    <button
+                        type="button"
+                        onClick={() => router.push("/home")}
+                        className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity cursor-pointer"
+                    >
+                        Abbrechen
+                    </button>
+                    <button
+                        type="submit"
+                        form="create-post-form"
+                        disabled={!content.trim()}
+                        className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        Posten
+                    </button>
+                </div>
+            </div>
+
+            <div className="pt-16">
             {isLoading ? (
                 <LoadingScreen text="Seite wird geladen..." />
             ) : (
                 <div className="px-4 py-6">
-                    <h2 className="text-2xl font-semibold mb-6 text-gray-900">
-                        Neuer Post
-                    </h2>
-
-                    <form onSubmit={handleSubmit}>
-                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
+                        <form id="create-post-form" onSubmit={handleSubmit}>
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4 overflow-hidden">
                             {/* Post Type Selection */}
                             <div className="mb-4 relative post-type-dropdown">
                                 <label htmlFor="postType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -403,7 +442,7 @@ export default function CreatePage() {
                                                         setPostType("normal");
                                                         setIsPostTypeOpen(false);
                                                     }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                 >
                                                     Normal
                                                 </button>
@@ -415,7 +454,7 @@ export default function CreatePage() {
                                                         setPostType("announcement");
                                                         setIsPostTypeOpen(false);
                                                     }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                 >
                                                     Ankündigung
                                                 </button>
@@ -427,7 +466,7 @@ export default function CreatePage() {
                                                         setPostType("spontaneous_meeting");
                                                         setIsPostTypeOpen(false);
                                                     }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                 >
                                                     Spontanes Treffen
                                                 </button>
@@ -439,7 +478,7 @@ export default function CreatePage() {
                                                         setPostType("recurring_meeting");
                                                         setIsPostTypeOpen(false);
                                                     }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                 >
                                                     Wiederkehrendes Treffen
                                                 </button>
@@ -451,7 +490,7 @@ export default function CreatePage() {
                                                         setPostType("poll");
                                                         setIsPostTypeOpen(false);
                                                     }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                 >
                                                     Umfrage
                                                 </button>
@@ -473,10 +512,12 @@ export default function CreatePage() {
                                 />
                             </div>
 
-                            <div className="relative">
+                            {/* Text and Image Container - Vertical Flexbox */}
+                            <div className="flex flex-col border border-gray-300 rounded-lg pb-4">
+                                <div className="relative flex-shrink-0">
                                 {/* Overlay for highlighting mentions - render ALL text here since textarea is transparent */}
                                 <div
-                                    className="absolute inset-0 px-4 py-3 pointer-events-none text-base md:text-sm whitespace-pre-wrap break-words overflow-hidden rounded-lg text-gray-900 [&::selection]:bg-blue-200"
+                                        className="absolute inset-0 px-4 py-3 pointer-events-none text-base md:text-sm whitespace-pre-wrap break-words overflow-hidden text-gray-900 [&::selection]:bg-blue-200"
                                     style={{
                                         minHeight: "150px",
                                         zIndex: 1,
@@ -576,7 +617,7 @@ export default function CreatePage() {
                                     onChange={handleContentChange}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Was möchtest du teilen?"
-                                    className="relative w-full px-4 py-3 rounded-lg border border-gray-300 bg-transparent text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none transition-colors [&::selection]:bg-blue-200 [&::selection]:text-transparent"
+                                        className="relative w-full px-4 pt-3 pb-0 bg-transparent text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-0 border-none resize-none transition-colors [&::selection]:bg-blue-200 [&::selection]:text-transparent"
                                     style={{
                                         minHeight: "150px",
                                         color: 'transparent',
@@ -623,6 +664,26 @@ export default function CreatePage() {
                                                 </div>
                                             </button>
                                         ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Image Preview - direct sibling of textarea */}
+                                {imagePreview && (
+                                    <div className="relative flex-shrink-0 px-4 -mt-28 pb-4">
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            className="w-full rounded-xl object-contain"
+                                            style={{ maxHeight: "600px", height: "auto" }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={removeImage}
+                                            className="absolute top-2 right-6 h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white focus:outline-none shadow-md"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -702,7 +763,7 @@ export default function CreatePage() {
                                                                     setRecurrencePattern("");
                                                                     setIsRecurrenceOpen(false);
                                                                 }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                             >
                                                                 Keine Wiederholung
                                                             </button>
@@ -714,7 +775,7 @@ export default function CreatePage() {
                                                                     setRecurrencePattern("daily");
                                                                     setIsRecurrenceOpen(false);
                                                                 }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                             >
                                                                 Täglich
                                                             </button>
@@ -726,7 +787,7 @@ export default function CreatePage() {
                                                                     setRecurrencePattern("weekly");
                                                                     setIsRecurrenceOpen(false);
                                                                 }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                             >
                                                                 Wöchentlich
                                                             </button>
@@ -738,7 +799,7 @@ export default function CreatePage() {
                                                                     setRecurrencePattern("monthly");
                                                                     setIsRecurrenceOpen(false);
                                                                 }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gradient-to-r hover:from-[#D08945] hover:via-[#DCA067] hover:to-[#F4CFAB] hover:text-white transition-all"
+                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                             >
                                                                 Monatlich
                                                             </button>
@@ -787,24 +848,6 @@ export default function CreatePage() {
                                 </div>
                             )}
 
-                            {imagePreview && (
-                                <div className="relative mt-4">
-                                    <img
-                                        src={imagePreview}
-                                        alt="Preview"
-                                        className="w-full rounded-lg object-cover"
-                                        style={{ maxHeight: "300px" }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={removeImage}
-                                        className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
-
                             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                                 <button
                                     type="button"
@@ -828,17 +871,10 @@ export default function CreatePage() {
                                 className="hidden"
                             />
                         </div>
-
-                        <button
-                            type="submit"
-                            disabled={!content.trim() || isSubmitting}
-                            className="w-full h-12 px-6 py-3 bg-gradient-to-r from-[#D08945] via-[#DCA067] to-[#F4CFAB] text-white font-medium rounded-lg hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
-                        >
-                            {isSubmitting ? "Wird gepostet..." : "Posten"}
-                        </button>
                     </form>
                 </div>
             )}
+            </div>
             <BottomNavigation />
         </main>
     );

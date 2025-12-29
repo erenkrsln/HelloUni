@@ -38,7 +38,10 @@ export default function UserProfilePage() {
     const isOwnProfile = profileData?.user?._id === currentUserId;
 
     // Fetch all posts (separate query, also cached by Convex)
-    const allPosts = useQuery(api.queries.getFeed);
+    const allPosts = useQuery(
+      api.queries.getFeed,
+      currentUserId ? { userId: currentUserId } : {}
+    );
 
     // Filter posts by this user
     const userPosts = profileData?.user
@@ -114,3 +117,6 @@ export default function UserProfilePage() {
         </main>
     );
 }
+
+
+

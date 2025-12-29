@@ -121,6 +121,251 @@ export const likePost = mutation({
   },
 });
 
+export const createComment = mutation({
+  args: {
+    userId: v.id("users"),
+    postId: v.id("posts"),
+    parentCommentId: v.optional(v.id("comments")),
+    content: v.string(),
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Validate post exists
+    const post = await ctx.db.get(args.postId);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    // If parentCommentId is provided, validate it exists
+    if (args.parentCommentId) {
+      const parentComment = await ctx.db.get(args.parentCommentId);
+      if (!parentComment) {
+        throw new Error("Parent comment not found");
+      }
+    }
+
+    // Create comment
+    const commentId = await ctx.db.insert("comments", {
+      userId: args.userId,
+      postId: args.postId,
+      parentCommentId: args.parentCommentId,
+      content: args.content.trim(),
+      imageUrl: args.imageUrl,
+      likesCount: 0,
+      repliesCount: 0,
+      createdAt: Date.now(),
+    });
+
+    // If this is a reply, update parent comment's repliesCount
+    if (args.parentCommentId) {
+      const parentReplies = await ctx.db
+        .query("comments")
+        .withIndex("by_parent", (q) => q.eq("parentCommentId", args.parentCommentId))
+        .collect();
+      
+      await ctx.db.patch(args.parentCommentId, {
+        repliesCount: parentReplies.length,
+      });
+    }
+
+    // Update post's commentsCount (only top-level comments count)
+    const topLevelComments = await ctx.db
+      .query("comments")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+    
+    const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
+
+    await ctx.db.patch(args.postId, {
+      commentsCount: topLevelCount,
+    });
+
+    return { success: true, commentId };
+  },
+});
+
+export const deleteComment = mutation({
+  args: {
+    commentId: v.id("comments"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Validate comment exists and user owns it
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+
+    if (comment.userId !== args.userId) {
+      throw new Error("Not authorized to delete this comment");
+    }
+
+    // Get postId before deleting
+    const postId = comment.postId;
+    const parentCommentId = comment.parentCommentId;
+
+    // Delete all replies to this comment first
+    const replies = await ctx.db
+      .query("comments")
+      .withIndex("by_parent", (q) => q.eq("parentCommentId", args.commentId))
+      .collect();
+
+    for (const reply of replies) {
+      // Delete all comment likes for this reply
+      const replyLikes = await ctx.db
+        .query("commentLikes")
+        .withIndex("by_comment", (q) => q.eq("commentId", reply._id))
+        .collect();
+      
+      for (const like of replyLikes) {
+        await ctx.db.delete(like._id);
+      }
+
+      await ctx.db.delete(reply._id);
+    }
+
+    // Delete all comment likes for this comment
+    const commentLikes = await ctx.db
+      .query("commentLikes")
+      .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
+      .collect();
+
+    for (const like of commentLikes) {
+      await ctx.db.delete(like._id);
+    }
+
+    // Delete the comment itself
+    await ctx.db.delete(args.commentId);
+
+    // If this was a reply, update parent comment's repliesCount
+    if (parentCommentId) {
+      const parentReplies = await ctx.db
+        .query("comments")
+        .withIndex("by_parent", (q) => q.eq("parentCommentId", parentCommentId))
+        .collect();
+      
+      await ctx.db.patch(parentCommentId, {
+        repliesCount: parentReplies.length,
+      });
+    }
+
+    // Update post's commentsCount (only top-level comments count)
+    const topLevelComments = await ctx.db
+      .query("comments")
+      .withIndex("by_post", (q) => q.eq("postId", postId))
+      .collect();
+    
+    const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
+
+    await ctx.db.patch(postId, {
+      commentsCount: topLevelCount,
+    });
+
+    return { success: true };
+  },
+});
+
+export const likeComment = mutation({
+  args: {
+    userId: v.id("users"),
+    commentId: v.id("comments"),
+  },
+  handler: async (ctx, args) => {
+    const existingLike = await ctx.db
+      .query("commentLikes")
+      .withIndex("by_user_comment", (q) =>
+        q.eq("userId", args.userId).eq("commentId", args.commentId)
+      )
+      .first();
+
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    if (existingLike) {
+      // Unlike: delete the like and recalculate count
+      await ctx.db.delete(existingLike._id);
+      
+      const allLikes = await ctx.db
+        .query("commentLikes")
+        .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
+        .collect();
+      
+      await ctx.db.patch(args.commentId, {
+        likesCount: allLikes.length,
+      });
+      return { liked: false };
+    } else {
+      // Like: insert the like and recalculate count
+      await ctx.db.insert("commentLikes", {
+        userId: args.userId,
+        commentId: args.commentId,
+      });
+      
+      const allLikes = await ctx.db
+        .query("commentLikes")
+        .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
+        .collect();
+      
+      await ctx.db.patch(args.commentId, {
+        likesCount: allLikes.length,
+      });
+      return { liked: true };
+    }
+  },
+});
+
+export const dislikeComment = mutation({
+  args: {
+    userId: v.id("users"),
+    commentId: v.id("comments"),
+  },
+  handler: async (ctx, args) => {
+    const existingDislike = await ctx.db
+      .query("commentDislikes")
+      .withIndex("by_user_comment", (q) =>
+        q.eq("userId", args.userId).eq("commentId", args.commentId)
+      )
+      .first();
+
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    if (existingDislike) {
+      // Undislike: delete the dislike
+      await ctx.db.delete(existingDislike._id);
+      return { disliked: false };
+    } else {
+      // Dislike: insert the dislike
+      // Also remove like if it exists
+      const existingLike = await ctx.db
+        .query("commentLikes")
+        .withIndex("by_user_comment", (q) =>
+          q.eq("userId", args.userId).eq("commentId", args.commentId)
+        )
+        .first();
+      
+      if (existingLike) {
+        await ctx.db.delete(existingLike._id);
+        
+        const allLikes = await ctx.db
+          .query("commentLikes")
+          .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
+          .collect();
+        
+        await ctx.db.patch(args.commentId, {
+          likesCount: allLikes.length,
+        });
+      }
+      
+      await ctx.db.insert("commentDislikes", {
+        userId: args.userId,
+        commentId: args.commentId,
+      });
+      return { disliked: true };
+    }
+  },
+});
+
 export const followUser = mutation({
   args: {
     followerId: v.id("users"),
@@ -192,6 +437,7 @@ export const updateUser = mutation({
     bio: v.optional(v.string()),
     major: v.optional(v.string()),
     semester: v.optional(v.number()),
+    interests: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
@@ -199,7 +445,7 @@ export const updateUser = mutation({
       throw new Error("User not found");
     }
 
-    const updates: { name?: string; image?: string; headerImage?: string; bio?: string; major?: string; semester?: number } = {};
+    const updates: { name?: string; image?: string; headerImage?: string; bio?: string; major?: string; semester?: number; interests?: string[] } = {};
     if (args.name !== undefined) {
       updates.name = args.name;
     }
@@ -222,6 +468,10 @@ export const updateUser = mutation({
     }
     if (args.semester !== undefined) {
       updates.semester = args.semester;
+    }
+    if (args.interests !== undefined) {
+      // If empty array, set to undefined to clear interests
+      updates.interests = args.interests.length > 0 ? args.interests : undefined;
     }
 
     await ctx.db.patch(args.userId, updates);

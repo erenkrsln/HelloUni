@@ -53,6 +53,7 @@ export function useFullUserProfile({ username, currentUserId }: useFullUserProfi
                 major: user.major,
                 semester: (user as any).semester,
                 bio: (user as any).bio,
+                interests: (user as any).interests,
                 createdAt: (user as any).createdAt,
             },
             followerCount,

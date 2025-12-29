@@ -11,6 +11,7 @@ export interface ProfileData {
         major?: string;
         semester?: number;
         bio?: string;
+        interests?: string[];
         createdAt?: number;
     };
     followerCount: number;

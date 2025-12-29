@@ -25,8 +25,43 @@ interface EditProfileModalProps {
   currentBio?: string;
   currentMajor?: string;
   currentSemester?: number;
+  currentInterests?: string[];
   onUpdate: () => void;
 }
+
+// Liste der verfügbaren Interessen
+const AVAILABLE_INTERESTS = [
+  "Sport",
+  "Musik",
+  "Gaming",
+  "Kunst",
+  "Fotografie",
+  "Reisen",
+  "Kochen",
+  "Lesen",
+  "Filme",
+  "Technologie",
+  "Programmierung",
+  "Design",
+  "Nachhaltigkeit",
+  "Politik",
+  "Wissenschaft",
+  "Medizin",
+  "Wirtschaft",
+  "Sprachen",
+  "Tanz",
+  "Theater",
+  "Natur",
+  "Tiere",
+  "Fitness",
+  "Yoga",
+  "Essen",
+  "Kaffee",
+  "Bier",
+  "Wein",
+  "Kunsthandwerk",
+  "DIY",
+];
 
 // Liste der Studiengänge (alphabetisch sortiert)
 const STUDY_PROGRAMS = [
@@ -76,6 +111,7 @@ export function EditProfileModal({
   currentBio,
   currentMajor,
   currentSemester,
+  currentInterests,
   onUpdate,
 }: EditProfileModalProps) {
   const [name, setName] = useState(currentName);
@@ -86,12 +122,14 @@ export function EditProfileModal({
   // Prüfe ob currentSemester gültig ist (zwischen 1 und 10)
   const isValidSemester = currentSemester && currentSemester >= 1 && currentSemester <= 10;
   const [semester, setSemester] = useState<number | undefined>(isValidSemester ? currentSemester : undefined);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(currentInterests || []);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(currentImage || null);
   const [isImageRemoved, setIsImageRemoved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMajorOpen, setIsMajorOpen] = useState(false);
   const [isSemesterOpen, setIsSemesterOpen] = useState(false);
+  const [isInterestsOpen, setIsInterestsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateUser = useMutation(api.mutations.updateUser);
@@ -112,16 +150,30 @@ export function EditProfileModal({
           setIsSemesterOpen(false);
         }
       }
+      if (isInterestsOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.interests-dropdown')) {
+          setIsInterestsOpen(false);
+        }
+      }
     };
 
-    if (isMajorOpen || isSemesterOpen) {
+    if (isMajorOpen || isSemesterOpen || isInterestsOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMajorOpen, isSemesterOpen]);
+  }, [isMajorOpen, isSemesterOpen, isInterestsOpen]);
+
+  const toggleInterest = (interest: string) => {
+    setSelectedInterests(prev => 
+      prev.includes(interest)
+        ? prev.filter(i => i !== interest)
+        : [...prev, interest]
+    );
+  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,6 +228,7 @@ export function EditProfileModal({
         bio: bio.trim() || "", // Send empty string to delete bio
         major: major || undefined, // Send undefined if empty
         semester: semester || undefined, // Send undefined if not set
+        interests: selectedInterests, // Send array (empty array to clear all interests)
       });
 
       onUpdate();
@@ -198,11 +251,13 @@ export function EditProfileModal({
     // Prüfe ob currentSemester gültig ist (zwischen 1 und 10)
     const isValidSemester = currentSemester && currentSemester >= 1 && currentSemester <= 10;
     setSemester(isValidSemester ? currentSemester : undefined);
+    setSelectedInterests(currentInterests || []);
     setSelectedImage(null);
     setImagePreview(currentImage || null);
     setIsImageRemoved(false);
     setIsMajorOpen(false);
     setIsSemesterOpen(false);
+    setIsInterestsOpen(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -376,6 +431,87 @@ export function EditProfileModal({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Interessen Multi-Select */}
+          <div className="relative interests-dropdown">
+            <label htmlFor="interests" className="block text-sm font-medium mb-2">
+              Interessen
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsInterestsOpen(!isInterestsOpen);
+                }}
+                disabled={isSubmitting}
+                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span className={selectedInterests.length > 0 ? "text-gray-900" : "text-gray-500"}>
+                  {selectedInterests.length > 0 
+                    ? `${selectedInterests.length} ${selectedInterests.length === 1 ? 'Interesse' : 'Interessen'} ausgewählt`
+                    : "Interessen auswählen"}
+                </span>
+                <ChevronDown 
+                  className={`h-4 w-4 text-gray-500 transition-transform ${isInterestsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isInterestsOpen && (
+                <div 
+                  className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                >
+                  <div className="p-2">
+                    <div className="flex flex-wrap gap-2">
+                      {AVAILABLE_INTERESTS.map((interest) => {
+                        const isSelected = selectedInterests.includes(interest);
+                        return (
+                          <button
+                            key={interest}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleInterest(interest);
+                            }}
+                            className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                              isSelected
+                                ? "bg-[#D08945] text-white border-[#D08945]"
+                                : "bg-white text-gray-700 border-gray-300 hover:border-[#D08945] hover:text-[#D08945]"
+                            }`}
+                          >
+                            {interest}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            {selectedInterests.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedInterests.map((interest) => (
+                  <span
+                    key={interest}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#D08945]/10 text-[#D08945] border border-[#D08945]/20"
+                  >
+                    {interest}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleInterest(interest);
+                      }}
+                      className="hover:text-[#C07835]"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Bio Input */}

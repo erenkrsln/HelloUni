@@ -76,7 +76,9 @@ export function useProfileData(options: UseProfileDataOptions): UseProfileDataRe
   );
 
   // Get all posts (cached by Convex)
-  const allPosts = useQuery(api.queries.getFeed);
+  // Note: userId is not available in this hook, so we pass empty object
+  // This will return posts without isLiked status, which is fine for this use case
+  const allPosts = useQuery(api.queries.getFeed, {});
 
   // Determine which user data to use
   // If username query is used, prefer that; otherwise use userId query

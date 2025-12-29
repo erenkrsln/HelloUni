@@ -34,6 +34,15 @@ export function BottomNavigation() {
     // Ansonsten lässt der Link die Navigation automatisch zu /create
   };
 
+  const handleHomeClick = (e: React.MouseEvent) => {
+    // Wenn bereits auf /home, scroll nach oben statt zu navigieren
+    if (pathname === "/home" || pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    // Ansonsten lässt der Link die Navigation automatisch zu /home
+  };
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4"
@@ -57,6 +66,7 @@ export function BottomNavigation() {
         <Link
           href="/home"
           prefetch={true}
+          onClick={handleHomeClick}
           className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
           style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
         >
