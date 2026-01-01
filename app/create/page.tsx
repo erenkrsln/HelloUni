@@ -376,9 +376,11 @@ export default function CreatePage() {
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             
             {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
+            {/* Äußerer Container für Hintergrund inkl. Safe Area */}
             <div 
-                className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200" 
+                className="fixed left-0 right-0 z-40 bg-white border-b border-gray-200" 
                 style={{ 
+                    top: 0,
                     maxWidth: "428px", 
                     margin: "0 auto",
                     paddingTop: "env(safe-area-inset-top)",
