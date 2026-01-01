@@ -371,16 +371,14 @@ export default function CreatePage() {
     }, [showMentionDropdown]);
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
+        <div className="fixed inset-0 w-full max-w-[428px] mx-auto flex flex-col bg-gray-50">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             
-            {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
-            {/* Äußerer Container für Hintergrund inkl. Safe Area */}
-            <div 
-                className="fixed left-0 right-0 z-40 bg-white border-b border-gray-200" 
+            {/* Custom Header - Fixed am oberen Rand */}
+            <header 
+                className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200" 
                 style={{ 
-                    top: 0,
                     maxWidth: "428px", 
                     margin: "0 auto",
                     paddingTop: "env(safe-area-inset-top)",
@@ -403,13 +401,21 @@ export default function CreatePage() {
                         Posten
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <div className="pt-16" style={{ paddingTop: `calc(4rem + env(safe-area-inset-top))` }}>
-            {isLoading ? (
-                <LoadingScreen text="Seite wird geladen..." />
-            ) : (
-                <div className="px-4 py-6">
+            {/* Scrollbarer Content-Bereich */}
+            <main 
+                className="flex-1 overflow-y-auto"
+                style={{ 
+                    marginTop: `calc(4rem + env(safe-area-inset-top))`,
+                    paddingBottom: `calc(6rem + env(safe-area-inset-bottom))`,
+                    WebkitOverflowScrolling: "touch",
+                }}
+            >
+                {isLoading ? (
+                    <LoadingScreen text="Seite wird geladen..." />
+                ) : (
+                    <div className="px-4 py-6">
                         <form id="create-post-form" onSubmit={handleSubmit}>
                         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4 overflow-hidden">
                             {/* Post Type Selection */}
@@ -880,11 +886,13 @@ export default function CreatePage() {
                                 className="hidden"
                             />
                         </div>
-                    </form>
-                </div>
-            )}
-            </div>
+                        </form>
+                    </div>
+                )}
+            </main>
+            
+            {/* Bottom Navigation - Fixed am unteren Rand */}
             <BottomNavigation />
-        </main>
+        </div>
     );
 }
