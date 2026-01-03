@@ -22,6 +22,32 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["convex", "framer-motion", "lucide-react"],
   },
+  // PWA Optimierungen
+  compress: true,
+  poweredByHeader: false,
+  // Caching Headers für statische Assets
+  async headers() {
+    return [
+      {
+        source: "/:all*(svg|jpg|jpeg|png|gif|ico|webp)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

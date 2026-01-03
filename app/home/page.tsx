@@ -5,8 +5,8 @@ import { api } from "@/convex/_generated/api";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
-import { LoadingScreen, Spinner } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
+import { FeedSkeleton } from "@/components/feed-skeleton";
 import { useEffect, useRef, useState, useMemo } from "react";
 
 // Funktion zur Erkennung mobiler Geräte
@@ -63,28 +63,28 @@ export default function Home() {
   const isMajorDisabled = currentUser !== undefined && !currentUserMajor;
   const isInterestsDisabled = currentUser !== undefined && (!currentUserInterests || currentUserInterests.length === 0);
 
-  // Cache für alle Feeds - lade alle parallel, damit sie gecached sind
+  // Lade nur den aktuell ausgewählten Feed für bessere Performance
   const allPosts = useQuery(
     api.queries.getFeed,
-    currentUserId ? { userId: currentUserId } : {}
+    feedType === "all" && currentUserId ? { userId: currentUserId } : "skip"
   );
   const filteredPostsByMajor = useQuery(
     api.queries.getFilteredFeed,
-    currentUser && currentUserMajor ? {
+    feedType === "major" && currentUser && currentUserMajor ? {
       major: currentUserMajor,
       userId: currentUserId,
     } : "skip"
   );
   const filteredPostsByInterests = useQuery(
     api.queries.getFilteredFeed,
-    currentUser && currentUserInterests && currentUserInterests.length > 0 ? {
+    feedType === "interests" && currentUser && currentUserInterests && currentUserInterests.length > 0 ? {
       interests: currentUserInterests,
       userId: currentUserId,
     } : "skip"
   );
   const followingPosts = useQuery(
     api.queries.getFollowingFeed,
-    currentUserId ? { userId: currentUserId } : "skip"
+    feedType === "following" && currentUserId ? { userId: currentUserId } : "skip"
   );
 
   // Verwende den entsprechenden Feed basierend auf feedType
@@ -105,7 +105,6 @@ export default function Home() {
   
   // Verwende gecachte Posts sofort, aktualisiere mit neuen Daten wenn verfügbar
   // Twitter-ähnliches Verhalten: Zeige alte Daten sofort, lade neue im Hintergrund
-  // NUR AUF MOBILE - auf Desktop normales Verhalten
   const cachedPostsForCurrentKey = getCachedPosts(cacheKey);
   
   const posts = useMemo(() => {
@@ -113,28 +112,17 @@ export default function Home() {
     if (postsFromQuery !== undefined) {
       return postsFromQuery;
     }
-    // Auf Mobile: Verwende gecachte Posts sofort (falls vorhanden)
-    // Auf Desktop: Verwende gecachte Posts nur wenn verfügbar, sonst leeres Array
-    if (isMobile && cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0) {
+    // Verwende gecachte Posts sofort (falls vorhanden) - sowohl auf Mobile als auch Desktop
+    if (cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0) {
       return cachedPostsForCurrentKey;
     }
-    // Auf Desktop: Keine gecachten Posts verwenden, warte auf neue Daten
-    if (!isMobile) {
-      return [];
-    }
+    // Keine Daten verfügbar
     return [];
-  }, [postsFromQuery, cachedPostsForCurrentKey, isMobile]);
+  }, [postsFromQuery, cachedPostsForCurrentKey]);
   
-  // Zeige Loading-Indikator nur auf Mobile:
-  // 1. Neue Daten werden geladen (postsFromQuery ist undefined)
-  // 2. UND wir haben bereits gecachte Posts (damit wir etwas anzeigen können)
+  // Skeleton nur anzeigen wenn KEINE gecachten Posts vorhanden sind
   const hasCachedPosts = cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0;
-  const isLoadingNewData = isMobile && postsFromQuery === undefined && hasCachedPosts;
-  
-  // Initial Load: 
-  // - Auf Mobile: Nur wenn keine gecachten Posts vorhanden sind
-  // - Auf Desktop: Immer wenn keine neuen Daten verfügbar sind
-  const isInitialLoad = postsFromQuery === undefined && (!isMobile || !hasCachedPosts);
+  const isInitialLoad = postsFromQuery === undefined && !hasCachedPosts;
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -266,18 +254,9 @@ export default function Home() {
           </div>
         )}
 
-        {/* Loading-Indikator oben im Feed (Twitter-ähnlich) - nur wenn neue Daten geladen werden */}
-        {isLoadingNewData && (
-          <div className="px-4 py-2 bg-white border-b border-gray-100">
-            <div className="flex items-center justify-center">
-              <Spinner size="sm" />
-            </div>
-          </div>
-        )}
-
         {isInitialLoad ? (
           <div className="px-4">
-            <LoadingScreen text="Feed wird geladen..." />
+            <FeedSkeleton />
           </div>
         ) : posts.length > 0 ? (
           <div style={{ gap: "0", margin: "0", padding: "0" }}>
@@ -296,7 +275,3 @@ export default function Home() {
     </main>
   );
 }
-
-
-
-

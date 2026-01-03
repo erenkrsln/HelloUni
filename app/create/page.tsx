@@ -371,7 +371,7 @@ export default function CreatePage() {
     }, [showMentionDropdown]);
 
     return (
-        <div className="fixed inset-0 w-full max-w-[428px] mx-auto flex flex-col bg-gray-50">
+        <div className="fixed inset-0 w-full max-w-[428px] mx-auto flex flex-col bg-white">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             

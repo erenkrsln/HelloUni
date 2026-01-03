@@ -2,24 +2,24 @@
   "name": "HelloUni",
   "short_name": "HelloUni",
   "description": "Social Media App für Studierende",
-  "start_url": "/",
+  "start_url": "/home",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
-  "icons": [
+  "categories": ["social", "education"],
+  "lang": "de",
+  "dir": "ltr",
+  "icons": [],
+  "screenshots": [],
+  "shortcuts": [
     {
-      "src": "/logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/hellouni.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "name": "Home",
+      "short_name": "Home",
+      "description": "Zur Startseite",
+      "url": "/home"
     }
-  ]
+  ],
+  "prefer_related_applications": false
 }

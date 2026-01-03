@@ -59,6 +59,8 @@
     /* Overscroll-Prävention für Twitter/X-ähnliches Verhalten */
     overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
+    /* Erzwinge Light Mode - ignoriere System Dark Mode */
+    color-scheme: light;
   }
 
   /* iOS Safari: Hintergrund auf html setzen, da background-attachment: fixed nicht funktioniert */
@@ -74,6 +76,8 @@
     /* Overscroll-Prävention - verhindert Rubber-Banding auf iOS/Android */
     overscroll-behavior-y: none;
     overflow-x: hidden;
+    /* Erzwinge Light Mode - ignoriere System Dark Mode */
+    color-scheme: light;
   }
 
   button,
@@ -126,6 +130,15 @@ select option {
 
 select option:disabled {
   color: #9ca3af;
+}
+
+/* Erzwinge Light Mode - ignoriere System Dark Mode Preferences */
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    color-scheme: light !important;
+    background-color: #FFFFFF !important;
+  }
 }
 
 /* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
