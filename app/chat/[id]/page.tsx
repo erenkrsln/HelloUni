@@ -128,7 +128,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         href={part}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#261708] underline break-all"
+                        className="text-[#8C531E] underline break-all"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {part}
@@ -248,7 +248,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         if (msg.type === "system") {
                             return (
                                 <div key={msg._id} className="flex justify-center my-4">
-                                    <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                                    <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full shadow-sm">
                                         {(() => {
                                             let content = msg.content;
                                             if (currentUser) {
@@ -369,8 +369,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         className={`
                                             ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
                                             ${isMe
-                                                ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl'
-                                                : 'text-black rounded-2xl bg-white'
+                                                ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
+                                                : 'text-black rounded-2xl bg-white shadow-sm'
                                             }
                                             ${!isNextSameSender
                                                 ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
@@ -452,14 +452,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Input */}
             {!isLeft ? (
                 <div
-                    className="p-3 bg-white"
+                    className="p-3 bg-[#FDFBF7]"
                     style={{
                         paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
                     }}
                 >
                     <form
                         onSubmit={handleSend}
-                        className="flex items-end border border-gray-300 rounded-full px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
+                        className="flex items-end bg-white border border-gray-300 rounded-full px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                     >
                         <input
                             type="file"
@@ -475,8 +475,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             onChange={(e) => setNewMessage(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSend();
+                                    const isMobile = window.matchMedia("(pointer: coarse)").matches;
+                                    if (!isMobile) {
+                                        e.preventDefault();
+                                        handleSend();
+                                    }
                                 }
                             }}
                             placeholder="Schreibe eine Nachricht..."
@@ -507,7 +510,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
             ) : (
                 <div
-                    className="p-4 bg-gray-100 text-center text-gray-700 text-sm border-t border-[#EFEADD]"
+                    className="p-4 bg-gray-100 text-center text-gray-700 text-sm"
                     style={{
                         paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
                     }}

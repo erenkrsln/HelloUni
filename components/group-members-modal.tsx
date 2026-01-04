@@ -391,7 +391,7 @@ export function GroupMembersModal({
                     )}
                 </div>
 
-                {view === "list" && !iAmAdmin && members.some(m => m._id === currentUserId && m.role !== "creator") && (
+                {view === "list" && members.some(m => m._id === currentUserId && m.role !== "creator") && (
                     <div className="p-4 border-t bg-gray-50">
                         <Button onClick={handleLeave} variant="destructive" className="w-full bg-red-100 text-red-600 hover:bg-red-200 border-0">
                             Gruppe verlassen
