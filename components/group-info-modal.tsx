@@ -393,16 +393,18 @@ export function GroupInfoModal({
                                             {/* Inhaber Badge */}
                                             {member.role === "creator" && (
                                                 <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
-                                                    <Sparkles size={13} />
+
                                                     <span className="text-xs font-medium">Inhaber</span>
+                                                    <Sparkles size={13} />
                                                 </div>
                                             )}
 
                                             {/* Admin Badge */}
                                             {member.role === "admin" && (
                                                 <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
-                                                    <Star size={13} />
+
                                                     <span className="text-xs font-medium">Admin</span>
+                                                    <Star size={13} />
                                                 </div>
                                             )}
                                         </div>
