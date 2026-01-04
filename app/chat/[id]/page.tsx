@@ -128,7 +128,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         href={part}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#764a41] underline break-all"
+                        className="text-[#261708] underline break-all"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {part}
