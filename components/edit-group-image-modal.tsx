@@ -180,6 +180,7 @@ export function EditGroupImageModal({
                     </Button>
                     <Button
                         type="submit"
+                        onClick={handleSubmit}
                         disabled={isSubmitting}
                         className="min-w-[100px]"
                         style={{
