@@ -128,7 +128,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         href={part}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#8C531E] underline break-all"
+                        className="text-[#261708] underline break-all"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {part}
@@ -168,7 +168,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
             {/* Header */}
             <div
-                className="flex items-center justify-between px-4 py-3 border-b border-[#efeadd] bg-white z-10 sticky top-0"
+                className="flex items-center justify-between px-4 py-3 bg-white z-10 sticky top-0"
                 style={{
                     paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
                     top: 0
@@ -226,7 +226,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 bg-[#FDFBF7]">
+            <div className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]">
                 {!messages ? (
                     <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
                 ) : messages.length === 0 ? (
@@ -339,7 +339,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         return (
                             <div
                                 key={msg._id}
-                                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-0.5' : 'mb-4'}`}
+                                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-0.5' : 'mb-1.5'}`}
                             >
 
                                 {conversation?.isGroup && !isMe && sender && !isPrevSameSender && (
@@ -369,8 +369,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         className={`
                                             ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
                                             ${isMe
-                                                ? 'bg-[#dcc6a1] text-black rounded-2xl border border-[#efeadd]'
-                                                : 'text-black rounded-2xl bg-white border border-[#efeadd]'
+                                                ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl'
+                                                : 'text-black rounded-2xl bg-white'
                                             }
                                             ${!isNextSameSender
                                                 ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
@@ -452,7 +452,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Input */}
             {!isLeft ? (
                 <div
-                    className="p-3 bg-white border-t border-[#efeadd]"
+                    className="p-3 bg-white"
                     style={{
                         paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
                     }}

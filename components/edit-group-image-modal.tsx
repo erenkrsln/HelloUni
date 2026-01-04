@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Camera } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 
 interface EditGroupImageModalProps {
@@ -115,12 +115,18 @@ export function EditGroupImageModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent aria-describedby={undefined} className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-6 rounded-2xl">
-                <DialogHeader className="mb-6">
-                    <DialogTitle className="text-xl font-semibold text-center">Gruppenbild bearbeiten</DialogTitle>
-                </DialogHeader>
+            <DialogContent aria-describedby={undefined} hideCloseButton withoutExitAnimation className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-0 rounded-2xl gap-0 bg-white">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <DialogTitle className="text-lg font-semibold">Gruppenbild bearbeiten</DialogTitle>
+                    <button
+                        onClick={handleClose}
+                        className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
 
-                <div className="flex flex-col items-center gap-6">
+                <div className="flex flex-col items-center gap-6 p-6">
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -162,7 +168,7 @@ export function EditGroupImageModal({
                     </div>
                 </div>
 
-                <div className="flex gap-3 justify-center mt-8">
+                <div className="flex gap-3 justify-center px-6 pb-6 pt-2">
                     <Button
                         type="button"
                         variant="outline"
@@ -180,6 +186,7 @@ export function EditGroupImageModal({
                     </Button>
                     <Button
                         type="submit"
+                        onClick={handleSubmit}
                         disabled={isSubmitting}
                         className="min-w-[100px]"
                         style={{

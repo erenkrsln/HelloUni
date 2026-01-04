@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -166,7 +166,7 @@ export default function ChatPage() {
                   <div key={conv._id} className="relative group">
                     <Link
                       href={`/chat/${conv._id}`}
-                      className={`flex items-center p-3 hover:bg-[#FDFBF7] transition-colors active:bg-[#FDFBF7] border-b border-[#EFEADD] last:border-0 ${isLeft ? "opacity-75" : ""}`}
+                      className={`flex items-center pb-6 ${isLeft ? "opacity-50" : ""}`}
                     >
 
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
@@ -192,10 +192,7 @@ export default function ChatPage() {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-500 truncate flex items-center gap-1">
-                          {conv.isGroup ? (
-                            <span className="font-semibold mr-1">{/* Optional sender name if available */}</span>
-                          ) : null}
+                        <p className="text-sm text-gray-500 truncate flex items-center pl-0.5">
                           {conv.lastMessage ? (
                             (conv.lastMessage as any).type === "image" ? (
                               <>
@@ -247,22 +244,22 @@ export default function ChatPage() {
         isNewChatOpen && (
           <div className="fixed inset-0 z-[60] flex flex-col bg-white">
             <div
-              className="flex items-center px-4 py-4 border-b gap-3"
+              className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white"
               style={{
-                paddingTop: `calc(1rem + env(safe-area-inset-top, 0px))`
+                paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`
               }}
             >
+              <h2 className="text-lg font-semibold">Neuer Chat</h2>
               <button
                 onClick={() => {
                   setIsNewChatOpen(false);
                   setSelectedUsers([]);
                   setGroupName("");
                 }}
-                className="mr-3 p-2 -ml-2 rounded-full"
+                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <ArrowLeft size={24} />
+                <X size={20} />
               </button>
-              <h2 className="text-lg font-medium flex-1 text-center">Neuer Chat</h2>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">

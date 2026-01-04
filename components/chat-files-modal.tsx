@@ -52,17 +52,17 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className={selectedImage
-                ? "p-0 border-0 rounded-none max-w-none w-screen h-screen bg-transparent"
-                : "w-[90vw] sm:w-[80vw] max-w-[600px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white"
+            <DialogContent hideCloseButton withoutExitAnimation className={selectedImage
+                ? "duration-0 p-0 border-0 rounded-none max-w-none w-screen h-screen bg-transparent"
+                : "duration-0 w-[90vw] sm:w-[80vw] max-w-[600px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white"
             }>
                 {selectedImage ? (
                     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2">
                         <button
-                            className="absolute top-8 right-8 text-white hover:text-gray-200 z-50"
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
                             onClick={() => setSelectedImage(null)}
                         >
-                            <X size={40} />
+                            <X size={32} />
                         </button>
                         <img
                             src={selectedImage}
@@ -73,9 +73,12 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                     </div>
                 ) : (
                     <>
-                        <div className="p-4 border-b flex items-center justify-between bg-white z-10">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
                             <DialogTitle className="text-lg font-semibold">Geteilte Medien</DialogTitle>
-                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                            <button
+                                onClick={onClose}
+                                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                            >
                                 <X size={20} />
                             </button>
                         </div>
@@ -84,27 +87,27 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                         <div className="flex border-b bg-white">
                             <button
                                 onClick={() => setActiveTab("images")}
-                                className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === "images"
-                                    ? "text-[#D08945] border-b-2 border-[#D08945]"
-                                    : "text-gray-500 hover:text-gray-700"
+                                className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "images"
+                                    ? "text-[#D08945] border-[#D08945]"
+                                    : "text-gray-500 hover:text-gray-700 border-transparent"
                                     }`}
                             >
                                 Bilder
                             </button>
                             <button
                                 onClick={() => setActiveTab("pdfs")}
-                                className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === "pdfs"
-                                    ? "text-[#D08945] border-b-2 border-[#D08945]"
-                                    : "text-gray-500 hover:text-gray-700"
+                                className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "pdfs"
+                                    ? "text-[#D08945] border-[#D08945]"
+                                    : "text-gray-500 hover:text-gray-700 border-transparent"
                                     }`}
                             >
                                 PDFs
                             </button>
                             <button
                                 onClick={() => setActiveTab("links")}
-                                className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === "links"
-                                    ? "text-[#D08945] border-b-2 border-[#D08945]"
-                                    : "text-gray-500 hover:text-gray-700"
+                                className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "links"
+                                    ? "text-[#D08945] border-[#D08945]"
+                                    : "text-gray-500 hover:text-gray-700 border-transparent"
                                     }`}
                             >
                                 Links
