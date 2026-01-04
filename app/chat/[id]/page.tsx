@@ -7,8 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, Paperclip, Search, X, Folder, FileText } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { EditGroupImageModal } from "@/components/edit-group-image-modal";
-import { GroupMembersModal } from "@/components/group-members-modal";
+import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -139,8 +138,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         });
     };
 
-    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
 
@@ -152,7 +150,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         if (isLeft) return;
 
         if (conversation?.isGroup) {
-            setIsMembersModalOpen(true);
+            setIsGroupInfoModalOpen(true);
         } else if (conversation && members) {
             const partner = members.find(m => m._id !== currentUser._id);
             if (partner?.username) {
@@ -188,7 +186,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             <div
                                 className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
                                 style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                                onClick={() => conversation.isGroup && isGroupAdmin && setIsImageModalOpen(true)}
+                                onClick={() => conversation.isGroup && setIsGroupInfoModalOpen(true)}
                             >
                                 {conversation.displayImage ? (
                                     <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
@@ -417,24 +415,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Members Modal */}
-            {isMembersModalOpen && currentUser && (
-                <GroupMembersModal
-                    isOpen={isMembersModalOpen}
-                    onClose={() => setIsMembersModalOpen(false)}
+            {/* Group Info Modal */}
+            {isGroupInfoModalOpen && currentUser && (
+                <GroupInfoModal
+                    isOpen={isGroupInfoModalOpen}
+                    onClose={() => setIsGroupInfoModalOpen(false)}
                     conversationId={conversationId}
-                    currentUserId={currentUser._id}
-                />
-            )}
-
-            {/* Edit Group Image Modal */}
-            {conversation && (
-                <EditGroupImageModal
-                    isOpen={isImageModalOpen}
-                    onClose={() => setIsImageModalOpen(false)}
-                    conversationId={conversationId}
-                    groupName={conversation.displayName || "Gruppe"}
-                    currentImage={conversation.displayImage || undefined}
                     currentUserId={currentUser._id}
                 />
             )}
