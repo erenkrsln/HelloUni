@@ -272,7 +272,7 @@ export default function ChatPage() {
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
                     placeholder="z.B. Lerngruppe"
-                    className="w-full pl-4 pr-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                    className="w-full pl-4 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
                   />
                 </div>
               )}

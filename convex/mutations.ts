@@ -162,7 +162,7 @@ export const createComment = mutation({
         .query("comments")
         .withIndex("by_parent", (q) => q.eq("parentCommentId", args.parentCommentId))
         .collect();
-      
+
       await ctx.db.patch(args.parentCommentId, {
         repliesCount: parentReplies.length,
       });
@@ -173,7 +173,7 @@ export const createComment = mutation({
       .query("comments")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
-    
+
     const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
 
     await ctx.db.patch(args.postId, {
@@ -216,7 +216,7 @@ export const deleteComment = mutation({
         .query("commentLikes")
         .withIndex("by_comment", (q) => q.eq("commentId", reply._id))
         .collect();
-      
+
       for (const like of replyLikes) {
         await ctx.db.delete(like._id);
       }
@@ -243,7 +243,7 @@ export const deleteComment = mutation({
         .query("comments")
         .withIndex("by_parent", (q) => q.eq("parentCommentId", parentCommentId))
         .collect();
-      
+
       await ctx.db.patch(parentCommentId, {
         repliesCount: parentReplies.length,
       });
@@ -254,7 +254,7 @@ export const deleteComment = mutation({
       .query("comments")
       .withIndex("by_post", (q) => q.eq("postId", postId))
       .collect();
-    
+
     const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
 
     await ctx.db.patch(postId, {
@@ -284,12 +284,12 @@ export const likeComment = mutation({
     if (existingLike) {
       // Unlike: delete the like and recalculate count
       await ctx.db.delete(existingLike._id);
-      
+
       const allLikes = await ctx.db
         .query("commentLikes")
         .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
         .collect();
-      
+
       await ctx.db.patch(args.commentId, {
         likesCount: allLikes.length,
       });
@@ -300,12 +300,12 @@ export const likeComment = mutation({
         userId: args.userId,
         commentId: args.commentId,
       });
-      
+
       const allLikes = await ctx.db
         .query("commentLikes")
         .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
         .collect();
-      
+
       await ctx.db.patch(args.commentId, {
         likesCount: allLikes.length,
       });
@@ -343,20 +343,20 @@ export const dislikeComment = mutation({
           q.eq("userId", args.userId).eq("commentId", args.commentId)
         )
         .first();
-      
+
       if (existingLike) {
         await ctx.db.delete(existingLike._id);
-        
+
         const allLikes = await ctx.db
           .query("commentLikes")
           .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
           .collect();
-        
+
         await ctx.db.patch(args.commentId, {
           likesCount: allLikes.length,
         });
       }
-      
+
       await ctx.db.insert("commentDislikes", {
         userId: args.userId,
         commentId: args.commentId,
@@ -577,6 +577,28 @@ export const updateGroupImage = mutation({
 
     await ctx.db.patch(args.conversationId, {
       image: args.imageId === "" ? undefined : args.imageId
+    });
+  },
+});
+
+export const updateGroupName = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    name: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.isGroup) throw new Error("Can only rename group chats");
+
+    // Check admin permissions
+    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+    if (!isAdmin) throw new Error("Only admins can rename the group");
+
+    await ctx.db.patch(args.conversationId, {
+      name: args.name.trim(),
     });
   },
 });

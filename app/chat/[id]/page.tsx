@@ -7,8 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, Paperclip, Search, X, Folder, FileText } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { EditGroupImageModal } from "@/components/edit-group-image-modal";
-import { GroupMembersModal } from "@/components/group-members-modal";
+import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -128,7 +127,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         href={part}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#261708] underline break-all"
+                        className="text-[#8C531E] underline break-all"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {part}
@@ -139,8 +138,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         });
     };
 
-    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
 
@@ -152,7 +150,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         if (isLeft) return;
 
         if (conversation?.isGroup) {
-            setIsMembersModalOpen(true);
+            setIsGroupInfoModalOpen(true);
         } else if (conversation && members) {
             const partner = members.find(m => m._id !== currentUser._id);
             if (partner?.username) {
@@ -188,7 +186,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             <div
                                 className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
                                 style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                                onClick={() => conversation.isGroup && isGroupAdmin && setIsImageModalOpen(true)}
+                                onClick={() => conversation.isGroup && setIsGroupInfoModalOpen(true)}
                             >
                                 {conversation.displayImage ? (
                                     <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
@@ -248,7 +246,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         if (msg.type === "system") {
                             return (
                                 <div key={msg._id} className="flex justify-center my-4">
-                                    <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                                    <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full shadow-sm">
                                         {(() => {
                                             let content = msg.content;
                                             if (currentUser) {
@@ -369,8 +367,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         className={`
                                             ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
                                             ${isMe
-                                                ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl'
-                                                : 'text-black rounded-2xl bg-white'
+                                                ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
+                                                : 'text-black rounded-2xl bg-white shadow-sm'
                                             }
                                             ${!isNextSameSender
                                                 ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
@@ -417,24 +415,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Members Modal */}
-            {isMembersModalOpen && currentUser && (
-                <GroupMembersModal
-                    isOpen={isMembersModalOpen}
-                    onClose={() => setIsMembersModalOpen(false)}
+            {/* Group Info Modal */}
+            {isGroupInfoModalOpen && currentUser && (
+                <GroupInfoModal
+                    isOpen={isGroupInfoModalOpen}
+                    onClose={() => setIsGroupInfoModalOpen(false)}
                     conversationId={conversationId}
-                    currentUserId={currentUser._id}
-                />
-            )}
-
-            {/* Edit Group Image Modal */}
-            {conversation && (
-                <EditGroupImageModal
-                    isOpen={isImageModalOpen}
-                    onClose={() => setIsImageModalOpen(false)}
-                    conversationId={conversationId}
-                    groupName={conversation.displayName || "Gruppe"}
-                    currentImage={conversation.displayImage || undefined}
                     currentUserId={currentUser._id}
                 />
             )}
@@ -452,14 +438,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Input */}
             {!isLeft ? (
                 <div
-                    className="p-3 bg-white"
+                    className="p-3 bg-[#FDFBF7]"
                     style={{
                         paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
                     }}
                 >
                     <form
                         onSubmit={handleSend}
-                        className="flex items-end border border-gray-300 rounded-full px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
+                        className="flex items-end bg-white border border-gray-300 rounded-full px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                     >
                         <input
                             type="file"
@@ -475,8 +461,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             onChange={(e) => setNewMessage(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSend();
+                                    const isMobile = window.matchMedia("(pointer: coarse)").matches;
+                                    if (!isMobile) {
+                                        e.preventDefault();
+                                        handleSend();
+                                    }
                                 }
                             }}
                             placeholder="Schreibe eine Nachricht..."
@@ -507,7 +496,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
             ) : (
                 <div
-                    className="p-4 bg-gray-100 text-center text-gray-700 text-sm border-t border-[#EFEADD]"
+                    className="p-4 bg-gray-100 text-center text-gray-700 text-sm"
                     style={{
                         paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
                     }}

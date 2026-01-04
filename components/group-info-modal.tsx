@@ -1,33 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Search, UserPlus, Trash2, X, Star, StarOff, Sparkles, ArrowLeft } from "lucide-react";
+import { Search, UserPlus, Trash2, X, Star, StarOff, Sparkles, ArrowLeft, Camera, Pencil, Check } from "lucide-react";
 
-interface GroupMembersModalProps {
+interface GroupInfoModalProps {
     isOpen: boolean;
     onClose: () => void;
     conversationId: Id<"conversations">;
     currentUserId: Id<"users">;
 }
 
-export function GroupMembersModal({
+export function GroupInfoModal({
     isOpen,
     onClose,
     conversationId,
     currentUserId,
-}: GroupMembersModalProps) {
+}: GroupInfoModalProps) {
     const router = useRouter();
     const [view, setView] = useState<"list" | "add">("list");
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Group Editing State
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [newName, setNewName] = useState("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const members = useQuery(api.queries.getConversationMembers, { conversationId });
     const allUsers = useQuery(api.queries.getAllUsers);
+
+    // Get full conversation details for name/image
+    const allConversations = useQuery(api.queries.getConversations, { userId: currentUserId });
+    const conversation = allConversations?.find(c => c._id === conversationId);
 
     const addMember = useMutation(api.mutations.addConversationMember);
     const removeMember = useMutation(api.mutations.removeConversationMember);
@@ -36,6 +45,12 @@ export function GroupMembersModal({
     const claimGroup = useMutation(api.mutations.claimGroupOwnership);
     const transferCreator = useMutation(api.mutations.transferCreator);
     const deleteConversation = useMutation(api.mutations.deleteConversation);
+    const leaveGroup = useMutation(api.mutations.leaveGroup);
+
+    // New mutations
+    const updateGroupName = useMutation(api.mutations.updateGroupName);
+    const updateGroupImage = useMutation(api.mutations.updateGroupImage);
+    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
     const myself = members?.find(m => m._id === currentUserId);
     const iAmCreator = myself?.role === "creator";
@@ -97,8 +112,6 @@ export function GroupMembersModal({
         }
     };
 
-    const leaveGroup = useMutation(api.mutations.leaveGroup);
-
     const handleLeave = async () => {
         if (!confirm("Möchtest du die Gruppe wirklich verlassen? Du kannst danach keine Nachrichten mehr senden.")) return;
         try {
@@ -159,23 +172,69 @@ export function GroupMembersModal({
         }
     };
 
+    // Update Functions
+    const handleUpdateName = async () => {
+        if (!newName.trim()) return;
+        try {
+            await updateGroupName({
+                conversationId,
+                name: newName.trim(),
+                userId: currentUserId,
+            });
+            setIsEditingName(false);
+            setNewName("");
+        } catch (error) {
+            console.error("Failed to update group name:", error);
+            alert("Fehler beim Umbenennen der Gruppe.");
+        }
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const postUrl = await generateUploadUrl();
+            const result = await fetch(postUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            const { storageId } = await result.json();
+
+            await updateGroupImage({
+                conversationId,
+                imageId: storageId,
+                userId: currentUserId,
+            });
+        } catch (error) {
+            console.error("Failed to update group image:", error);
+            alert("Fehler beim Aktualisieren des Gruppenbildes.");
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+
     const hasAdmins = members?.some(m => m.role === "admin" || m.role === "creator");
 
     const handleClose = () => {
         setView("list");
         setSearchQuery("");
+        setIsEditingName(false);
+        setNewName("");
         onClose();
     };
 
-    if (!members) return null;
+    if (!members || !conversation) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent hideCloseButton className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-white gap-0">
+            <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-white gap-0">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
                     {view === "list" ? (
                         <>
-                            <DialogTitle className="text-lg font-semibold">Gruppenmitglieder</DialogTitle>
+                            <DialogTitle className="text-lg font-semibold">Gruppeninfo</DialogTitle>
                             <button
                                 onClick={handleClose}
                                 className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
@@ -186,16 +245,10 @@ export function GroupMembersModal({
                     ) : (
                         <>
                             <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setView("list")}
-                                    className="p-2 -ml-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
-                                >
-                                    <ArrowLeft size={20} />
-                                </button>
                                 <DialogTitle className="text-lg font-semibold">Mitglied hinzufügen</DialogTitle>
                             </div>
                             <button
-                                onClick={handleClose}
+                                onClick={() => setView("list")}
                                 className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
                             >
                                 <X size={20} />
@@ -207,6 +260,96 @@ export function GroupMembersModal({
                 <div className="flex-1 overflow-y-auto p-0 bg-white">
                     {view === "list" ? (
                         <div className="flex flex-col">
+                            {/* Group Info Header */}
+                            <div className="flex flex-col items-center py-6 border-b border-gray-100">
+                                <div className="relative mb-3">
+                                    <div className="w-24 h-24 rounded-full overflow-hidden relative group">
+                                        {conversation.displayImage ? (
+                                            <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-gray-200 text-3xl font-bold text-gray-500">
+                                                {conversation.displayName?.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        {iAmAdmin && (
+                                            <div
+                                                className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <Camera className="text-white" size={24} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {iAmAdmin && (
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="absolute bottom-0 right-0 p-1.5 bg-[#D08945] text-white rounded-full shadow-sm hover:bg-[#b0733a] transition-colors"
+                                        >
+                                            <Camera size={14} />
+                                        </button>
+                                    )}
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleFileSelect}
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2 justify-center w-full px-8">
+                                    {isEditingName ? (
+                                        <div className="flex flex-col items-center gap-3 w-full max-w-[250px]">
+                                            <input
+                                                type="text"
+                                                value={newName}
+                                                onChange={(e) => setNewName(e.target.value)}
+                                                placeholder={conversation.displayName}
+                                                className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                                                autoFocus
+                                                onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()}
+                                            />
+
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={handleUpdateName}
+                                                    className="p-2 bg-[#D08945] text-white rounded-full hover:bg-[#b0733a] transition-colors"
+                                                >
+                                                    <Check size={18} />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => setIsEditingName(false)}
+                                                    className="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
+                                                >
+                                                    <X size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-xl font-semibold text-center break-all">
+                                                {conversation.displayName}
+                                            </h3>
+                                            {iAmAdmin && (
+                                                <button
+                                                    onClick={() => {
+                                                        setNewName(conversation.displayName || "");
+                                                        setIsEditingName(true);
+                                                    }}
+                                                    className="text-[#D08945]"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-500 mt-4">
+                                    {members.filter(m => m.role !== 'left').length} Mitglieder
+                                </p>
+                            </div>
+
                             {!hasAdmins && (
                                 <div className="p-4 bg-yellow-50 border-b border-yellow-100">
                                     <p className="text-sm text-yellow-800 mb-2">Diese Gruppe hat keinen Admin. Du kannst sie übernehmen.</p>
@@ -250,16 +393,18 @@ export function GroupMembersModal({
                                             {/* Inhaber Badge */}
                                             {member.role === "creator" && (
                                                 <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
-                                                    <Sparkles size={13} />
+
                                                     <span className="text-xs font-medium">Inhaber</span>
+                                                    <Sparkles size={13} />
                                                 </div>
                                             )}
 
                                             {/* Admin Badge */}
                                             {member.role === "admin" && (
                                                 <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
-                                                    <Star size={13} />
+
                                                     <span className="text-xs font-medium">Admin</span>
+                                                    <Star size={13} />
                                                 </div>
                                             )}
                                         </div>
@@ -274,7 +419,7 @@ export function GroupMembersModal({
                                             {iAmCreator && member.role !== "creator" && (
                                                 <button
                                                     onClick={() => handleTransferCreator(member._id, member.name)}
-                                                    className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
+                                                    className="p-2 text-gray-400 rounded-full transition-colors"
                                                     title="Gruppenleitung übertragen"
                                                 >
                                                     <Sparkles size={18} />
@@ -283,7 +428,7 @@ export function GroupMembersModal({
                                             {member.role === "member" && (
                                                 <button
                                                     onClick={() => handlePromote(member._id)}
-                                                    className="p-2 text-gray-400 hover:text-[#D08945] "
+                                                    className="p-2 text-gray-400"
                                                     title="Zum Admin machen"
                                                 >
                                                     <Star size={18} />
@@ -301,7 +446,7 @@ export function GroupMembersModal({
                                             {member.role !== "creator" && (
                                                 <button
                                                     onClick={() => handleRemoveMember(member._id)}
-                                                    className="p-2 text-gray-400 hover:text-[#D08945]"
+                                                    className="p-2 text-gray-400"
                                                     title="Entfernen"
                                                 >
                                                     <Trash2 size={18} />
@@ -350,7 +495,7 @@ export function GroupMembersModal({
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Suchen..."
-                                        className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl outline-none focus:ring-1 focus:ring-[#8C531E] text-sm"
+                                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
                                         autoFocus
                                     />
                                 </div>

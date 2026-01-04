@@ -52,7 +52,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent hideCloseButton withoutExitAnimation className={selectedImage
+            <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className={selectedImage
                 ? "duration-0 p-0 border-0 rounded-none max-w-none w-screen h-screen bg-transparent"
                 : "duration-0 w-[90vw] sm:w-[80vw] max-w-[600px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white"
             }>
