@@ -230,7 +230,7 @@ export function GroupInfoModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent hideCloseButton className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-white gap-0">
+            <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-white gap-0">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
                     {view === "list" ? (
                         <>

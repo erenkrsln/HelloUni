@@ -27,16 +27,16 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideCloseButton?: boolean; withoutExitAnimation?: boolean }
->(({ className, children, hideCloseButton, withoutExitAnimation, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideCloseButton?: boolean; withoutExitAnimation?: boolean; withoutEnterAnimation?: boolean }
+>(({ className, children, hideCloseButton, withoutExitAnimation, withoutEnterAnimation, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%] border bg-white shadow-xl",
-        // Base animations (enter)
-        "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+        // Base animations (enter) - only if not disabled
+        !withoutEnterAnimation && "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         // Exit animations (only if not disabled)
         !withoutExitAnimation && "duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
         // If disabled, ensure no duration on exit
