@@ -59,10 +59,10 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                 {selectedImage ? (
                     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2">
                         <button
-                            className="absolute top-8 right-8 text-white hover:text-gray-200 z-50"
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
                             onClick={() => setSelectedImage(null)}
                         >
-                            <X size={40} />
+                            <X size={32} />
                         </button>
                         <img
                             src={selectedImage}
@@ -83,7 +83,6 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                             </button>
                         </div>
 
-                        {/* Tabs */}
                         {/* Tabs */}
                         <div className="flex border-b bg-white">
                             <button
