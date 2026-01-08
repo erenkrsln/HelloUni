@@ -239,3 +239,10 @@ select option:disabled {
   margin-top: 0;
   padding-top: 0;
 }
+
+/* Mobile Drawer Height - mit Fallbacks für alle Browser */
+.drawer-height-mobile {
+  height: 100vh; /* Fallback für ältere Browser */
+  height: 100dvh; /* Dynamic viewport height für moderne Browser */
+  max-height: -webkit-fill-available; /* iOS Safari Fallback */
+}

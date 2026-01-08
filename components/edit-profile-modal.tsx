@@ -367,14 +367,11 @@ export function EditProfileModal({
 
       {/* Drawer */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out drawer-height-mobile ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
-          height: "100dvh",
-          height: "100vh", // Fallback für ältere Browser
-          maxHeight: "-webkit-fill-available", // iOS Safari Fallback
         }}
       >
         {/* Header - Sticky mit Safe-Area Support */}
