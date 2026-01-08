@@ -306,6 +306,18 @@ select option:disabled {
   opacity: 1 !important;
 }
 
+/* Force white background on button wrapper to prevent gray overlay bleeding */
+.drawer-header-sticky > div > div {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.drawer-header-sticky > div > div::before,
+.drawer-header-sticky > div > div::after {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
 /* Prevent iOS Safari from showing gray overlay on header when button is pressed */
 .drawer-header-sticky::before,
 .drawer-header-sticky::after {

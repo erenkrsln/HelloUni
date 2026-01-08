@@ -355,6 +355,41 @@ export function EditProfileModal({
     }
   }, [isOpen]);
 
+  // Force white background on header after touch events to prevent gray overlay
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const headerElement = document.querySelector('.drawer-header-sticky') as HTMLElement;
+    if (!headerElement) return;
+
+    const forceWhiteBackground = () => {
+      if (headerElement) {
+        headerElement.style.backgroundColor = "#ffffff";
+        headerElement.style.background = "#ffffff";
+      }
+    };
+
+    // Force white on mount and after delays
+    forceWhiteBackground();
+    const timeout1 = setTimeout(forceWhiteBackground, 100);
+    const timeout2 = setTimeout(forceWhiteBackground, 300);
+
+    // Listen to touch events
+    const handleTouchEnd = () => {
+      setTimeout(forceWhiteBackground, 0);
+    };
+
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    document.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [isOpen, isSubmitting]);
+
   return (
     <>
       {/* Backdrop */}
@@ -467,44 +502,68 @@ export function EditProfileModal({
             Abbrechen
           </button>
           <h2 className="text-lg font-semibold text-gray-900">Profil bearbeiten</h2>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              // Small delay to prevent iOS gray overlay
-              setTimeout(() => {
-                handleSubmit(e as any);
-              }, 0);
-            }}
-            disabled={isSubmitting || !name.trim()}
-            className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: "transparent",
-              background: "transparent",
-              WebkitTapHighlightColor: "transparent",
-              WebkitAppearance: "none",
-              appearance: "none",
-              position: "relative",
-              zIndex: 12,
-            }}
-            onFocus={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-            }}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            {isSubmitting ? "Wird gespeichert..." : "Speichern"}
-          </button>
+          {/* Button wrapper with white overlay protection */}
+          <div className="relative" style={{ zIndex: 12 }}>
+            {/* White overlay that covers button area to prevent gray overlay */}
+            <div
+              className="absolute inset-0 bg-white"
+              style={{
+                backgroundColor: "#ffffff !important",
+                background: "#ffffff !important",
+                zIndex: 1,
+                pointerEvents: "none",
+                borderRadius: "4px",
+                margin: "-4px",
+                padding: "4px",
+              }}
+              aria-hidden="true"
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Small delay to prevent iOS gray overlay
+                setTimeout(() => {
+                  handleSubmit(e as any);
+                }, 0);
+              }}
+              disabled={isSubmitting || !name.trim()}
+              className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed relative"
+              style={{
+                backgroundColor: "transparent",
+                background: "transparent",
+                WebkitTapHighlightColor: "transparent",
+                WebkitAppearance: "none",
+                appearance: "none",
+                position: "relative",
+                zIndex: 2,
+                isolation: "isolate",
+              }}
+              onFocus={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                // Force white background after touch
+                const header = e.currentTarget.closest('.drawer-header-sticky') as HTMLElement;
+                if (header) {
+                  header.style.backgroundColor = "#ffffff";
+                  header.style.background = "#ffffff";
+                }
+              }}
+            >
+              {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+            </button>
+          </div>
           </div>
         </div>
 
