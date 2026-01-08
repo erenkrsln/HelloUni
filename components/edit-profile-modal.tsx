@@ -369,15 +369,21 @@ export function EditProfileModal({
       <div
         className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
-        } h-[100vh] overflow-hidden`}
+        }`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
+          height: "100dvh",
+          height: "100vh", // Fallback für ältere Browser
+          maxHeight: "-webkit-fill-available", // iOS Safari Fallback
         }}
       >
-        {/* Header */}
+        {/* Header - Sticky mit Safe-Area Support */}
         <div 
-          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0"
-          style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))" }}
+          className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white flex-shrink-0"
+          style={{ 
+            paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+            paddingBottom: "1rem",
+          }}
         >
           <button
             onClick={handleClose}
@@ -471,9 +477,16 @@ export function EditProfileModal({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
-          <form onSubmit={handleSubmit} className="space-y-6 flex-1">
+        {/* Scrollable Content - Nur dieser Bereich scrollt */}
+        <div 
+          className="flex-1 overflow-y-auto overscroll-contain"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
+          <div className="px-4 py-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Input */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium mb-2">
@@ -692,7 +705,8 @@ export function EditProfileModal({
               {bio.length}/150
             </p>
           </div>
-        </form>
+            </form>
+          </div>
         </div>
       </div>
 
