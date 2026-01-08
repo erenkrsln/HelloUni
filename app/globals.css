@@ -246,3 +246,19 @@ select option:disabled {
   height: 100dvh; /* Dynamic viewport height für moderne Browser */
   max-height: -webkit-fill-available; /* iOS Safari Fallback */
 }
+
+/* Drawer Header - Always solid white, isolated from form states */
+.drawer-header-sticky {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  isolation: isolate;
+}
+
+/* Prevent any focus/active states from affecting drawer header */
+.drawer-header-sticky:focus,
+.drawer-header-sticky:focus-within,
+.drawer-header-sticky:active,
+.drawer-header-sticky:hover {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}

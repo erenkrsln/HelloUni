@@ -372,30 +372,65 @@ export function EditProfileModal({
         }`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
+          backgroundColor: "#ffffff",
+          background: "#ffffff",
+        }}
+        onFocus={(e) => {
+          // Prevent focus from bubbling to drawer container
+          if (e.target !== e.currentTarget) {
+            e.stopPropagation();
+          }
         }}
       >
         {/* Header - Sticky mit Safe-Area Support */}
         <div 
-          className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white flex-shrink-0"
+          className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white flex-shrink-0 drawer-header-sticky"
           style={{ 
             paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
             paddingBottom: "1rem",
+            backgroundColor: "#ffffff",
+            background: "#ffffff",
+            isolation: "isolate",
           }}
+          onFocus={(e) => e.stopPropagation()}
+          onFocusCapture={(e) => e.stopPropagation()}
         >
           <button
-            onClick={handleClose}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClose();
+            }}
             className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
+            style={{
+              backgroundColor: "transparent",
+              background: "transparent",
+              WebkitTapHighlightColor: "transparent",
+            }}
+            onFocus={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             Abbrechen
           </button>
           <h2 className="text-lg font-semibold text-gray-900">Profil bearbeiten</h2>
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               handleSubmit(e as any);
             }}
             disabled={isSubmitting || !name.trim()}
             className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: "transparent",
+              background: "transparent",
+              WebkitTapHighlightColor: "transparent",
+            }}
+            onFocus={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             {isSubmitting ? "Wird gespeichert..." : "Speichern"}
           </button>
@@ -483,7 +518,14 @@ export function EditProfileModal({
           }}
         >
           <div className="px-4 py-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form 
+              onSubmit={handleSubmit} 
+              className="space-y-6"
+              onFocus={(e) => {
+                // Prevent form focus from affecting header
+                e.stopPropagation();
+              }}
+            >
             {/* Name Input */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium mb-2">
