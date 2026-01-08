@@ -255,12 +255,14 @@ select option:disabled {
   -webkit-appearance: none !important;
   appearance: none !important;
   -webkit-tap-highlight-color: transparent !important;
-  tap-highlight-color: transparent !important;
   will-change: transform;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  /* Prevent any backdrop or overlay from affecting header */
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
 }
 
 /* Prevent any focus/active states from affecting drawer header */
@@ -285,12 +287,13 @@ select option:disabled {
   -webkit-appearance: none !important;
   appearance: none !important;
   -webkit-tap-highlight-color: transparent !important;
-  tap-highlight-color: transparent !important;
   background-color: transparent !important;
   background: transparent !important;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
+  /* Prevent button from affecting parent background */
+  mix-blend-mode: normal !important;
 }
 
 .drawer-header-sticky button:active,

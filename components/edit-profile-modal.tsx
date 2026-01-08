@@ -363,6 +363,10 @@ export function EditProfileModal({
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={handleClose}
+        style={{
+          // Ensure backdrop doesn't affect header
+          mixBlendMode: "normal",
+        }}
       />
 
       {/* Drawer */}
@@ -384,7 +388,7 @@ export function EditProfileModal({
       >
         {/* Header - Sticky mit Safe-Area Support */}
         <div 
-          className="sticky top-0 z-[70] flex-shrink-0 drawer-header-sticky"
+          className={`sticky top-0 z-[70] flex-shrink-0 drawer-header-sticky ${isSubmitting ? '' : ''}`}
           style={{ 
             isolation: "isolate",
             position: "relative",
@@ -395,6 +399,11 @@ export function EditProfileModal({
             willChange: "transform",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
+            // Force white background even during submit
+            ...(isSubmitting ? {
+              backgroundColor: "#ffffff !important",
+              background: "#ffffff !important",
+            } : {}),
           }}
         >
           {/* White background layer - always on top, prevents gray overlay */}
