@@ -406,7 +406,6 @@ export function EditProfileModal({
               zIndex: 10,
               pointerEvents: "none",
               WebkitTapHighlightColor: "transparent",
-              tapHighlightColor: "transparent",
               WebkitAppearance: "none",
               appearance: "none",
               willChange: "transform",
