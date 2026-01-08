@@ -252,13 +252,42 @@ select option:disabled {
   background-color: #ffffff !important;
   background: #ffffff !important;
   isolation: isolate;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
 }
 
 /* Prevent any focus/active states from affecting drawer header */
 .drawer-header-sticky:focus,
 .drawer-header-sticky:focus-within,
 .drawer-header-sticky:active,
-.drawer-header-sticky:hover {
+.drawer-header-sticky:hover,
+.drawer-header-sticky:focus-visible {
   background-color: #ffffff !important;
   background: #ffffff !important;
+}
+
+/* Force white background on all child elements in header */
+.drawer-header-sticky > * {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Prevent iOS Safari gray overlay on buttons inside header */
+.drawer-header-sticky button {
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+.drawer-header-sticky button:active,
+.drawer-header-sticky button:focus,
+.drawer-header-sticky button:focus-visible {
+  background-color: transparent !important;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent;
 }

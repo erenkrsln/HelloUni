@@ -384,17 +384,42 @@ export function EditProfileModal({
       >
         {/* Header - Sticky mit Safe-Area Support */}
         <div 
-          className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white flex-shrink-0 drawer-header-sticky"
+          className="sticky top-0 z-50 flex-shrink-0 drawer-header-sticky"
           style={{ 
-            paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
-            paddingBottom: "1rem",
+            isolation: "isolate",
+            position: "relative",
             backgroundColor: "#ffffff",
             background: "#ffffff",
-            isolation: "isolate",
+            WebkitTapHighlightColor: "transparent",
+            WebkitAppearance: "none",
           }}
-          onFocus={(e) => e.stopPropagation()}
-          onFocusCapture={(e) => e.stopPropagation()}
         >
+          {/* White background layer - always on top, prevents gray overlay */}
+          <div
+            className="absolute inset-0 bg-white border-b border-gray-200"
+            style={{
+              backgroundColor: "#ffffff",
+              background: "#ffffff",
+              zIndex: 1,
+              pointerEvents: "none",
+              WebkitTapHighlightColor: "transparent",
+              tapHighlightColor: "transparent",
+              WebkitAppearance: "none",
+              appearance: "none",
+            }}
+            aria-hidden="true"
+          />
+          {/* Content layer */}
+          <div 
+            className="relative flex items-center justify-between px-4 py-4"
+            style={{ 
+              paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+              paddingBottom: "1rem",
+              zIndex: 2,
+            }}
+            onFocus={(e) => e.stopPropagation()}
+            onFocusCapture={(e) => e.stopPropagation()}
+          >
           <button
             type="button"
             onClick={(e) => {
@@ -434,6 +459,7 @@ export function EditProfileModal({
           >
             {isSubmitting ? "Wird gespeichert..." : "Speichern"}
           </button>
+          </div>
         </div>
 
         {/* Header Image */}
