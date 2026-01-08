@@ -654,15 +654,11 @@ export function CommentDrawer({
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out comment-drawer-height ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
-          height: "75dvh",
-          height: "75vh", // Fallback für ältere Browser
-          maxHeight: "calc(100dvh - env(keyboard-inset-height, 0px))",
-          maxHeight: "calc(100vh - env(keyboard-inset-height, 0px))", // Fallback
         }}
       >
         {/* Header - Sticky */}
