@@ -173,7 +173,7 @@ export function ProfileHeader({
 
     return (
         <div 
-            className="relative w-full sticky top-0 z-40 profile-header-sticky"
+            className="relative w-full sticky top-0 z-40 profile-header-sticky bg-white"
             style={{
                 overscrollBehavior: 'none',
             }}

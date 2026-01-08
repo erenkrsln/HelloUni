@@ -229,7 +229,7 @@ select option:disabled {
   left: 0;
   right: 0;
   height: 100vh;
-  background-color: #0a0a0a;
+  background-color: #ffffff;
   z-index: -1;
   pointer-events: none;
 }
