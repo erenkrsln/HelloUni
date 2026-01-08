@@ -247,6 +247,14 @@ select option:disabled {
   max-height: -webkit-fill-available; /* iOS Safari Fallback */
 }
 
+/* Comment Drawer Height - mit Keyboard Support */
+.comment-drawer-height {
+  height: 75vh; /* Fallback für ältere Browser */
+  height: 75dvh; /* Dynamic viewport height für moderne Browser */
+  max-height: calc(100dvh - env(keyboard-inset-height, 0px));
+  max-height: calc(100vh - env(keyboard-inset-height, 0px)); /* Fallback */
+}
+
 /* Drawer Header - Always solid white, isolated from form states */
 .drawer-header-sticky {
   background-color: #ffffff !important;
