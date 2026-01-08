@@ -384,7 +384,7 @@ export function EditProfileModal({
       >
         {/* Header - Sticky mit Safe-Area Support */}
         <div 
-          className="sticky top-0 z-50 flex-shrink-0 drawer-header-sticky"
+          className="sticky top-0 z-[70] flex-shrink-0 drawer-header-sticky"
           style={{ 
             isolation: "isolate",
             position: "relative",
@@ -392,20 +392,38 @@ export function EditProfileModal({
             background: "#ffffff",
             WebkitTapHighlightColor: "transparent",
             WebkitAppearance: "none",
+            willChange: "transform",
+            transform: "translateZ(0)",
+            WebkitTransform: "translateZ(0)",
           }}
         >
           {/* White background layer - always on top, prevents gray overlay */}
           <div
             className="absolute inset-0 bg-white border-b border-gray-200"
             style={{
-              backgroundColor: "#ffffff",
-              background: "#ffffff",
-              zIndex: 1,
+              backgroundColor: "#ffffff !important",
+              background: "#ffffff !important",
+              zIndex: 10,
               pointerEvents: "none",
               WebkitTapHighlightColor: "transparent",
               tapHighlightColor: "transparent",
               WebkitAppearance: "none",
               appearance: "none",
+              willChange: "transform",
+              transform: "translateZ(0)",
+              WebkitTransform: "translateZ(0)",
+            }}
+            aria-hidden="true"
+          />
+          {/* Additional white overlay to catch any gray overlays */}
+          <div
+            className="absolute inset-0 bg-white"
+            style={{
+              backgroundColor: "#ffffff !important",
+              background: "#ffffff !important",
+              zIndex: 9,
+              pointerEvents: "none",
+              WebkitTapHighlightColor: "transparent",
             }}
             aria-hidden="true"
           />
@@ -415,7 +433,9 @@ export function EditProfileModal({
             style={{ 
               paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
               paddingBottom: "1rem",
-              zIndex: 2,
+              zIndex: 11,
+              backgroundColor: "transparent",
+              background: "transparent",
             }}
             onFocus={(e) => e.stopPropagation()}
             onFocusCapture={(e) => e.stopPropagation()}
@@ -444,7 +464,10 @@ export function EditProfileModal({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleSubmit(e as any);
+              // Small delay to prevent iOS gray overlay
+              setTimeout(() => {
+                handleSubmit(e as any);
+              }, 0);
             }}
             disabled={isSubmitting || !name.trim()}
             className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
@@ -452,10 +475,25 @@ export function EditProfileModal({
               backgroundColor: "transparent",
               background: "transparent",
               WebkitTapHighlightColor: "transparent",
+              WebkitAppearance: "none",
+              appearance: "none",
+              position: "relative",
+              zIndex: 12,
             }}
-            onFocus={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
+            onFocus={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+            }}
           >
             {isSubmitting ? "Wird gespeichert..." : "Speichern"}
           </button>

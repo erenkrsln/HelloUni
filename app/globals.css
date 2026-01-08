@@ -252,10 +252,15 @@ select option:disabled {
   background-color: #ffffff !important;
   background: #ffffff !important;
   isolation: isolate;
-  -webkit-appearance: none;
-  appearance: none;
-  -webkit-tap-highlight-color: transparent;
-  tap-highlight-color: transparent;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  tap-highlight-color: transparent !important;
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Prevent any focus/active states from affecting drawer header */
@@ -263,7 +268,8 @@ select option:disabled {
 .drawer-header-sticky:focus-within,
 .drawer-header-sticky:active,
 .drawer-header-sticky:hover,
-.drawer-header-sticky:focus-visible {
+.drawer-header-sticky:focus-visible,
+.drawer-header-sticky:target {
   background-color: #ffffff !important;
   background: #ffffff !important;
 }
@@ -276,18 +282,30 @@ select option:disabled {
 
 /* Prevent iOS Safari gray overlay on buttons inside header */
 .drawer-header-sticky button {
-  -webkit-appearance: none;
-  appearance: none;
-  -webkit-tap-highlight-color: transparent;
-  tap-highlight-color: transparent;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  tap-highlight-color: transparent !important;
   background-color: transparent !important;
   background: transparent !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 }
 
 .drawer-header-sticky button:active,
 .drawer-header-sticky button:focus,
-.drawer-header-sticky button:focus-visible {
+.drawer-header-sticky button:focus-visible,
+.drawer-header-sticky button:hover {
   background-color: transparent !important;
   background: transparent !important;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent !important;
+  opacity: 1 !important;
+}
+
+/* Prevent iOS Safari from showing gray overlay on header when button is pressed */
+.drawer-header-sticky::before,
+.drawer-header-sticky::after {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
 }
