@@ -59,6 +59,12 @@ export function CommentDrawer({
   const drawerRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false); // Synchroner Check für doppelte Submits
   
+  // Visual Viewport API - Track viewport height for keyboard handling
+  const [viewportHeight, setViewportHeight] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    return window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  });
+  
   // Store time ago strings for comments - calculated only once per comment
   const timeAgoCacheRef = useRef<Map<string, string>>(new Map());
   
@@ -141,6 +147,25 @@ export function CommentDrawer({
     }
   }, [commentText]);
 
+  // Visual Viewport API - Listen to resize events for keyboard handling
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    
+    const handleResize = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      }
+    };
+    
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('scroll', handleResize);
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
+  }, []);
+
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
@@ -156,43 +181,6 @@ export function CommentDrawer({
     }
     return () => {
       document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-
-  // Handle visual viewport changes (keyboard open/close)
-  useEffect(() => {
-    if (!isOpen || typeof window === 'undefined' || !window.visualViewport) return;
-
-    const drawer = drawerRef.current;
-    if (!drawer) return;
-
-    const updateDrawerHeight = () => {
-      const viewport = window.visualViewport;
-      if (!viewport) return;
-
-      // Calculate available height (viewport height minus keyboard)
-      const availableHeight = viewport.height;
-      
-      // Set drawer height to available viewport height
-      // Use 75% of available height, but ensure it doesn't exceed viewport
-      const drawerHeight = Math.min(availableHeight * 0.75, availableHeight);
-      
-      drawer.style.height = `${drawerHeight}px`;
-      drawer.style.maxHeight = `${availableHeight}px`;
-    };
-
-    // Initial update
-    updateDrawerHeight();
-
-    // Listen to viewport resize events (keyboard open/close)
-    window.visualViewport.addEventListener('resize', updateDrawerHeight);
-    window.visualViewport.addEventListener('scroll', updateDrawerHeight);
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateDrawerHeight);
-        window.visualViewport.removeEventListener('scroll', updateDrawerHeight);
-      }
     };
   }, [isOpen]);
 
@@ -654,19 +642,17 @@ export function CommentDrawer({
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out comment-drawer-height ${
+        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
-        }`}
+        } overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
+          maxHeight: viewportHeight > 0 ? `${viewportHeight * 0.75}px` : '75vh',
+          height: viewportHeight > 0 ? `${viewportHeight * 0.75}px` : '75vh',
         }}
       >
-        {/* Header - Sticky */}
-        <div className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white flex-shrink-0"
-          style={{
-            paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))",
-          }}
-        >
+        {/* Header - Sticky to stay visible when keyboard opens */}
+        <div className="sticky top-0 z-10 bg-white flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-base font-semibold text-gray-900">
             {commentsCount} {commentsCount === 1 ? "Kommentar" : "Kommentare"}
           </h2>
@@ -726,15 +712,8 @@ export function CommentDrawer({
           </div>
         </div>
 
-        {/* Comments List - Scrollable */}
-        <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden py-1"
-          style={{
-            WebkitOverflowScrolling: "touch",
-            overscrollBehavior: "contain",
-            paddingBottom: "calc(0.25rem + env(safe-area-inset-bottom, 0px))",
-          }}
-        >
+        {/* Comments List */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner size="md" />
@@ -752,15 +731,12 @@ export function CommentDrawer({
           ) : null}
         </div>
 
-        {/* Sticky Input - Fixed at bottom */}
+        {/* Sticky Input - With safe area inset for mobile devices */}
         {currentUserId && (
-          <div 
-            className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 relative sticky bottom-0 z-40"
-            style={{ 
-              paddingBottom: "calc(0.375rem + env(safe-area-inset-bottom, 0px))",
-              paddingTop: "0.5rem",
-            }}
-          >
+          <div className="bg-white px-4 pt-2 flex-shrink-0 relative" style={{ 
+            transform: 'translateY(-16px)',
+            paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))'
+          }}>
             {/* Horizontale Linie */}
             <div className="absolute top-0 left-0 right-0 border-t border-gray-200"></div>
             {replyingTo && (
