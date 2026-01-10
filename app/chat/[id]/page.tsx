@@ -192,9 +192,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     {conversation ? (
                         <div className="flex items-center min-w-0">
                             <div
-                                className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
+                                className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && !isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                                onClick={() => conversation.isGroup && setIsGroupInfoModalOpen(true)}
+                                onClick={() => conversation.isGroup && !isLeft && setIsGroupInfoModalOpen(true)}
                             >
                                 {conversation.displayImage ? (
                                     <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
@@ -206,7 +206,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
 
                             <span
-                                className="font-semibold truncate cursor-pointer hover:opacity-80 transition-opacity"
+                                className={`font-semibold truncate transition-opacity ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 onClick={handleHeaderClick}
                             >
                                 {conversation.displayName}
