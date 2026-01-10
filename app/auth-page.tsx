@@ -126,7 +126,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen w-full flex flex-col items-center bg-white"
       style={{
         paddingTop: "0",
@@ -138,20 +138,20 @@ export default function AuthPage() {
       <div className="w-full max-w-md flex flex-col items-center">
         {/* Logo - zentriert über Hello Uni */}
         <div className="flex items-center justify-center mt-0 sm:mt-4 w-full">
-          <img 
-            src="/hellouni.svg" 
-            alt="Hello Uni Logo" 
+          <img
+            src="/hellouni.svg"
+            alt="Hello Uni Logo"
             className="w-56 h-56 object-contain ml-24"
           />
         </div>
-        
+
         {/* Headline - zentriert unter Logo */}
         <h1 className="text-4xl font-semibold text-black text-center -mt-16 w-full" style={{ fontFamily: 'var(--font-poppins), sans-serif' }}>
           Hello Uni
         </h1>
 
         {/* Beige Card - fester Abstand, unabhängig von Logo/Headline-Position */}
-        <div 
+        <div
           className="rounded-3xl p-8 shadow-lg w-full"
           style={{ backgroundColor: "rgba(220, 198, 161)", marginTop: "40px" }}
         >
@@ -160,7 +160,7 @@ export default function AuthPage() {
             {isSignUp ? "Konto erstellen" : "Anmelden"}
           </h2>
           <p className="text-sm text-gray-700 mb-6 text-center">
-            {isSignUp 
+            {isSignUp
               ? "Gib deine Informationen ein, um dich für diese App zu registrieren"
               : "Gib deine Anmeldedaten ein, um dich anzumelden"
             }
@@ -284,20 +284,21 @@ export default function AuthPage() {
               }}
               className="text-sm text-gray-700 hover:text-black underline transition-colors"
             >
-              {isSignUp 
-                ? "Bereits einen Account? Anmelden" 
+              {isSignUp
+                ? "Bereits einen Account? Anmelden"
                 : "Noch keinen Account? Registrieren"
               }
             </button>
           </div>
 
           {/* Terms and Privacy */}
-          <p className="text-xs text-gray-600 text-center mt-6">
-            By clicking continue, you agree to our{" "}
-            <a href="#" className="underline hover:text-black">Terms of Service</a>{" "}
-            and{" "}
-            <a href="#" className="underline hover:text-black">Privacy Policy</a>.
-          </p>
+          <div className="flex items-center justify-center gap-4 mt-6 text-xs text-gray-600">
+            <a href="/about" className="underline hover:text-black">Über Uns</a>
+            <span>•</span>
+            <a href="/imprint" className="underline hover:text-black">Impressum</a>
+            <span>•</span>
+            <a href="/privacy" className="underline hover:text-black">Datenschutz</a>
+          </div>
         </div>
       </div>
     </div>

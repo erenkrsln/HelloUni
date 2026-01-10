@@ -3,6 +3,7 @@
 import { User, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { LogoSidebar } from "@/components/logo-sidebar";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 
@@ -14,6 +15,7 @@ interface HeaderProps {
 export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
   const [isProfileHovered, setIsProfileHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
+  const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
@@ -36,8 +38,9 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
       }}
     >
       <div className="relative w-full h-[94px]">
-        <div
-          className="absolute flex items-center justify-center overflow-hidden"
+        <button
+          onClick={() => setIsLogoSidebarOpen(true)}
+          className="absolute flex items-center justify-center overflow-hidden cursor-pointer active:scale-95 transition-transform"
           style={{
             left: "12px",
             top: "-20px",
@@ -70,7 +73,8 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
               }
             }}
           />
-        </div>
+
+        </button>
         {pathname !== "/profile" &&
           !pathname.startsWith("/profile/") &&
           pathname !== "/create" && (
@@ -200,6 +204,7 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
           </button>
         )}
       </div>
+      <LogoSidebar isOpen={isLogoSidebarOpen} onClose={() => setIsLogoSidebarOpen(false)} />
     </header>
   );
 }

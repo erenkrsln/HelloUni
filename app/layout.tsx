@@ -51,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
+    <html lang="de" suppressHydrationWarning>
       <head>
         {/* PWA Meta Tags für bessere Installation */}
         <link rel="manifest" href="/site.webmanifest" />
