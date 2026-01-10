@@ -19,6 +19,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const isInitialLoad = useRef(true);
 
     const messages = useQuery(api.queries.getMessages, {
         conversationId,
@@ -89,12 +90,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         conversation.adminIds?.includes(currentUser._id)
     );
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+        messagesEndRef.current?.scrollIntoView({ behavior });
     };
 
     useEffect(() => {
-        scrollToBottom();
+        if (messages) {
+            if (isInitialLoad.current) {
+                scrollToBottom("auto");
+                isInitialLoad.current = false;
+            } else {
+                scrollToBottom("smooth");
+            }
+        }
     }, [messages]);
 
     const handleSend = async (e?: React.FormEvent) => {
@@ -246,7 +254,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         if (msg.type === "system") {
                             return (
                                 <div key={msg._id} className="flex justify-center my-4">
-                                    <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full shadow-sm">
+                                    <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full shadow-sm text-center">
                                         {(() => {
                                             let content = msg.content;
                                             if (currentUser) {
