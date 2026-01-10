@@ -334,6 +334,24 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         return `Du hast ${targetName} Admin-Rechte entzogen`;
                                                     }
                                                 }
+
+                                                const nameChangeMatch = content.match(/(.*) hat den Gruppennamen von "(.*)" zu "(.*)" geändert/);
+                                                if (nameChangeMatch) {
+                                                    const [_, userName, oldName, newName] = nameChangeMatch;
+                                                    if (userName === currentUser.name) {
+                                                        return `Du hast den Gruppennamen von "${oldName}" zu "${newName}" geändert`;
+                                                    }
+                                                    return content;
+                                                }
+
+                                                const imageChangeMatch = content.match(/(.*) hat das Gruppenbild geändert/);
+                                                if (imageChangeMatch) {
+                                                    const [_, userName] = imageChangeMatch;
+                                                    if (userName === currentUser.name) {
+                                                        return "Du hast das Gruppenbild geändert";
+                                                    }
+                                                    return content;
+                                                }
                                             }
                                             return content;
                                         })()}

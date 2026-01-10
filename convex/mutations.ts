@@ -578,6 +578,20 @@ export const updateGroupImage = mutation({
     await ctx.db.patch(args.conversationId, {
       image: args.imageId === "" ? undefined : args.imageId
     });
+
+    // Create system message
+    if (args.userId) {
+      const user = await ctx.db.get(args.userId);
+      if (user) {
+        await ctx.db.insert("messages", {
+          conversationId: args.conversationId,
+          senderId: args.userId,
+          content: `${user.name} hat das Gruppenbild geändert`,
+          type: "system",
+          createdAt: Date.now(),
+        });
+      }
+    }
   },
 });
 
@@ -597,9 +611,23 @@ export const updateGroupName = mutation({
     const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
     if (!isAdmin) throw new Error("Only admins can rename the group");
 
+    const oldName = conversation.name || "Gruppe";
+
     await ctx.db.patch(args.conversationId, {
       name: args.name.trim(),
     });
+
+    // Create system message
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: `${user.name} hat den Gruppennamen von "${oldName}" zu "${args.name.trim()}" geändert`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
   },
 });
 
