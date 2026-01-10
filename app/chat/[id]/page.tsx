@@ -471,7 +471,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 >
                     <form
                         onSubmit={handleSend}
-                        className="flex items-end bg-white border border-gray-300 rounded-full px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
+                        className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                     >
                         <input
                             type="file"
