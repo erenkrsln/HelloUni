@@ -19,6 +19,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [newMessage, setNewMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const isInitialLoad = useRef(true);
 
     const messages = useQuery(api.queries.getMessages, {
         conversationId,
@@ -89,12 +90,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         conversation.adminIds?.includes(currentUser._id)
     );
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+        messagesEndRef.current?.scrollIntoView({ behavior });
     };
 
     useEffect(() => {
-        scrollToBottom();
+        if (messages) {
+            if (isInitialLoad.current) {
+                scrollToBottom("auto");
+                isInitialLoad.current = false;
+            } else {
+                scrollToBottom("smooth");
+            }
+        }
     }, [messages]);
 
     const handleSend = async (e?: React.FormEvent) => {
@@ -184,9 +192,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     {conversation ? (
                         <div className="flex items-center min-w-0">
                             <div
-                                className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && isGroupAdmin ? "cursor-pointer hover:opacity-80" : ""}`}
+                                className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && !isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                                onClick={() => conversation.isGroup && setIsGroupInfoModalOpen(true)}
+                                onClick={() => conversation.isGroup && !isLeft && setIsGroupInfoModalOpen(true)}
                             >
                                 {conversation.displayImage ? (
                                     <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
@@ -198,7 +206,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
 
                             <span
-                                className="font-semibold truncate cursor-pointer hover:opacity-80 transition-opacity"
+                                className={`font-semibold truncate transition-opacity ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 onClick={handleHeaderClick}
                             >
                                 {conversation.displayName}
@@ -246,7 +254,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         if (msg.type === "system") {
                             return (
                                 <div key={msg._id} className="flex justify-center my-4">
-                                    <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full shadow-sm">
+                                    <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full shadow-sm text-center">
                                         {(() => {
                                             let content = msg.content;
                                             if (currentUser) {
@@ -325,6 +333,24 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     if (adminName === currentUser.name) {
                                                         return `Du hast ${targetName} Admin-Rechte entzogen`;
                                                     }
+                                                }
+
+                                                const nameChangeMatch = content.match(/(.*) hat den Gruppennamen von "(.*)" zu "(.*)" geändert/);
+                                                if (nameChangeMatch) {
+                                                    const [_, userName, oldName, newName] = nameChangeMatch;
+                                                    if (userName === currentUser.name) {
+                                                        return `Du hast den Gruppennamen von "${oldName}" zu "${newName}" geändert`;
+                                                    }
+                                                    return content;
+                                                }
+
+                                                const imageChangeMatch = content.match(/(.*) hat das Gruppenbild geändert/);
+                                                if (imageChangeMatch) {
+                                                    const [_, userName] = imageChangeMatch;
+                                                    if (userName === currentUser.name) {
+                                                        return "Du hast das Gruppenbild geändert";
+                                                    }
+                                                    return content;
                                                 }
                                             }
                                             return content;
@@ -445,7 +471,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 >
                     <form
                         onSubmit={handleSend}
-                        className="flex items-end bg-white border border-gray-300 rounded-full px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
+                        className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                     >
                         <input
                             type="file"

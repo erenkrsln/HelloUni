@@ -190,6 +190,24 @@ export default function ChatPage() {
                                 {conv.unreadCount}
                               </div>
                             )}
+                            {isLeft && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault(); // Prevent navigation
+                                  e.stopPropagation();
+                                  if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
+                                    deleteConversationFromList({
+                                      conversationId: conv._id,
+                                      userId: currentUser!._id
+                                    });
+                                  }
+                                }}
+                                className="mt-1 p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
+                                title="Chat löschen"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </div>
                         </div>
                         <p className="text-sm text-gray-500 truncate flex items-center pl-0.5">
@@ -213,24 +231,7 @@ export default function ChatPage() {
                         </p>
                       </div>
                     </Link>
-                    {isLeft && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault(); // Prevent navigation
-                          e.stopPropagation();
-                          if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
-                            deleteConversationFromList({
-                              conversationId: conv._id,
-                              userId: currentUser!._id
-                            });
-                          }
-                        }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-red-100 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-200"
-                        title="Chat löschen"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
+
                   </div>
                 );
               })
