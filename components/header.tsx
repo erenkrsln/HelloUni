@@ -31,24 +31,36 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 w-full bg-white z-50 pt-safe-top"
+      className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top"
       style={{
         height: `calc(94px + env(safe-area-inset-top, 0px))`,
         minHeight: `calc(94px + env(safe-area-inset-top, 0px))`
       }}
     >
       <div className="relative w-full h-[94px]">
+        {/* Clickable area for logo sidebar - left third of header */}
+        <button
+          onClick={() => setIsLogoSidebarOpen(true)}
+          className="absolute top-0 left-0 h-full cursor-pointer"
+          style={{
+            width: "33.33%",
+            zIndex: 1,
+          }}
+          aria-label="Open menu"
+        />
+
+        {/* Logo button - visual element */}
         <button
           onClick={() => setIsLogoSidebarOpen(true)}
           className="absolute flex items-center justify-center overflow-hidden cursor-pointer active:scale-95 transition-transform"
           style={{
-
             top: "-15px",
             width: "120px",
             height: "130px",
             willChange: "transform",
             transform: "translateZ(0)",
-            backfaceVisibility: "hidden"
+            backfaceVisibility: "hidden",
+            zIndex: 2,
           }}
         >
           <img
