@@ -61,39 +61,45 @@ export function LogoSidebar({ isOpen, onClose }: LogoSidebarProps) {
                         overflowY: "auto",
                     }}
                 >
-                    {/* Header Section: Close Button */}
-                    <div className="flex justify-end p-2">
+
+
+                    {/* Branding Section */}
+
+
+                    <div className="flex items-center justify-between pb-6 border-b border-gray-200 mb-6">
+                        <div className="flex items-center gap-4 flex-1">
+                            <div className="w-12 h-12 flex-shrink-0">
+                                <img
+                                    src="/logo2.svg"
+                                    alt="HelloUni Logo"
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = "none";
+                                        if (target.parentElement) {
+                                            target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl font-bold">C</div>';
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className="flex flex-col flex-1 min-w-0">
+                                <h2 className="text-lg font-semibold text-black truncate">
+                                    Hello Uni
+                                </h2>
+
+                                <p className="text-sm text-gray-600 truncate">
+                                    Your Campus. Your People.
+                                </p>
+
+                            </div>
+                        </div>
                         <button
                             onClick={onClose}
-                            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
-                            aria-label="Close sidebar"
+                            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors ml-2 flex-shrink-0"
+                            aria-label="Sidebar schließen"
                         >
                             <X className="w-6 h-6 text-black" />
                         </button>
-                    </div>
-
-                    {/* Branding Section */}
-                    <div className="flex flex-col items-center justify-center pt-2 pb-10 border-b border-gray-100 mx-4">
-                        <div className="w-24 h-24 mb-4 relative">
-                            <img
-                                src="/logo.svg"
-                                alt="HelloUni Logo"
-                                className="w-full h-full object-contain"
-                                onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = "none";
-                                    if (target.parentElement) {
-                                        target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl font-bold">C</div>';
-                                    }
-                                }}
-                            />
-                        </div>
-                        <h1 className="text-2xl font-bold text-black mb-1" style={{ fontFamily: 'var(--font-poppins), sans-serif' }}>
-                            HelloUni
-                        </h1>
-                        <p className="text-sm text-gray-500 font-medium">
-                            Social Media für Studierende
-                        </p>
                     </div>
 
                     {/* Menu Items */}

@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     startupImage: "/hellouni.svg",
   },
   icons: {
-    icon: "/logo.svg",
+    icon: "/logo2.svg",
     apple: "/hellouni.svg",
   },
 };

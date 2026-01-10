@@ -42,8 +42,8 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
           onClick={() => setIsLogoSidebarOpen(true)}
           className="absolute flex items-center justify-center overflow-hidden cursor-pointer active:scale-95 transition-transform"
           style={{
-            left: "12px",
-            top: "-20px",
+
+            top: "-15px",
             width: "120px",
             height: "130px",
             willChange: "transform",
@@ -52,13 +52,13 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
           }}
         >
           <img
-            src="/logo.svg"
+            src="/logo2.svg"
             alt="Logo"
-            width={120}
-            height={130}
+            width={50}
+            height={50}
             style={{
-              width: "120px",
-              height: "130px",
+              width: "50px",
+              height: "50px",
               objectFit: "contain",
               display: "block",
               willChange: "transform",
