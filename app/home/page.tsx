@@ -10,6 +10,7 @@ import { MobileSidebar } from "@/components/mobile-sidebar";
 
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 
 // Funktion zur Erkennung mobiler Geräte
 const isMobileDevice = (): boolean => {
@@ -36,6 +37,7 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [visiblePostsCount, setVisiblePostsCount] = useState(10); // Starte mit 10 Posts auf Mobile
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // Loading-State für weitere Posts
 
   // Prüfe, ob es ein mobiles Gerät ist
   useEffect(() => {
@@ -200,12 +202,18 @@ export default function Home() {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting && visiblePostsCount < posts.length) {
-              // Lade 5 weitere Posts automatisch
-              setVisiblePostsCount((prev) => {
-                const newCount = Math.min(prev + 5, posts.length);
-                return newCount;
-              });
+            if (entry.isIntersecting && visiblePostsCount < posts.length && !isLoadingMore) {
+              // Zeige Lade-Indikator
+              setIsLoadingMore(true);
+              
+              // Simuliere kurze Verzögerung für bessere UX (wie Twitter/X)
+              setTimeout(() => {
+                setVisiblePostsCount((prev) => {
+                  const newCount = Math.min(prev + 5, posts.length);
+                  setIsLoadingMore(false);
+                  return newCount;
+                });
+              }, 500); // 500ms Verzögerung für sichtbaren Lade-Indikator
             }
           });
         },
@@ -225,7 +233,7 @@ export default function Home() {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [posts, visiblePostsCount]);
+  }, [posts, visiblePostsCount, isLoadingMore]);
 
   // Fallback: Scroll-Event für Infinite Scroll (falls Intersection Observer nicht funktioniert)
   useEffect(() => {
@@ -246,8 +254,16 @@ export default function Home() {
           const documentHeight = document.documentElement.scrollHeight;
           
           // Wenn User nahe am Ende ist (200px vor Ende), lade mehr Posts
-          if (scrollPosition >= documentHeight - 200 && visiblePostsCount < posts.length) {
-            setVisiblePostsCount((prev) => Math.min(prev + 5, posts.length));
+          if (scrollPosition >= documentHeight - 200 && visiblePostsCount < posts.length && !isLoadingMore) {
+            setIsLoadingMore(true);
+            // Simuliere kurze Verzögerung für bessere UX
+            setTimeout(() => {
+              setVisiblePostsCount((prev) => {
+                const newCount = Math.min(prev + 5, posts.length);
+                setIsLoadingMore(false);
+                return newCount;
+              });
+            }, 500);
           }
           ticking = false;
         });
@@ -257,7 +273,7 @@ export default function Home() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [posts, visiblePostsCount]);
+  }, [posts, visiblePostsCount, isLoadingMore]);
 
   // Upload Progress Tracking
   useEffect(() => {
@@ -367,6 +383,12 @@ export default function Home() {
                 />
               </div>
             ))}
+            {/* Lade-Indikator (Twitter/X-Stil) - wird angezeigt wenn weitere Posts geladen werden */}
+            {isLoadingMore && visiblePostsCount < posts.length && (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-[#D08945]" />
+              </div>
+            )}
             {/* Unsichtbarer Sentinel für Infinite Scroll - nur wenn noch Posts vorhanden */}
             {visiblePostsCount < posts.length ? (
               <div
