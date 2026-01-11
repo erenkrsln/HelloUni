@@ -125,14 +125,27 @@ export default function Home() {
   const cachedPostsForCurrentKey = getCachedPosts(cacheKey);
 
   const posts = useMemo(() => {
+    let postsToUse: typeof postsFromQuery = [];
+    
     // Wenn neue Daten verfügbar sind, verwende diese
     if (postsFromQuery !== undefined) {
-      return postsFromQuery;
+      postsToUse = postsFromQuery;
     }
     // Verwende gecachte Posts sofort (falls vorhanden) - sowohl auf Mobile als auch Desktop
-    if (cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0) {
-      return cachedPostsForCurrentKey;
+    else if (cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0) {
+      postsToUse = cachedPostsForCurrentKey;
     }
+    
+    // WICHTIG: Sortiere Posts immer nach createdAt (neueste zuerst)
+    // Verhindert, dass alte Posts vor neuen Posts angezeigt werden
+    if (Array.isArray(postsToUse) && postsToUse.length > 0) {
+      return [...postsToUse].sort((a, b) => {
+        const aTime = a.createdAt || 0;
+        const bTime = b.createdAt || 0;
+        return bTime - aTime; // Descending: neueste zuerst
+      });
+    }
+    
     // Keine Daten verfügbar
     return [];
   }, [postsFromQuery, cachedPostsForCurrentKey]);

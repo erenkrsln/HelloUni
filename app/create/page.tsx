@@ -11,6 +11,7 @@ import { ImagePlus, X, ChevronDown } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
+import { usePostsCache } from "@/lib/contexts/posts-context";
 
 export default function CreatePage() {
     const router = useRouter();
@@ -247,6 +248,9 @@ export default function CreatePage() {
 
                 // Upload abgeschlossen
                 sessionStorage.removeItem("uploadProgress");
+                
+                // Cache löschen, damit neue Posts sofort angezeigt werden
+                clearCache();
             } catch (error) {
                 console.error("Fehler beim Erstellen des Posts:", error);
                 sessionStorage.removeItem("uploadProgress");
