@@ -186,33 +186,41 @@ export default function Home() {
       observerRef.current = null;
     }
 
-    // Nur Observer erstellen wenn Status "CanLoadMore" ist
-    if (postsStatus !== "CanLoadMore" || !sentinelRef.current) {
+    // Nur Observer erstellen wenn Status "CanLoadMore" ist und Sentinel existiert
+    if (postsStatus !== "CanLoadMore") {
       return;
     }
 
-    // Erstelle neuen Observer
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            debouncedLoadMore();
-          }
-        });
-      },
-      {
-        rootMargin: "200px", // Starte Ladevorgang 200px vor dem Viewport
-        threshold: 0.1,
+    // Warte kurz, damit Sentinel gerendert wird
+    const timeoutId = setTimeout(() => {
+      if (!sentinelRef.current) {
+        return;
       }
-    );
 
-    // Beobachte Sentinel
-    if (sentinelRef.current) {
-      observerRef.current.observe(sentinelRef.current);
-    }
+      // Erstelle neuen Observer
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && postsStatus === "CanLoadMore") {
+              debouncedLoadMore();
+            }
+          });
+        },
+        {
+          rootMargin: "200px", // Starte Ladevorgang 200px vor dem Viewport
+          threshold: 0.1,
+        }
+      );
+
+      // Beobachte Sentinel
+      if (sentinelRef.current) {
+        observerRef.current.observe(sentinelRef.current);
+      }
+    }, 100);
 
     // Cleanup
     return () => {
+      clearTimeout(timeoutId);
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
@@ -336,7 +344,7 @@ export default function Home() {
             )}
 
             {/* Unsichtbarer Sentinel für Infinite Scroll - nur wenn noch Posts vorhanden */}
-            {canLoadMore && !isLoadingMoreState && (
+            {canLoadMore && (
               <div
                 ref={sentinelRef}
                 style={{
@@ -344,6 +352,7 @@ export default function Home() {
                   width: "100%",
                   position: "relative",
                   marginTop: "20px",
+                  visibility: isLoadingMoreState ? "hidden" : "visible",
                 }}
                 aria-hidden="true"
               />
