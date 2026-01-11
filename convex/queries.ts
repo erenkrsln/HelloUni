@@ -1,4 +1,5 @@
-import { query, paginatedQuery } from "./_generated/server";
+import { query } from "./_generated/server";
+import { paginatedQuery } from "convex/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
