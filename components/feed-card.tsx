@@ -76,6 +76,37 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
     setIsBookmarked(prev => !prev);
   };
 
+  // OPTIMISTIC FIX: Likes Count Tracking für Feed-übergreifende Konsistenz
+  const likesStorageKey = `likes_count_${post._id}`;
+  const getStoredLikesCount = (): number | null => {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(likesStorageKey);
+    if (stored !== null && stored !== "") {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return null;
+  };
+
+  const [optimisticLikesCount, setOptimisticLikesCount] = useState<number | null>(getStoredLikesCount());
+
+  // Synchronize localStorage with optimistic likes count
+  useEffect(() => {
+    const storedCount = getStoredLikesCount();
+    if (storedCount !== null && storedCount !== post.likesCount) {
+      // Server hat neuen Count, aktualisiere localStorage
+      localStorage.setItem(likesStorageKey, post.likesCount.toString());
+      setOptimisticLikesCount(post.likesCount);
+    } else if (storedCount === null) {
+      // Initial load
+      localStorage.setItem(likesStorageKey, post.likesCount.toString());
+      setOptimisticLikesCount(post.likesCount);
+    }
+  }, [post.likesCount, likesStorageKey]);
+
+  // Likes-Count mit Optimistic Update
+  const displayLikesCount = optimisticLikesCount !== null ? optimisticLikesCount : post.likesCount;
+
   // OPTIMISTIC FIX: Kommentar-Count Tracking für Feed-übergreifende Konsistenz
   const commentsStorageKey = `comments_count_${post._id}`;
   const getStoredCommentsCount = (): number | null => {
@@ -416,8 +447,17 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
     const wasLiked = displayIsLiked;
     const newLikedState = !wasLiked;
 
-    // Optimistic update immediately - no delay
+    // OPTIMISTIC: Update both like status AND counter
     setOptimisticLiked(newLikedState);
+    const currentLikesCount = optimisticLikesCount !== null ? optimisticLikesCount : post.likesCount;
+    const newLikesCount = newLikedState ? currentLikesCount + 1 : Math.max(0, currentLikesCount - 1);
+    setOptimisticLikesCount(newLikesCount);
+
+    // Save to localStorage immediately
+    if (likesStorageKey) {
+      localStorage.setItem(likesStorageKey, newLikesCount.toString());
+    }
+
     setIsLiking(true);
 
     try {
@@ -425,9 +465,15 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
       // Update lastKnownState after successful like
       lastKnownLikedState.current = newLikedState;
     } catch (error) {
-      // Revert on error
+      // Revert both on error
       setOptimisticLiked(wasLiked);
+      setOptimisticLikesCount(currentLikesCount);
+      if (likesStorageKey) {
+        localStorage.setItem(likesStorageKey, currentLikesCount.toString());
+      }
       console.error("Error liking post:", error);
+      setIsLiking(false);
+    } finally {
       setIsLiking(false);
     }
   };
@@ -717,7 +763,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
           )}
 
           <PostActions
-            likesCount={post.likesCount}
+            likesCount={displayLikesCount}
             commentsCount={displayCommentsCount}
             isLiked={displayIsLiked}
             onLike={handleLike}
