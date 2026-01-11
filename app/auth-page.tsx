@@ -290,16 +290,16 @@ export default function AuthPage() {
               }
             </button>
           </div>
-
-          {/* Terms and Privacy */}
-          <div className="flex items-center justify-center gap-4 mt-6 text-xs text-gray-600">
-            <a href="/about" className="underline hover:text-black">Über Uns</a>
-            <span>•</span>
-            <a href="/imprint" className="underline hover:text-black">Impressum</a>
-            <span>•</span>
-            <a href="/privacy" className="underline hover:text-black">Datenschutz</a>
-          </div>
         </div>
+      </div>
+
+      {/* Terms and Privacy */}
+      <div className="flex items-center justify-center gap-4 mt-6 text-sm text-gray-700">
+        <a href="/about" className="underline hover:text-black">Über Uns</a>
+        <span>•</span>
+        <a href="/imprint" className="underline hover:text-black">Impressum</a>
+        <span>•</span>
+        <a href="/privacy" className="underline hover:text-black">Datenschutz</a>
       </div>
     </div>
   );
