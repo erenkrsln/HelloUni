@@ -179,7 +179,16 @@ export default function Home() {
 
   // Infinite Scroll: Automatisches Nachladen beim Scrollen
   useEffect(() => {
-    if (!posts || posts.length <= visiblePostsCount) return;
+    // Stoppe Observer, wenn alle Posts geladen sind
+    if (!posts || posts.length <= visiblePostsCount) {
+      // Entferne Sentinel-Element wenn alle Posts geladen sind
+      const sentinelId = "infinite-scroll-sentinel";
+      const sentinelElement = document.getElementById(sentinelId);
+      if (sentinelElement) {
+        sentinelElement.remove();
+      }
+      return;
+    }
 
     const sentinelId = "infinite-scroll-sentinel";
     
@@ -201,7 +210,7 @@ export default function Home() {
           });
         },
         {
-          rootMargin: "300px", // Starte Ladevorgang 300px vor dem Viewport
+          rootMargin: "200px", // Reduziert von 300px auf 200px
           threshold: 0.1,
         }
       );
@@ -220,17 +229,24 @@ export default function Home() {
 
   // Fallback: Scroll-Event für Infinite Scroll (falls Intersection Observer nicht funktioniert)
   useEffect(() => {
+    // Stoppe Scroll-Listener, wenn alle Posts geladen sind
     if (!posts || posts.length <= visiblePostsCount) return;
 
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
+          // Prüfe erneut, ob noch Posts geladen werden müssen
+          if (visiblePostsCount >= posts.length) {
+            ticking = false;
+            return;
+          }
+
           const scrollPosition = window.innerHeight + window.scrollY;
           const documentHeight = document.documentElement.scrollHeight;
           
-          // Wenn User nahe am Ende ist (300px vor Ende), lade mehr Posts
-          if (scrollPosition >= documentHeight - 300 && visiblePostsCount < posts.length) {
+          // Wenn User nahe am Ende ist (200px vor Ende), lade mehr Posts
+          if (scrollPosition >= documentHeight - 200 && visiblePostsCount < posts.length) {
             setVisiblePostsCount((prev) => Math.min(prev + 5, posts.length));
           }
           ticking = false;
@@ -351,7 +367,7 @@ export default function Home() {
                 />
               </div>
             ))}
-            {/* Unsichtbarer Sentinel für Infinite Scroll */}
+            {/* Unsichtbarer Sentinel für Infinite Scroll - nur wenn noch Posts vorhanden */}
             {visiblePostsCount < posts.length && (
               <div
                 id="infinite-scroll-sentinel"
@@ -359,7 +375,7 @@ export default function Home() {
                   height: "1px",
                   width: "100%",
                   position: "relative",
-                  marginTop: "100px",
+                  marginTop: "50px", // Reduziert von 100px auf 50px
                 }}
                 aria-hidden="true"
               />
