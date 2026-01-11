@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, paginatedQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
@@ -56,21 +56,23 @@ async function getPostImageUrls(ctx: any, post: { imageIds?: Id<"_storage">[]; s
   return [];
 }
 
-export const getFeed = query({
+// Paginated version of getFeed for infinite scroll
+export const getFeedPaginated = paginatedQuery({
   args: {
     userId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
-    const posts = await ctx.db
+    // Get paginated posts
+    const postsPage = await ctx.db
       .query("posts")
       .withIndex("by_created")
       .order("desc")
-      .collect();
+      .paginate(args);
 
     // Batch-Abfrage aller Likes für diesen User
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
+      const postIds = postsPage.page.map((p) => p._id);
       const allLikes = await ctx.db
         .query("likes")
         .collect();
@@ -85,7 +87,7 @@ export const getFeed = query({
     }
 
     const postsWithUsers = await Promise.all(
-      posts.map(async (post) => {
+      postsPage.page.map(async (post) => {
         const user = await ctx.db.get(post.userId);
         
         // Use helper function for image URLs conversion (supports arrays)
@@ -129,7 +131,11 @@ export const getFeed = query({
       })
     );
 
-    return postsWithUsers;
+    return {
+      page: postsWithUsers,
+      isDone: postsPage.isDone,
+      continueCursor: postsPage.continueCursor,
+    };
   },
 });
 
