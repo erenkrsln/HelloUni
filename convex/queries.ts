@@ -56,6 +56,84 @@ async function getPostImageUrls(ctx: any, post: { imageIds?: Id<"_storage">[]; s
   return [];
 }
 
+// Original getFeed query (für andere Komponenten)
+export const getFeed = query({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    // Batch-Abfrage aller Likes für diesen User
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = posts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+      
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+      
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
+    const postsWithUsers = await Promise.all(
+      posts.map(async (post) => {
+        const user = await ctx.db.get(post.userId);
+        
+        // Use helper function for image URLs conversion (supports arrays)
+        const imageUrls = await getPostImageUrls(ctx, post);
+        
+        // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
+
+        // Convert user image storage ID to URL if it exists
+        let userImageUrl = user?.image;
+        if (userImageUrl && !userImageUrl.startsWith('http')) {
+          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+        }
+
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+        }
+
+        // Calculate actual comments count (only top-level comments)
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+        return {
+          ...post,
+          participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
+          imageUrls, // Array von Bild-URLs
+          imageUrl, // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+          imageDimensions: post.imageDimensions, // Array von Bilddimensionen (parallel zu imageUrls)
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+          user: user ? {
+            ...user,
+            image: userImageUrl,
+          } : null,
+        };
+      })
+    );
+
+    return postsWithUsers;
+  },
+});
+
 // Paginated version of getFeed for infinite scroll (manuelle Pagination)
 export const getFeedPaginated = query({
   args: {
