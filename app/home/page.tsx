@@ -154,24 +154,22 @@ export default function Home() {
 
   // Kein Loading Screen - zeige gecachte Daten sofort an
 
-  // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
-  // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
+  // Optimiertes Preloading: Nur die ersten 3 Bilder vorladen (für bessere Performance auf Mobile)
+  // Mobile-Geräte haben begrenzten Speicher - zu viele gleichzeitige Bild-Ladungen führen zu Crashes
   useEffect(() => {
-    if (!posts) return;
+    if (!posts || !isMobile) return; // Preload nur auf Desktop, Mobile nutzt Lazy-Loading
 
-    // Alle Bilder parallel vorladen für sofortige Anzeige
-    posts.forEach((post) => {
+    // Nur die ersten 3 Bilder vorladen (für sofortige Anzeige beim ersten Scroll)
+    const postsToPreload = posts.slice(0, 3);
+    postsToPreload.forEach((post) => {
       if (post.imageUrl && !preloadedImages.current.has(post.imageUrl)) {
-        // Image-Objekt für Browser-Cache (kein Link-Preload, um Warnungen zu vermeiden)
         const img = new Image();
         img.src = post.imageUrl;
-        img.loading = "eager";
-        img.fetchPriority = "high";
-
+        img.loading = "lazy"; // Lazy-Loading auch für Preload
         preloadedImages.current.add(post.imageUrl);
       }
     });
-  }, [posts]);
+  }, [posts, isMobile]);
 
   // Upload Progress Tracking
   useEffect(() => {

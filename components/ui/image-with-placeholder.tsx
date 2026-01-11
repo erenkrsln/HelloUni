@@ -24,9 +24,21 @@ interface ImageWithPlaceholderProps {
  * Phase 3: Image Ready (Bild) - wenn onLoad feuert
  * 
  * KRITISCH: Container hat IMMER stabiles Aspect Ratio - keine Layout Shifts möglich
+ * 
+ * Memory-Optimierung: Cache wird auf max. 50 Bilder begrenzt (verhindert Memory-Leaks auf Mobile)
  */
 // Globaler Cache für bereits geladene Bilder in dieser Session
 const loadedImages = new Set<string>();
+const MAX_CACHE_SIZE = 50; // Max. Anzahl gecachter Bilder (verhindert Memory-Probleme)
+
+// Cleanup-Funktion für Memory-Management
+const cleanupImageCache = () => {
+  if (loadedImages.size > MAX_CACHE_SIZE) {
+    // Entferne die ältesten Einträge (FIFO)
+    const entriesToRemove = Array.from(loadedImages).slice(0, loadedImages.size - MAX_CACHE_SIZE);
+    entriesToRemove.forEach(url => loadedImages.delete(url));
+  }
+};
 
 export function ImageWithPlaceholder({
   src,
@@ -200,10 +212,11 @@ export function ImageWithPlaceholder({
           sizes={sizes}
           priority={priority}
           className={`relative w-full h-auto transition-opacity duration-500 ease-in-out z-10 ${!isImageLoaded ? "opacity-0" : "opacity-100"}`}
-          onLoad={() => {
-            loadedImages.add(src); // Zum Cache hinzufügen
-            setIsImageLoaded(true);
-          }}
+        onLoad={() => {
+          loadedImages.add(src); // Zum Cache hinzufügen
+          cleanupImageCache(); // Memory-Cleanup
+          setIsImageLoaded(true);
+        }}
           onError={() => {
             setIsImageLoaded(false);
             setHasError(true);
@@ -241,6 +254,7 @@ export function ImageWithPlaceholder({
           // WICHTIG: onLoad feuert, wenn das Bild vollständig geladen ist
           // Der Container ändert seine Größe NICHT - Shimmer und Bild füllen denselben Raum aus
           loadedImages.add(src); // Zum Cache hinzufügen
+          cleanupImageCache(); // Memory-Cleanup (verhindert Memory-Leaks auf Mobile)
           setIsImageLoaded(true);
         }}
         onError={() => {
