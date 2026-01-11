@@ -11,6 +11,7 @@ import { ImagePlus, X, ChevronDown } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
+import { ImageGrid } from "@/components/image-grid";
 
 export default function CreatePage() {
     const router = useRouter();
@@ -56,8 +57,8 @@ export default function CreatePage() {
         api.queries.searchUsers,
         mentionSearchTerm ? { searchTerm: mentionSearchTerm } : "skip"
     );
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Event fields
@@ -99,24 +100,54 @@ export default function CreatePage() {
     const createPost = useMutation(api.mutations.createPost);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedImage(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    // Cleanup Object URLs when component unmounts or files change
+    // Track all created object URLs to revoke them only on unmount
+    const createdUrlsRef = useRef<string[]>([]);
 
-    const removeImage = () => {
-        setSelectedImage(null);
-        setImagePreview(null);
+    // Cleanup Object URLs when component unmounts
+    useEffect(() => {
+        return () => {
+            createdUrlsRef.current.forEach((url) => {
+                URL.revokeObjectURL(url);
+            });
+        };
+    }, []);
+
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Validierung: Maximal 4 Bilder insgesamt
+        const totalFiles = selectedFiles.length + files.length;
+        if (totalFiles > 4) {
+            alert("Du kannst maximal 4 Bilder hinzufügen.");
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+            return;
+        }
+
+        // Neue Dateien hinzufügen
+        const newFiles = [...selectedFiles, ...files];
+        setSelectedFiles(newFiles);
+
+        // Object URLs für Vorschau erstellen
+        const newPreviews = files.map((file) => URL.createObjectURL(file));
+        createdUrlsRef.current.push(...newPreviews);
+        setImagePreviews([...imagePreviews, ...newPreviews]);
+
+        // Input zurücksetzen
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
+    };
+
+    const removeImage = (index: number) => {
+        // Dateien und Previews aktualisieren
+        const newFiles = selectedFiles.filter((_, i) => i !== index);
+        const newPreviews = imagePreviews.filter((_, i) => i !== index);
+        setSelectedFiles(newFiles);
+        setImagePreviews(newPreviews);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -139,7 +170,7 @@ export default function CreatePage() {
         }
 
         // Nur bei Bild-Upload: Progress initialisieren
-        if (selectedImage) {
+        if (selectedFiles.length > 0) {
             sessionStorage.setItem("uploadProgress", "0");
         }
 
@@ -149,23 +180,35 @@ export default function CreatePage() {
         // Upload im Hintergrund durchführen
         (async () => {
             try {
-                let imageUrl: string | undefined = undefined;
+                let imageUrls: string[] | undefined = undefined;
 
-                // Bild hochladen mit Progress-Tracking über sessionStorage
-                if (selectedImage) {
+                // Bilder hochladen mit Progress-Tracking über sessionStorage
+                if (selectedFiles.length > 0) {
                     sessionStorage.setItem("uploadProgress", "10");
-                    const uploadUrl = await generateUploadUrl();
-                    sessionStorage.setItem("uploadProgress", "30");
-                    
-                    const result = await fetch(uploadUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": selectedImage.type },
-                        body: selectedImage,
-                    });
-                    sessionStorage.setItem("uploadProgress", "60");
-                    
-                    const { storageId } = await result.json();
-                    imageUrl = storageId;
+                    const storageIds: string[] = [];
+
+                    // Alle Bilder hochladen
+                    for (let i = 0; i < selectedFiles.length; i++) {
+                        const file = selectedFiles[i];
+                        const progressStart = 10 + (i / selectedFiles.length) * 70;
+                        const progressEnd = 10 + ((i + 1) / selectedFiles.length) * 70;
+
+                        sessionStorage.setItem("uploadProgress", progressStart.toString());
+                        const uploadUrl = await generateUploadUrl();
+                        sessionStorage.setItem("uploadProgress", ((progressStart + progressEnd) / 2).toString());
+
+                        const result = await fetch(uploadUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": file.type },
+                            body: file,
+                        });
+
+                        const { storageId } = await result.json();
+                        storageIds.push(storageId);
+                        sessionStorage.setItem("uploadProgress", progressEnd.toString());
+                    }
+
+                    imageUrls = storageIds;
                     sessionStorage.setItem("uploadProgress", "80");
                 }
 
@@ -190,7 +233,7 @@ export default function CreatePage() {
                 const extractedMentions = extractMentions(content.trim());
                 const validMentions = extractedMentions.length > 0 ? extractedMentions : undefined;
 
-                if (selectedImage) {
+                if (selectedFiles.length > 0) {
                     sessionStorage.setItem("uploadProgress", "90");
                 }
 
@@ -200,7 +243,7 @@ export default function CreatePage() {
                     postType,
                     title: title.trim() || undefined,
                     content: content.trim(),
-                    imageUrl,
+                    imageUrls, // Neue Array-Format
                     eventDate: eventDateTimestamp,
                     eventTime: eventTime || undefined,
                     participantLimit: participantLimit || undefined,
@@ -210,7 +253,7 @@ export default function CreatePage() {
                     mentions: validMentions,
                 });
 
-                if (selectedImage) {
+                if (selectedFiles.length > 0) {
                     sessionStorage.setItem("uploadProgress", "100");
                     // Kurze Verzögerung damit User den vollen Progress sieht
                     await new Promise(resolve => setTimeout(resolve, 500));
@@ -374,13 +417,13 @@ export default function CreatePage() {
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-            
+
             {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
-            <div 
-                className="fixed left-0 right-0 z-40 bg-white border-b border-gray-200" 
-                style={{ 
+            <div
+                className="fixed left-0 right-0 z-40 bg-white border-b border-gray-200"
+                style={{
                     top: "env(safe-area-inset-top, 0px)",
-                    maxWidth: "428px", 
+                    maxWidth: "428px",
                     margin: "0 auto",
                 }}
             >
@@ -404,483 +447,483 @@ export default function CreatePage() {
             </div>
 
             <div className="pt-16" style={{ paddingTop: `calc(4rem + env(safe-area-inset-top, 0px))` }}>
-            {isLoading ? (
-                <LoadingScreen text="Seite wird geladen..." />
-            ) : (
-                <div className="px-4 py-6">
+                {isLoading ? (
+                    <LoadingScreen text="Seite wird geladen..." />
+                ) : (
+                    <div className="px-4 py-6">
                         <form id="create-post-form" onSubmit={handleSubmit}>
-                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4 overflow-hidden">
-                            {/* Post Type Selection */}
-                            <div className="mb-4 relative post-type-dropdown">
-                                <label htmlFor="postType" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Post-Typ
-                                </label>
-                                <div className="relative">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setIsPostTypeOpen(!isPostTypeOpen);
-                                        }}
-                                        className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
-                                    >
-                                        <span>
-                                            {postType === "normal" && "Normal"}
-                                            {postType === "announcement" && "Ankündigung"}
-                                            {postType === "spontaneous_meeting" && "Spontanes Treffen"}
-                                            {postType === "recurring_meeting" && "Wiederkehrendes Treffen"}
-                                            {postType === "poll" && "Umfrage"}
-                                        </span>
-                                        <ChevronDown
-                                            className={`h-4 w-4 text-gray-500 transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`}
-                                        />
-                                    </button>
-                                    {isPostTypeOpen && (
-                                        <div
-                                            className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4 overflow-hidden">
+                                {/* Post Type Selection */}
+                                <div className="mb-4 relative post-type-dropdown">
+                                    <label htmlFor="postType" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Post-Typ
+                                    </label>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setIsPostTypeOpen(!isPostTypeOpen);
+                                            }}
+                                            className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                         >
-                                            <div className="py-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setPostType("normal");
-                                                        setIsPostTypeOpen(false);
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                >
-                                                    Normal
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setPostType("announcement");
-                                                        setIsPostTypeOpen(false);
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                >
-                                                    Ankündigung
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setPostType("spontaneous_meeting");
-                                                        setIsPostTypeOpen(false);
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                >
-                                                    Spontanes Treffen
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setPostType("recurring_meeting");
-                                                        setIsPostTypeOpen(false);
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                >
-                                                    Wiederkehrendes Treffen
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setPostType("poll");
-                                                        setIsPostTypeOpen(false);
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                >
-                                                    Umfrage
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Title */}
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="Titel (optional)"
-                                    maxLength={100}
-                                    className="w-full h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
-                                />
-                            </div>
-
-                            {/* Text and Image Container - Vertical Flexbox */}
-                            <div className="flex flex-col border border-gray-300 rounded-lg pb-4">
-                                <div className="relative flex-shrink-0">
-                                {/* Overlay for highlighting mentions - render ALL text here since textarea is transparent */}
-                                <div
-                                        className="absolute inset-0 px-4 py-3 pointer-events-none text-base md:text-sm whitespace-pre-wrap break-words overflow-hidden text-gray-900 [&::selection]:bg-blue-200"
-                                    style={{
-                                        minHeight: "150px",
-                                        zIndex: 1,
-                                        lineHeight: '1.5',
-                                        letterSpacing: 'normal',
-                                        userSelect: 'none'
-                                    }}
-                                >
-                                    {(() => {
-                                        // Show placeholder if content is empty
-                                        if (!content || content.trim() === '') {
-                                            return <span className="text-gray-400">Was möchtest du teilen?</span>;
-                                        }
-
-                                        // Use same regex as FeedCard: /@(\w+)/g
-                                        // Don't highlight if dropdown is open (user is still typing)
-                                        const parts: React.ReactNode[] = [];
-                                        let lastIndex = 0;
-                                        let keyCounter = 0;
-
-                                        // Same regex as FeedCard
-                                        const mentionRegex = /@(\w+)/g;
-                                        const matches = Array.from(content.matchAll(mentionRegex));
-
-                                        if (matches.length === 0) {
-                                            // No mentions, just render the content as normal text
-                                            return <span>{content}</span>;
-                                        }
-
-                                        matches.forEach((match) => {
-                                            if (match.index === undefined) return;
-
-                                            // Check if this is the current incomplete mention (while typing)
-                                            const isCurrentTyping = showMentionDropdown &&
-                                                match.index <= mentionCursorPosition &&
-                                                match.index + match[0].length >= mentionCursorPosition;
-
-                                            // Add text before mention (visible normal text)
-                                            if (match.index > lastIndex) {
-                                                parts.push(
-                                                    <span key={`text-${keyCounter++}`}>
-                                                        {content.substring(lastIndex, match.index)}
-                                                    </span>
-                                                );
-                                            }
-
-                                            // Add mention - only color, no other styling
-                                            // Only highlight if not currently typing (after selection from dropdown)
-                                            if (!isCurrentTyping) {
-                                                parts.push(
-                                                    <span
-                                                        key={`mention-${keyCounter++}`}
-                                                        style={{
-                                                            color: '#D08945',
-                                                            fontWeight: 'normal',
-                                                            fontStyle: 'normal',
-                                                            textDecoration: 'none',
-                                                            textShadow: 'none',
-                                                            WebkitTextStroke: '0',
-                                                            outline: 'none',
-                                                            border: 'none',
-                                                            boxShadow: 'none',
-                                                            background: 'transparent'
+                                            <span>
+                                                {postType === "normal" && "Normal"}
+                                                {postType === "announcement" && "Ankündigung"}
+                                                {postType === "spontaneous_meeting" && "Spontanes Treffen"}
+                                                {postType === "recurring_meeting" && "Wiederkehrendes Treffen"}
+                                                {postType === "poll" && "Umfrage"}
+                                            </span>
+                                            <ChevronDown
+                                                className={`h-4 w-4 text-gray-500 transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`}
+                                            />
+                                        </button>
+                                        {isPostTypeOpen && (
+                                            <div
+                                                className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                                            >
+                                                <div className="py-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setPostType("normal");
+                                                            setIsPostTypeOpen(false);
                                                         }}
+                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
                                                     >
-                                                        {match[0]}
-                                                    </span>
-                                                );
-                                            } else {
-                                                // While typing, show as normal text (not highlighted yet)
-                                                parts.push(
-                                                    <span key={`mention-${keyCounter++}`}>
-                                                        {match[0]}
-                                                    </span>
-                                                );
-                                            }
-
-                                            lastIndex = match.index + match[0].length;
-                                        });
-
-                                        // Add remaining text (visible normal text)
-                                        if (lastIndex < content.length) {
-                                            parts.push(
-                                                <span key={`text-${keyCounter++}`}>
-                                                    {content.substring(lastIndex)}
-                                                </span>
-                                            );
-                                        }
-
-                                        return <>{parts}</>;
-                                    })()}
+                                                        Normal
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setPostType("announcement");
+                                                            setIsPostTypeOpen(false);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                    >
+                                                        Ankündigung
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setPostType("spontaneous_meeting");
+                                                            setIsPostTypeOpen(false);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                    >
+                                                        Spontanes Treffen
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setPostType("recurring_meeting");
+                                                            setIsPostTypeOpen(false);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                    >
+                                                        Wiederkehrendes Treffen
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setPostType("poll");
+                                                            setIsPostTypeOpen(false);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                    >
+                                                        Umfrage
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <textarea
-                                    ref={textareaRef}
-                                    value={content}
-                                    onChange={handleContentChange}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Was möchtest du teilen?"
-                                        className="relative w-full px-4 pt-3 pb-0 bg-transparent text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-0 border-none resize-none transition-colors [&::selection]:bg-blue-200 [&::selection]:text-transparent"
-                                    style={{
-                                        minHeight: "150px",
-                                        color: 'transparent',
-                                        caretColor: '#111827',
-                                        WebkitTextFillColor: 'transparent'
-                                    }}
-                                    maxLength={500}
-                                />
+                                {/* Title */}
+                                <div className="mb-4">
+                                    <input
+                                        type="text"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        placeholder="Titel (optional)"
+                                        maxLength={100}
+                                        className="w-full h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
+                                    />
+                                </div>
 
-                                {/* Mention Autocomplete Dropdown */}
-                                {showMentionDropdown && mentionUsers && mentionUsers.length > 0 && (
-                                    <div
-                                        ref={mentionDropdownRef}
-                                        className="absolute z-50 mt-1 w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                                    >
-                                        {mentionUsers.map((user, index) => (
-                                            <button
-                                                key={user._id}
-                                                type="button"
-                                                onClick={() => insertMention(user.username)}
-                                                className={`
+                                {/* Text and Image Container - Vertical Flexbox */}
+                                <div className="flex flex-col border border-gray-300 rounded-lg pb-4">
+                                    <div className="relative flex-shrink-0">
+                                        {/* Overlay for highlighting mentions - render ALL text here since textarea is transparent */}
+                                        <div
+                                            className="absolute inset-0 px-4 py-3 pointer-events-none text-base md:text-sm whitespace-pre-wrap break-words overflow-hidden text-gray-900 [&::selection]:bg-blue-200"
+                                            style={{
+                                                minHeight: "150px",
+                                                zIndex: 1,
+                                                lineHeight: '1.5',
+                                                letterSpacing: 'normal',
+                                                userSelect: 'none'
+                                            }}
+                                        >
+                                            {(() => {
+                                                // Show placeholder if content is empty
+                                                if (!content || content.trim() === '') {
+                                                    return <span className="text-gray-400">Was möchtest du teilen?</span>;
+                                                }
+
+                                                // Use same regex as FeedCard: /@(\w+)/g
+                                                // Don't highlight if dropdown is open (user is still typing)
+                                                const parts: React.ReactNode[] = [];
+                                                let lastIndex = 0;
+                                                let keyCounter = 0;
+
+                                                // Same regex as FeedCard
+                                                const mentionRegex = /@(\w+)/g;
+                                                const matches = Array.from(content.matchAll(mentionRegex));
+
+                                                if (matches.length === 0) {
+                                                    // No mentions, just render the content as normal text
+                                                    return <span>{content}</span>;
+                                                }
+
+                                                matches.forEach((match) => {
+                                                    if (match.index === undefined) return;
+
+                                                    // Check if this is the current incomplete mention (while typing)
+                                                    const isCurrentTyping = showMentionDropdown &&
+                                                        match.index <= mentionCursorPosition &&
+                                                        match.index + match[0].length >= mentionCursorPosition;
+
+                                                    // Add text before mention (visible normal text)
+                                                    if (match.index > lastIndex) {
+                                                        parts.push(
+                                                            <span key={`text-${keyCounter++}`}>
+                                                                {content.substring(lastIndex, match.index)}
+                                                            </span>
+                                                        );
+                                                    }
+
+                                                    // Add mention - only color, no other styling
+                                                    // Only highlight if not currently typing (after selection from dropdown)
+                                                    if (!isCurrentTyping) {
+                                                        parts.push(
+                                                            <span
+                                                                key={`mention-${keyCounter++}`}
+                                                                style={{
+                                                                    color: '#D08945',
+                                                                    fontWeight: 'normal',
+                                                                    fontStyle: 'normal',
+                                                                    textDecoration: 'none',
+                                                                    textShadow: 'none',
+                                                                    WebkitTextStroke: '0',
+                                                                    outline: 'none',
+                                                                    border: 'none',
+                                                                    boxShadow: 'none',
+                                                                    background: 'transparent'
+                                                                }}
+                                                            >
+                                                                {match[0]}
+                                                            </span>
+                                                        );
+                                                    } else {
+                                                        // While typing, show as normal text (not highlighted yet)
+                                                        parts.push(
+                                                            <span key={`mention-${keyCounter++}`}>
+                                                                {match[0]}
+                                                            </span>
+                                                        );
+                                                    }
+
+                                                    lastIndex = match.index + match[0].length;
+                                                });
+
+                                                // Add remaining text (visible normal text)
+                                                if (lastIndex < content.length) {
+                                                    parts.push(
+                                                        <span key={`text-${keyCounter++}`}>
+                                                            {content.substring(lastIndex)}
+                                                        </span>
+                                                    );
+                                                }
+
+                                                return <>{parts}</>;
+                                            })()}
+                                        </div>
+
+                                        <textarea
+                                            ref={textareaRef}
+                                            value={content}
+                                            onChange={handleContentChange}
+                                            onKeyDown={handleKeyDown}
+                                            placeholder="Was möchtest du teilen?"
+                                            className="relative w-full px-4 pt-3 pb-0 bg-transparent text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-0 border-none resize-none transition-colors [&::selection]:bg-blue-200 [&::selection]:text-transparent"
+                                            style={{
+                                                minHeight: "150px",
+                                                color: 'transparent',
+                                                caretColor: '#111827',
+                                                WebkitTextFillColor: 'transparent'
+                                            }}
+                                            maxLength={500}
+                                        />
+
+                                        {/* Mention Autocomplete Dropdown */}
+                                        {showMentionDropdown && mentionUsers && mentionUsers.length > 0 && (
+                                            <div
+                                                ref={mentionDropdownRef}
+                                                className="absolute z-50 mt-1 w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                            >
+                                                {mentionUsers.map((user, index) => (
+                                                    <button
+                                                        key={user._id}
+                                                        type="button"
+                                                        onClick={() => insertMention(user.username)}
+                                                        className={`
                                                 w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-3
                                                 ${index === selectedMentionIndex && selectedMentionIndex >= 0 ? 'bg-gray-100' : ''}
                                             `}
-                                            >
-                                                {user.image ? (
-                                                    <img
-                                                        src={user.image}
-                                                        alt={user.name}
-                                                        className="w-8 h-8 rounded-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-medium">
-                                                        {user.name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-sm font-medium text-gray-900 truncate">
-                                                        {user.name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500 truncate">
-                                                        @{user.username}
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        ))}
+                                                    >
+                                                        {user.image ? (
+                                                            <img
+                                                                src={user.image}
+                                                                alt={user.name}
+                                                                className="w-8 h-8 rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-medium">
+                                                                {user.name.charAt(0).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-medium text-gray-900 truncate">
+                                                                {user.name}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 truncate">
+                                                                @{user.username}
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Image Preview Grid */}
+                                    {imagePreviews.length > 0 && (
+                                        <div className="px-4 -mt-28 pb-4">
+                                            <ImageGrid
+                                                images={imagePreviews}
+                                                onRemove={removeImage}
+                                            />
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Image Preview - direct sibling of textarea */}
-                                {imagePreview && (
-                                    <div className="relative flex-shrink-0 px-4 -mt-28 pb-4">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            className="w-full rounded-xl object-contain"
-                                            style={{ maxHeight: "600px", height: "auto" }}
-                                        />
+                                {/* Event Fields */}
+                                {(postType === "spontaneous_meeting" || postType === "recurring_meeting") && (
+                                    <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200" style={{ textAlign: "left" }}>
+                                        <div>
+                                            <label htmlFor="eventDate" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Datum *
+                                            </label>
+                                            <DatePicker
+                                                value={eventDate}
+                                                onChange={setEventDate}
+                                                placeholder="Datum auswählen"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="eventTime" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Uhrzeit
+                                            </label>
+                                            <TimePicker
+                                                value={eventTime}
+                                                onChange={setEventTime}
+                                                placeholder="Uhrzeit auswählen"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="participantLimit" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Teilnehmerlimit
+                                            </label>
+                                            <input
+                                                id="participantLimit"
+                                                type="number"
+                                                value={participantLimit || ""}
+                                                onChange={(e) => setParticipantLimit(e.target.value ? parseInt(e.target.value) : undefined)}
+                                                min="1"
+                                                placeholder="Unbegrenzt"
+                                                className="w-full h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
+                                            />
+                                        </div>
+                                        {postType === "recurring_meeting" && (
+                                            <div className="relative recurrence-dropdown">
+                                                <label htmlFor="recurrencePattern" className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Wiederholung
+                                                </label>
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setIsRecurrenceOpen(!isRecurrenceOpen);
+                                                        }}
+                                                        className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                    >
+                                                        <span>
+                                                            {recurrencePattern === "" && "Keine Wiederholung"}
+                                                            {recurrencePattern === "daily" && "Täglich"}
+                                                            {recurrencePattern === "weekly" && "Wöchentlich"}
+                                                            {recurrencePattern === "monthly" && "Monatlich"}
+                                                        </span>
+                                                        <ChevronDown
+                                                            className={`h-4 w-4 text-gray-500 transition-transform ${isRecurrenceOpen ? "rotate-180" : ""}`}
+                                                        />
+                                                    </button>
+                                                    {isRecurrenceOpen && (
+                                                        <div
+                                                            className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                                                        >
+                                                            <div className="py-1">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        setRecurrencePattern("");
+                                                                        setIsRecurrenceOpen(false);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                >
+                                                                    Keine Wiederholung
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        setRecurrencePattern("daily");
+                                                                        setIsRecurrenceOpen(false);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                >
+                                                                    Täglich
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        setRecurrencePattern("weekly");
+                                                                        setIsRecurrenceOpen(false);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                >
+                                                                    Wöchentlich
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        setRecurrencePattern("monthly");
+                                                                        setIsRecurrenceOpen(false);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                >
+                                                                    Monatlich
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Poll Options */}
+                                {postType === "poll" && (
+                                    <div className="mt-4 space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Umfrage-Optionen *
+                                        </label>
+                                        {pollOptions.map((option, index) => (
+                                            <div key={index} className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={option}
+                                                    onChange={(e) => updatePollOption(index, e.target.value)}
+                                                    placeholder={`Option ${index + 1}`}
+                                                    className="flex-1 h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
+                                                />
+                                                {pollOptions.length > 2 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removePollOption(index)}
+                                                        className="h-11 w-11 flex items-center justify-center rounded-lg border border-red-300 bg-white text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
                                         <button
                                             type="button"
-                                            onClick={removeImage}
-                                            className="absolute top-2 right-6 h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white focus:outline-none shadow-md"
+                                            onClick={addPollOption}
+                                            className="w-full h-11 px-4 py-2 rounded-lg bg-gradient-to-r from-[#D08945] via-[#DCA067] to-[#F4CFAB] text-white hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:ring-offset-2 transition-all shadow-md text-sm font-medium"
                                         >
-                                            <X className="w-5 h-5" />
+                                            + Option hinzufügen
                                         </button>
                                     </div>
                                 )}
-                            </div>
 
-                            {/* Event Fields */}
-                            {(postType === "spontaneous_meeting" || postType === "recurring_meeting") && (
-                                <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200" style={{ textAlign: "left" }}>
-                                    <div>
-                                        <label htmlFor="eventDate" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Datum *
-                                        </label>
-                                        <DatePicker
-                                            value={eventDate}
-                                            onChange={setEventDate}
-                                            placeholder="Datum auswählen"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="eventTime" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Uhrzeit
-                                        </label>
-                                        <TimePicker
-                                            value={eventTime}
-                                            onChange={setEventTime}
-                                            placeholder="Uhrzeit auswählen"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="participantLimit" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Teilnehmerlimit
-                                        </label>
-                                        <input
-                                            id="participantLimit"
-                                            type="number"
-                                            value={participantLimit || ""}
-                                            onChange={(e) => setParticipantLimit(e.target.value ? parseInt(e.target.value) : undefined)}
-                                            min="1"
-                                            placeholder="Unbegrenzt"
-                                            className="w-full h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
-                                        />
-                                    </div>
-                                    {postType === "recurring_meeting" && (
-                                        <div className="relative recurrence-dropdown">
-                                            <label htmlFor="recurrencePattern" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Wiederholung
-                                            </label>
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setIsRecurrenceOpen(!isRecurrenceOpen);
-                                                    }}
-                                                    className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
-                                                >
-                                                    <span>
-                                                        {recurrencePattern === "" && "Keine Wiederholung"}
-                                                        {recurrencePattern === "daily" && "Täglich"}
-                                                        {recurrencePattern === "weekly" && "Wöchentlich"}
-                                                        {recurrencePattern === "monthly" && "Monatlich"}
-                                                    </span>
-                                                    <ChevronDown
-                                                        className={`h-4 w-4 text-gray-500 transition-transform ${isRecurrenceOpen ? "rotate-180" : ""}`}
-                                                    />
-                                                </button>
-                                                {isRecurrenceOpen && (
-                                                    <div
-                                                        className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
-                                                    >
-                                                        <div className="py-1">
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setRecurrencePattern("");
-                                                                    setIsRecurrenceOpen(false);
-                                                                }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                            >
-                                                                Keine Wiederholung
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setRecurrencePattern("daily");
-                                                                    setIsRecurrenceOpen(false);
-                                                                }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                            >
-                                                                Täglich
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setRecurrencePattern("weekly");
-                                                                    setIsRecurrenceOpen(false);
-                                                                }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                            >
-                                                                Wöchentlich
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setRecurrencePattern("monthly");
-                                                                    setIsRecurrenceOpen(false);
-                                                                }}
-                                                                className="w-full px-3 py-2 text-left text-sm text-gray-900"
-                                                            >
-                                                                Monatlich
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Poll Options */}
-                            {postType === "poll" && (
-                                <div className="mt-4 space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Umfrage-Optionen *
-                                    </label>
-                                    {pollOptions.map((option, index) => (
-                                        <div key={index} className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={option}
-                                                onChange={(e) => updatePollOption(index, e.target.value)}
-                                                placeholder={`Option ${index + 1}`}
-                                                className="flex-1 h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
-                                            />
-                                            {pollOptions.length > 2 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removePollOption(index)}
-                                                    className="h-11 w-11 flex items-center justify-center rounded-lg border border-red-300 bg-white text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                                     <button
                                         type="button"
-                                        onClick={addPollOption}
-                                        className="w-full h-11 px-4 py-2 rounded-lg bg-gradient-to-r from-[#D08945] via-[#DCA067] to-[#F4CFAB] text-white hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:ring-offset-2 transition-all shadow-md text-sm font-medium"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        title="Bilder hinzufügen"
+                                        aria-label="Bilder hinzufügen"
+                                        disabled={selectedFiles.length >= 4}
+                                        className="flex items-center justify-center w-10 h-10 text-gray-600 rounded-lg focus:outline-none active:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        + Option hinzufügen
+                                        <ImagePlus className="w-6 h-6" />
                                     </button>
+                                    <div className="flex items-center gap-3">
+                                        {selectedFiles.length > 0 && (
+                                            <div className="text-xs text-gray-500">
+                                                {selectedFiles.length}/4 Bilder
+                                            </div>
+                                        )}
+                                        <div className="text-xs text-gray-500">
+                                            {content.length}/500
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
 
-                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    title="Bild hinzufügen"
-                                    aria-label="Bild hinzufügen"
-                                    className="flex items-center justify-center w-10 h-10 text-gray-600 rounded-lg focus:outline-none active:outline-none"
-                                >
-                                    <ImagePlus className="w-6 h-6" />
-                                </button>
-                                <div className="text-xs text-gray-500">
-                                    {content.length}/500
-                                </div>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImageSelect}
+                                    className="hidden"
+                                />
                             </div>
-
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageSelect}
-                                className="hidden"
-                            />
-                        </div>
-                    </form>
-                </div>
-            )}
+                        </form>
+                    </div>
+                )}
             </div>
             <BottomNavigation />
         </main>

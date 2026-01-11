@@ -14,7 +14,8 @@ export const createPost = mutation({
     )),
     title: v.optional(v.string()),
     content: v.string(),
-    imageUrl: v.optional(v.string()),
+    imageUrl: v.optional(v.string()), // Deprecated: Use imageUrls instead (for backward compatibility)
+    imageUrls: v.optional(v.array(v.string())), // Array von Bild-URLs (max 4)
     eventDate: v.optional(v.number()),
     eventTime: v.optional(v.string()),
     participantLimit: v.optional(v.number()),
@@ -29,7 +30,8 @@ export const createPost = mutation({
       postType: args.postType || "normal", // Default für normale Posts
       title: args.title,
       content: args.content,
-      imageUrl: args.imageUrl,
+      imageUrl: args.imageUrl, // Deprecated: Keep for backward compatibility
+      imageUrls: args.imageUrls,
       eventDate: args.eventDate,
       eventTime: args.eventTime,
       participantLimit: args.participantLimit,

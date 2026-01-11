@@ -9,9 +9,31 @@ import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil,
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
+
+// Cache für bereits geladene Header-Bilder (nur Bilder, die erfolgreich geladen wurden)
+const loadedHeaderImagesCache = new Set<string>();
+
+// Prüfe ob Bild bereits im Browser-Cache ist (synchron)
+const checkHeaderImageCached = (src: string): boolean => {
+    if (typeof window === 'undefined') return false;
+    if (loadedHeaderImagesCache.has(src)) return true;
+    
+    try {
+        const img = document.createElement('img');
+        img.src = src;
+        if (img.complete && img.naturalWidth > 0) {
+            loadedHeaderImagesCache.add(src);
+            return true;
+        }
+    } catch {
+        // Ignoriere Fehler
+    }
+    return false;
+};
 
 interface ProfileHeaderProps {
     name: string;
@@ -69,6 +91,68 @@ export function ProfileHeader({
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const [selectedImageSrc, setSelectedImageSrc] = useState<string>("");
     const [isUploading, setIsUploading] = useState(false);
+    
+    // State for header image loading
+    // Initial state: Shimmer beim ersten Besuch, direkt anzeigen wenn bereits im Cache
+    const [isHeaderImageLoaded, setIsHeaderImageLoaded] = useState(() => {
+        if (!headerImage) return false;
+        // Prüfe sowohl eigenen Cache als auch Browser-Cache
+        return checkHeaderImageCached(headerImage);
+    });
+    const [wasCachedInitially, setWasCachedInitially] = useState(() => {
+        if (!headerImage) return false;
+        return checkHeaderImageCached(headerImage);
+    });
+    const [headerImageError, setHeaderImageError] = useState(false);
+    
+    // Reset loading state when headerImage changes und prüfe Browser-Cache
+    useEffect(() => {
+        if (headerImage) {
+            setHeaderImageError(false);
+            const wasCached = checkHeaderImageCached(headerImage);
+            setWasCachedInitially(wasCached);
+            
+            // Prüfe ob Bild bereits im Cache ist (eigener Cache oder Browser-Cache)
+            if (wasCached) {
+                setIsHeaderImageLoaded(true);
+            } else {
+                setIsHeaderImageLoaded(false);
+                // Asynchrone Prüfung für den Fall, dass das Bild gerade geladen wird
+                const img = document.createElement('img');
+                img.src = headerImage;
+                
+                if (img.complete && img.naturalWidth > 0) {
+                    // Bild ist bereits geladen
+                    loadedHeaderImagesCache.add(headerImage);
+                    setIsHeaderImageLoaded(true);
+                    setWasCachedInitially(true);
+                } else {
+                    // Bild muss noch geladen werden - warte auf onLoad
+                    const handleLoad = () => {
+                        loadedHeaderImagesCache.add(headerImage);
+                        setIsHeaderImageLoaded(true);
+                    };
+                    
+                    const handleError = () => {
+                        setIsHeaderImageLoaded(false);
+                        setHeaderImageError(true);
+                    };
+                    
+                    img.onload = handleLoad;
+                    img.onerror = handleError;
+                    
+                    return () => {
+                        img.onload = null;
+                        img.onerror = null;
+                    };
+                }
+            }
+        } else {
+            setIsHeaderImageLoaded(false);
+            setHeaderImageError(false);
+            setWasCachedInitially(false);
+        }
+    }, [headerImage]);
 
     const handleHeaderImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -188,20 +272,47 @@ export function ProfileHeader({
             >
                 {/* Back Arrow Button - bottom left on mobile, top left on desktop with iOS safe area */}
                 <button
-                    onClick={() => router.push("/home")}
+                    onClick={() => router.back()}
                     className="absolute bottom-12 left-3 sm:bottom-auto sm:left-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
-                    aria-label="Zurück zur Startseite"
+                    aria-label="Zurück"
                 >
                     <ArrowLeft className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white" />
                 </button>
 
-                {headerImage ? (
-                    <img
-                        src={headerImage}
-                        alt="Header"
-                        className="w-full h-full object-cover"
-                    />
+                {headerImage && !headerImageError ? (
+                    <>
+                        {/* Shimmer-Effekt während des Ladens */}
+                        {!isHeaderImageLoaded && (
+                            <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+                        )}
+                        {/* Next.js Image mit Fade-in nur wenn nicht bereits im Cache */}
+                        <Image
+                            src={headerImage}
+                            alt="Header"
+                            fill
+                            className={`object-cover ${
+                                isHeaderImageLoaded 
+                                    ? wasCachedInitially 
+                                        ? "opacity-100" // Sofort anzeigen wenn im Cache
+                                        : "opacity-100 transition-opacity duration-500" // Fade-in wenn neu geladen
+                                    : "opacity-0"
+                            }`}
+                            priority
+                            sizes="(max-width: 640px) 100vw, 428px"
+                            onLoad={() => {
+                                if (headerImage) {
+                                    loadedHeaderImagesCache.add(headerImage);
+                                }
+                                setIsHeaderImageLoaded(true);
+                            }}
+                            onError={() => {
+                                setIsHeaderImageLoaded(false);
+                                setHeaderImageError(true);
+                            }}
+                        />
+                    </>
                 ) : (
+                    /* Fallback - schlichte Hintergrundfarbe ohne Animation */
                     <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
                 )}
             </div>

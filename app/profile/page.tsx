@@ -120,6 +120,7 @@ export default function ProfilePage() {
                                         post={post}
                                         currentUserId={currentUserId}
                                         showDivider={index < userPosts.length - 1}
+                                        priorityIndex={index}
                                     />
                                 ))}
                             </div>

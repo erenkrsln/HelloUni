@@ -47,8 +47,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
+  modal: React.ReactNode;
 }>) {
   return (
     <html lang="de">
@@ -63,7 +65,10 @@ export default function RootLayout({
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
         <NextAuthSessionProvider>
           <ConvexClientProvider>
-            <PostsCacheWrapper>{children}</PostsCacheWrapper>
+            <PostsCacheWrapper>
+              {children}
+              {modal}
+            </PostsCacheWrapper>
           </ConvexClientProvider>
         </NextAuthSessionProvider>
       </body>

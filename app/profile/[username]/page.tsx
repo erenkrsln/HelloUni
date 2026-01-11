@@ -7,11 +7,13 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen, Spinner } from "@/components/ui/spinner";
+import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { profileCache } from "@/lib/cache/profileCache";
 
 
 /**
@@ -23,6 +25,8 @@ import { useParams } from "next/navigation";
  */
 export default function UserProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const router = useRouter();
     const params = useParams();
     const username = params.username as string;
     const { currentUserId, currentUser } = useCurrentUser();
@@ -48,6 +52,15 @@ export default function UserProfilePage() {
         ? allPosts?.filter((post) => post.userId === profileData.user._id) || []
         : [];
 
+    const handleProfileUpdate = () => {
+        // Clear cache to force refresh
+        if (username) {
+            const cacheKey = profileCache.getKey(username, currentUserId);
+            profileCache.delete(cacheKey);
+        }
+        router.refresh();
+    };
+
     return (
         <main 
             className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden"
@@ -58,6 +71,24 @@ export default function UserProfilePage() {
         >
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+            {/* Edit Profile Modal - nur für eigenes Profil */}
+            {isOwnProfile && profileData && (
+                <EditProfileModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    userId={profileData.user._id}
+                    currentName={profileData.user.name}
+                    currentImage={profileData.user.image}
+                    currentHeaderImage={profileData.user.headerImage}
+                    currentBio={profileData.user.bio}
+                    currentMajor={profileData.user.major}
+                    currentSemester={profileData.user.semester}
+                    currentInterests={profileData.user.interests}
+                    onUpdate={handleProfileUpdate}
+                />
+            )}
+
             {isLoading ? (
                 // Show spinner only on first visit (no cached data)
                 <LoadingScreen text="Profil wird geladen..." />
@@ -85,6 +116,8 @@ export default function UserProfilePage() {
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
                         isFollowing={profileData.isFollowing}
+                        onHeaderImageUpdate={handleProfileUpdate}
+                        onEditClick={isOwnProfile ? () => setIsEditModalOpen(true) : undefined}
                     />
 
                     {/* Posts section */}
@@ -106,6 +139,7 @@ export default function UserProfilePage() {
                                         post={post}
                                         currentUserId={currentUserId}
                                         showDivider={index < userPosts.length - 1}
+                                        priorityIndex={index}
                                     />
                                 ))}
                             </div>

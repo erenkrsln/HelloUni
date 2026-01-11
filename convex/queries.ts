@@ -1,5 +1,34 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+
+// Helper function to convert post images to array format
+// Supports both old (imageUrl) and new (imageUrls) formats
+async function convertPostImages(ctx: any, post: any): Promise<string[]> {
+  // If imageUrls exists and is not empty, use it
+  if (post.imageUrls && Array.isArray(post.imageUrls) && post.imageUrls.length > 0) {
+    // Convert storage IDs to URLs
+    const imageUrls = await Promise.all(
+      post.imageUrls.map(async (url: string) => {
+        if (url && !url.startsWith('http')) {
+          return (await ctx.storage.getUrl(url as any)) ?? url;
+        }
+        return url;
+      })
+    );
+    return imageUrls;
+  }
+
+  // Fallback to imageUrl for backward compatibility
+  if (post.imageUrl) {
+    let imageUrl = post.imageUrl;
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+    }
+    return [imageUrl];
+  }
+
+  return [];
+}
 import { Id } from "./_generated/dataModel";
 
 // Helper function to calculate actual comments count for a post
@@ -29,11 +58,11 @@ export const getFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -42,12 +71,9 @@ export const getFeed = query({
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
-        let imageUrl = post.imageUrl;
-
-        // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrls = await convertPostImages(ctx, post);
+        // For backward compatibility, also return imageUrl (first image or undefined)
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         // Convert user image storage ID to URL if it exists
         let userImageUrl = user?.image;
@@ -72,7 +98,8 @@ export const getFeed = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrl, // Backward compatibility
+          imageUrls, // New array format
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
@@ -93,8 +120,14 @@ export const getPost = query({
     if (!post) return null;
 
     const user = await ctx.db.get(post.userId);
+    const imageUrls = await convertPostImages(ctx, post);
+    // For backward compatibility, also return imageUrl (first image or undefined)
+    const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
+
     return {
       ...post,
+      imageUrl, // Backward compatibility
+      imageUrls, // New array format
       user,
     };
   },
@@ -215,11 +248,11 @@ export const getUserPosts = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -228,12 +261,9 @@ export const getUserPosts = query({
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
-        let imageUrl = post.imageUrl;
-
-        // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrls = await convertPostImages(ctx, post);
+        // For backward compatibility, also return imageUrl (first image or undefined)
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         // Convert user image storage ID to URL if it exists
         let userImageUrl = user?.image;
@@ -258,7 +288,8 @@ export const getUserPosts = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrl, // Backward compatibility
+          imageUrls, // New array format
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
@@ -452,11 +483,11 @@ export const getFollowingFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -466,12 +497,9 @@ export const getFollowingFeed = query({
     const postsWithUsers = await Promise.all(
       followingPosts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
-        let imageUrl = post.imageUrl;
-
-        // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith("http")) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrls = await convertPostImages(ctx, post);
+        // For backward compatibility, also return imageUrl (first image or undefined)
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         // Convert user image storage ID to URL if it exists
         let userImageUrl = user?.image;
@@ -496,7 +524,8 @@ export const getFollowingFeed = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrl, // Backward compatibility
+          imageUrls, // New array format
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
@@ -724,11 +753,11 @@ export const getFilteredFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -754,10 +783,9 @@ export const getFilteredFeed = query({
           }
         }
 
-        let imageUrl = post.imageUrl;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrls = await convertPostImages(ctx, post);
+        // For backward compatibility, also return imageUrl (first image or undefined)
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         let userImageUrl = user?.image;
         if (userImageUrl && !userImageUrl.startsWith('http')) {
@@ -781,7 +809,8 @@ export const getFilteredFeed = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrl, // Backward compatibility
+          imageUrls, // New array format
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
@@ -1080,11 +1109,11 @@ export const getComments = query({
       const allCommentLikes = await ctx.db
         .query("commentLikes")
         .collect();
-      
+
       const userCommentLikes = allCommentLikes.filter(
         (like) => like.userId === args.userId && commentIds.includes(like.commentId)
       );
-      
+
       userCommentLikes.forEach((like) => {
         userCommentLikesMap[like.commentId as string] = true;
       });
@@ -1093,11 +1122,11 @@ export const getComments = query({
       const allCommentDislikes = await ctx.db
         .query("commentDislikes")
         .collect();
-      
+
       const userCommentDislikes = allCommentDislikes.filter(
         (dislike) => dislike.userId === args.userId && commentIds.includes(dislike.commentId)
       );
-      
+
       userCommentDislikes.forEach((dislike) => {
         userCommentDislikesMap[dislike.commentId as string] = true;
       });
@@ -1285,5 +1314,86 @@ export const getMessages = query({
 
     return messagesWithUrls;
 
+  },
+});
+// Find a post by one of its images (storageId or URL)
+export const getPostByImage = query({
+  args: { imageId: v.string(), userId: v.optional(v.id("users")) },
+  handler: async (ctx, args) => {
+    // We need to scan posts to find the one containing this image
+    // Note: In a production app with many posts, we should have a separate 'images' table 
+    // or an index on the image array. For now, filter is okay.
+
+    // Efficiency optimization: Most likely recent posts are clicked
+    const posts = await ctx.db
+      .query("posts")
+      .order("desc")
+      .take(100); // Check last 100 posts first
+
+    // Try to find in recent posts first
+    let post = posts.find(p => {
+      // Check imageUrls array
+      if (p.imageUrls && p.imageUrls.some(url => args.imageId.includes(url) || url.includes(args.imageId))) return true;
+      // Check legacy imageUrl
+      if (p.imageUrl && (args.imageId.includes(p.imageUrl) || p.imageUrl.includes(args.imageId))) return true;
+      // Check new legacy storage fields
+      if (p.storageIds && p.storageIds.some(id => args.imageId.includes(id) || id === args.imageId)) return true;
+      if (p.storageId && (args.imageId.includes(p.storageId) || p.storageId === args.imageId)) return true;
+
+      return false;
+    });
+
+    // If not found in recent, scan all (expensive, but necessary fallback)
+    if (!post) {
+      const allPosts = await ctx.db.query("posts").collect();
+      post = allPosts.find(p => {
+        // Check imageUrls array
+        if (p.imageUrls && p.imageUrls.some(url => args.imageId.includes(url) || url.includes(args.imageId))) return true;
+        // Check legacy imageUrl
+        if (p.imageUrl && (args.imageId.includes(p.imageUrl) || p.imageUrl.includes(args.imageId))) return true;
+        // Check new legacy storage fields
+        if (p.storageIds && p.storageIds.some(id => args.imageId.includes(id) || id === args.imageId)) return true;
+        if (p.storageId && (args.imageId.includes(p.storageId) || p.storageId === args.imageId)) return true;
+        return false;
+      });
+    }
+
+    if (!post) return null;
+
+    const user = await ctx.db.get(post.userId);
+    const imageUrls = await convertPostImages(ctx, post);
+    const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
+
+    let userImageUrl = user?.image;
+    if (userImageUrl && !userImageUrl.startsWith('http')) {
+      userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+    }
+
+    // Calculate actual comments count
+    const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+    // Check like status
+    let isLiked = false;
+    if (args.userId) {
+      const like = await ctx.db
+        .query("likes")
+        .withIndex("by_user_post", (q) =>
+          q.eq("userId", args.userId!).eq("postId", post._id)
+        )
+        .first();
+      isLiked = !!like;
+    }
+
+    return {
+      ...post,
+      commentsCount: actualCommentsCount,
+      imageUrl,
+      imageUrls,
+      isLiked,
+      user: user ? {
+        ...user,
+        image: userImageUrl,
+      } : null,
+    };
   },
 });

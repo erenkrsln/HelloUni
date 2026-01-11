@@ -367,7 +367,7 @@ export function EditProfileModal({
 
       {/* Drawer */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 bg-white z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         } h-[100vh] overflow-hidden`}
         style={{
@@ -376,25 +376,29 @@ export function EditProfileModal({
       >
         {/* Header */}
         <div 
-          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0"
-          style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))" }}
+          className="flex items-center justify-between px-4 border-b border-gray-200 flex-shrink-0"
+          style={{ 
+            paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+            paddingBottom: "1rem",
+            minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))"
+          }}
         >
           <button
             onClick={handleClose}
-            className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
+            className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity flex-shrink-0 py-2"
           >
             Abbrechen
           </button>
-          <h2 className="text-lg font-semibold text-gray-900">Profil bearbeiten</h2>
+          <h2 className="text-lg font-semibold text-gray-900 flex-1 text-center px-2">Profil bearbeiten</h2>
           <button
             onClick={(e) => {
               e.preventDefault();
               handleSubmit(e as any);
             }}
             disabled={isSubmitting || !name.trim()}
-            className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 py-2"
           >
-            {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+            Speichern
           </button>
         </div>
 

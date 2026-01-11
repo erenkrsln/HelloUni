@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
-import { LoadingScreen, Spinner } from "@/components/ui/spinner";
+import { LoadingScreen } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useEffect, useRef, useState, useMemo } from "react";
 
@@ -125,11 +125,7 @@ export default function Home() {
     return [];
   }, [postsFromQuery, cachedPostsForCurrentKey, isMobile]);
   
-  // Zeige Loading-Indikator nur auf Mobile:
-  // 1. Neue Daten werden geladen (postsFromQuery ist undefined)
-  // 2. UND wir haben bereits gecachte Posts (damit wir etwas anzeigen können)
   const hasCachedPosts = cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0;
-  const isLoadingNewData = isMobile && postsFromQuery === undefined && hasCachedPosts;
   
   // Initial Load: 
   // - Auf Mobile: Nur wenn keine gecachten Posts vorhanden sind
@@ -266,15 +262,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Loading-Indikator oben im Feed (Twitter-ähnlich) - nur wenn neue Daten geladen werden */}
-        {isLoadingNewData && (
-          <div className="px-4 py-2 bg-white border-b border-gray-100">
-            <div className="flex items-center justify-center">
-              <Spinner size="sm" />
-            </div>
-          </div>
-        )}
-
         {isInitialLoad ? (
           <div className="px-4">
             <LoadingScreen text="Feed wird geladen..." />
@@ -287,6 +274,7 @@ export default function Home() {
                 post={post}
                 currentUserId={currentUserId}
                 showDivider={index < posts.length - 1}
+                priorityIndex={index}
               />
             ))}
           </div>

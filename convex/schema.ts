@@ -27,7 +27,12 @@ export default defineSchema({
     )),
     title: v.optional(v.string()),
     content: v.string(),
-    imageUrl: v.optional(v.string()),
+    imageUrl: v.optional(v.string()), // Deprecated: Use imageUrls instead (for backward compatibility)
+    imageUrls: v.optional(v.array(v.string())), // Array von Bild-URLs (max 4)
+    // Legacy fields for backward compatibility
+    storageId: v.optional(v.id("_storage")),
+    storageIds: v.optional(v.array(v.id("_storage"))),
+    imageIds: v.optional(v.array(v.id("_storage"))),
     // Für Treffen
     eventDate: v.optional(v.number()), // Timestamp
     eventTime: v.optional(v.string()), // z.B. "14:00"
@@ -42,6 +47,7 @@ export default defineSchema({
     likesCount: v.number(),
     commentsCount: v.number(),
     participantsCount: v.optional(v.number()), // Anzahl der Teilnehmer
+    clientGeneratedId: v.optional(v.string()), // ID vom Client generiert (für Offline-Support etc.)
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
