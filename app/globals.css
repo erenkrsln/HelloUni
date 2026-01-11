@@ -46,8 +46,10 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    /* iOS Safari: 100vh Problem beheben - verwende -webkit-fill-available */
-    min-height: 100vh;
+    /* iOS Safari: 100vh Problem beheben - verwende 100dvh für Mobile */
+    min-height: 100dvh;
+    /* Verhindere iOS Bounce-Scroll am Ende */
+    overscroll-behavior-y: contain;
     min-height: 100dvh;
     min-height: -webkit-fill-available;
     /* background-attachment: fixed funktioniert nicht auf iOS Safari */

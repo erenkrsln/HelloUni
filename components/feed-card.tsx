@@ -8,7 +8,7 @@ import { renderContentWithMentions } from "@/lib/mentions";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { PostMenu } from "./post-menu";
 import { PostActions } from "./post-actions";
@@ -94,26 +94,30 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
     setTimeAgo(formatTimeAgo(post.createdAt));
   }, [post.createdAt]);
 
-  // Check participation status for events
-  const isParticipatingFromQuery = useQuery(
-    api.queries.isParticipating,
-    currentUserId && (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting")
+  // Stabilisiere Query Args mit useMemo - verhindert Re-Subscriptions (N+1 Problem)
+  const isParticipatingArgs = useMemo(() => {
+    return currentUserId && (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting")
       ? { userId: currentUserId, postId: post._id }
-      : "skip"
-  );
+      : "skip";
+  }, [currentUserId, post.postType, post._id]);
+
+  const pollVoteArgs = useMemo(() => {
+    return currentUserId && post.postType === "poll"
+      ? { userId: currentUserId, postId: post._id }
+      : "skip";
+  }, [currentUserId, post.postType, post._id]);
+
+  const pollResultsArgs = useMemo(() => {
+    return post.postType === "poll" ? { postId: post._id } : "skip";
+  }, [post.postType, post._id]);
+
+  // Check participation status for events
+  const isParticipatingFromQuery = useQuery(api.queries.isParticipating, isParticipatingArgs);
 
   // Get poll vote and results
-  const pollVoteFromQuery = useQuery(
-    api.queries.getPollVote,
-    currentUserId && post.postType === "poll"
-      ? { userId: currentUserId, postId: post._id }
-      : "skip"
-  );
+  const pollVoteFromQuery = useQuery(api.queries.getPollVote, pollVoteArgs);
 
-  const pollResultsFromQuery = useQuery(
-    api.queries.getPollResults,
-    post.postType === "poll" ? { postId: post._id } : "skip"
-  );
+  const pollResultsFromQuery = useQuery(api.queries.getPollResults, pollResultsArgs);
 
 
   const pollVoteStorageKey = currentUserId && post.postType === "poll"
@@ -318,12 +322,14 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
   const [isLiking, setIsLiking] = useState(false);
   const lastKnownLikedState = useRef<boolean | null>(getStoredLikeState());
 
-  const isLikedFromQuery = useQuery(
-    api.queries.getUserLikes,
-    currentUserId && post._id && post.isLiked === undefined
+  // Stabilisiere Query Args für isLiked - verhindert Re-Subscriptions
+  const isLikedArgs = useMemo(() => {
+    return currentUserId && post._id && post.isLiked === undefined
       ? { userId: currentUserId, postId: post._id }
-      : "skip"
-  );
+      : "skip";
+  }, [currentUserId, post._id, post.isLiked]);
+
+  const isLikedFromQuery = useQuery(api.queries.getUserLikes, isLikedArgs);
 
   const isLiked = post.isLiked !== undefined ? post.isLiked : isLikedFromQuery;
 

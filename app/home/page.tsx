@@ -68,29 +68,34 @@ export default function Home() {
   const isMajorDisabled = currentUser !== undefined && !currentUserMajor;
   const isInterestsDisabled = currentUser !== undefined && (!currentUserInterests || currentUserInterests.length === 0);
 
-  // Lade nur den aktuell ausgewählten Feed für bessere Performance
-  const allPosts = useQuery(
-    api.queries.getFeed,
-    feedType === "all" && currentUserId ? { userId: currentUserId } : "skip"
-  );
-  const filteredPostsByMajor = useQuery(
-    api.queries.getFilteredFeed,
-    feedType === "major" && currentUser && currentUserMajor ? {
+  // Stabilisiere Query Args mit useMemo - verhindert Re-Subscriptions
+  const allPostsArgs = useMemo(() => {
+    return feedType === "all" && currentUserId ? { userId: currentUserId } : "skip";
+  }, [feedType, currentUserId]);
+
+  const filteredPostsByMajorArgs = useMemo(() => {
+    return feedType === "major" && currentUser && currentUserMajor ? {
       major: currentUserMajor,
       userId: currentUserId,
-    } : "skip"
-  );
-  const filteredPostsByInterests = useQuery(
-    api.queries.getFilteredFeed,
-    feedType === "interests" && currentUser && currentUserInterests && currentUserInterests.length > 0 ? {
+    } : "skip";
+  }, [feedType, currentUser, currentUserMajor, currentUserId]);
+
+  const filteredPostsByInterestsArgs = useMemo(() => {
+    return feedType === "interests" && currentUser && currentUserInterests && currentUserInterests.length > 0 ? {
       interests: currentUserInterests,
       userId: currentUserId,
-    } : "skip"
-  );
-  const followingPosts = useQuery(
-    api.queries.getFollowingFeed,
-    feedType === "following" && currentUserId ? { userId: currentUserId } : "skip"
-  );
+    } : "skip";
+  }, [feedType, currentUser, currentUserInterests, currentUserId]);
+
+  const followingPostsArgs = useMemo(() => {
+    return feedType === "following" && currentUserId ? { userId: currentUserId } : "skip";
+  }, [feedType, currentUserId]);
+
+  // Lade nur den aktuell ausgewählten Feed für bessere Performance
+  const allPosts = useQuery(api.queries.getFeed, allPostsArgs);
+  const filteredPostsByMajor = useQuery(api.queries.getFilteredFeed, filteredPostsByMajorArgs);
+  const filteredPostsByInterests = useQuery(api.queries.getFilteredFeed, filteredPostsByInterestsArgs);
+  const followingPosts = useQuery(api.queries.getFollowingFeed, followingPostsArgs);
 
   // Verwende den entsprechenden Feed basierend auf feedType
   const postsFromQuery = feedType === "all"
@@ -100,6 +105,13 @@ export default function Home() {
       : feedType === "interests"
         ? filteredPostsByInterests
         : followingPosts;
+
+  // Reset visiblePostsCount wenn Feed-Type sich ändert
+  useEffect(() => {
+    setVisiblePostsCount(10); // Reset auf initial 10 Posts
+    setIsLoadingMore(false);
+    isLoadMoreInProgressRef.current = false;
+  }, [feedType]);
 
   // Aktualisiere Cache, wenn neue Posts geladen sind
   useEffect(() => {
@@ -174,9 +186,29 @@ export default function Home() {
     });
   }, [posts, isMobile]);
 
+  // Refs für Observer Management (verhindert Memory-Leaks)
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoadMoreInProgressRef = useRef(false); // Verhindert mehrfaches Laden
+
   // Infinite Scroll: Lade weitere Posts wenn User am Ende ist
   useEffect(() => {
-    if (!posts || posts.length <= visiblePostsCount || isLoadingMore) return;
+    // Cleanup vorheriger Observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    // Cleanup vorheriger Timeouts
+    if (loadMoreTimeoutRef.current) {
+      clearTimeout(loadMoreTimeoutRef.current);
+      loadMoreTimeoutRef.current = null;
+    }
+
+    // Guard: Stoppe wenn keine Posts oder bereits alle geladen
+    if (!posts || posts.length <= visiblePostsCount || isLoadingMore || isLoadMoreInProgressRef.current) {
+      return;
+    }
 
     const sentinelId = "infinite-scroll-sentinel";
     
@@ -185,42 +217,71 @@ export default function Home() {
       const sentinelElement = document.getElementById(sentinelId);
       if (!sentinelElement) return;
 
-      const observer = new IntersectionObserver(
+      // Erstelle Observer mit optimierten Settings für Mobile
+      observerRef.current = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting && visiblePostsCount < posts.length && !isLoadingMore) {
-              // Zeige Lade-Indikator
-              setIsLoadingMore(true);
-              
-              // Simuliere kurze Verzögerung für bessere UX (wie Twitter/X)
-              setTimeout(() => {
-                setVisiblePostsCount((prev) => {
-                  // Lade 10 weitere Posts (wie Twitter/X)
-                  const newCount = Math.min(prev + 10, posts.length);
-                  setIsLoadingMore(false);
-                  return newCount;
-                });
-              }, 800); // 800ms Verzögerung für sichtbaren Lade-Indikator
+            // Guard: Verhindere mehrfaches Laden
+            if (!entry.isIntersecting || 
+                visiblePostsCount >= posts.length || 
+                isLoadingMore || 
+                isLoadMoreInProgressRef.current) {
+              return;
             }
+
+            // Setze Flag sofort (verhindert Race Conditions)
+            isLoadMoreInProgressRef.current = true;
+            setIsLoadingMore(true);
+            
+            // Debug Logging (kann später entfernt werden)
+            console.count("loadMore triggered");
+            console.log("Loading more posts:", {
+              current: visiblePostsCount,
+              total: posts.length,
+              remaining: posts.length - visiblePostsCount,
+            });
+            
+            // Debounced Load: Warte 600ms bevor Posts geladen werden
+            loadMoreTimeoutRef.current = setTimeout(() => {
+              setVisiblePostsCount((prev) => {
+                const newCount = Math.min(prev + 10, posts.length);
+                
+                // Reset Flags nach kurzer Verzögerung
+                setTimeout(() => {
+                  isLoadMoreInProgressRef.current = false;
+                  setIsLoadingMore(false);
+                }, 100);
+                
+                return newCount;
+              });
+            }, 600); // 600ms Debounce für Mobile
           });
         },
         {
-          rootMargin: "300px", // Starte Ladevorgang 300px vor dem Viewport
+          // Reduzierter rootMargin für Mobile (verhindert zu frühe Triggers)
+          rootMargin: isMobile ? "150px" : "200px",
           threshold: 0.1,
         }
       );
 
-      observer.observe(sentinelElement);
-
-      return () => {
-        observer.disconnect();
-      };
+      observerRef.current.observe(sentinelElement);
     }, 100);
 
+    // Cleanup: Disconnect Observer und clear Timeouts
     return () => {
       clearTimeout(timeoutId);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+        loadMoreTimeoutRef.current = null;
+      }
+      // Reset Flag beim Cleanup
+      isLoadMoreInProgressRef.current = false;
     };
-  }, [posts, visiblePostsCount, isLoadingMore]);
+  }, [posts, visiblePostsCount, isLoadingMore, isMobile]);
 
   // Upload Progress Tracking
   useEffect(() => {
@@ -244,7 +305,10 @@ export default function Home() {
 
   // Konsistentes Layout immer beibehalten
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden">
+    <main 
+      className="min-h-dvh w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden"
+      style={{ overscrollBehavior: "contain" }}
+    >
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       {/* Mobile Sidebar */}
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
