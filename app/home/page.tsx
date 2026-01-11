@@ -177,45 +177,50 @@ export default function Home() {
     });
   }, [posts, isMobile]);
 
-  // Intersection Observer für Lazy-Loading weiterer Posts beim Scrollen
+  // Infinite Scroll: Automatisches Nachladen beim Scrollen
   useEffect(() => {
-    if (!isMobile || !posts || posts.length <= visiblePostsCount) return;
+    if (!posts || posts.length <= visiblePostsCount) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Lade 5 weitere Posts wenn der Loader sichtbar wird
-            setVisiblePostsCount((prev) => {
-              const newCount = Math.min(prev + 5, posts.length);
-              return newCount;
-            });
-          }
-        });
-      },
-      {
-        rootMargin: "300px", // Starte Ladevorgang 300px vor dem Viewport (früher für smooth scrolling)
-        threshold: 0.1, // Trigger wenn 10% sichtbar
-      }
-    );
-
+    const sentinelId = "infinite-scroll-sentinel";
+    
     // Warte kurz, damit DOM gerendert ist
     const timeoutId = setTimeout(() => {
-      const lastElement = document.querySelector(`[data-post-index="${visiblePostsCount - 1}"]`);
-      if (lastElement) {
-        observer.observe(lastElement);
-      }
+      const sentinelElement = document.getElementById(sentinelId);
+      if (!sentinelElement) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && visiblePostsCount < posts.length) {
+              // Lade 5 weitere Posts automatisch
+              setVisiblePostsCount((prev) => {
+                const newCount = Math.min(prev + 5, posts.length);
+                return newCount;
+              });
+            }
+          });
+        },
+        {
+          rootMargin: "300px", // Starte Ladevorgang 300px vor dem Viewport
+          threshold: 0.1,
+        }
+      );
+
+      observer.observe(sentinelElement);
+
+      return () => {
+        observer.disconnect();
+      };
     }, 100);
 
     return () => {
       clearTimeout(timeoutId);
-      observer.disconnect();
     };
-  }, [isMobile, posts, visiblePostsCount]);
+  }, [posts, visiblePostsCount]);
 
-  // Fallback: Scroll-Event für zusätzliches Lazy-Loading (falls Intersection Observer nicht funktioniert)
+  // Fallback: Scroll-Event für Infinite Scroll (falls Intersection Observer nicht funktioniert)
   useEffect(() => {
-    if (!isMobile || !posts || posts.length <= visiblePostsCount) return;
+    if (!posts || posts.length <= visiblePostsCount) return;
 
     let ticking = false;
     const handleScroll = () => {
@@ -224,8 +229,8 @@ export default function Home() {
           const scrollPosition = window.innerHeight + window.scrollY;
           const documentHeight = document.documentElement.scrollHeight;
           
-          // Wenn User nahe am Ende ist (200px vor Ende), lade mehr Posts
-          if (scrollPosition >= documentHeight - 200) {
+          // Wenn User nahe am Ende ist (300px vor Ende), lade mehr Posts
+          if (scrollPosition >= documentHeight - 300 && visiblePostsCount < posts.length) {
             setVisiblePostsCount((prev) => Math.min(prev + 5, posts.length));
           }
           ticking = false;
@@ -236,7 +241,7 @@ export default function Home() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isMobile, posts, visiblePostsCount]);
+  }, [posts, visiblePostsCount]);
 
   // Upload Progress Tracking
   useEffect(() => {
@@ -334,7 +339,7 @@ export default function Home() {
             ))}
           </div>
         ) : posts.length > 0 ? (
-          <div style={{ gap: "0", margin: "0", padding: "0" }}>
+          <div style={{ gap: "0", margin: "0", padding: "0" }} data-posts-container>
             {/* Windowed Rendering: Nur sichtbare Posts rendern (verhindert Mobile Crashes) */}
             {posts.slice(0, visiblePostsCount).map((post, index) => (
               <div key={post._id} data-post-index={index}>
@@ -346,11 +351,18 @@ export default function Home() {
                 />
               </div>
             ))}
-            {/* Lade-Indikator wenn weitere Posts verfügbar sind */}
+            {/* Unsichtbarer Sentinel für Infinite Scroll */}
             {visiblePostsCount < posts.length && (
-              <div className="flex justify-center py-4">
-                <div className="text-sm text-gray-500">Lade weitere Posts...</div>
-              </div>
+              <div
+                id="infinite-scroll-sentinel"
+                style={{
+                  height: "1px",
+                  width: "100%",
+                  position: "relative",
+                  marginTop: "100px",
+                }}
+                aria-hidden="true"
+              />
             )}
           </div>
         ) : null}
