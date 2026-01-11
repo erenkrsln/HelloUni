@@ -7,9 +7,20 @@ import { NextResponse } from "next/server";
  */
 export default withAuth(
   function middleware(req) {
+    // Ignoriere öffentliche Dateien (manifest, favicon, etc.)
+    const pathname = req.nextUrl.pathname;
+    if (
+      pathname === "/site.webmanifest" ||
+      pathname === "/favicon.ico" ||
+      pathname.startsWith("/_next/") ||
+      pathname.startsWith("/api/auth/") ||
+      pathname === "/api/register"
+    ) {
+      return NextResponse.next();
+    }
+    
     // Ignoriere Requests, die wie Convex-IDs aussehen (z.B. kg283gptp92vz668wnk2t73sbs7wwpzz)
     // Diese sollten nicht als Routen behandelt werden
-    const pathname = req.nextUrl.pathname;
     // Convex-IDs sind typischerweise 20+ Zeichen lang und bestehen nur aus Kleinbuchstaben und Zahlen
     if (pathname.length > 20 && pathname.length < 50 && /^\/[a-z0-9]+$/.test(pathname)) {
       // Sieht aus wie eine Convex-ID, leite zu 404 um oder blockiere den Request
@@ -43,9 +54,10 @@ export const config = {
      * - /api/register (Registrierungsroute)
      * - /_next/* (statische Next.js-Dateien)
      * - /favicon.ico
-     * - öffentliche Dateien
+     * - /site.webmanifest
+     * - öffentliche Dateien (Bilder, etc.)
      */
-    "/((?!api/auth|api/register|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.webmanifest).*)",
+    "/((?!api/auth|api/register|_next/static|_next/image|favicon.ico|site.webmanifest|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.webmanifest).*)",
   ],
 };
 
