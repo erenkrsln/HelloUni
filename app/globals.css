@@ -57,13 +57,12 @@
     -webkit-overflow-scrolling: touch;
     /* Touch-Optimierungen */
     -webkit-tap-highlight-color: transparent;
-    touch-action: pan-y; /* Erlaube nur vertikales Scrollen, verhindere horizontales */
+    /* MOBILE FIX: Erlaube normales Scrollen - touch-action: manipulation ist zu restriktiv */
+    touch-action: pan-y pan-x; /* Erlaube vertikales UND horizontales Scrollen */
     /* Verhindere Text-Skalierung auf iOS */
     -webkit-text-size-adjust: 100%;
     /* Erzwinge Light Mode - ignoriere System Dark Mode */
     color-scheme: light;
-    /* Verhindere Momentum-Scrolling am Ende (verhindert Reload) */
-    position: relative;
   }
 
   /* iOS Safari: Hintergrund auf html setzen, da background-attachment: fixed nicht funktioniert */
@@ -80,9 +79,7 @@
     overscroll-behavior-y: none;
     overscroll-behavior-x: none;
     overflow-x: hidden;
-    /* Verhindere Momentum-Scrolling am Ende (verhindert Reload) */
-    position: fixed;
-    width: 100%;
+    /* MOBILE FIX: position: fixed blockiert Scrollen - entfernt */
     /* Erzwinge Light Mode - ignoriere System Dark Mode */
     color-scheme: light;
   }

@@ -48,57 +48,16 @@ export default function Home() {
   });
   const [isLoadingMore, setIsLoadingMore] = useState(false); // Loading-State für weitere Posts
 
-  // MOBILE FIX: Prüfe, ob es ein mobiles Gerät ist und verhindere Pull-to-Refresh
+  // MOBILE FIX: Prüfe, ob es ein mobiles Gerät ist
   useEffect(() => {
-    const mobile = isMobileDevice();
-    setIsMobile(mobile);
+    setIsMobile(isMobileDevice());
 
     const handleResize = () => {
       setIsMobile(isMobileDevice());
     };
 
-    // MOBILE FIX: Verhindere Pull-to-Refresh durch Touch-Events
-    const preventPullToRefresh = (e: TouchEvent) => {
-      // Wenn User am oberen Rand scrollt (scrollTop === 0) und nach unten zieht
-      // Verhindere das Standard-Pull-to-Refresh Verhalten
-      if (window.scrollY === 0 && e.touches[0]?.clientY > 0) {
-        // Erlaube nur wenn nicht am oberen Rand
-        return;
-      }
-    };
-
-    // MOBILE FIX: Verhindere Momentum-Scrolling am Ende (verhindert Reload)
-    const preventOverscroll = (e: TouchEvent) => {
-      const target = e.target as HTMLElement;
-      const scrollContainer = target.closest('[data-posts-container]') || document.body;
-      
-      // Prüfe ob wir am Ende des Scroll-Containers sind
-      const isAtBottom = 
-        scrollContainer.scrollHeight - scrollContainer.scrollTop <= scrollContainer.clientHeight + 10;
-      
-      // Wenn am Ende und User scrollt weiter nach unten, verhindere Overscroll
-      if (isAtBottom && e.touches[0]?.clientY < e.touches[0]?.clientY) {
-        e.preventDefault();
-      }
-    };
-
     window.addEventListener("resize", handleResize);
-    
-    // MOBILE FIX: Touch-Event-Handler für Pull-to-Refresh Prävention
-    if (mobile) {
-      document.addEventListener("touchstart", preventPullToRefresh, { passive: true });
-      document.addEventListener("touchmove", preventOverscroll, { passive: false });
-      
-      console.log("[Mobile Debug] Touch event handlers attached");
-    }
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (mobile) {
-        document.removeEventListener("touchstart", preventPullToRefresh);
-        document.removeEventListener("touchmove", preventOverscroll);
-      }
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Globaler Posts Cache - bleibt über Unmounts erhalten
