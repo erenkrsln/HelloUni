@@ -71,25 +71,136 @@ export default function AboutPage() {
                         Dennoch gibt es hier einen kleinen Einblick, wer hauptsächlich in welchen Bereichen gearbeitet hat.
                     </p>
 
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-xl font-medium mb-2">Branding und Design</h3>
-                            <p className="text-gray-700">Im ersten der beiden Semster gab es viel im gestalterischen Bereich zu tun.</p>
-                        </div>
+                    <div className="space-y-10">
+                        <div className="space-y-12">
+                            {/* Branding und Design – 3 Bilder */}
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-xl font-medium">Branding und Design</h3>
+                                    <p className="text-gray-700 mt-2">
+                                        Im ersten der beiden Semester gab es viel im gestalterischen Bereich zu tun.
+                                    </p>
+                                </div>
 
-                        <div>
-                            <h3 className="text-xl font-medium mb-2">Entwicklung</h3>
-                            <p className="text-gray-700">Die Grundlagen der Entwicklung mussten ebenfalls geschaffen werden.</p>
-                        </div>
+                                <div className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                                    <div className="flex gap-5">
+                                        {/* Alle Bilder bekommen exakt die gleiche Breite */}
+                                        <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
+                                            <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] shadow-sm">
+                                                <img
+                                                    src="/about/lia.png"
+                                                    alt="Lia"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+                                            <p className="mt-3 text-md font-medium text-gray-700 text-center">Lia</p>
+                                        </div>
 
-                        <div>
-                            <h3 className="text-xl font-medium mb-2">Social Media</h3>
-                            <p className="text-gray-700">Auch unsere Social Media Profile mussten erstellt und verwaltet werden.</p>
-                        </div>
+                                        <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
+                                            <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] shadow-sm">
+                                                <img
+                                                    src="/about/jannis.png"
+                                                    alt="Jannis"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+                                            <p className="mt-3 text-md font-medium text-gray-700 text-center">Jannis</p>
+                                        </div>
 
-                        <div>
-                            <h3 className="text-xl font-medium mb-2">Organisation</h3>
-                            <p className="text-gray-700">Damit wir zusammenarbeiten konnten, brauchte es auch eine gute Organisation.</p>
+
+                                        <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
+                                            <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] shadow-sm">
+                                                <img
+                                                    src="/about/saly.png"
+                                                    alt="Saly"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+                                            <p className="mt-3 text-md font-medium text-gray-700 text-center">Saly</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Entwicklung – 2 Bilder */}
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-xl font-medium">Entwicklung</h3>
+                                    <p className="text-gray-700 mt-2">
+                                        Die Grundlagen der Entwicklung mussten ebenfalls geschaffen werden.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-5">
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] shadow-sm">
+                                            <img
+                                                src="/about/eren.png"
+                                                alt="Eren"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-md font-medium text-gray-700 text-center">Eren</p>
+                                    </div>
+
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] shadow-sm">
+                                            <img
+                                                src="/about/tanja.png"
+                                                alt="Tanja"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-md font-medium text-gray-700 text-center">Tanja</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Social Media – 1 Bild */}
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-xl font-medium">Social Media</h3>
+                                    <p className="text-gray-700 mt-2">
+                                        Auch unsere Social Media Profile mussten erstellt und verwaltet werden.
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <div className="flex flex-col items-center w-[calc(50%_-_10px)] max-w-[220px]">
+                                        <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] shadow-sm">
+                                            <img
+                                                src="/about/lana.png"
+                                                alt="Lana"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-md font-medium text-gray-700 text-center">Lana</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Organisation – 1 Bild */}
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-xl font-medium">Organisation</h3>
+                                    <p className="text-gray-700 mt-2">
+                                        Damit wir zusammenarbeiten konnten, brauchte es auch eine gute Organisation.
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <div className="flex flex-col items-center w-[calc(50%_-_10px)] max-w-[220px]">
+                                        <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] shadow-sm">
+                                            <img
+                                                src="/about/lexi.png"
+                                                alt="Lexi"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-md font-medium text-gray-700 text-center">Lexi</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
