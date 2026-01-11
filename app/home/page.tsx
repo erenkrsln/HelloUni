@@ -10,7 +10,6 @@ import { MobileSidebar } from "@/components/mobile-sidebar";
 
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Loader2 } from "lucide-react";
 
 // Funktion zur Erkennung mobiler Geräte
 const isMobileDevice = (): boolean => {
@@ -36,20 +35,13 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [visiblePostsCount, setVisiblePostsCount] = useState(10); // Starte mit 10 Posts auf Mobile
-  const [isLoadingMore, setIsLoadingMore] = useState(false); // Loading-State für weitere Posts
 
   // Prüfe, ob es ein mobiles Gerät ist
   useEffect(() => {
-    const mobile = isMobileDevice();
-    setIsMobile(mobile);
-    // Auf Mobile: Starte mit weniger Posts für bessere Performance
-    setVisiblePostsCount(mobile ? 10 : 20);
+    setIsMobile(isMobileDevice());
 
     const handleResize = () => {
-      const mobile = isMobileDevice();
-      setIsMobile(mobile);
-      setVisiblePostsCount(mobile ? 10 : 20);
+      setIsMobile(isMobileDevice());
     };
 
     window.addEventListener("resize", handleResize);
@@ -179,101 +171,6 @@ export default function Home() {
     });
   }, [posts, isMobile]);
 
-  // Infinite Scroll: Automatisches Nachladen beim Scrollen
-  useEffect(() => {
-    // Stoppe Observer, wenn alle Posts geladen sind
-    if (!posts || posts.length <= visiblePostsCount) {
-      // Entferne Sentinel-Element wenn alle Posts geladen sind
-      const sentinelId = "infinite-scroll-sentinel";
-      const sentinelElement = document.getElementById(sentinelId);
-      if (sentinelElement) {
-        sentinelElement.remove();
-      }
-      return;
-    }
-
-    const sentinelId = "infinite-scroll-sentinel";
-    
-    // Warte kurz, damit DOM gerendert ist
-    const timeoutId = setTimeout(() => {
-      const sentinelElement = document.getElementById(sentinelId);
-      if (!sentinelElement) return;
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && visiblePostsCount < posts.length && !isLoadingMore) {
-              // Zeige Lade-Indikator
-              setIsLoadingMore(true);
-              
-              // Simuliere kurze Verzögerung für bessere UX (wie Twitter/X)
-              setTimeout(() => {
-                setVisiblePostsCount((prev) => {
-                  const newCount = Math.min(prev + 5, posts.length);
-                  setIsLoadingMore(false);
-                  return newCount;
-                });
-              }, 500); // 500ms Verzögerung für sichtbaren Lade-Indikator
-            }
-          });
-        },
-        {
-          rootMargin: "200px", // Reduziert von 300px auf 200px
-          threshold: 0.1,
-        }
-      );
-
-      observer.observe(sentinelElement);
-
-      return () => {
-        observer.disconnect();
-      };
-    }, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [posts, visiblePostsCount, isLoadingMore]);
-
-  // Fallback: Scroll-Event für Infinite Scroll (falls Intersection Observer nicht funktioniert)
-  useEffect(() => {
-    // Stoppe Scroll-Listener, wenn alle Posts geladen sind
-    if (!posts || posts.length <= visiblePostsCount) return;
-
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          // Prüfe erneut, ob noch Posts geladen werden müssen
-          if (visiblePostsCount >= posts.length) {
-            ticking = false;
-            return;
-          }
-
-          const scrollPosition = window.innerHeight + window.scrollY;
-          const documentHeight = document.documentElement.scrollHeight;
-          
-          // Wenn User nahe am Ende ist (200px vor Ende), lade mehr Posts
-          if (scrollPosition >= documentHeight - 200 && visiblePostsCount < posts.length && !isLoadingMore) {
-            setIsLoadingMore(true);
-            // Simuliere kurze Verzögerung für bessere UX
-            setTimeout(() => {
-              setVisiblePostsCount((prev) => {
-                const newCount = Math.min(prev + 5, posts.length);
-                setIsLoadingMore(false);
-                return newCount;
-              });
-            }, 500);
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [posts, visiblePostsCount, isLoadingMore]);
 
   // Upload Progress Tracking
   useEffect(() => {
@@ -371,42 +268,17 @@ export default function Home() {
             ))}
           </div>
         ) : posts.length > 0 ? (
-          <div style={{ gap: "0", margin: "0", padding: "0" }} data-posts-container>
-            {/* Windowed Rendering: Nur sichtbare Posts rendern (verhindert Mobile Crashes) */}
-            {posts.slice(0, visiblePostsCount).map((post, index) => (
-              <div key={post._id} data-post-index={index}>
-                <FeedCard
-                  post={post}
-                  currentUserId={currentUserId}
-                  showDivider={index < Math.min(visiblePostsCount, posts.length) - 1}
-                  imagePriority={index < 2} // priority={true} nur für die ersten 2 Posts
-                />
-              </div>
-            ))}
-            {/* Lade-Indikator (Twitter/X-Stil) - wird angezeigt wenn weitere Posts geladen werden */}
-            {isLoadingMore && visiblePostsCount < posts.length && (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-[#D08945]" />
-              </div>
-            )}
-            {/* Unsichtbarer Sentinel für Infinite Scroll - nur wenn noch Posts vorhanden */}
-            {visiblePostsCount < posts.length ? (
-              <div
-                id="infinite-scroll-sentinel"
-                style={{
-                  height: "1px",
-                  width: "100%",
-                  position: "relative",
-                  marginTop: "20px", // Minimaler Abstand
-                }}
-                aria-hidden="true"
+          <div style={{ gap: "0", margin: "0", padding: "0" }}>
+            {/* Alle Posts auf einmal rendern */}
+            {posts.map((post, index) => (
+              <FeedCard
+                key={post._id}
+                post={post}
+                currentUserId={currentUserId}
+                showDivider={index < posts.length - 1}
+                imagePriority={index < 2} // priority={true} nur für die ersten 2 Posts
               />
-            ) : (
-              // Zeige "Ende erreicht" nur wenn wirklich alle Posts geladen sind
-              <div className="flex justify-center py-8 text-sm text-gray-400">
-                Du hast alle Posts gesehen
-              </div>
-            )}
+            ))}
           </div>
         ) : null}
       </div>
