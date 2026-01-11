@@ -30,7 +30,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "HelloUni",
   description: "Social Media App für Studierende",
-  manifest: "/site.webmanifest",
+  manifest: "/api/site.webmanifest",
   appleWebApp: {
     title: "HelloUni",
     statusBarStyle: "black-translucent",
@@ -57,7 +57,7 @@ export default function RootLayout({
     <html lang="de" style={{ colorScheme: 'light' }}>
       <head>
         {/* PWA Meta Tags für bessere Installation */}
-        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="manifest" href="/api/site.webmanifest" />
         
         {/* iOS Meta Tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />

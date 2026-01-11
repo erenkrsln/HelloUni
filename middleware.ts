@@ -14,7 +14,8 @@ export default withAuth(
       pathname === "/favicon.ico" ||
       pathname.startsWith("/_next/") ||
       pathname.startsWith("/api/auth/") ||
-      pathname === "/api/register"
+      pathname === "/api/register" ||
+      pathname === "/api/site.webmanifest"
     ) {
       return NextResponse.next();
     }
@@ -40,7 +41,8 @@ export default withAuth(
           pathname === "/favicon.ico" ||
           pathname.startsWith("/_next/") ||
           pathname.startsWith("/api/auth/") ||
-          pathname === "/api/register"
+          pathname === "/api/register" ||
+          pathname === "/api/site.webmanifest"
         ) {
           return true;
         }
