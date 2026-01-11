@@ -48,21 +48,22 @@
     background-repeat: no-repeat;
     /* iOS Safari: 100vh Problem beheben - verwende 100dvh für Mobile */
     min-height: 100dvh;
-    /* Verhindere iOS Bounce-Scroll am Ende */
-    overscroll-behavior-y: contain;
-    min-height: 100dvh;
     min-height: -webkit-fill-available;
-    /* background-attachment: fixed funktioniert nicht auf iOS Safari */
-    /* Stattdessen: Hintergrund auf html-Element setzen für bessere iOS-Kompatibilität */
+    /* MOBILE FIX: Verhindere Pull-to-Refresh auf iOS Safari und Android Chrome */
+    /* overscroll-behavior-y: none verhindert Pull-to-Refresh komplett */
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
+    /* Smooth Scrolling für Touch-Geräte */
+    -webkit-overflow-scrolling: touch;
+    /* Touch-Optimierungen */
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    touch-action: pan-y; /* Erlaube nur vertikales Scrollen, verhindere horizontales */
     /* Verhindere Text-Skalierung auf iOS */
     -webkit-text-size-adjust: 100%;
-    /* Overscroll-Prävention für Twitter/X-ähnliches Verhalten */
-    overscroll-behavior-y: none;
-    -webkit-overflow-scrolling: touch;
     /* Erzwinge Light Mode - ignoriere System Dark Mode */
     color-scheme: light;
+    /* Verhindere Momentum-Scrolling am Ende (verhindert Reload) */
+    position: relative;
   }
 
   /* iOS Safari: Hintergrund auf html setzen, da background-attachment: fixed nicht funktioniert */
@@ -75,9 +76,13 @@
     height: 100%;
     height: 100dvh;
     height: -webkit-fill-available;
-    /* Overscroll-Prävention - verhindert Rubber-Banding auf iOS/Android */
+    /* MOBILE FIX: Overscroll-Prävention - verhindert Rubber-Banding und Pull-to-Refresh */
     overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
     overflow-x: hidden;
+    /* Verhindere Momentum-Scrolling am Ende (verhindert Reload) */
+    position: fixed;
+    width: 100%;
     /* Erzwinge Light Mode - ignoriere System Dark Mode */
     color-scheme: light;
   }

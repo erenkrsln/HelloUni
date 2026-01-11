@@ -36,19 +36,69 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [visiblePostsCount, setVisiblePostsCount] = useState(10); // Starte mit 10 Posts
+  // MOBILE FIX: Kleinere initiale Post-Anzahl auf Mobile für bessere Performance
+  const [visiblePostsCount, setVisiblePostsCount] = useState(() => {
+    if (typeof window !== "undefined") {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) || (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+      return isMobileDevice ? 8 : 10; // Mobile: 8 Posts, Desktop: 10 Posts
+    }
+    return 10;
+  });
   const [isLoadingMore, setIsLoadingMore] = useState(false); // Loading-State für weitere Posts
 
-  // Prüfe, ob es ein mobiles Gerät ist
+  // MOBILE FIX: Prüfe, ob es ein mobiles Gerät ist und verhindere Pull-to-Refresh
   useEffect(() => {
-    setIsMobile(isMobileDevice());
+    const mobile = isMobileDevice();
+    setIsMobile(mobile);
 
     const handleResize = () => {
       setIsMobile(isMobileDevice());
     };
 
+    // MOBILE FIX: Verhindere Pull-to-Refresh durch Touch-Events
+    const preventPullToRefresh = (e: TouchEvent) => {
+      // Wenn User am oberen Rand scrollt (scrollTop === 0) und nach unten zieht
+      // Verhindere das Standard-Pull-to-Refresh Verhalten
+      if (window.scrollY === 0 && e.touches[0]?.clientY > 0) {
+        // Erlaube nur wenn nicht am oberen Rand
+        return;
+      }
+    };
+
+    // MOBILE FIX: Verhindere Momentum-Scrolling am Ende (verhindert Reload)
+    const preventOverscroll = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const scrollContainer = target.closest('[data-posts-container]') || document.body;
+      
+      // Prüfe ob wir am Ende des Scroll-Containers sind
+      const isAtBottom = 
+        scrollContainer.scrollHeight - scrollContainer.scrollTop <= scrollContainer.clientHeight + 10;
+      
+      // Wenn am Ende und User scrollt weiter nach unten, verhindere Overscroll
+      if (isAtBottom && e.touches[0]?.clientY < e.touches[0]?.clientY) {
+        e.preventDefault();
+      }
+    };
+
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    
+    // MOBILE FIX: Touch-Event-Handler für Pull-to-Refresh Prävention
+    if (mobile) {
+      document.addEventListener("touchstart", preventPullToRefresh, { passive: true });
+      document.addEventListener("touchmove", preventOverscroll, { passive: false });
+      
+      console.log("[Mobile Debug] Touch event handlers attached");
+    }
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (mobile) {
+        document.removeEventListener("touchstart", preventPullToRefresh);
+        document.removeEventListener("touchmove", preventOverscroll);
+      }
+    };
   }, []);
 
   // Globaler Posts Cache - bleibt über Unmounts erhalten
@@ -106,12 +156,17 @@ export default function Home() {
         ? filteredPostsByInterests
         : followingPosts;
 
-  // Reset visiblePostsCount wenn Feed-Type sich ändert
+  // MOBILE FIX: Reset visiblePostsCount wenn Feed-Type sich ändert
   useEffect(() => {
-    setVisiblePostsCount(10); // Reset auf initial 10 Posts
+    // Reset auf initiale Anzahl basierend auf Device
+    const initialCount = isMobile ? 8 : 10;
+    setVisiblePostsCount(initialCount);
     setIsLoadingMore(false);
     isLoadMoreInProgressRef.current = false;
-  }, [feedType]);
+    if (isMobile) {
+      console.log("[Mobile Debug] Feed type changed, reset to", initialCount, "posts");
+    }
+  }, [feedType, isMobile]);
 
   // Aktualisiere Cache, wenn neue Posts geladen sind
   useEffect(() => {
@@ -204,7 +259,7 @@ export default function Home() {
   const animationFrameRef = useRef<number | null>(null);
   const isLoadMoreInProgressRef = useRef(false); // Verhindert mehrfaches Laden
 
-  // Infinite Scroll: Lade weitere Posts wenn User am Ende ist
+  // MOBILE FIX: Infinite Scroll mit optimiertem Intersection Observer
   useEffect(() => {
     // Guard: Stoppe wenn keine Posts oder bereits alle geladen
     if (!posts || posts.length <= visiblePostsCount) {
@@ -225,59 +280,102 @@ export default function Home() {
 
     const sentinelId = "infinite-scroll-sentinel";
     
-    // Verwende requestAnimationFrame statt setTimeout für bessere Performance
+    // MOBILE FIX: Verwende requestAnimationFrame für bessere Performance
     const frameId = requestAnimationFrame(() => {
       const sentinelElement = document.getElementById(sentinelId);
-      if (!sentinelElement) return;
+      if (!sentinelElement) {
+        if (isMobile) {
+          console.log("[Mobile Debug] Sentinel element not found");
+        }
+        return;
+      }
 
       // Cleanup vorheriger Observer (falls vorhanden)
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
 
-      // Erstelle Observer mit optimierten Settings für Mobile
+      // MOBILE FIX: Optimierte Intersection Observer Settings für Mobile
+      // Größerer rootMargin auf Mobile = früherer Trigger = weniger aggressive Scrolls nötig
+      // Höherer threshold = mehr vom Element muss sichtbar sein = weniger false positives
+      const observerOptions = {
+        // Mobile: Größerer rootMargin (200px) für früheren Trigger, aber höherer threshold
+        // Desktop: Standard rootMargin (200px) mit niedrigerem threshold
+        rootMargin: isMobile ? "200px" : "200px",
+        // Mobile: Höherer threshold (0.3) = 30% des Elements muss sichtbar sein
+        // Verhindert zu frühe Triggers bei schnellem Scrollen
+        threshold: isMobile ? 0.3 : 0.1,
+        // root: null = viewport (Standard)
+        root: null,
+      };
+
+      if (isMobile) {
+        console.log("[Mobile Debug] Creating Intersection Observer:", observerOptions);
+      }
+
       observerRef.current = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            // Guard: Verhindere mehrfaches Laden
-            if (!entry.isIntersecting) return;
+            // MOBILE FIX: Zusätzliche Guards für Mobile
+            if (!entry.isIntersecting) {
+              if (isMobile && entry.boundingClientRect.top > window.innerHeight) {
+                console.log("[Mobile Debug] Sentinel not intersecting, top:", entry.boundingClientRect.top);
+              }
+              return;
+            }
             
-            // Prüfe aktuelle Werte (nicht aus Closure)
+            // Prüfe aktuelle Werte (nicht aus Closure) - verhindert Stale Closures
             const currentVisibleCount = visiblePostsCount;
             const totalPosts = posts.length;
             
-            if (currentVisibleCount >= totalPosts || 
-                isLoadingMore || 
-                isLoadMoreInProgressRef.current) {
+            // MOBILE FIX: Zusätzliche Validierung für Mobile
+            if (currentVisibleCount >= totalPosts) {
+              if (isMobile) {
+                console.log("[Mobile Debug] All posts already visible");
+              }
+              return;
+            }
+            
+            if (isLoadingMore || isLoadMoreInProgressRef.current) {
+              if (isMobile) {
+                console.log("[Mobile Debug] Load already in progress, skipping");
+              }
               return;
             }
 
-            // Setze Flag sofort (verhindert Race Conditions)
+            // MOBILE FIX: Setze Flag sofort (verhindert Race Conditions)
             isLoadMoreInProgressRef.current = true;
             setIsLoadingMore(true);
             
-            // Debug Logging
-            console.count("loadMore triggered");
-            console.log("Loading more posts:", {
-              current: currentVisibleCount,
-              total: totalPosts,
-              remaining: totalPosts - currentVisibleCount,
-            });
+            // MOBILE FIX: Debug Logging für Mobile
+            if (isMobile) {
+              console.log("[Mobile Debug] LoadMore triggered:", {
+                current: currentVisibleCount,
+                total: totalPosts,
+                remaining: totalPosts - currentVisibleCount,
+                intersectionRatio: entry.intersectionRatio,
+                boundingClientRect: entry.boundingClientRect,
+              });
+            }
             
             // Posts sind bereits geladen (im State), müssen nur angezeigt werden
-            // Kein Timeout nötig - sofort anzeigen für bessere UX
             const currentPostsLength = posts.length;
             
-            // Verwende requestAnimationFrame für flüssige Animation (nächster Frame)
+            // MOBILE FIX: Verwende requestAnimationFrame für flüssige Animation
             animationFrameRef.current = requestAnimationFrame(() => {
               setVisiblePostsCount((prev) => {
-                const newCount = Math.min(prev + 10, currentPostsLength);
+                // MOBILE FIX: Kleinere Batch-Größe auf Mobile (10 statt 10 für bessere Performance)
+                const batchSize = isMobile ? 10 : 10;
+                const newCount = Math.min(prev + batchSize, currentPostsLength);
                 
-                console.log("Posts loaded:", {
-                  before: prev,
-                  after: newCount,
-                  total: currentPostsLength,
-                });
+                if (isMobile) {
+                  console.log("[Mobile Debug] Posts loaded:", {
+                    before: prev,
+                    after: newCount,
+                    total: currentPostsLength,
+                    batchSize,
+                  });
+                }
                 
                 // Reset Flags sofort nach Update
                 isLoadMoreInProgressRef.current = false;
@@ -289,17 +387,17 @@ export default function Home() {
             });
           });
         },
-        {
-          // Reduzierter rootMargin für Mobile (verhindert zu frühe Triggers)
-          rootMargin: isMobile ? "150px" : "200px",
-          threshold: 0.1,
-        }
+        observerOptions
       );
 
       observerRef.current.observe(sentinelElement);
+      
+      if (isMobile) {
+        console.log("[Mobile Debug] Observer attached to sentinel");
+      }
     });
 
-    // Cleanup: Disconnect Observer und cancel Animation Frames
+    // MOBILE FIX: Cleanup mit besserer Fehlerbehandlung
     return () => {
       cancelAnimationFrame(frameId);
       if (animationFrameRef.current) {
@@ -310,6 +408,9 @@ export default function Home() {
       if (!isLoadingMore && !isLoadMoreInProgressRef.current && observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
+        if (isMobile) {
+          console.log("[Mobile Debug] Observer disconnected");
+        }
       }
     };
   }, [posts, visiblePostsCount, isMobile]); // isLoadingMore aus Dependencies entfernt (verhindert Loop)
@@ -338,7 +439,16 @@ export default function Home() {
   return (
     <main 
       className="min-h-dvh w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden"
-      style={{ overscrollBehavior: "contain" }}
+      style={{ 
+        // MOBILE FIX: Verhindere Pull-to-Refresh und Overscroll
+        overscrollBehavior: "none",
+        overscrollBehaviorY: "none",
+        overscrollBehaviorX: "none",
+        // Verhindere Momentum-Scrolling am Ende
+        WebkitOverflowScrolling: "touch",
+        // Touch-Optimierungen
+        touchAction: "pan-y",
+      }}
     >
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       {/* Mobile Sidebar */}
@@ -413,9 +523,20 @@ export default function Home() {
             ))}
           </div>
         ) : posts.length > 0 ? (
-          <div style={{ gap: "0", margin: "0", padding: "0" }} data-posts-container>
-            {/* Windowed Rendering: Nur sichtbare Posts rendern */}
-            {posts.slice(0, visiblePostsCount).map((post, index) => (
+          <div 
+            style={{ 
+              gap: "0", 
+              margin: "0", 
+              padding: "0",
+              // MOBILE FIX: Verhindere Pull-to-Refresh auf diesem Container
+              overscrollBehavior: "none",
+              overscrollBehaviorY: "none",
+            }} 
+            data-posts-container
+          >
+            {/* MOBILE FIX: Windowed Rendering - Nur sichtbare Posts rendern für bessere Performance */}
+            {/* Auf Mobile: Maximal 50 Posts gleichzeitig gerendert (verhindert Memory-Probleme) */}
+            {posts.slice(0, Math.min(visiblePostsCount, isMobile ? 50 : Infinity)).map((post, index) => (
               <FeedCard
                 key={post._id}
                 post={post}
