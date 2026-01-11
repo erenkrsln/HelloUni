@@ -76,6 +76,37 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
     setIsBookmarked(prev => !prev);
   };
 
+  // OPTIMISTIC FIX: Kommentar-Count Tracking für Feed-übergreifende Konsistenz
+  const commentsStorageKey = `comments_count_${post._id}`;
+  const getStoredCommentsCount = (): number | null => {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(commentsStorageKey);
+    if (stored !== null && stored !== "") {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return null;
+  };
+
+  const [optimisticCommentsCount, setOptimisticCommentsCount] = useState<number | null>(getStoredCommentsCount());
+
+  // Synchronize localStorage with optimistic state
+  useEffect(() => {
+    const storedCount = getStoredCommentsCount();
+    if (storedCount !== null && storedCount !== post.commentsCount) {
+      // Server hat neuen Count, aktualisiere localStorage
+      localStorage.setItem(commentsStorageKey, post.commentsCount.toString());
+      setOptimisticCommentsCount(post.commentsCount);
+    } else if (storedCount === null) {
+      // Initial load
+      localStorage.setItem(commentsStorageKey, post.commentsCount.toString());
+      setOptimisticCommentsCount(post.commentsCount);
+    }
+  }, [post.commentsCount, commentsStorageKey]);
+
+  // Kommentar-Count mit Optimistic Update
+  const displayCommentsCount = optimisticCommentsCount !== null ? optimisticCommentsCount : post.commentsCount;
+
   // Lightbox State
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
 
@@ -331,7 +362,28 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
 
   const isLikedFromQuery = useQuery(api.queries.getUserLikes, isLikedArgs);
 
-  const isLiked = post.isLiked !== undefined ? post.isLiked : isLikedFromQuery;
+  // OPTIMISTIC FIX: Prioritize localStorage/optimistic state über Query data
+  // Verhindert Flackern beim Feed-Wechsel (z.B. "Alle" -> "Studiengang")
+  const isLiked = useMemo(() => {
+    // 1. Prüfe localStorage zuerst (optimistischer State)
+    const storedLike = getStoredLikeState();
+    if (storedLike !== null) {
+      return storedLike;
+    }
+
+    // 2. Dann prüfe Query-embedded isLiked (aus getFeed)
+    if (post.isLiked !== undefined) {
+      return post.isLiked;
+    }
+
+    // 3. Fallback: Separate Query
+    if (isLikedFromQuery !== undefined) {
+      return isLikedFromQuery;
+    }
+
+    // 4. Final fallback
+    return false;
+  }, [post.isLiked, isLikedFromQuery, post._id, currentUserId]);
 
   useEffect(() => {
     // Don't override optimistic state if we're currently liking/unliking
@@ -351,9 +403,9 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
     }
   }, [isLiked, optimisticLiked, isLiking]);
 
-  const displayIsLiked = isLiked !== undefined
-    ? isLiked
-    : (optimisticLiked !== null ? optimisticLiked : (lastKnownLikedState.current ?? false));
+  const displayIsLiked = optimisticLiked !== null
+    ? optimisticLiked
+    : (isLiked !== undefined ? isLiked : (lastKnownLikedState.current ?? false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
@@ -676,7 +728,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
 
           <PostActions
             likesCount={post.likesCount}
-            commentsCount={post.commentsCount}
+            commentsCount={displayCommentsCount}
             isLiked={displayIsLiked}
             onLike={handleLike}
             isLiking={isLiking}
