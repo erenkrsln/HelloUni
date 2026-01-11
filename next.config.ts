@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
     // Optimierungen für bessere Performance
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60,
+    // Erlaubte Qualitätsstufen für Image-Optimierung
+    qualities: [75, 80],
   },
   experimental: {
     optimizePackageImports: ["convex", "framer-motion", "lucide-react"],
