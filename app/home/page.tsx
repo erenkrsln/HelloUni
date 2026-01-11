@@ -1,6 +1,6 @@
 "use client";
 
-import { usePaginatedQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { FeedCard } from "@/components/feed-card";
 import { FeedCardSkeleton } from "@/components/feed-card-skeleton";
@@ -66,22 +66,61 @@ export default function Home() {
   const isMajorDisabled = currentUser !== undefined && !currentUserMajor;
   const isInterestsDisabled = currentUser !== undefined && (!currentUserInterests || currentUserInterests.length === 0);
 
-  // usePaginatedQuery für "all" Feed
-  // Desktop: Starte mit 20 Posts, Mobile: 10 Posts für bessere Performance
-  const {
-    results: allPostsResults,
-    status: allPostsStatus,
-    loadMore: loadMoreAllPosts,
-  } = usePaginatedQuery(
+  // Manuelle Pagination State
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [allLoadedPosts, setAllLoadedPosts] = useState<any[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isDone, setIsDone] = useState(false);
+
+  // useQuery für "all" Feed mit manueller Pagination
+  const initialNumItems = isMobile ? 10 : 20;
+  const feedPage = useQuery(
     api.queries.getFeedPaginated,
-    feedType === "all" && currentUserId ? { userId: currentUserId } : "skip",
-    { initialNumItems: isMobile ? 10 : 20 } // Desktop: 20, Mobile: 10
+    feedType === "all" && currentUserId
+      ? {
+          userId: currentUserId,
+          numItems: cursor ? initialNumItems : initialNumItems, // Initial load oder next page
+          cursor: cursor || undefined,
+        }
+      : "skip"
   );
 
-  // Für andere Feed-Typen verwenden wir weiterhin useQuery (können später auch paginiert werden)
-  // TODO: Implementiere paginatedQuery für andere Feed-Typen falls nötig
-  const allPosts = feedType === "all" ? allPostsResults : undefined;
-  const postsStatus = feedType === "all" ? allPostsStatus : "Exhausted";
+  // Update loaded posts when new page arrives
+  useEffect(() => {
+    if (feedPage && feedType === "all") {
+      if (cursor === null) {
+        // Initial load
+        setAllLoadedPosts(feedPage.page || []);
+        setIsDone(feedPage.isDone || false);
+      } else {
+        // Append new posts
+        setAllLoadedPosts((prev) => [...prev, ...(feedPage.page || [])]);
+        setIsDone(feedPage.isDone || false);
+      }
+      setIsLoadingMore(false);
+    }
+  }, [feedPage, cursor, feedType]);
+
+  // Reset when feed type changes
+  useEffect(() => {
+    setCursor(null);
+    setAllLoadedPosts([]);
+    setIsDone(false);
+    setIsLoadingMore(false);
+  }, [feedType]);
+
+  // Load more function
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || isDone || !feedPage?.continueCursor) return;
+    
+    setIsLoadingMore(true);
+    setCursor(feedPage.continueCursor);
+  }, [isLoadingMore, isDone, feedPage?.continueCursor]);
+
+  const allPosts = feedType === "all" ? allLoadedPosts : undefined;
+  const postsStatus = feedType === "all" 
+    ? (isDone ? "Exhausted" : feedPage?.continueCursor ? "CanLoadMore" : "LoadingFirstPage")
+    : "Exhausted";
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -128,9 +167,8 @@ export default function Home() {
 
     // Debounce: Warte 300ms bevor loadMore aufgerufen wird
     loadMoreTimeoutRef.current = setTimeout(() => {
-      if (feedType === "all" && loadMoreAllPosts) {
-        // Desktop: Lade 20 weitere Posts, Mobile: 10 Posts
-        loadMoreAllPosts(isMobile ? 10 : 20);
+      if (feedType === "all") {
+        loadMore();
       }
       
       // Reset Flag nach kurzer Verzögerung
@@ -138,7 +176,7 @@ export default function Home() {
         isLoadMoreInProgressRef.current = false;
       }, 500);
     }, 300);
-  }, [postsStatus, feedType, loadMoreAllPosts, isMobile]);
+  }, [postsStatus, feedType, loadMore]);
 
   // Intersection Observer für Infinite Scroll mit Memory Management
   useEffect(() => {
@@ -197,9 +235,9 @@ export default function Home() {
 
   // Posts für Rendering
   const posts = allPosts || [];
-  const isLoading = feedType === "all" && allPosts === undefined;
+  const isLoading = feedType === "all" && feedPage === undefined && allLoadedPosts.length === 0;
   const canLoadMore = postsStatus === "CanLoadMore";
-  const isLoadingMore = postsStatus === "LoadingMore";
+  const isLoadingMoreState = isLoadingMore || postsStatus === "LoadingFirstPage";
 
   return (
     <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden">
@@ -291,14 +329,14 @@ export default function Home() {
             ))}
 
             {/* Lade-Indikator (Twitter/X-Stil) - wird angezeigt wenn weitere Posts geladen werden */}
-            {isLoadingMore && (
+            {isLoadingMoreState && (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-[#D08945]" />
               </div>
             )}
 
             {/* Unsichtbarer Sentinel für Infinite Scroll - nur wenn noch Posts vorhanden */}
-            {canLoadMore && !isLoadingMore && (
+            {canLoadMore && !isLoadingMoreState && (
               <div
                 ref={sentinelRef}
                 style={{
