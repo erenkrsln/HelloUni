@@ -7,9 +7,11 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen, Spinner } from "@/components/ui/spinner";
+import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
 import { useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useParams } from "next/navigation";
 
@@ -23,7 +25,9 @@ import { useParams } from "next/navigation";
  */
 export default function UserProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const params = useParams();
+    const router = useRouter();
     const username = params.username as string;
     const { currentUserId, currentUser } = useCurrentUser();
 
@@ -39,8 +43,8 @@ export default function UserProfilePage() {
 
     // Fetch all posts (separate query, also cached by Convex)
     const allPosts = useQuery(
-      api.queries.getFeed,
-      currentUserId ? { userId: currentUserId } : {}
+        api.queries.getFeed,
+        currentUserId ? { userId: currentUserId } : {}
     );
 
     // Filter posts by this user
@@ -48,8 +52,12 @@ export default function UserProfilePage() {
         ? allPosts?.filter((post) => post.userId === profileData.user._id) || []
         : [];
 
+    const handleProfileUpdate = () => {
+        router.refresh();
+    };
+
     return (
-        <main 
+        <main
             className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden"
             style={{
                 overscrollBehaviorY: 'none',
@@ -58,6 +66,23 @@ export default function UserProfilePage() {
         >
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+            {/* Edit Profile Modal */}
+            {profileData && isOwnProfile && (
+                <EditProfileModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    userId={profileData.user._id}
+                    currentName={profileData.user.name}
+                    currentImage={profileData.user.image}
+                    currentHeaderImage={profileData.user.headerImage}
+                    currentBio={profileData.user.bio}
+                    currentMajor={profileData.user.major}
+                    currentSemester={profileData.user.semester}
+                    currentInterests={profileData.user.interests}
+                    onUpdate={handleProfileUpdate}
+                />
+            )}
             {isLoading ? (
                 // Show spinner only on first visit (no cached data)
                 <LoadingScreen text="Profil wird geladen..." />
@@ -85,6 +110,8 @@ export default function UserProfilePage() {
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
                         isFollowing={profileData.isFollowing}
+                        onHeaderImageUpdate={handleProfileUpdate}
+                        onEditClick={() => setIsEditModalOpen(true)}
                     />
 
                     {/* Posts section */}

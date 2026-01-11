@@ -70,6 +70,11 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
   const votePoll = useMutation(api.mutations.votePoll);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  const handleBookmark = () => {
+    setIsBookmarked(prev => !prev);
+  };
 
   // Lightbox State
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
@@ -671,6 +676,8 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
             isLiking={isLiking}
             currentUserId={currentUserId}
             onCommentClick={() => setIsDrawerOpen(true)}
+            isBookmarked={isBookmarked}
+            onBookmark={handleBookmark}
           />
         </div>
       </div>
