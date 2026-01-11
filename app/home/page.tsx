@@ -215,8 +215,8 @@ export default function Home() {
 
   // Refs für Observer Management (verhindert Memory-Leaks)
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
   const isLoadMoreInProgressRef = useRef(false); // Verhindert mehrfaches Laden
+  const resetFlagsTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Timeout für Flag-Reset
 
   // MOBILE FIX: Infinite Scroll mit optimiertem Intersection Observer
   useEffect(() => {
@@ -320,30 +320,40 @@ export default function Home() {
             // Posts sind bereits geladen (im State), müssen nur angezeigt werden
             const currentPostsLength = posts.length;
             
-            // MOBILE FIX: Verwende requestAnimationFrame für flüssige Animation
-            animationFrameRef.current = requestAnimationFrame(() => {
-              setVisiblePostsCount((prev) => {
-                // MOBILE FIX: Kleinere Batch-Größe auf Mobile (10 statt 10 für bessere Performance)
-                const batchSize = isMobile ? 10 : 10;
-                const newCount = Math.min(prev + batchSize, currentPostsLength);
-                
-                if (isMobile) {
-                  console.log("[Mobile Debug] Posts loaded:", {
-                    before: prev,
-                    after: newCount,
-                    total: currentPostsLength,
-                    batchSize,
-                  });
-                }
-                
-                // Reset Flags sofort nach Update
-                isLoadMoreInProgressRef.current = false;
-                setIsLoadingMore(false);
-                
-                return newCount;
-              });
-              animationFrameRef.current = null;
+            // FIX: Setze Posts sofort anzeigen (kein requestAnimationFrame nötig, da Posts bereits geladen)
+            // requestAnimationFrame kann zu Verzögerungen führen
+            setVisiblePostsCount((prev) => {
+              // MOBILE FIX: Kleinere Batch-Größe auf Mobile (10 statt 10 für bessere Performance)
+              const batchSize = isMobile ? 10 : 10;
+              const newCount = Math.min(prev + batchSize, currentPostsLength);
+              
+              if (isMobile) {
+                console.log("[Mobile Debug] Posts loaded:", {
+                  before: prev,
+                  after: newCount,
+                  total: currentPostsLength,
+                  batchSize,
+                });
+              }
+              
+              return newCount;
             });
+            
+            // FIX: Reset Flags sofort nach State-Update (nicht innerhalb des Updates)
+            // Clear vorherigen Timeout falls vorhanden
+            if (resetFlagsTimeoutRef.current) {
+              clearTimeout(resetFlagsTimeoutRef.current);
+            }
+            // Verwende setTimeout(0) um sicherzustellen, dass State-Update verarbeitet wurde
+            resetFlagsTimeoutRef.current = setTimeout(() => {
+              isLoadMoreInProgressRef.current = false;
+              setIsLoadingMore(false);
+              resetFlagsTimeoutRef.current = null;
+              
+              if (isMobile) {
+                console.log("[Mobile Debug] Flags reset after state update");
+              }
+            }, 0);
           });
         },
         observerOptions
