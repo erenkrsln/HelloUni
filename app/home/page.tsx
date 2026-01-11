@@ -201,7 +201,7 @@ export default function Home() {
 
   // Refs für Observer Management (verhindert Memory-Leaks)
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const isLoadMoreInProgressRef = useRef(false); // Verhindert mehrfaches Laden
 
   // Infinite Scroll: Lade weitere Posts wenn User am Ende ist
@@ -225,8 +225,8 @@ export default function Home() {
 
     const sentinelId = "infinite-scroll-sentinel";
     
-    // Warte kurz, damit DOM gerendert ist
-    const timeoutId = setTimeout(() => {
+    // Verwende requestAnimationFrame statt setTimeout für bessere Performance
+    const frameId = requestAnimationFrame(() => {
       const sentinelElement = document.getElementById(sentinelId);
       if (!sentinelElement) return;
 
@@ -264,11 +264,12 @@ export default function Home() {
               remaining: totalPosts - currentVisibleCount,
             });
             
-            // Debounced Load: Warte 600ms bevor Posts geladen werden
-            // WICHTIG: Speichere aktuelle Werte, um Closure-Probleme zu vermeiden
+            // Posts sind bereits geladen (im State), müssen nur angezeigt werden
+            // Kein Timeout nötig - sofort anzeigen für bessere UX
             const currentPostsLength = posts.length;
             
-            loadMoreTimeoutRef.current = setTimeout(() => {
+            // Verwende requestAnimationFrame für flüssige Animation (nächster Frame)
+            animationFrameRef.current = requestAnimationFrame(() => {
               setVisiblePostsCount((prev) => {
                 const newCount = Math.min(prev + 10, currentPostsLength);
                 
@@ -278,13 +279,14 @@ export default function Home() {
                   total: currentPostsLength,
                 });
                 
-                // Reset Flags sofort nach Update (nicht in setTimeout)
+                // Reset Flags sofort nach Update
                 isLoadMoreInProgressRef.current = false;
                 setIsLoadingMore(false);
                 
                 return newCount;
               });
-            }, 600); // 600ms Debounce für Mobile
+              animationFrameRef.current = null;
+            });
           });
         },
         {
@@ -295,16 +297,14 @@ export default function Home() {
       );
 
       observerRef.current.observe(sentinelElement);
-    }, 100);
+    });
 
-    // Cleanup: Disconnect Observer und clear Timeouts
+    // Cleanup: Disconnect Observer und cancel Animation Frames
     return () => {
-      clearTimeout(timeoutId);
-      // WICHTIG: Timeout NICHT canceln, wenn isLoadingMore true ist
-      // Sonst wird der Callback nie ausgeführt und isLoadingMore bleibt true
-      if (!isLoadingMore && loadMoreTimeoutRef.current) {
-        clearTimeout(loadMoreTimeoutRef.current);
-        loadMoreTimeoutRef.current = null;
+      cancelAnimationFrame(frameId);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
       // Observer nur disconnecten, wenn kein Load in Progress ist
       if (!isLoadingMore && !isLoadMoreInProgressRef.current && observerRef.current) {
