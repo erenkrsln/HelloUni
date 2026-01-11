@@ -193,21 +193,21 @@ export default function Home() {
 
   // Infinite Scroll: Lade weitere Posts wenn User am Ende ist
   useEffect(() => {
-    // Cleanup vorheriger Observer
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
-
-    // Cleanup vorheriger Timeouts
-    if (loadMoreTimeoutRef.current) {
-      clearTimeout(loadMoreTimeoutRef.current);
-      loadMoreTimeoutRef.current = null;
-    }
-
     // Guard: Stoppe wenn keine Posts oder bereits alle geladen
-    if (!posts || posts.length <= visiblePostsCount || isLoadingMore || isLoadMoreInProgressRef.current) {
+    if (!posts || posts.length <= visiblePostsCount) {
+      // Cleanup wenn keine weiteren Posts zu laden sind
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      setIsLoadingMore(false);
+      isLoadMoreInProgressRef.current = false;
       return;
+    }
+
+    // Guard: Stoppe wenn bereits ein Load in Progress ist
+    if (isLoadingMore || isLoadMoreInProgressRef.current) {
+      return; // Warte bis aktueller Load fertig ist
     }
 
     const sentinelId = "infinite-scroll-sentinel";
@@ -217,13 +217,23 @@ export default function Home() {
       const sentinelElement = document.getElementById(sentinelId);
       if (!sentinelElement) return;
 
+      // Cleanup vorheriger Observer (falls vorhanden)
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+
       // Erstelle Observer mit optimierten Settings für Mobile
       observerRef.current = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             // Guard: Verhindere mehrfaches Laden
-            if (!entry.isIntersecting || 
-                visiblePostsCount >= posts.length || 
+            if (!entry.isIntersecting) return;
+            
+            // Prüfe aktuelle Werte (nicht aus Closure)
+            const currentVisibleCount = visiblePostsCount;
+            const totalPosts = posts.length;
+            
+            if (currentVisibleCount >= totalPosts || 
                 isLoadingMore || 
                 isLoadMoreInProgressRef.current) {
               return;
@@ -233,24 +243,31 @@ export default function Home() {
             isLoadMoreInProgressRef.current = true;
             setIsLoadingMore(true);
             
-            // Debug Logging (kann später entfernt werden)
+            // Debug Logging
             console.count("loadMore triggered");
             console.log("Loading more posts:", {
-              current: visiblePostsCount,
-              total: posts.length,
-              remaining: posts.length - visiblePostsCount,
+              current: currentVisibleCount,
+              total: totalPosts,
+              remaining: totalPosts - currentVisibleCount,
             });
             
             // Debounced Load: Warte 600ms bevor Posts geladen werden
+            // WICHTIG: Speichere aktuelle Werte, um Closure-Probleme zu vermeiden
+            const currentPostsLength = posts.length;
+            
             loadMoreTimeoutRef.current = setTimeout(() => {
               setVisiblePostsCount((prev) => {
-                const newCount = Math.min(prev + 10, posts.length);
+                const newCount = Math.min(prev + 10, currentPostsLength);
                 
-                // Reset Flags nach kurzer Verzögerung
-                setTimeout(() => {
-                  isLoadMoreInProgressRef.current = false;
-                  setIsLoadingMore(false);
-                }, 100);
+                console.log("Posts loaded:", {
+                  before: prev,
+                  after: newCount,
+                  total: currentPostsLength,
+                });
+                
+                // Reset Flags sofort nach Update (nicht in setTimeout)
+                isLoadMoreInProgressRef.current = false;
+                setIsLoadingMore(false);
                 
                 return newCount;
               });
@@ -270,18 +287,18 @@ export default function Home() {
     // Cleanup: Disconnect Observer und clear Timeouts
     return () => {
       clearTimeout(timeoutId);
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
       if (loadMoreTimeoutRef.current) {
         clearTimeout(loadMoreTimeoutRef.current);
         loadMoreTimeoutRef.current = null;
       }
-      // Reset Flag beim Cleanup
-      isLoadMoreInProgressRef.current = false;
+      // WICHTIG: Observer NICHT disconnecten beim Cleanup, wenn isLoadingMore true ist
+      // Sonst wird der Timeout-Callback nie ausgeführt
+      if (!isLoadingMore && observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
     };
-  }, [posts, visiblePostsCount, isLoadingMore, isMobile]);
+  }, [posts, visiblePostsCount, isMobile]); // isLoadingMore aus Dependencies entfernt
 
   // Upload Progress Tracking
   useEffect(() => {
