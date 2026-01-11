@@ -369,9 +369,10 @@ export default function Home() {
     // MOBILE FIX: Cleanup mit besserer Fehlerbehandlung
     return () => {
       cancelAnimationFrame(frameId);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
+      // Clear Timeout falls vorhanden
+      if (resetFlagsTimeoutRef.current) {
+        clearTimeout(resetFlagsTimeoutRef.current);
+        resetFlagsTimeoutRef.current = null;
       }
       // Observer nur disconnecten, wenn kein Load in Progress ist
       if (!isLoadingMore && !isLoadMoreInProgressRef.current && observerRef.current) {
