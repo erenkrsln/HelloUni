@@ -46,19 +46,23 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    /* iOS Safari: 100vh Problem beheben - verwende -webkit-fill-available */
-    min-height: 100vh;
+    /* iOS Safari: 100vh Problem beheben - verwende 100dvh für Mobile */
     min-height: 100dvh;
     min-height: -webkit-fill-available;
-    /* background-attachment: fixed funktioniert nicht auf iOS Safari */
-    /* Stattdessen: Hintergrund auf html-Element setzen für bessere iOS-Kompatibilität */
+    /* MOBILE FIX: Verhindere Pull-to-Refresh auf iOS Safari und Android Chrome */
+    /* overscroll-behavior-y: none verhindert Pull-to-Refresh komplett */
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
+    /* Smooth Scrolling für Touch-Geräte */
+    -webkit-overflow-scrolling: touch;
+    /* Touch-Optimierungen */
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    /* MOBILE FIX: Erlaube normales Scrollen - touch-action: manipulation ist zu restriktiv */
+    touch-action: pan-y pan-x; /* Erlaube vertikales UND horizontales Scrollen */
     /* Verhindere Text-Skalierung auf iOS */
     -webkit-text-size-adjust: 100%;
-    /* Overscroll-Prävention für Twitter/X-ähnliches Verhalten */
-    overscroll-behavior-y: none;
-    -webkit-overflow-scrolling: touch;
+    /* Erzwinge Light Mode - ignoriere System Dark Mode */
+    color-scheme: light;
   }
 
   /* iOS Safari: Hintergrund auf html setzen, da background-attachment: fixed nicht funktioniert */
@@ -71,9 +75,13 @@
     height: 100%;
     height: 100dvh;
     height: -webkit-fill-available;
-    /* Overscroll-Prävention - verhindert Rubber-Banding auf iOS/Android */
+    /* MOBILE FIX: Overscroll-Prävention - verhindert Rubber-Banding und Pull-to-Refresh */
     overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
     overflow-x: hidden;
+    /* MOBILE FIX: position: fixed blockiert Scrollen - entfernt */
+    /* Erzwinge Light Mode - ignoriere System Dark Mode */
+    color-scheme: light;
   }
 
   button,
@@ -126,6 +134,15 @@ select option {
 
 select option:disabled {
   color: #9ca3af;
+}
+
+/* Erzwinge Light Mode - ignoriere System Dark Mode Preferences */
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    color-scheme: light !important;
+    background-color: #FFFFFF !important;
+  }
 }
 
 /* Safe Area Padding Utility-Klasse - Wiederverwendbar für alle Komponenten */
@@ -216,7 +233,7 @@ select option:disabled {
   left: 0;
   right: 0;
   height: 100vh;
-  background-color: #0a0a0a;
+  background-color: #ffffff;
   z-index: -1;
   pointer-events: none;
 }
@@ -225,4 +242,97 @@ select option:disabled {
 .profile-header-sticky > div:first-child {
   margin-top: 0;
   padding-top: 0;
+}
+
+/* Mobile Drawer Height - mit Fallbacks für alle Browser */
+.drawer-height-mobile {
+  height: 100vh; /* Fallback für ältere Browser */
+  height: 100dvh; /* Dynamic viewport height für moderne Browser */
+  max-height: -webkit-fill-available; /* iOS Safari Fallback */
+}
+
+/* Comment Drawer Height - mit Keyboard Support */
+.comment-drawer-height {
+  height: 75vh; /* Fallback für ältere Browser */
+  height: 75dvh; /* Dynamic viewport height für moderne Browser */
+  max-height: calc(100dvh - env(keyboard-inset-height, 0px));
+  max-height: calc(100vh - env(keyboard-inset-height, 0px)); /* Fallback */
+}
+
+/* Drawer Header - Always solid white, isolated from form states */
+.drawer-header-sticky {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  isolation: isolate;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Prevent any backdrop or overlay from affecting header */
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+}
+
+/* Prevent any focus/active states from affecting drawer header */
+.drawer-header-sticky:focus,
+.drawer-header-sticky:focus-within,
+.drawer-header-sticky:active,
+.drawer-header-sticky:hover,
+.drawer-header-sticky:focus-visible,
+.drawer-header-sticky:target {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* Force white background on all child elements in header */
+.drawer-header-sticky > * {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Prevent iOS Safari gray overlay on buttons inside header */
+.drawer-header-sticky button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  /* Prevent button from affecting parent background */
+  mix-blend-mode: normal !important;
+}
+
+.drawer-header-sticky button:active,
+.drawer-header-sticky button:focus,
+.drawer-header-sticky button:focus-visible,
+.drawer-header-sticky button:hover {
+  background-color: transparent !important;
+  background: transparent !important;
+  -webkit-tap-highlight-color: transparent !important;
+  opacity: 1 !important;
+}
+
+/* Force white background on button wrapper to prevent gray overlay bleeding */
+.drawer-header-sticky > div > div {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.drawer-header-sticky > div > div::before,
+.drawer-header-sticky > div > div::after {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* Prevent iOS Safari from showing gray overlay on header when button is pressed */
+.drawer-header-sticky::before,
+.drawer-header-sticky::after {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
 }

@@ -42,11 +42,10 @@ export default function ProfilePage() {
         : [];
 
     const handleProfileUpdate = () => {
-        // Clear cache to force refresh
-        if (currentUser?.username) {
-            const cacheKey = profileCache.getKey(currentUser.username, currentUserId);
-            profileCache.delete(cacheKey);
-        }
+        // Don't clear cache - keep old data visible during refresh to prevent flickering
+        // Convex will automatically invalidate and refetch queries after mutations
+        // The useFullUserProfile hook will update when new data arrives
+        // This prevents the header image from flashing to gradient during refresh
         router.refresh();
     };
 

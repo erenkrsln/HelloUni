@@ -59,6 +59,12 @@ export function CommentDrawer({
   const drawerRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false); // Synchroner Check für doppelte Submits
   
+  // Visual Viewport API - Track viewport height for keyboard handling
+  const [viewportHeight, setViewportHeight] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    return window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  });
+  
   // Store time ago strings for comments - calculated only once per comment
   const timeAgoCacheRef = useRef<Map<string, string>>(new Map());
   
@@ -140,6 +146,25 @@ export function CommentDrawer({
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [commentText]);
+
+  // Visual Viewport API - Listen to resize events for keyboard handling
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    
+    const handleResize = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      }
+    };
+    
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('scroll', handleResize);
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
+  }, []);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -619,13 +644,15 @@ export function CommentDrawer({
         ref={drawerRef}
         className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
-        } h-[75vh] overflow-hidden`}
+        } overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
+          maxHeight: viewportHeight > 0 ? `${viewportHeight * 0.75}px` : '75vh',
+          height: viewportHeight > 0 ? `${viewportHeight * 0.75}px` : '75vh',
         }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
+        {/* Header - Sticky to stay visible when keyboard opens */}
+        <div className="sticky top-0 z-10 bg-white flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-base font-semibold text-gray-900">
             {commentsCount} {commentsCount === 1 ? "Kommentar" : "Kommentare"}
           </h2>
@@ -704,9 +731,12 @@ export function CommentDrawer({
           ) : null}
         </div>
 
-        {/* Sticky Input */}
+        {/* Sticky Input - With safe area inset for mobile devices */}
         {currentUserId && (
-          <div className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 relative" style={{ transform: 'translateY(-16px)' }}>
+          <div className="bg-white px-4 pt-2 flex-shrink-0 relative" style={{ 
+            transform: 'translateY(-16px)',
+            paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))'
+          }}>
             {/* Horizontale Linie */}
             <div className="absolute top-0 left-0 right-0 border-t border-gray-200"></div>
             {replyingTo && (
