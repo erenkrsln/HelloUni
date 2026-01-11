@@ -7,8 +7,9 @@ import { ConvexClientProvider } from "@/components/convex-provider";
 import { NextAuthSessionProvider } from "@/components/session-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
 import { UnregisterServiceWorkers } from "@/components/unregister-service-workers";
+import { ErrorBoundary } from "@/components/error-boundary";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   preload: true,
@@ -59,29 +60,31 @@ export default function RootLayout({
       <head>
         {/* PWA Meta Tags für bessere Installation */}
         <link rel="manifest" href="/api/site.webmanifest" />
-        
+
         {/* iOS Meta Tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
-        
+
         {/* Android Chrome Meta Tags */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="application-name" content="HelloUni" />
-        
+
         {/* PWA Installation Prompt */}
         <meta name="theme-color" content="#ffffff" />
         <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="msapplication-tap-highlight" content="no" />
-        
+
       </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
         <UnregisterServiceWorkers />
-        <NextAuthSessionProvider>
-          <ConvexClientProvider>
-            <PostsCacheWrapper>{children}</PostsCacheWrapper>
-          </ConvexClientProvider>
-        </NextAuthSessionProvider>
+        <ErrorBoundary>
+          <NextAuthSessionProvider>
+            <ConvexClientProvider>
+              <PostsCacheWrapper>{children}</PostsCacheWrapper>
+            </ConvexClientProvider>
+          </NextAuthSessionProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

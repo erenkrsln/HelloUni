@@ -37,18 +37,19 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   // MOBILE FIX: Kleinere initiale Post-Anzahl auf Mobile für bessere Performance
+  // Reduziert von 8 auf 6 für Mobile (verhindert Memory-Overload)
   const [visiblePostsCount, setVisiblePostsCount] = useState(() => {
     if (typeof window !== "undefined") {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent
       ) || (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
-      return isMobileDevice ? 8 : 10; // Mobile: 8 Posts, Desktop: 10 Posts
+      return isMobileDevice ? 6 : 10; // Mobile: 6 Posts (reduziert!), Desktop: 10 Posts
     }
     return 10;
   });
   const [isLoadingMore, setIsLoadingMore] = useState(false); // Loading-State für weitere Posts
 
-  // MOBILE FIX: Prüfe, ob es ein mobiles Gerät ist
+  // MOBILE FIX: Prüfe, ob es ein mobiles Gerät ist + Enhanced Overscroll Prevention
   useEffect(() => {
     setIsMobile(isMobileDevice());
 
@@ -56,8 +57,27 @@ export default function Home() {
       setIsMobile(isMobileDevice());
     };
 
+    // MOBILE FIX: Verstärkte Overscroll-Prävention
+    // Verhindert Pull-to-Refresh und Rubber-Banding auf iOS/Android
+    if (isMobileDevice() && typeof document !== 'undefined') {
+      document.body.style.overscrollBehaviorY = 'none';
+      document.documentElement.style.overscrollBehaviorY = 'none';
+      // Verhindere auch horizontales Overscroll
+      document.body.style.overscrollBehaviorX = 'none';
+      document.documentElement.style.overscrollBehaviorX = 'none';
+    }
+
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      // Cleanup: Stelle ursprünglichen Zustand wieder her
+      if (isMobileDevice() && typeof document !== 'undefined') {
+        document.body.style.overscrollBehaviorY = '';
+        document.documentElement.style.overscrollBehaviorY = '';
+        document.body.style.overscrollBehaviorX = '';
+        document.documentElement.style.overscrollBehaviorX = '';
+      }
+    };
   }, []);
 
   // Globaler Posts Cache - bleibt über Unmounts erhalten
@@ -117,8 +137,8 @@ export default function Home() {
 
   // MOBILE FIX: Reset visiblePostsCount wenn Feed-Type sich ändert
   useEffect(() => {
-    // Reset auf initiale Anzahl basierend auf Device
-    const initialCount = isMobile ? 8 : 10;
+    // Reset auf initiale Anzahl basierend auf Device (reduziert auf 6 für Mobile)
+    const initialCount = isMobile ? 6 : 10;
     setVisiblePostsCount(initialCount);
     setIsLoadingMore(false);
     isLoadMoreInProgressRef.current = false;
@@ -140,7 +160,7 @@ export default function Home() {
 
   const posts = useMemo(() => {
     let postsToUse: typeof postsFromQuery = [];
-    
+
     // Wenn neue Daten verfügbar sind, verwende diese
     if (postsFromQuery !== undefined) {
       postsToUse = postsFromQuery;
@@ -149,7 +169,7 @@ export default function Home() {
     else if (cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0) {
       postsToUse = cachedPostsForCurrentKey;
     }
-    
+
     // WICHTIG: Sortiere Posts immer nach createdAt (neueste zuerst)
     // Verhindert, dass alte Posts vor neuen Posts angezeigt werden
     if (Array.isArray(postsToUse) && postsToUse.length > 0) {
@@ -159,7 +179,7 @@ export default function Home() {
         return bTime - aTime; // Descending: neueste zuerst
       });
     }
-    
+
     // Keine Daten verfügbar
     return [];
   }, [postsFromQuery, cachedPostsForCurrentKey]);
@@ -193,6 +213,40 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // MOBILE FIX: Scroll Position Persistence
+  // Speichert und stellt Scroll-Position wieder her (hilfreich bei Reloads)
+  useEffect(() => {
+    // Stelle Scroll-Position wieder her (falls vorhanden)
+    const savedPosition = sessionStorage.getItem('feed_scroll_position');
+    if (savedPosition && !isFirstVisit) {
+      const position = parseInt(savedPosition, 10);
+      // Verwende requestAnimationFrame um sicherzustellen, dass DOM gerendert ist
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: position,
+          behavior: 'auto', // Kein smooth scrolling beim Restore
+        });
+      });
+    }
+
+    // Speichere Scroll-Position periodisch (Throttled)
+    let scrollTimeout: NodeJS.Timeout;
+    const saveScrollPosition = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const currentPosition = window.scrollY;
+        sessionStorage.setItem('feed_scroll_position', currentPosition.toString());
+      }, 150); // Throttle: Speichere nur alle 150ms
+    };
+
+    window.addEventListener('scroll', saveScrollPosition);
+
+    return () => {
+      window.removeEventListener('scroll', saveScrollPosition);
+      clearTimeout(scrollTimeout);
+    };
+  }, [isFirstVisit]);
 
   // Kein Loading Screen - zeige gecachte Daten sofort an
 
@@ -238,7 +292,7 @@ export default function Home() {
     }
 
     const sentinelId = "infinite-scroll-sentinel";
-    
+
     // MOBILE FIX: Verwende requestAnimationFrame für bessere Performance
     const frameId = requestAnimationFrame(() => {
       const sentinelElement = document.getElementById(sentinelId);
@@ -282,11 +336,11 @@ export default function Home() {
               }
               return;
             }
-            
+
             // Prüfe aktuelle Werte (nicht aus Closure) - verhindert Stale Closures
             const currentVisibleCount = visiblePostsCount;
             const totalPosts = posts.length;
-            
+
             // MOBILE FIX: Zusätzliche Validierung für Mobile
             if (currentVisibleCount >= totalPosts) {
               if (isMobile) {
@@ -294,7 +348,7 @@ export default function Home() {
               }
               return;
             }
-            
+
             if (isLoadingMore || isLoadMoreInProgressRef.current) {
               if (isMobile) {
                 console.log("[Mobile Debug] Load already in progress, skipping");
@@ -305,7 +359,7 @@ export default function Home() {
             // MOBILE FIX: Setze Flag sofort (verhindert Race Conditions)
             isLoadMoreInProgressRef.current = true;
             setIsLoadingMore(true);
-            
+
             // MOBILE FIX: Debug Logging für Mobile
             if (isMobile) {
               console.log("[Mobile Debug] LoadMore triggered:", {
@@ -316,17 +370,17 @@ export default function Home() {
                 boundingClientRect: entry.boundingClientRect,
               });
             }
-            
+
             // Posts sind bereits geladen (im State), müssen nur angezeigt werden
             const currentPostsLength = posts.length;
-            
+
             // FIX: Setze Posts sofort anzeigen (kein requestAnimationFrame nötig, da Posts bereits geladen)
             // requestAnimationFrame kann zu Verzögerungen führen
             setVisiblePostsCount((prev) => {
               // MOBILE FIX: Kleinere Batch-Größe auf Mobile (10 statt 10 für bessere Performance)
               const batchSize = isMobile ? 10 : 10;
               const newCount = Math.min(prev + batchSize, currentPostsLength);
-              
+
               if (isMobile) {
                 console.log("[Mobile Debug] Posts loaded:", {
                   before: prev,
@@ -335,10 +389,10 @@ export default function Home() {
                   batchSize,
                 });
               }
-              
+
               return newCount;
             });
-            
+
             // FIX: Reset Flags sofort nach State-Update (nicht innerhalb des Updates)
             // Clear vorherigen Timeout falls vorhanden
             if (resetFlagsTimeoutRef.current) {
@@ -349,7 +403,7 @@ export default function Home() {
               isLoadMoreInProgressRef.current = false;
               setIsLoadingMore(false);
               resetFlagsTimeoutRef.current = null;
-              
+
               if (isMobile) {
                 console.log("[Mobile Debug] Flags reset after state update");
               }
@@ -360,7 +414,7 @@ export default function Home() {
       );
 
       observerRef.current.observe(sentinelElement);
-      
+
       if (isMobile) {
         console.log("[Mobile Debug] Observer attached to sentinel");
       }
@@ -407,9 +461,9 @@ export default function Home() {
 
   // Konsistentes Layout immer beibehalten
   return (
-    <main 
+    <main
       className="min-h-dvh w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden"
-      style={{ 
+      style={{
         // MOBILE FIX: Verhindere Pull-to-Refresh und Overscroll
         overscrollBehavior: "none",
         overscrollBehaviorY: "none",
@@ -493,20 +547,21 @@ export default function Home() {
             ))}
           </div>
         ) : posts.length > 0 ? (
-          <div 
-            style={{ 
-              gap: "0", 
-              margin: "0", 
+          <div
+            style={{
+              gap: "0",
+              margin: "0",
               padding: "0",
               // MOBILE FIX: Verhindere Pull-to-Refresh auf diesem Container
               overscrollBehavior: "none",
               overscrollBehaviorY: "none",
-            }} 
+            }}
             data-posts-container
           >
             {/* MOBILE FIX: Windowed Rendering - Nur sichtbare Posts rendern für bessere Performance */}
-            {/* Auf Mobile: Maximal 50 Posts gleichzeitig gerendert (verhindert Memory-Probleme) */}
-            {posts.slice(0, Math.min(visiblePostsCount, isMobile ? 50 : Infinity)).map((post, index) => (
+            {/* Auf Mobile: Maximal 30 Posts gleichzeitig gerendert (verhindert Memory-Probleme) */}
+            {/* REDUZIERT von 50 auf 30 für ältere Geräte (iPhone 8, Android 8) */}
+            {posts.slice(0, Math.min(visiblePostsCount, isMobile ? 30 : Infinity)).map((post, index) => (
               <FeedCard
                 key={post._id}
                 post={post}
