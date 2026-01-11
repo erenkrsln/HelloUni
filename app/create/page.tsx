@@ -17,6 +17,7 @@ export default function CreatePage() {
     const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { currentUser, currentUserId } = useCurrentUser();
+    const { clearCache } = usePostsCache();
     const [isFirstVisit, setIsFirstVisit] = useState(true);
 
     // Prüfe, ob Seite bereits besucht wurde
