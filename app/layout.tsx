@@ -6,6 +6,7 @@ import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { NextAuthSessionProvider } from "@/components/session-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
+import { UnregisterServiceWorkers } from "@/components/unregister-service-workers";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -75,6 +76,7 @@ export default function RootLayout({
         
       </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
+        <UnregisterServiceWorkers />
         <NextAuthSessionProvider>
           <ConvexClientProvider>
             <PostsCacheWrapper>{children}</PostsCacheWrapper>
