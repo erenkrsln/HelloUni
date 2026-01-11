@@ -362,50 +362,52 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
 
   const isLikedFromQuery = useQuery(api.queries.getUserLikes, isLikedArgs);
 
-  // OPTIMISTIC FIX: Prioritize localStorage/optimistic state über Query data
-  // Verhindert Flackern beim Feed-Wechsel (z.B. "Alle" -> "Studiengang")
-  const isLiked = useMemo(() => {
-    // 1. Prüfe localStorage zuerst (optimistischer State)
-    const storedLike = getStoredLikeState();
-    if (storedLike !== null) {
-      return storedLike;
+  // Initialize optimistic state from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredLikeState();
+    if (stored !== null && optimisticLiked === null) {
+      setOptimisticLiked(stored);
+      lastKnownLikedState.current = stored;
     }
+  }, []);
 
-    // 2. Dann prüfe Query-embedded isLiked (aus getFeed)
-    if (post.isLiked !== undefined) {
-      return post.isLiked;
-    }
-
-    // 3. Fallback: Separate Query
-    if (isLikedFromQuery !== undefined) {
-      return isLikedFromQuery;
-    }
-
-    // 4. Final fallback
-    return false;
-  }, [post.isLiked, isLikedFromQuery, post._id, currentUserId]);
-
+  // KRITISCH: Synchronisiere localStorage <-> State, aber NUR wenn User NICHT gerade liked
+  // Verhindert, dass Server-Daten optimistische Updates überschreiben
   useEffect(() => {
     // Don't override optimistic state if we're currently liking/unliking
     if (isLiking) return;
 
-    if (isLiked !== undefined) {
-      lastKnownLikedState.current = isLiked;
-      if (optimisticLiked === null) {
-        setOptimisticLiked(isLiked);
-      } else if (optimisticLiked !== isLiked) {
-        // Only update if the server state differs from our optimistic state
-        // This means the server has confirmed our action
-        setOptimisticLiked(isLiked);
-      }
-    } else if (optimisticLiked === null && lastKnownLikedState.current !== null) {
-      setOptimisticLiked(lastKnownLikedState.current);
-    }
-  }, [isLiked, optimisticLiked, isLiking]);
+    // Prüfe localStorage zuerst
+    const storedLikeState = getStoredLikeState();
 
+    if (storedLikeState !== null) {
+      // localStorage hat einen Wert - verwende diesen (optimistic)
+      if (optimisticLiked !== storedLikeState) {
+        setOptimisticLiked(storedLikeState);
+        lastKnownLikedState.current = storedLikeState;
+      }
+    } else {
+      // Kein localStorage-Wert vorhanden - verwende Server-Daten
+      const serverLikeState = post.isLiked !== undefined ? post.isLiked : isLikedFromQuery;
+      if (serverLikeState !== undefined) {
+        // Speichere Server-Wert in localStorage und State
+        if (optimisticLiked !== serverLikeState) {
+          setOptimisticLiked(serverLikeState);
+          lastKnownLikedState.current = serverLikeState;
+          // Speichere in localStorage für zukünftige Verwendung
+          if (storageKey) {
+            localStorage.setItem(storageKey, serverLikeState.toString());
+            sessionStorage.setItem(storageKey, serverLikeState.toString());
+          }
+        }
+      }
+    }
+  }, [post.isLiked, isLikedFromQuery, isLiking, optimisticLiked, storageKey]);
+
+  // Display-Wert: Immer optimisticLiked bevorzugen
   const displayIsLiked = optimisticLiked !== null
     ? optimisticLiked
-    : (isLiked !== undefined ? isLiked : (lastKnownLikedState.current ?? false));
+    : (post.isLiked !== undefined ? post.isLiked : (isLikedFromQuery ?? false));
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
@@ -426,21 +428,9 @@ export function FeedCard({ post, currentUserId, showDivider = true, imagePriorit
       // Revert on error
       setOptimisticLiked(wasLiked);
       console.error("Error liking post:", error);
-    } finally {
       setIsLiking(false);
     }
   };
-
-  useEffect(() => {
-    if (!storageKey) return;
-    const value = optimisticLiked !== null ? optimisticLiked : isLiked;
-    if (value !== undefined) {
-      const str = value.toString();
-      localStorage.setItem(storageKey, str);
-      sessionStorage.setItem(storageKey, str);
-    }
-  }, [optimisticLiked, isLiked, storageKey]);
-
 
   const handleJoinEvent = async () => {
     if (!currentUserId || isJoining) return;
