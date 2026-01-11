@@ -374,10 +374,9 @@ export default function Home() {
             // Posts sind bereits geladen (im State), müssen nur angezeigt werden
             const currentPostsLength = posts.length;
 
-            // FIX: Setze Posts sofort anzeigen (kein requestAnimationFrame nötig, da Posts bereits geladen)
-            // requestAnimationFrame kann zu Verzögerungen führen
+            // Setze Posts sofort anzeigen - Posts sind bereits im State!
             setVisiblePostsCount((prev) => {
-              // MOBILE FIX: Kleinere Batch-Größe auf Mobile (10 statt 10 für bessere Performance)
+              // MOBILE FIX: Kleinere Batch-Größe auf Mobile (10 Posts pro Batch)
               const batchSize = isMobile ? 10 : 10;
               const newCount = Math.min(prev + batchSize, currentPostsLength);
 
@@ -393,21 +392,15 @@ export default function Home() {
               return newCount;
             });
 
-            // FIX: Reset Flags sofort nach State-Update (nicht innerhalb des Updates)
-            // Clear vorherigen Timeout falls vorhanden
-            if (resetFlagsTimeoutRef.current) {
-              clearTimeout(resetFlagsTimeoutRef.current);
-            }
-            // Verwende setTimeout(0) um sicherzustellen, dass State-Update verarbeitet wurde
-            resetFlagsTimeoutRef.current = setTimeout(() => {
-              isLoadMoreInProgressRef.current = false;
-              setIsLoadingMore(false);
-              resetFlagsTimeoutRef.current = null;
+            // OPTIMIERT: Reset Flags sofort nach State-Update (kein setTimeout nötig!)
+            // Posts sind bereits im State, müssen nur gerendert werden - das passiert instant
+            // Der React Render-Cycle ist schnell genug, kein async Delay nötig
+            isLoadMoreInProgressRef.current = false;
+            setIsLoadingMore(false);
 
-              if (isMobile) {
-                console.log("[Mobile Debug] Flags reset after state update");
-              }
-            }, 0);
+            if (isMobile) {
+              console.log("[Mobile Debug] Flags reset immediately after state update");
+            }
           });
         },
         observerOptions
@@ -423,11 +416,6 @@ export default function Home() {
     // MOBILE FIX: Cleanup mit besserer Fehlerbehandlung
     return () => {
       cancelAnimationFrame(frameId);
-      // Clear Timeout falls vorhanden
-      if (resetFlagsTimeoutRef.current) {
-        clearTimeout(resetFlagsTimeoutRef.current);
-        resetFlagsTimeoutRef.current = null;
-      }
       // Observer nur disconnecten, wenn kein Load in Progress ist
       if (!isLoadingMore && !isLoadMoreInProgressRef.current && observerRef.current) {
         observerRef.current.disconnect();
