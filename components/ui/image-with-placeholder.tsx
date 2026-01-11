@@ -21,7 +21,7 @@ interface ImageWithPlaceholderProps {
  * Optimierte Image-Komponente mit Phasen-Steuerung:
  * Phase 1: Global Loading (Spinner) - wenn isLoading=true
  * Phase 2: Image Loading (Shimmer) - wenn Bild noch nicht geladen
- * Phase 3: Image Ready (Bild) - wenn onLoadingComplete feuert
+ * Phase 3: Image Ready (Bild) - wenn onLoad feuert
  * 
  * KRITISCH: Container hat IMMER stabiles Aspect Ratio - keine Layout Shifts möglich
  */
@@ -200,7 +200,7 @@ export function ImageWithPlaceholder({
           sizes={sizes}
           priority={priority}
           className={`relative w-full h-auto transition-opacity duration-500 ease-in-out z-10 ${!isImageLoaded ? "opacity-0" : "opacity-100"}`}
-          onLoadingComplete={() => {
+          onLoad={() => {
             loadedImages.add(src); // Zum Cache hinzufügen
             setIsImageLoaded(true);
           }}
@@ -237,9 +237,10 @@ export function ImageWithPlaceholder({
           z-10
           ${!isImageLoaded ? "opacity-0" : "opacity-100"}
         `}
-        onLoadingComplete={() => {
-          // WICHTIG: onLoadingComplete feuert, wenn das Bild vollständig geladen ist
+        onLoad={() => {
+          // WICHTIG: onLoad feuert, wenn das Bild vollständig geladen ist
           // Der Container ändert seine Größe NICHT - Shimmer und Bild füllen denselben Raum aus
+          loadedImages.add(src); // Zum Cache hinzufügen
           setIsImageLoaded(true);
         }}
         onError={() => {

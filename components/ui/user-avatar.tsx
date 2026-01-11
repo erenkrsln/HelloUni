@@ -95,7 +95,7 @@ export function UserAvatar({
                 priority={priority}
                 className={`rounded-full object-cover transition-opacity duration-300 ease-in-out ${!isImageLoaded ? "opacity-0" : "opacity-100"
                     }`}
-                onLoadingComplete={() => {
+                onLoad={() => {
                     if (src) loadedAvatars.add(src);
                     setIsImageLoaded(true);
                 }}

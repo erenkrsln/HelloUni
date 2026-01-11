@@ -78,7 +78,7 @@ export function HeaderImageWithLoading({
                     quality={80}
                     className={`object-cover transition-opacity duration-200 ease-in-out z-10 ${!isImageLoaded ? "opacity-0" : "opacity-100"
                         }`}
-                    onLoadingComplete={() => {
+                    onLoad={() => {
                         if (headerImage) loadedHeaderImages.add(headerImage);
                         setIsImageLoaded(true);
                     }}
