@@ -368,17 +368,22 @@ export default function Home() {
               </div>
             ))}
             {/* Unsichtbarer Sentinel für Infinite Scroll - nur wenn noch Posts vorhanden */}
-            {visiblePostsCount < posts.length && (
+            {visiblePostsCount < posts.length ? (
               <div
                 id="infinite-scroll-sentinel"
                 style={{
                   height: "1px",
                   width: "100%",
                   position: "relative",
-                  marginTop: "50px", // Reduziert von 100px auf 50px
+                  marginTop: "20px", // Minimaler Abstand
                 }}
                 aria-hidden="true"
               />
+            ) : (
+              // Zeige "Ende erreicht" nur wenn wirklich alle Posts geladen sind
+              <div className="flex justify-center py-8 text-sm text-gray-400">
+                Du hast alle Posts gesehen
+              </div>
             )}
           </div>
         ) : null}
