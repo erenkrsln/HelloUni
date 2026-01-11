@@ -29,10 +29,11 @@ export const createPost = mutation({
   handler: async (ctx, args) => {
     // Begrenze auf max 4 Bilder (Twitter-Standard)
     // Priorisiere imageIds (neuer Standard), dann storageIds (Legacy), dann storageId (Legacy Single)
-    const finalImageIds = (args.imageIds || args.storageIds) && (args.imageIds?.length || args.storageIds?.length) > 0 
-      ? (args.imageIds || args.storageIds)!.slice(0, 4) // Max 4 Bilder (Twitter-Limit)
-      : args.storageId 
-        ? [args.storageId] 
+    const imageArray = args.imageIds || args.storageIds;
+    const finalImageIds = imageArray && imageArray.length > 0
+      ? imageArray.slice(0, 4) // Max 4 Bilder (Twitter-Limit)
+      : args.storageId
+        ? [args.storageId]
         : undefined;
 
     const postId = await ctx.db.insert("posts", {
@@ -176,7 +177,7 @@ export const createComment = mutation({
         .query("comments")
         .withIndex("by_parent", (q) => q.eq("parentCommentId", args.parentCommentId))
         .collect();
-      
+
       await ctx.db.patch(args.parentCommentId, {
         repliesCount: parentReplies.length,
       });
@@ -187,7 +188,7 @@ export const createComment = mutation({
       .query("comments")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
-    
+
     const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
 
     await ctx.db.patch(args.postId, {
@@ -230,7 +231,7 @@ export const deleteComment = mutation({
         .query("commentLikes")
         .withIndex("by_comment", (q) => q.eq("commentId", reply._id))
         .collect();
-      
+
       for (const like of replyLikes) {
         await ctx.db.delete(like._id);
       }
@@ -257,7 +258,7 @@ export const deleteComment = mutation({
         .query("comments")
         .withIndex("by_parent", (q) => q.eq("parentCommentId", parentCommentId))
         .collect();
-      
+
       await ctx.db.patch(parentCommentId, {
         repliesCount: parentReplies.length,
       });
@@ -268,7 +269,7 @@ export const deleteComment = mutation({
       .query("comments")
       .withIndex("by_post", (q) => q.eq("postId", postId))
       .collect();
-    
+
     const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
 
     await ctx.db.patch(postId, {
@@ -298,12 +299,12 @@ export const likeComment = mutation({
     if (existingLike) {
       // Unlike: delete the like and recalculate count
       await ctx.db.delete(existingLike._id);
-      
+
       const allLikes = await ctx.db
         .query("commentLikes")
         .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
         .collect();
-      
+
       await ctx.db.patch(args.commentId, {
         likesCount: allLikes.length,
       });
@@ -314,12 +315,12 @@ export const likeComment = mutation({
         userId: args.userId,
         commentId: args.commentId,
       });
-      
+
       const allLikes = await ctx.db
         .query("commentLikes")
         .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
         .collect();
-      
+
       await ctx.db.patch(args.commentId, {
         likesCount: allLikes.length,
       });
@@ -357,20 +358,20 @@ export const dislikeComment = mutation({
           q.eq("userId", args.userId).eq("commentId", args.commentId)
         )
         .first();
-      
+
       if (existingLike) {
         await ctx.db.delete(existingLike._id);
-        
+
         const allLikes = await ctx.db
           .query("commentLikes")
           .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
           .collect();
-        
+
         await ctx.db.patch(args.commentId, {
           likesCount: allLikes.length,
         });
       }
-      
+
       await ctx.db.insert("commentDislikes", {
         userId: args.userId,
         commentId: args.commentId,
