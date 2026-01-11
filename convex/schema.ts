@@ -27,7 +27,12 @@ export default defineSchema({
     )),
     title: v.optional(v.string()),
     content: v.string(),
-    imageUrl: v.optional(v.string()),
+    imageIds: v.optional(v.array(v.id("_storage"))), // Array von Bild-IDs (neuer Standard für Multi-Image Support)
+    storageIds: v.optional(v.array(v.id("_storage"))), // Legacy: Array von Storage IDs (Alias für imageIds)
+    storageId: v.optional(v.id("_storage")), // Legacy: Einzelnes Bild (für Rückwärtskompatibilität)
+    imageUrl: v.optional(v.string()), // Legacy/Fallback für externe URLs oder bereits konvertierte URLs
+    imageUrls: v.optional(v.array(v.string())), // Array von Bild-URLs (bereits konvertiert, für Rückwärtskompatibilität)
+    imageDimensions: v.optional(v.array(v.object({ width: v.number(), height: v.number() }))), // Array von Bilddimensionen (parallel zu imageIds/imageUrls)
     // Für Treffen
     eventDate: v.optional(v.number()), // Timestamp
     eventTime: v.optional(v.string()), // z.B. "14:00"
@@ -43,6 +48,7 @@ export default defineSchema({
     commentsCount: v.number(),
     participantsCount: v.optional(v.number()), // Anzahl der Teilnehmer
     createdAt: v.number(),
+    clientGeneratedId: v.optional(v.string()), // Optionales Feld für Client-seitig generierte IDs (Legacy/Übergangszeit)
   })
     .index("by_user", ["userId"])
     .index("by_created", ["createdAt"])

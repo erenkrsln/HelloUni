@@ -14,7 +14,10 @@ export const createPost = mutation({
     )),
     title: v.optional(v.string()),
     content: v.string(),
-    imageUrl: v.optional(v.string()),
+    imageIds: v.optional(v.array(v.id("_storage"))), // Array von Bild-IDs für mehrere Bilder (bis zu 4) - neuer Standard
+    storageIds: v.optional(v.array(v.id("_storage"))), // Legacy: Array von Storage IDs (Alias für imageIds)
+    storageId: v.optional(v.id("_storage")), // Legacy: Einzelnes Bild (für Rückwärtskompatibilität)
+    imageUrl: v.optional(v.string()), // Legacy: Fallback für externe URLs
     eventDate: v.optional(v.number()),
     eventTime: v.optional(v.string()),
     participantLimit: v.optional(v.number()),
@@ -24,12 +27,23 @@ export const createPost = mutation({
     mentions: v.optional(v.array(v.string())), // Array von Usernames
   },
   handler: async (ctx, args) => {
+    // Begrenze auf max 4 Bilder (Twitter-Standard)
+    // Priorisiere imageIds (neuer Standard), dann storageIds (Legacy), dann storageId (Legacy Single)
+    const finalImageIds = (args.imageIds || args.storageIds) && (args.imageIds?.length || args.storageIds?.length) > 0 
+      ? (args.imageIds || args.storageIds)!.slice(0, 4) // Max 4 Bilder (Twitter-Limit)
+      : args.storageId 
+        ? [args.storageId] 
+        : undefined;
+
     const postId = await ctx.db.insert("posts", {
       userId: args.userId,
       postType: args.postType || "normal", // Default für normale Posts
       title: args.title,
       content: args.content,
-      imageUrl: args.imageUrl,
+      imageIds: finalImageIds && finalImageIds.length > 1 ? finalImageIds : undefined, // Neuer Standard: Array
+      storageIds: finalImageIds && finalImageIds.length > 1 ? finalImageIds : undefined, // Legacy: Array (für Rückwärtskompatibilität)
+      storageId: finalImageIds && finalImageIds.length === 1 ? finalImageIds[0] : undefined, // Legacy: Einzelnes Bild
+      imageUrl: args.imageUrl, // Legacy: Fallback für externe URLs
       eventDate: args.eventDate,
       eventTime: args.eventTime,
       participantLimit: args.participantLimit,

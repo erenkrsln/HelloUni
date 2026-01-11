@@ -170,7 +170,7 @@ export function EditProfileModal({
   }, [isMajorOpen, isSemesterOpen, isInterestsOpen]);
 
   const toggleInterest = (interest: string) => {
-    setSelectedInterests(prev => 
+    setSelectedInterests(prev =>
       prev.includes(interest)
         ? prev.filter(i => i !== interest)
         : [...prev, interest]
@@ -215,12 +215,12 @@ export function EditProfileModal({
         setHeaderImagePreview(reader.result as string);
       };
       reader.readAsDataURL(croppedBlob);
-      
+
       // Store the blob for later upload
       const file = new File([croppedBlob], "header-image.jpg", { type: "image/jpeg" });
       setSelectedHeaderImage(file);
       setIsHeaderImageRemoved(false);
-      
+
       // Close modal
       setIsHeaderCropModalOpen(false);
       setSelectedHeaderImageSrc("");
@@ -257,7 +257,7 @@ export function EditProfileModal({
     e.preventDefault();
     if (!name.trim() || isSubmitting) return;
 
-      setIsSubmitting(true);
+    setIsSubmitting(true);
     try {
       let imageUrl: string | undefined = undefined;
       let headerImageUrl: string | undefined = undefined;
@@ -394,9 +394,8 @@ export function EditProfileModal({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
         onClick={handleClose}
         style={{
           // Ensure backdrop doesn't affect header
@@ -406,9 +405,8 @@ export function EditProfileModal({
 
       {/* Drawer */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out drawer-height-mobile ${
-          isOpen ? "translate-y-0" : "translate-y-full"
-        }`}
+        className={`fixed inset-0 sm:inset-x-0 sm:bottom-0 sm:top-auto sm:h-[90vh] bg-white sm:rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"
+          } h-[100dvh] overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
           backgroundColor: "#ffffff",
@@ -421,29 +419,13 @@ export function EditProfileModal({
           }
         }}
       >
-        {/* Header - Sticky mit Safe-Area Support */}
-        <div 
-          className={`sticky top-0 z-[70] flex-shrink-0 drawer-header-sticky ${isSubmitting ? '' : ''}`}
-          style={{ 
-            isolation: "isolate",
-            position: "relative",
-            backgroundColor: "#ffffff",
-            background: "#ffffff",
-            WebkitTapHighlightColor: "transparent",
-            WebkitAppearance: "none",
-            willChange: "transform",
-            transform: "translateZ(0)",
-            WebkitTransform: "translateZ(0)",
-            // Force white background even during submit
-            ...(isSubmitting ? {
-              backgroundColor: "#ffffff !important",
-              background: "#ffffff !important",
-            } : {}),
-          }}
+        {/* Header */}
+        <div
+          className="relative z-50 flex-shrink-0 bg-white border-b border-gray-200"
         >
           {/* White background layer - always on top, prevents gray overlay */}
           <div
-            className="absolute inset-0 bg-white border-b border-gray-200"
+            className="absolute inset-0 bg-white"
             style={{
               backgroundColor: "#ffffff !important",
               background: "#ffffff !important",
@@ -471,107 +453,121 @@ export function EditProfileModal({
             aria-hidden="true"
           />
           {/* Content layer */}
-          <div 
-            className="relative flex items-center justify-between px-4 py-4"
-            style={{ 
+          <div
+            className="relative flex items-center justify-between px-4"
+            style={{
               paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
               paddingBottom: "1rem",
               zIndex: 11,
               backgroundColor: "transparent",
               background: "transparent",
+              minHeight: "calc(60px + env(safe-area-inset-top, 0px))"
             }}
             onFocus={(e) => e.stopPropagation()}
             onFocusCapture={(e) => e.stopPropagation()}
           >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClose();
-            }}
-            className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
-            style={{
-              backgroundColor: "transparent",
-              background: "transparent",
-              WebkitTapHighlightColor: "transparent",
-            }}
-            onFocus={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            Abbrechen
-          </button>
-          <h2 className="text-lg font-semibold text-gray-900">Profil bearbeiten</h2>
-          {/* Button wrapper with white overlay protection */}
-          <div className="relative" style={{ zIndex: 12 }}>
-            {/* White overlay that covers button area to prevent gray overlay */}
+            {/* Left Button */}
+            <div className="flex-shrink-0 relative z-20">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClose();
+                }}
+                className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
+                style={{
+                  backgroundColor: "transparent",
+                  background: "transparent",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+                onFocus={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                Abbrechen
+              </button>
+            </div>
+
+            {/* Centered Title */}
             <div
-              className="absolute inset-0 bg-white"
-              style={{
-                backgroundColor: "#ffffff !important",
-                background: "#ffffff !important",
-                zIndex: 1,
-                pointerEvents: "none",
-                borderRadius: "4px",
-                margin: "-4px",
-                padding: "4px",
-              }}
-              aria-hidden="true"
-            />
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Small delay to prevent iOS gray overlay
-                setTimeout(() => {
-                  handleSubmit(e as any);
-                }, 0);
-              }}
-              disabled={isSubmitting || !name.trim()}
-              className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed relative"
-              style={{
-                backgroundColor: "transparent",
-                background: "transparent",
-                WebkitTapHighlightColor: "transparent",
-                WebkitAppearance: "none",
-                appearance: "none",
-                position: "relative",
-                zIndex: 2,
-                isolation: "isolate",
-              }}
-              onFocus={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-              }}
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                // Force white background after touch
-                const header = e.currentTarget.closest('.drawer-header-sticky') as HTMLElement;
-                if (header) {
-                  header.style.backgroundColor = "#ffffff";
-                  header.style.background = "#ffffff";
-                }
-              }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none mt-[calc(0.5rem + env(safe-area-inset-top, 0px)/2)]"
+              style={{ zIndex: 11 }}
             >
-              {isSubmitting ? "Wird gespeichert..." : "Speichern"}
-            </button>
-          </div>
+              <h2 className="text-lg font-semibold text-gray-900 whitespace-nowrap">
+                Profil bearbeiten
+              </h2>
+            </div>
+
+            {/* Right Button wrapper with white overlay protection */}
+            <div className="flex-shrink-0 relative z-20">
+              {/* White overlay that covers button area to prevent gray overlay */}
+              <div
+                className="absolute inset-0 bg-white"
+                style={{
+                  backgroundColor: "#ffffff !important",
+                  background: "#ffffff !important",
+                  zIndex: 1,
+                  pointerEvents: "none",
+                  borderRadius: "4px",
+                  margin: "-4px",
+                  padding: "4px",
+                }}
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Small delay to prevent iOS gray overlay
+                  setTimeout(() => {
+                    handleSubmit(e as any);
+                  }, 0);
+                }}
+                disabled={isSubmitting || !name.trim()}
+                className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed relative"
+                style={{
+                  backgroundColor: "transparent",
+                  background: "transparent",
+                  WebkitTapHighlightColor: "transparent",
+                  WebkitAppearance: "none",
+                  appearance: "none",
+                  position: "relative",
+                  zIndex: 2,
+                  isolation: "isolate",
+                }}
+                onFocus={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  // Force white background after touch
+                  const header = e.currentTarget.closest('.drawer-header-sticky') as HTMLElement;
+                  if (header) {
+                    header.style.backgroundColor = "#ffffff";
+                    header.style.background = "#ffffff";
+                  }
+                }}
+              >
+                Speichern
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Header Image */}
-        <div 
+        <div
           className="relative bg-[#0a0a0a] overflow-hidden"
-          style={{ 
-            aspectRatio: '3/1', 
+          style={{
+            aspectRatio: '3/1',
             minHeight: '120px',
           }}
         >
@@ -584,7 +580,7 @@ export function EditProfileModal({
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
           )}
-          
+
           {/* Edit Header Image Button */}
           <input
             ref={headerImageInputRef}
@@ -641,7 +637,7 @@ export function EditProfileModal({
         </div>
 
         {/* Scrollable Content - Nur dieser Bereich scrollt */}
-        <div 
+        <div
           className="flex-1 overflow-y-auto overscroll-contain"
           style={{
             WebkitOverflowScrolling: "touch",
@@ -649,248 +645,247 @@ export function EditProfileModal({
           }}
         >
           <div className="px-4 py-6">
-            <form 
-              onSubmit={handleSubmit} 
+            <form
+              onSubmit={handleSubmit}
               className="space-y-6"
               onFocus={(e) => {
                 // Prevent form focus from affecting header
                 e.stopPropagation();
               }}
             >
-            {/* Name Input */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-2">
-              Name
-            </label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Dein Name"
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Studiengang Dropdown */}
-          <div className="relative major-dropdown">
-            <label htmlFor="major" className="block text-sm font-medium mb-2">
-              Studiengang
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsMajorOpen(!isMajorOpen);
-                }}
-                disabled={isSubmitting}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className={major ? "text-gray-900" : "text-gray-500"}>
-                  {major || "Studiengang auswählen"}
-                </span>
-                <ChevronDown 
-                  className={`h-4 w-4 text-gray-500 transition-transform ${isMajorOpen ? "rotate-180" : ""}`}
+              {/* Name Input */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium mb-2">
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Dein Name"
+                  required
+                  disabled={isSubmitting}
                 />
-              </button>
-              {isMajorOpen && (
-                <div 
-                  className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
-                >
-                  <div className="py-1">
-                    {STUDY_PROGRAMS.map((program) => (
-                      <button
-                        key={program}
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setMajor(program);
-                          setIsMajorOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${
-                          major === program ? "" : ""
-                        }`}
-                      >
-                        {program}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Semester Dropdown */}
-          <div className="relative semester-dropdown">
-            <label htmlFor="semester" className="block text-sm font-medium mb-2">
-              Semester
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsSemesterOpen(!isSemesterOpen);
-                }}
-                disabled={isSubmitting}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className={semester ? "text-gray-900" : "text-gray-500"}>
-                  {semester ? `${semester}. Semester` : "Semester auswählen"}
-                </span>
-                <ChevronDown 
-                  className={`h-4 w-4 text-gray-500 transition-transform ${isSemesterOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {isSemesterOpen && (
-                <div 
-                  className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
-                >
-                  <div className="py-1">
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((sem) => (
-                      <button
-                        key={sem}
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setSemester(sem);
-                          setIsSemesterOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${
-                          semester === sem ? "" : ""
-                        }`}
-                      >
-                        {sem}. Semester
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Interessen Multi-Select */}
-          <div className="relative interests-dropdown">
-            <label htmlFor="interests" className="block text-sm font-medium mb-2">
-              Interessen
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsInterestsOpen(!isInterestsOpen);
-                }}
-                disabled={isSubmitting}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className={selectedInterests.length > 0 ? "text-gray-900" : "text-gray-500"}>
-                  {selectedInterests.length > 0 
-                    ? `${selectedInterests.length} ${selectedInterests.length === 1 ? 'Interesse' : 'Interessen'} ausgewählt`
-                    : "Interessen auswählen"}
-                </span>
-                <ChevronDown 
-                  className={`h-4 w-4 text-gray-500 transition-transform ${isInterestsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {isInterestsOpen && (
-                <div 
-                  className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
-                >
-                  <div className="p-2">
-                    <div className="flex flex-wrap gap-2">
-                      {AVAILABLE_INTERESTS.map((interest) => {
-                        const isSelected = selectedInterests.includes(interest);
-                        return (
+              {/* Studiengang Dropdown */}
+              <div className="relative major-dropdown">
+                <label htmlFor="major" className="block text-sm font-medium mb-2">
+                  Studiengang
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsMajorOpen(!isMajorOpen);
+                    }}
+                    disabled={isSubmitting}
+                    className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className={major ? "text-gray-900" : "text-gray-500"}>
+                      {major || "Studiengang auswählen"}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 text-gray-500 transition-transform ${isMajorOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isMajorOpen && (
+                    <div
+                      className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      <div className="py-1">
+                        {STUDY_PROGRAMS.map((program) => (
                           <button
-                            key={interest}
+                            key={program}
                             type="button"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              toggleInterest(interest);
+                              setMajor(program);
+                              setIsMajorOpen(false);
                             }}
-                            className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
-                              isSelected
-                                ? "bg-[#D08945] text-white border-[#D08945]"
-                                : "bg-white text-gray-700 border-gray-300 hover:border-[#D08945] hover:text-[#D08945]"
-                            }`}
+                            className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${major === program ? "" : ""
+                              }`}
                           >
-                            {interest}
+                            {program}
                           </button>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {selectedInterests.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedInterests.map((interest) => (
-                  <span
-                    key={interest}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#D08945]/10 text-[#D08945] border border-[#D08945]/20"
-                  >
-                    {interest}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleInterest(interest);
-                      }}
-                      className="hover:text-[#C07835]"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
               </div>
-            )}
-          </div>
 
-          {/* Bio Input */}
-          <div>
-            <label htmlFor="bio" className="block text-sm font-medium mb-2">
-              Biografie
-            </label>
-            <textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Erzähle etwas über dich..."
-              rows={4}
-              maxLength={150}
-              disabled={isSubmitting}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-base resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            <p className="text-xs text-gray-500 mt-1 text-right">
-              {bio.length}/150
-            </p>
-          </div>
+              {/* Semester Dropdown */}
+              <div className="relative semester-dropdown">
+                <label htmlFor="semester" className="block text-sm font-medium mb-2">
+                  Semester
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsSemesterOpen(!isSemesterOpen);
+                    }}
+                    disabled={isSubmitting}
+                    className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className={semester ? "text-gray-900" : "text-gray-500"}>
+                      {semester ? `${semester}. Semester` : "Semester auswählen"}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 text-gray-500 transition-transform ${isSemesterOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isSemesterOpen && (
+                    <div
+                      className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      <div className="py-1">
+                        {Array.from({ length: 10 }, (_, i) => i + 1).map((sem) => (
+                          <button
+                            key={sem}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSemester(sem);
+                              setIsSemesterOpen(false);
+                            }}
+                            className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${semester === sem ? "" : ""
+                              }`}
+                          >
+                            {sem}. Semester
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Interessen Multi-Select */}
+              <div className="relative interests-dropdown">
+                <label htmlFor="interests" className="block text-sm font-medium mb-2">
+                  Interessen
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsInterestsOpen(!isInterestsOpen);
+                    }}
+                    disabled={isSubmitting}
+                    className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className={selectedInterests.length > 0 ? "text-gray-900" : "text-gray-500"}>
+                      {selectedInterests.length > 0
+                        ? `${selectedInterests.length} ${selectedInterests.length === 1 ? 'Interesse' : 'Interessen'} ausgewählt`
+                        : "Interessen auswählen"}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 text-gray-500 transition-transform ${isInterestsOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isInterestsOpen && (
+                    <div
+                      className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      <div className="p-2">
+                        <div className="flex flex-wrap gap-2">
+                          {AVAILABLE_INTERESTS.map((interest) => {
+                            const isSelected = selectedInterests.includes(interest);
+                            return (
+                              <button
+                                key={interest}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  toggleInterest(interest);
+                                }}
+                                className={`px-3 py-1.5 text-sm rounded-full border transition-all ${isSelected
+                                  ? "bg-[#D08945] text-white border-[#D08945]"
+                                  : "bg-white text-gray-700 border-gray-300 hover:border-[#D08945] hover:text-[#D08945]"
+                                  }`}
+                              >
+                                {interest}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {selectedInterests.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedInterests.map((interest) => (
+                      <span
+                        key={interest}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#D08945]/10 text-[#D08945] border border-[#D08945]/20"
+                      >
+                        {interest}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleInterest(interest);
+                          }}
+                          className="hover:text-[#C07835]"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Bio Input */}
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium mb-2">
+                  Biografie
+                </label>
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Erzähle etwas über dich..."
+                  rows={4}
+                  maxLength={150}
+                  disabled={isSubmitting}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-base resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <p className="text-xs text-gray-500 mt-1 text-right">
+                  {bio.length}/150
+                </p>
+              </div>
             </form>
-          </div>
-        </div>
-      </div>
+          </div >
+        </div >
 
-      {/* Header Image Crop Modal */}
-      {isHeaderCropModalOpen && selectedHeaderImageSrc && (
-        <HeaderImageCropModal
-          isOpen={isHeaderCropModalOpen}
-          onClose={handleHeaderCropCancel}
-          imageSrc={selectedHeaderImageSrc}
-          onCropComplete={handleHeaderCropComplete}
-          isUploading={isHeaderUploading}
-          className="drawer-crop-modal"
-        />
-      )}
+        {/* Header Image Crop Modal */}
+        {
+          isHeaderCropModalOpen && selectedHeaderImageSrc && (
+            <HeaderImageCropModal
+              isOpen={isHeaderCropModalOpen}
+              onClose={handleHeaderCropCancel}
+              imageSrc={selectedHeaderImageSrc}
+              onCropComplete={handleHeaderCropComplete}
+              isUploading={isHeaderUploading}
+              className="drawer-crop-modal"
+            />
+          )
+        }
+      </div>
     </>
   );
 }

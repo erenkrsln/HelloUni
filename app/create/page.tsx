@@ -56,8 +56,9 @@ export default function CreatePage() {
         api.queries.searchUsers,
         mentionSearchTerm ? { searchTerm: mentionSearchTerm } : "skip"
     );
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    // Multi-Image Support: Array für bis zu 4 Bilder
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Event fields
@@ -100,23 +101,40 @@ export default function CreatePage() {
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedImage(file);
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Begrenze auf max 4 Bilder (Twitter-Limit)
+        const remainingSlots = 4 - selectedImages.length;
+        const filesToAdd = files.slice(0, remainingSlots);
+        
+        if (filesToAdd.length === 0) {
+            alert("Du kannst maximal 4 Bilder hochladen.");
+            return;
+        }
+
+        // Neue Dateien hinzufügen
+        const newImages = [...selectedImages, ...filesToAdd];
+        setSelectedImages(newImages);
+
+        // Previews für neue Bilder erstellen
+        filesToAdd.forEach((file) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result as string);
+                setImagePreviews((prev) => [...prev, reader.result as string]);
             };
             reader.readAsDataURL(file);
-        }
-    };
+        });
 
-    const removeImage = () => {
-        setSelectedImage(null);
-        setImagePreview(null);
+        // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
+    };
+
+    const removeImage = (index: number) => {
+        setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+        setImagePreviews((prev) => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -139,7 +157,7 @@ export default function CreatePage() {
         }
 
         // Nur bei Bild-Upload: Progress initialisieren
-        if (selectedImage) {
+        if (selectedImages.length > 0) {
             sessionStorage.setItem("uploadProgress", "0");
         }
 
@@ -149,23 +167,34 @@ export default function CreatePage() {
         // Upload im Hintergrund durchführen
         (async () => {
             try {
-                let imageUrl: string | undefined = undefined;
+                let imageIds: string[] = [];
 
-                // Bild hochladen mit Progress-Tracking über sessionStorage
-                if (selectedImage) {
+                // Mehrere Bilder hochladen mit Progress-Tracking über sessionStorage
+                if (selectedImages.length > 0) {
+                    const totalImages = selectedImages.length;
                     sessionStorage.setItem("uploadProgress", "10");
-                    const uploadUrl = await generateUploadUrl();
-                    sessionStorage.setItem("uploadProgress", "30");
                     
-                    const result = await fetch(uploadUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": selectedImage.type },
-                        body: selectedImage,
+                    // Lade alle Bilder parallel hoch
+                    const uploadPromises = selectedImages.map(async (image, index) => {
+                        const uploadUrl = await generateUploadUrl();
+                        const progressStart = 10 + (index * 70 / totalImages);
+                        const progressEnd = 10 + ((index + 1) * 70 / totalImages);
+                        
+                        sessionStorage.setItem("uploadProgress", progressStart.toString());
+                        
+                        const result = await fetch(uploadUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": image.type },
+                            body: image,
+                        });
+                        
+                        sessionStorage.setItem("uploadProgress", progressEnd.toString());
+                        
+                        const { storageId } = await result.json();
+                        return storageId;
                     });
-                    sessionStorage.setItem("uploadProgress", "60");
-                    
-                    const { storageId } = await result.json();
-                    imageUrl = storageId;
+
+                    imageIds = await Promise.all(uploadPromises);
                     sessionStorage.setItem("uploadProgress", "80");
                 }
 
@@ -190,17 +219,17 @@ export default function CreatePage() {
                 const extractedMentions = extractMentions(content.trim());
                 const validMentions = extractedMentions.length > 0 ? extractedMentions : undefined;
 
-                if (selectedImage) {
+                if (selectedImages.length > 0) {
                     sessionStorage.setItem("uploadProgress", "90");
                 }
 
-                // Post erstellen
+                // Post erstellen mit imageIds Array (neuer Standard)
                 await createPost({
                     userId: currentUser._id,
                     postType,
                     title: title.trim() || undefined,
                     content: content.trim(),
-                    imageUrl,
+                    imageIds: imageIds.length > 0 ? imageIds as any : undefined, // Array von Storage IDs (Id<"_storage">[])
                     eventDate: eventDateTimestamp,
                     eventTime: eventTime || undefined,
                     participantLimit: participantLimit || undefined,
@@ -210,7 +239,7 @@ export default function CreatePage() {
                     mentions: validMentions,
                 });
 
-                if (selectedImage) {
+                if (selectedImages.length > 0) {
                     sessionStorage.setItem("uploadProgress", "100");
                     // Kurze Verzögerung damit User den vollen Progress sieht
                     await new Promise(resolve => setTimeout(resolve, 500));
@@ -684,21 +713,39 @@ export default function CreatePage() {
                                 </div>
 
                                 {/* Image Preview - direct sibling of textarea */}
-                                {imagePreview && (
+                                {/* Multi-Image Preview Grid */}
+                                {imagePreviews.length > 0 && (
                                     <div className="relative flex-shrink-0 px-4 -mt-28 pb-4">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            className="w-full rounded-xl object-contain"
-                                            style={{ maxHeight: "600px", height: "auto" }}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={removeImage}
-                                            className="absolute top-2 right-6 h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white focus:outline-none shadow-md"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
+                                        <div className={`grid gap-2 ${imagePreviews.length === 1 ? 'grid-cols-1' : imagePreviews.length === 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+                                            {imagePreviews.map((preview, index) => (
+                                                <div key={index} className="relative group">
+                                                    <img
+                                                        src={preview}
+                                                        alt={`Preview ${index + 1}`}
+                                                        className={`w-full rounded-xl object-cover ${
+                                                            imagePreviews.length === 1 
+                                                                ? 'max-h-[600px] h-auto' 
+                                                                : 'aspect-square'
+                                                        }`}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeImage(index)}
+                                                        className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white focus:outline-none shadow-md hover:bg-red-600 transition-colors"
+                                                    >
+                                                        <X className="w-5 h-5" />
+                                                    </button>
+                                                    {imagePreviews.length === 3 && index === 0 && (
+                                                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-xl" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {imagePreviews.length >= 4 && (
+                                            <div className="mt-2 text-xs text-gray-500 text-center">
+                                                Max. 4 Bilder (Twitter-Limit)
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -864,15 +911,25 @@ export default function CreatePage() {
                             )}
 
                             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    title="Bild hinzufügen"
-                                    aria-label="Bild hinzufügen"
-                                    className="flex items-center justify-center w-10 h-10 text-gray-600 rounded-lg focus:outline-none active:outline-none"
-                                >
-                                    <ImagePlus className="w-6 h-6" />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        title={selectedImages.length >= 4 ? "Max. 4 Bilder erreicht" : "Bilder hinzufügen"}
+                                        aria-label="Bilder hinzufügen"
+                                        disabled={selectedImages.length >= 4}
+                                        className={`flex items-center justify-center w-10 h-10 text-gray-600 rounded-lg focus:outline-none active:outline-none ${
+                                            selectedImages.length >= 4 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        <ImagePlus className="w-6 h-6" />
+                                    </button>
+                                    {selectedImages.length > 0 && (
+                                        <span className="text-xs text-gray-500">
+                                            {selectedImages.length}/4 Bilder
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="text-xs text-gray-500">
                                     {content.length}/500
                                 </div>
@@ -882,6 +939,7 @@ export default function CreatePage() {
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
+                                multiple
                                 onChange={handleImageSelect}
                                 className="hidden"
                             />

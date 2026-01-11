@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { HeaderImageWithLoading } from "@/components/ui/header-image-with-loading";
 import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -58,7 +59,7 @@ export function ProfileHeader({
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateUser = useMutation(api.mutations.updateUser);
     const createConversation = useMutation(api.mutations.createConversation);
-    
+
     // Get conversations to check if a direct message already exists
     const conversations = useQuery(
         api.queries.getConversations,
@@ -172,38 +173,29 @@ export function ProfileHeader({
 
 
     return (
-        <div 
+        <div
             className="relative w-full sticky top-0 z-40 profile-header-sticky bg-white"
             style={{
                 overscrollBehavior: 'none',
             }}
         >
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
-            <div 
-                className="relative bg-[#0a0a0a] overflow-hidden group header-image-responsive" 
-                style={{ 
-                    aspectRatio: '3/1', 
-                    minHeight: '120px',
-                }}
-            >
+            <div className="relative">
+                <HeaderImageWithLoading
+                    headerImage={headerImage}
+                    isOwnProfile={isOwnProfile}
+                    onHeaderImageClick={() => headerImageInputRef.current?.click()}
+                />
+
                 {/* Back Arrow Button - bottom left on mobile, top left on desktop with iOS safe area */}
                 <button
-                    onClick={() => router.push("/home")}
+                    onClick={() => router.back()}
                     className="absolute bottom-12 left-3 sm:bottom-auto sm:left-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                    style={{ top: 'max(12px, env(safe-area-inset-top))' }}
                     aria-label="Zurück zur Startseite"
                 >
                     <ArrowLeft className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white" />
                 </button>
-
-                {headerImage ? (
-                    <img
-                        src={headerImage}
-                        alt="Header"
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
-                )}
             </div>
 
             {/* Profile Picture - overlapping header (Twitter/X Style) */}
@@ -230,16 +222,16 @@ export function ProfileHeader({
                             <button
                                 onClick={async () => {
                                     if (!currentUserId || !userId) return;
-                                    
+
                                     // Check if a direct message conversation already exists
                                     const existingConversation = conversations?.find(conv => {
                                         // Direct message: exactly 2 participants and not a group
-                                        return !conv.isGroup && 
-                                               conv.participants.length === 2 &&
-                                               conv.participants.includes(currentUserId) &&
-                                               conv.participants.includes(userId);
+                                        return !conv.isGroup &&
+                                            conv.participants.length === 2 &&
+                                            conv.participants.includes(currentUserId) &&
+                                            conv.participants.includes(userId);
                                     });
-                                    
+
                                     if (existingConversation) {
                                         // Navigate to existing conversation
                                         router.push(`/chat/${existingConversation._id}`);

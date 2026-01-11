@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Tag } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { renderContentWithMentions } from "@/lib/mentions";
@@ -14,6 +15,8 @@ import { PostActions } from "./post-actions";
 import { PollOptions } from "./poll-options";
 import { EventDetails } from "./event-details";
 import { CommentDrawer } from "./comment-drawer";
+import { PostImageGrid } from "@/components/post-image-grid";
+import { ImageLightbox } from "@/components/image-lightbox";
 
 interface FeedCardProps {
   post: {
@@ -22,7 +25,9 @@ interface FeedCardProps {
     postType?: "normal" | "spontaneous_meeting" | "recurring_meeting" | "announcement" | "poll";
     title?: string;
     content: string;
-    imageUrl?: string;
+    imageUrls?: string[]; // Array von Bild-URLs (für Multi-Image Support)
+    imageUrl?: string; // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+    imageDimensions?: Array<{ width: number; height: number }>; // Array von Bilddimensionen (parallel zu imageUrls)
     eventDate?: number;
     eventTime?: string;
     participantLimit?: number;
@@ -47,6 +52,7 @@ interface FeedCardProps {
   };
   currentUserId?: Id<"users">;
   showDivider?: boolean; // Zeigt Trennlinie nach den Buttons an
+  imagePriority?: boolean; // Für Next.js Image priority (erste Posts im Feed)
 }
 
 // Helper to remove degree titles
@@ -56,14 +62,24 @@ const cleanMajor = (major?: string) => {
   return major.replace(/\s*\(?\b(B\.?Eng|B\.?Sc|B\.?A|M\.?Sc|M\.?A|M\.?Eng|LL\.?B|LL\.?M)\.?\)?\s*/gi, "").trim();
 };
 
-export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, showDivider = true, imagePriority = false }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const isOwnPost = currentUserId && post.userId === currentUserId;
   const joinEvent = useMutation(api.mutations.joinEvent);
   const leaveEvent = useMutation(api.mutations.leaveEvent);
   const votePoll = useMutation(api.mutations.votePoll);
-  
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Lightbox State
+  const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
+
+  // Berechne Array aller Bilder für Lightbox
+  const allImages = post.imageUrls && post.imageUrls.length > 0
+    ? post.imageUrls
+    : post.imageUrl
+      ? [post.imageUrl]
+      : [];
 
   // Store time ago string on mount - only updates when component remounts (e.g. navigating to /home)
   const [timeAgo, setTimeAgo] = useState(() => formatTimeAgo(post.createdAt));
@@ -295,7 +311,6 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
 
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(getStoredLikeState);
   const [isLiking, setIsLiking] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
   const lastKnownLikedState = useRef<boolean | null>(getStoredLikeState());
 
   const isLikedFromQuery = useQuery(
@@ -310,7 +325,7 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
   useEffect(() => {
     // Don't override optimistic state if we're currently liking/unliking
     if (isLiking) return;
-    
+
     if (isLiked !== undefined) {
       lastKnownLikedState.current = isLiked;
       if (optimisticLiked === null) {
@@ -331,15 +346,15 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
-    
+
     // Use displayIsLiked to get the current state (includes optimistic updates)
     const wasLiked = displayIsLiked;
     const newLikedState = !wasLiked;
-    
+
     // Optimistic update immediately - no delay
     setOptimisticLiked(newLikedState);
     setIsLiking(true);
-    
+
     try {
       await likePost({ userId: currentUserId, postId: post._id });
       // Update lastKnownState after successful like
@@ -463,84 +478,23 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             href={`/profile/${post.user.username}`}
             prefetch={true}
             className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
-            style={{
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
-            }}
           >
-            <Avatar className="w-12 h-12 rounded-full" style={{
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
-            }}>
-              <AvatarImage
-                src={post.user.image}
-                alt={post.user.name}
-                className="object-cover"
-                style={{
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              />
-              <AvatarFallback
-                className="font-semibold rounded-full"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.2)",
-                  color: "#000000",
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              >
-                {post.user.name?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              src={post.user.image}
+              alt={post.user.name}
+              size="lg"
+              fallbackText={post.user.name?.[0]?.toUpperCase() || "U"}
+              priority={imagePriority}
+            />
           </Link>
         ) : (
-          <div className="flex-shrink-0" style={{
-            willChange: "transform",
-            transform: "translateZ(0)",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden"
-          }}>
-            <Avatar className="w-12 h-12 rounded-full" style={{
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
-            }}>
-              <AvatarImage
-                src={post.user?.image}
-                alt={post.user?.name}
-                className="object-cover"
-                style={{
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              />
-              <AvatarFallback
-                className="font-semibold rounded-full"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.2)",
-                  color: "#000000",
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              >
-                {post.user?.name?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+          <UserAvatar
+            src={post.user?.image}
+            alt={post.user?.name || "User"}
+            size="lg"
+            fallbackText={post.user?.name?.[0]?.toUpperCase() || "U"}
+            priority={imagePriority}
+          />
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1 mb-1 min-w-0 -mt-1">
@@ -571,9 +525,9 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
               {timeAgo}
             </time>
             <div className="ml-auto mr-2 w-8 h-8 flex items-center justify-center flex-shrink-0">
-            {isOwnPost && (
-              <PostMenu postId={post._id} userId={currentUserId} />
-            )}
+              {isOwnPost && (
+                <PostMenu postId={post._id} userId={currentUserId} />
+              )}
             </div>
           </div>
 
@@ -647,19 +601,27 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
               isVoting={isVoting}
             />
           )}
-          {post.imageUrl && (
-            <div className="mt-3 w-full rounded-2xl overflow-hidden">
-              <img
-                ref={imgRef}
-                src={post.imageUrl}
-                alt="Post image"
-                className="w-full h-auto object-cover rounded-2xl"
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          {/* Multi-Image Grid im Twitter-Stil */}
+          {allImages.length > 0 && (
+            <>
+              <PostImageGrid
+                images={allImages}
+                imageDimensions={post.imageDimensions}
+                onImageClick={(index) => {
+                  // Öffne Lightbox mit dem angeklickten Bild
+                  setLightboxImageIndex(index);
+                }}
+                priority={imagePriority}
               />
-            </div>
+
+              {/* Image Lightbox */}
+              <ImageLightbox
+                images={allImages}
+                currentIndex={lightboxImageIndex}
+                onClose={() => setLightboxImageIndex(null)}
+                onImageChange={(newIndex) => setLightboxImageIndex(newIndex)}
+              />
+            </>
           )}
 
           {/* Join Event Button */}

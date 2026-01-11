@@ -11,6 +11,51 @@ async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<nu
   return allComments.filter((c: any) => !c.parentCommentId).length;
 }
 
+// Helper function to convert post image storageId/imageUrl to public URL
+async function getPostImageUrl(ctx: any, post: { storageId?: Id<"_storage">; imageUrl?: string }): Promise<string | undefined> {
+  // Prioritize storageId over imageUrl for better performance
+  if (post.storageId) {
+    return (await ctx.storage.getUrl(post.storageId)) ?? undefined;
+  } else if (post.imageUrl) {
+    // Fallback to imageUrl (legacy support or external URLs)
+    // If it's not a full URL, try to convert as storage ID (for backward compatibility)
+    if (post.imageUrl.startsWith('http')) {
+      return post.imageUrl;
+    }
+    return (await ctx.storage.getUrl(post.imageUrl as any)) ?? post.imageUrl;
+  }
+  return undefined;
+}
+
+// Helper function to convert array of imageIds/storageIds to array of URLs
+async function getPostImageUrls(ctx: any, post: { imageIds?: Id<"_storage">[]; storageIds?: Id<"_storage">[]; imageUrls?: string[]; storageId?: Id<"_storage">; imageUrl?: string }): Promise<string[]> {
+  const urls: string[] = [];
+
+  // Prioritize imageIds array (new standard multi-image format)
+  const imageIdArray = post.imageIds || post.storageIds; // Unterstütze beide Felder
+  
+  if (imageIdArray && imageIdArray.length > 0) {
+    for (const imageId of imageIdArray.slice(0, 4)) { // Max 4 Bilder (Twitter-Limit)
+      const url = await ctx.storage.getUrl(imageId);
+      if (url) urls.push(url);
+    }
+    return urls;
+  }
+
+  // Fallback to imageUrls array (already converted)
+  if (post.imageUrls && post.imageUrls.length > 0) {
+    return post.imageUrls.slice(0, 4).filter(url => url && url.startsWith('http'));
+  }
+
+  // Legacy: Single image support
+  const singleUrl = await getPostImageUrl(ctx, post);
+  if (singleUrl) {
+    return [singleUrl];
+  }
+
+  return [];
+}
+
 export const getFeed = query({
   args: {
     userId: v.optional(v.id("users")),
@@ -42,12 +87,12 @@ export const getFeed = query({
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
-        let imageUrl = post.imageUrl;
-
-        // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        
+        // Use helper function for image URLs conversion (supports arrays)
+        const imageUrls = await getPostImageUrls(ctx, post);
+        
+        // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         // Convert user image storage ID to URL if it exists
         let userImageUrl = user?.image;
@@ -72,7 +117,9 @@ export const getFeed = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrls, // Array von Bild-URLs
+          imageUrl, // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+          imageDimensions: post.imageDimensions, // Array von Bilddimensionen (parallel zu imageUrls)
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
@@ -228,12 +275,12 @@ export const getUserPosts = query({
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
-        let imageUrl = post.imageUrl;
-
-        // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        
+        // Use helper function for image URLs conversion (supports arrays)
+        const imageUrls = await getPostImageUrls(ctx, post);
+        
+        // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         // Convert user image storage ID to URL if it exists
         let userImageUrl = user?.image;
@@ -258,7 +305,9 @@ export const getUserPosts = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrls, // Array von Bild-URLs
+          imageUrl, // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+          imageDimensions: post.imageDimensions, // Array von Bilddimensionen (parallel zu imageUrls)
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
@@ -466,12 +515,12 @@ export const getFollowingFeed = query({
     const postsWithUsers = await Promise.all(
       followingPosts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
-        let imageUrl = post.imageUrl;
-
-        // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith("http")) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        
+        // Use helper function for image URLs conversion (supports arrays)
+        const imageUrls = await getPostImageUrls(ctx, post);
+        
+        // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         // Convert user image storage ID to URL if it exists
         let userImageUrl = user?.image;
@@ -496,7 +545,9 @@ export const getFollowingFeed = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrls, // Array von Bild-URLs
+          imageUrl, // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+          imageDimensions: post.imageDimensions, // Array von Bilddimensionen (parallel zu imageUrls)
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,
@@ -754,10 +805,11 @@ export const getFilteredFeed = query({
           }
         }
 
-        let imageUrl = post.imageUrl;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        // Use helper function for image URLs conversion (supports arrays)
+        const imageUrls = await getPostImageUrls(ctx, post);
+        
+        // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
 
         let userImageUrl = user?.image;
         if (userImageUrl && !userImageUrl.startsWith('http')) {
@@ -781,7 +833,9 @@ export const getFilteredFeed = query({
           ...post,
           participantsCount: actualParticipantsCount,
           commentsCount: actualCommentsCount,
-          imageUrl,
+          imageUrls, // Array von Bild-URLs
+          imageUrl, // Legacy: Einzelnes Bild für Rückwärtskompatibilität
+          imageDimensions: post.imageDimensions, // Array von Bilddimensionen (parallel zu imageUrls)
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           user: user ? {
             ...user,

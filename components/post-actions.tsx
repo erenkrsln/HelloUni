@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Heart, MessageCircle, Bookmark } from "lucide-react";
 
 interface PostActionsProps {
@@ -21,8 +22,11 @@ export function PostActions({
   currentUserId,
   onCommentClick
 }: PostActionsProps) {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
   return (
     <div className="flex items-center justify-between w-full mt-3">
+      {/* ... Like Button ... */}
       <button
         onClick={onLike}
         disabled={!currentUserId || isLiking}
@@ -49,7 +53,7 @@ export function PostActions({
           {likesCount > 0 ? likesCount : <span className="invisible">0</span>}
         </span>
       </button>
-      <button 
+      <button
         onClick={onCommentClick}
         className="flex items-center gap-1 h-10 px-0 font-normal cursor-pointer flex-shrink-0 group rounded-full transition-colors outline-none focus:outline-none active:outline-none touch-manipulation"
         onTouchEnd={(e) => {
@@ -61,8 +65,17 @@ export function PostActions({
           {commentsCount > 0 ? commentsCount : <span className="invisible">0</span>}
         </span>
       </button>
-      <button className="flex items-center gap-1 h-10 px-0 font-normal cursor-pointer flex-shrink-0 group rounded-full transition-colors">
-        <Bookmark className="text-gray-500 group-hover:text-green-500" style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
+      <button
+        onClick={() => setIsBookmarked(!isBookmarked)}
+        className="flex items-center gap-1 h-10 px-0 font-normal cursor-pointer flex-shrink-0 group rounded-full transition-colors outline-none focus:outline-none active:outline-none touch-manipulation"
+        onTouchEnd={(e) => {
+          e.currentTarget.blur();
+        }}
+      >
+        <Bookmark
+          className={isBookmarked ? "text-green-500 fill-green-500" : "text-gray-500 group-hover:text-green-500"}
+          style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }}
+        />
         <span className="text-[13px] tabular-nums inline-block min-w-[1.5ch] invisible">
           0
         </span>
