@@ -287,18 +287,19 @@ export default function Home() {
     // Cleanup: Disconnect Observer und clear Timeouts
     return () => {
       clearTimeout(timeoutId);
-      if (loadMoreTimeoutRef.current) {
+      // WICHTIG: Timeout NICHT canceln, wenn isLoadingMore true ist
+      // Sonst wird der Callback nie ausgeführt und isLoadingMore bleibt true
+      if (!isLoadingMore && loadMoreTimeoutRef.current) {
         clearTimeout(loadMoreTimeoutRef.current);
         loadMoreTimeoutRef.current = null;
       }
-      // WICHTIG: Observer NICHT disconnecten beim Cleanup, wenn isLoadingMore true ist
-      // Sonst wird der Timeout-Callback nie ausgeführt
-      if (!isLoadingMore && observerRef.current) {
+      // Observer nur disconnecten, wenn kein Load in Progress ist
+      if (!isLoadingMore && !isLoadMoreInProgressRef.current && observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
       }
     };
-  }, [posts, visiblePostsCount, isMobile]); // isLoadingMore aus Dependencies entfernt
+  }, [posts, visiblePostsCount, isMobile]); // isLoadingMore aus Dependencies entfernt (verhindert Loop)
 
   // Upload Progress Tracking
   useEffect(() => {
