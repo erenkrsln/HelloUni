@@ -29,7 +29,7 @@ interface ImageWithPlaceholderProps {
  */
 // Globaler Cache für bereits geladene Bilder in dieser Session
 const loadedImages = new Set<string>();
-const MAX_CACHE_SIZE = 50; // Max. Anzahl gecachter Bilder (verhindert Memory-Probleme)
+const MAX_CACHE_SIZE = 30; // Reduziert auf 30 für Mobile (verhindert Memory-Probleme)
 
 // Cleanup-Funktion für Memory-Management
 const cleanupImageCache = () => {

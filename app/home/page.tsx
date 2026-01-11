@@ -35,13 +35,19 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [visiblePostsCount, setVisiblePostsCount] = useState(10); // Starte mit 10 Posts auf Mobile
 
   // Prüfe, ob es ein mobiles Gerät ist
   useEffect(() => {
-    setIsMobile(isMobileDevice());
+    const mobile = isMobileDevice();
+    setIsMobile(mobile);
+    // Auf Mobile: Starte mit weniger Posts für bessere Performance
+    setVisiblePostsCount(mobile ? 10 : 20);
 
     const handleResize = () => {
-      setIsMobile(isMobileDevice());
+      const mobile = isMobileDevice();
+      setIsMobile(mobile);
+      setVisiblePostsCount(mobile ? 10 : 20);
     };
 
     window.addEventListener("resize", handleResize);
@@ -154,22 +160,83 @@ export default function Home() {
 
   // Kein Loading Screen - zeige gecachte Daten sofort an
 
-  // Optimiertes Preloading: Nur die ersten 3 Bilder vorladen (für bessere Performance auf Mobile)
-  // Mobile-Geräte haben begrenzten Speicher - zu viele gleichzeitige Bild-Ladungen führen zu Crashes
+  // KEIN Preloading auf Mobile - verhindert Memory-Probleme
+  // Desktop: Nur erste 2 Bilder für sofortige Anzeige
   useEffect(() => {
-    if (!posts || !isMobile) return; // Preload nur auf Desktop, Mobile nutzt Lazy-Loading
+    if (!posts || isMobile) return; // Mobile: KEIN Preloading
 
-    // Nur die ersten 3 Bilder vorladen (für sofortige Anzeige beim ersten Scroll)
-    const postsToPreload = posts.slice(0, 3);
+    // Desktop: Nur die ersten 2 Bilder vorladen
+    const postsToPreload = posts.slice(0, 2);
     postsToPreload.forEach((post) => {
       if (post.imageUrl && !preloadedImages.current.has(post.imageUrl)) {
         const img = new Image();
         img.src = post.imageUrl;
-        img.loading = "lazy"; // Lazy-Loading auch für Preload
+        img.loading = "lazy";
         preloadedImages.current.add(post.imageUrl);
       }
     });
   }, [posts, isMobile]);
+
+  // Intersection Observer für Lazy-Loading weiterer Posts beim Scrollen
+  useEffect(() => {
+    if (!isMobile || !posts || posts.length <= visiblePostsCount) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Lade 5 weitere Posts wenn der Loader sichtbar wird
+            setVisiblePostsCount((prev) => {
+              const newCount = Math.min(prev + 5, posts.length);
+              return newCount;
+            });
+          }
+        });
+      },
+      {
+        rootMargin: "300px", // Starte Ladevorgang 300px vor dem Viewport (früher für smooth scrolling)
+        threshold: 0.1, // Trigger wenn 10% sichtbar
+      }
+    );
+
+    // Warte kurz, damit DOM gerendert ist
+    const timeoutId = setTimeout(() => {
+      const lastElement = document.querySelector(`[data-post-index="${visiblePostsCount - 1}"]`);
+      if (lastElement) {
+        observer.observe(lastElement);
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [isMobile, posts, visiblePostsCount]);
+
+  // Fallback: Scroll-Event für zusätzliches Lazy-Loading (falls Intersection Observer nicht funktioniert)
+  useEffect(() => {
+    if (!isMobile || !posts || posts.length <= visiblePostsCount) return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollPosition = window.innerHeight + window.scrollY;
+          const documentHeight = document.documentElement.scrollHeight;
+          
+          // Wenn User nahe am Ende ist (200px vor Ende), lade mehr Posts
+          if (scrollPosition >= documentHeight - 200) {
+            setVisiblePostsCount((prev) => Math.min(prev + 5, posts.length));
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isMobile, posts, visiblePostsCount]);
 
   // Upload Progress Tracking
   useEffect(() => {
@@ -268,15 +335,23 @@ export default function Home() {
           </div>
         ) : posts.length > 0 ? (
           <div style={{ gap: "0", margin: "0", padding: "0" }}>
-            {posts.map((post, index) => (
-              <FeedCard
-                key={post._id}
-                post={post}
-                currentUserId={currentUserId}
-                showDivider={index < posts.length - 1}
-                imagePriority={index < 2} // priority={true} für die ersten 2 Posts
-              />
+            {/* Windowed Rendering: Nur sichtbare Posts rendern (verhindert Mobile Crashes) */}
+            {posts.slice(0, visiblePostsCount).map((post, index) => (
+              <div key={post._id} data-post-index={index}>
+                <FeedCard
+                  post={post}
+                  currentUserId={currentUserId}
+                  showDivider={index < Math.min(visiblePostsCount, posts.length) - 1}
+                  imagePriority={index < 2} // priority={true} nur für die ersten 2 Posts
+                />
+              </div>
             ))}
+            {/* Lade-Indikator wenn weitere Posts verfügbar sind */}
+            {visiblePostsCount < posts.length && (
+              <div className="flex justify-center py-4">
+                <div className="text-sm text-gray-500">Lade weitere Posts...</div>
+              </div>
+            )}
           </div>
         ) : null}
       </div>
