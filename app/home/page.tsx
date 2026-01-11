@@ -10,6 +10,7 @@ import { MobileSidebar } from "@/components/mobile-sidebar";
 
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 
 // Funktion zur Erkennung mobiler Geräte
 const isMobileDevice = (): boolean => {
@@ -35,6 +36,8 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [visiblePostsCount, setVisiblePostsCount] = useState(10); // Starte mit 10 Posts
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // Loading-State für weitere Posts
 
   // Prüfe, ob es ein mobiles Gerät ist
   useEffect(() => {
@@ -171,6 +174,53 @@ export default function Home() {
     });
   }, [posts, isMobile]);
 
+  // Infinite Scroll: Lade weitere Posts wenn User am Ende ist
+  useEffect(() => {
+    if (!posts || posts.length <= visiblePostsCount || isLoadingMore) return;
+
+    const sentinelId = "infinite-scroll-sentinel";
+    
+    // Warte kurz, damit DOM gerendert ist
+    const timeoutId = setTimeout(() => {
+      const sentinelElement = document.getElementById(sentinelId);
+      if (!sentinelElement) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && visiblePostsCount < posts.length && !isLoadingMore) {
+              // Zeige Lade-Indikator
+              setIsLoadingMore(true);
+              
+              // Simuliere kurze Verzögerung für bessere UX (wie Twitter/X)
+              setTimeout(() => {
+                setVisiblePostsCount((prev) => {
+                  // Lade 10 weitere Posts (wie Twitter/X)
+                  const newCount = Math.min(prev + 10, posts.length);
+                  setIsLoadingMore(false);
+                  return newCount;
+                });
+              }, 800); // 800ms Verzögerung für sichtbaren Lade-Indikator
+            }
+          });
+        },
+        {
+          rootMargin: "300px", // Starte Ladevorgang 300px vor dem Viewport
+          threshold: 0.1,
+        }
+      );
+
+      observer.observe(sentinelElement);
+
+      return () => {
+        observer.disconnect();
+      };
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [posts, visiblePostsCount, isLoadingMore]);
 
   // Upload Progress Tracking
   useEffect(() => {
@@ -268,17 +318,42 @@ export default function Home() {
             ))}
           </div>
         ) : posts.length > 0 ? (
-          <div style={{ gap: "0", margin: "0", padding: "0" }}>
-            {/* Alle Posts auf einmal rendern */}
-            {posts.map((post, index) => (
+          <div style={{ gap: "0", margin: "0", padding: "0" }} data-posts-container>
+            {/* Windowed Rendering: Nur sichtbare Posts rendern */}
+            {posts.slice(0, visiblePostsCount).map((post, index) => (
               <FeedCard
                 key={post._id}
                 post={post}
                 currentUserId={currentUserId}
-                showDivider={index < posts.length - 1}
+                showDivider={index < Math.min(visiblePostsCount, posts.length) - 1}
                 imagePriority={index < 2} // priority={true} nur für die ersten 2 Posts
               />
             ))}
+            {/* Lade-Indikator (Twitter/X-Stil) - wird angezeigt wenn weitere Posts geladen werden */}
+            {isLoadingMore && visiblePostsCount < posts.length && (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-[#D08945]" />
+              </div>
+            )}
+            {/* Unsichtbarer Sentinel für Infinite Scroll - nur wenn noch Posts vorhanden */}
+            {visiblePostsCount < posts.length && !isLoadingMore && (
+              <div
+                id="infinite-scroll-sentinel"
+                style={{
+                  height: "1px",
+                  width: "100%",
+                  position: "relative",
+                  marginTop: "20px",
+                }}
+                aria-hidden="true"
+              />
+            )}
+            {/* Ende-Nachricht wenn alle Posts geladen sind */}
+            {visiblePostsCount >= posts.length && posts.length > 0 && (
+              <div className="flex justify-center py-8 text-sm text-gray-400">
+                Du hast alle Posts gesehen
+              </div>
+            )}
           </div>
         ) : null}
       </div>
