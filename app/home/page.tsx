@@ -67,6 +67,7 @@ export default function Home() {
   const isInterestsDisabled = currentUser !== undefined && (!currentUserInterests || currentUserInterests.length === 0);
 
   // usePaginatedQuery für "all" Feed
+  // Desktop: Starte mit 20 Posts, Mobile: 10 Posts für bessere Performance
   const {
     results: allPostsResults,
     status: allPostsStatus,
@@ -74,7 +75,7 @@ export default function Home() {
   } = usePaginatedQuery(
     api.queries.getFeedPaginated,
     feedType === "all" && currentUserId ? { userId: currentUserId } : "skip",
-    { initialNumItems: 10 } // Starte mit 10 Posts
+    { initialNumItems: isMobile ? 10 : 20 } // Desktop: 20, Mobile: 10
   );
 
   // Für andere Feed-Typen verwenden wir weiterhin useQuery (können später auch paginiert werden)
@@ -128,7 +129,8 @@ export default function Home() {
     // Debounce: Warte 300ms bevor loadMore aufgerufen wird
     loadMoreTimeoutRef.current = setTimeout(() => {
       if (feedType === "all" && loadMoreAllPosts) {
-        loadMoreAllPosts(10); // Lade 10 weitere Posts
+        // Desktop: Lade 20 weitere Posts, Mobile: 10 Posts
+        loadMoreAllPosts(isMobile ? 10 : 20);
       }
       
       // Reset Flag nach kurzer Verzögerung
@@ -136,7 +138,7 @@ export default function Home() {
         isLoadMoreInProgressRef.current = false;
       }, 500);
     }, 300);
-  }, [postsStatus, feedType, loadMoreAllPosts]);
+  }, [postsStatus, feedType, loadMoreAllPosts, isMobile]);
 
   // Intersection Observer für Infinite Scroll mit Memory Management
   useEffect(() => {
