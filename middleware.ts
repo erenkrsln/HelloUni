@@ -31,10 +31,20 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Zugriff auf Login-Seite ohne Authentifizierung erlauben
-        if (req.nextUrl.pathname === "/") {
+        const pathname = req.nextUrl.pathname;
+        
+        // Öffentliche Dateien ohne Authentifizierung erlauben
+        if (
+          pathname === "/" ||
+          pathname === "/site.webmanifest" ||
+          pathname === "/favicon.ico" ||
+          pathname.startsWith("/_next/") ||
+          pathname.startsWith("/api/auth/") ||
+          pathname === "/api/register"
+        ) {
           return true;
         }
+        
         // Für alle anderen Routen ist Authentifizierung erforderlich
         return !!token;
       },
