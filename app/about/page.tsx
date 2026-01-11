@@ -50,7 +50,7 @@ export default function AboutPage() {
 
             {/* Content with padding for header */}
             <div className="pt-[110px] px-5 pb-10">
-                <section className="mb-8 bg-white rounded-[39px] shadow-sm p-6 border border-[#F4CFAB]/20 input-card">
+                <section className="mb-8 bg-white rounded-3xl shadow-sm p-6 border border-[#F4CFAB]/20 input-card">
                     <h2 className="text-2xl font-semibold mb-4 text-black text-center">Unsere Idee</h2>
                     <p className="text-gray-700 leading-relaxed mb-4 text-center">
                         Im digitalen Zeitalter sollte es leicht sein, neue Kontakte zu knüpfen und trotzdem fällt es vielen Studierenden überraschend schwer, wirklich anzukommen und Freundschaften zu finden.
@@ -60,11 +60,11 @@ export default function AboutPage() {
                     </p>
                     <p className="text-gray-700 leading-relaxed text-center">
                         Kein Chaos, keine Anonymität. <br />
-                        Stattdessen ein übersichtlicher Raum für Lerngruppen, Events, Sport, Projekte oder einfach neue Freundschaften, denn ein gutes Studium lebt vor allem von den Menschen, die man dabei trifft.
+                        Stattdessen ein übersichtlicher Raum für Lerngruppen, Events, Sport, Projekte oder einfach neue Kontakte, denn ein gutes Studium lebt vor allem von den Menschen, die man dabei trifft.
                     </p>
                 </section>
 
-                <section className="bg-white rounded-[39px] shadow-sm p-6 border border-[#F4CFAB]/20 input-card space-y-6">
+                <section className="bg-white rounded-3xl shadow-sm p-6 border border-[#F4CFAB]/20 input-card space-y-6">
                     <h2 className="text-2xl font-semibold mb-6 text-black text-center">Unser Team</h2>
                     <div>
                         <p className="text-gray-700 leading-relaxed text-center">
@@ -86,7 +86,7 @@ export default function AboutPage() {
                                 <div className="flex gap-5">
                                     {/* Linke Spalte */}
                                     <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
-                                        <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] mb-3">
+                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                             <img
                                                 src="/about/lia.png"
                                                 alt="Lia"
@@ -98,7 +98,7 @@ export default function AboutPage() {
 
                                     {/* Rechte Spalte */}
                                     <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
-                                        <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] mb-3">
+                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                             <img
                                                 src="/about/jannis.png"
                                                 alt="Jannis"
@@ -110,7 +110,7 @@ export default function AboutPage() {
 
                                     {/* Scroll Item */}
                                     <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
-                                        <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] mb-3">
+                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                             <img
                                                 src="/about/saly.png"
                                                 alt="Saly"
@@ -134,7 +134,7 @@ export default function AboutPage() {
 
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="flex flex-col items-center">
-                                    <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] mb-3">
+                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                         <img
                                             src="/about/eren.png"
                                             alt="Eren"
@@ -145,7 +145,7 @@ export default function AboutPage() {
                                 </div>
 
                                 <div className="flex flex-col items-center">
-                                    <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945]    mb-3">
+                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945]    mb-3">
                                         <img
                                             src="/about/tanja.png"
                                             alt="Tanja"
@@ -168,7 +168,7 @@ export default function AboutPage() {
 
                             <div className="flex justify-center">
                                 <div className="flex flex-col items-center w-[calc(50%_-_10px)] max-w-[220px]">
-                                    <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] mb-3">
+                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                         <img
                                             src="/about/lana.png"
                                             alt="Lana"
@@ -191,7 +191,7 @@ export default function AboutPage() {
 
                             <div className="flex justify-center">
                                 <div className="flex flex-col items-center w-[calc(50%_-_10px)] max-w-[220px]">
-                                    <div className="w-full aspect-square overflow-hidden rounded-2xl bg-[#d08945] mb-3">
+                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                         <img
                                             src="/about/lexi.png"
                                             alt="Lexi"
