@@ -406,7 +406,7 @@ export default function Home() {
         // Verhindere Momentum-Scrolling am Ende
         WebkitOverflowScrolling: "touch",
         // Touch-Optimierungen
-        touchAction: "pan-y",
+        touchAction: "pan-y pan-x",
       }}
     >
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
