@@ -49,13 +49,13 @@ export default function ProfilePage() {
 
     return (
         <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
-            <Header 
+            <Header
                 onMenuClick={() => setIsSidebarOpen(true)}
                 onEditClick={() => setIsEditModalOpen(true)}
             />
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-            
+
             {/* Edit Profile Modal */}
             {profileData && (
                 <EditProfileModal
@@ -68,7 +68,7 @@ export default function ProfilePage() {
                     onUpdate={handleProfileUpdate}
                 />
             )}
-                {isLoading ? (
+            {isLoading ? (
                 <LoadingScreen text="Profil wird geladen..." />
             ) : profileData ? (
                 <>
@@ -85,6 +85,20 @@ export default function ProfilePage() {
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
                     />
+
+
+
+                    {/* Calendar Link - Only show on own profile */}
+                    {currentUser && (
+                        <div className="px-4 mb-4">
+                            <button
+                                onClick={() => router.push("/calendar")}
+                                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#f0f0f0] active:bg-[#e0e0e0] transition-colors"
+                            >
+                                <span className="text-[#000000] font-medium">Open Calendar</span>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Posts section */}
                     <div>
