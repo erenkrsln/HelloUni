@@ -46,10 +46,15 @@ export function useFullUserProfile({ username, currentUserId }: useFullUserProfi
             user: {
                 _id: user._id,
                 name: user.name,
+                username: user.username,
                 image: user.image,
+                headerImage: (user as any).headerImage,
                 uni_name: user.uni_name,
                 major: user.major,
+                semester: (user as any).semester,
                 bio: (user as any).bio,
+                interests: (user as any).interests,
+                createdAt: (user as any).createdAt,
             },
             followerCount,
             followingCount,
@@ -74,8 +79,10 @@ export function useFullUserProfile({ username, currentUserId }: useFullUserProfi
     // Priority: Cache -> Resolved (Fresh) -> Loading
 
     const finalData = cachedData ?? resolvedData;
-    const isLoading = !finalData;
-    // Note: if finalData exists (cache), we are NOT loading from UI perspective.
+    // If we have cached data, we're not loading - show immediately
+    // Only show loading if we have NO data at all (neither cache nor resolved)
+    const isLoading = !cachedData && !resolvedData;
+    // Note: if cachedData exists, we are NOT loading from UI perspective.
     // The hooks run in background and update cache/state when ready.
 
     return {

@@ -1,33 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
-export default function SearchPage() {
+export default function NotificationsPage() {
     const [isFirstVisit, setIsFirstVisit] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    // Lade Daten im Hintergrund, damit sie beim Navigieren zu /profile bereits im Cache sind
-    const { currentUser, currentUserId } = useCurrentUser();
-    const posts = useQuery(
-      api.queries.getFeed,
-      currentUserId ? { userId: currentUserId } : {}
-    );
+    const { currentUser } = useCurrentUser();
 
     useEffect(() => {
         // Prüfe, ob Seite bereits besucht wurde
-        const visited = sessionStorage.getItem("search_visited");
+        const visited = sessionStorage.getItem("notifications_visited");
         if (visited) {
             setIsFirstVisit(false);
         } else {
             // Markiere Seite als besucht nach kurzer Verzögerung
             const timer = setTimeout(() => {
-                sessionStorage.setItem("search_visited", "true");
+                sessionStorage.setItem("notifications_visited", "true");
                 setIsFirstVisit(false);
             }, 300);
             return () => clearTimeout(timer);
@@ -44,7 +37,7 @@ export default function SearchPage() {
             ) : (
                 <div className="flex items-center justify-center py-16">
                     <h1 className="text-2xl" style={{ color: "#000000" }}>
-                        Search Page
+                        Benachrichtigungen
                     </h1>
                 </div>
             )}
@@ -52,3 +45,23 @@ export default function SearchPage() {
         </main>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -5,11 +5,20 @@ import { api } from "@/convex/_generated/api";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
-import { LoadingScreen } from "@/components/ui/spinner";
+import { LoadingScreen, Spinner } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+
+// Funktion zur Erkennung mobiler Geräte
+const isMobileDevice = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  ) || (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+};
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { usePostsCache } from "@/lib/contexts/posts-context";
 
 /**
  * Hauptseite (geschützt) - Posts-Feed
@@ -18,18 +27,114 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 export default function Home() {
   const router = useRouter();
   const { session, currentUserId, currentUser } = useCurrentUser();
-  const [feedType, setFeedType] = useState<"all" | "following">("all");
-  const allPosts = useQuery(api.queries.getFeed);
+  const [feedType, setFeedType] = useState<"all" | "major" | "following" | "interests">("all");
+  const preloadedImages = useRef<Set<string>>(new Set());
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Prüfe, ob es ein mobiles Gerät ist
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+    
+    const handleResize = () => {
+      setIsMobile(isMobileDevice());
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  
+  // Globaler Posts Cache - bleibt über Unmounts erhalten
+  const { setPosts: cachePosts, getPosts: getCachedPosts } = usePostsCache();
+  
+  // Cache Key für diesen Feed-Typ
+  const cacheKey = useMemo(() => {
+    return `posts_${feedType}_${currentUserId || "anonymous"}`;
+  }, [feedType, currentUserId]);
+
+  // Get current user's major and interests for filtering
+  // Nur als disabled markieren, wenn currentUser geladen ist und tatsächlich keine Daten hat
+  const currentUserMajor = currentUser ? (currentUser as any)?.major : undefined;
+  const currentUserInterests = currentUser ? ((currentUser as any)?.interests || []) : undefined;
+  
+  // Buttons nur disable wenn User geladen ist und tatsächlich keine Daten hat
+  const isMajorDisabled = currentUser !== undefined && !currentUserMajor;
+  const isInterestsDisabled = currentUser !== undefined && (!currentUserInterests || currentUserInterests.length === 0);
+
+  // Cache für alle Feeds - lade alle parallel, damit sie gecached sind
+  const allPosts = useQuery(
+    api.queries.getFeed,
+    currentUserId ? { userId: currentUserId } : {}
+  );
+  const filteredPostsByMajor = useQuery(
+    api.queries.getFilteredFeed,
+    currentUser && currentUserMajor ? {
+      major: currentUserMajor,
+      userId: currentUserId,
+    } : "skip"
+  );
+  const filteredPostsByInterests = useQuery(
+    api.queries.getFilteredFeed,
+    currentUser && currentUserInterests && currentUserInterests.length > 0 ? {
+      interests: currentUserInterests,
+      userId: currentUserId,
+    } : "skip"
+  );
   const followingPosts = useQuery(
     api.queries.getFollowingFeed,
     currentUserId ? { userId: currentUserId } : "skip"
   );
-  const preloadedImages = useRef<Set<string>>(new Set());
-  const [isFirstVisit, setIsFirstVisit] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Verwende den entsprechenden Feed basierend auf feedType
-  const posts = feedType === "all" ? allPosts : followingPosts;
+  const postsFromQuery = feedType === "all" 
+    ? allPosts 
+    : feedType === "major"
+    ? filteredPostsByMajor
+    : feedType === "interests"
+    ? filteredPostsByInterests
+    : followingPosts;
+  
+  // Aktualisiere Cache, wenn neue Posts geladen sind
+  useEffect(() => {
+    if (postsFromQuery !== undefined && Array.isArray(postsFromQuery) && postsFromQuery.length > 0) {
+      cachePosts(cacheKey, postsFromQuery);
+    }
+  }, [postsFromQuery, cacheKey, cachePosts]);
+  
+  // Verwende gecachte Posts sofort, aktualisiere mit neuen Daten wenn verfügbar
+  // Twitter-ähnliches Verhalten: Zeige alte Daten sofort, lade neue im Hintergrund
+  // NUR AUF MOBILE - auf Desktop normales Verhalten
+  const cachedPostsForCurrentKey = getCachedPosts(cacheKey);
+  
+  const posts = useMemo(() => {
+    // Wenn neue Daten verfügbar sind, verwende diese
+    if (postsFromQuery !== undefined) {
+      return postsFromQuery;
+    }
+    // Auf Mobile: Verwende gecachte Posts sofort (falls vorhanden)
+    // Auf Desktop: Verwende gecachte Posts nur wenn verfügbar, sonst leeres Array
+    if (isMobile && cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0) {
+      return cachedPostsForCurrentKey;
+    }
+    // Auf Desktop: Keine gecachten Posts verwenden, warte auf neue Daten
+    if (!isMobile) {
+      return [];
+    }
+    return [];
+  }, [postsFromQuery, cachedPostsForCurrentKey, isMobile]);
+  
+  // Zeige Loading-Indikator nur auf Mobile:
+  // 1. Neue Daten werden geladen (postsFromQuery ist undefined)
+  // 2. UND wir haben bereits gecachte Posts (damit wir etwas anzeigen können)
+  const hasCachedPosts = cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0;
+  const isLoadingNewData = isMobile && postsFromQuery === undefined && hasCachedPosts;
+  
+  // Initial Load: 
+  // - Auf Mobile: Nur wenn keine gecachten Posts vorhanden sind
+  // - Auf Desktop: Immer wenn keine neuen Daten verfügbar sind
+  const isInitialLoad = postsFromQuery === undefined && (!isMobile || !hasCachedPosts);
 
   // Zum Login umleiten, wenn nicht authentifiziert
   useEffect(() => {
@@ -53,10 +158,7 @@ export default function Home() {
     }
   }, []);
 
-  // Prüfe, ob alle Daten geladen sind (Posts und User)
-  // Like-Status werden clientseitig in FeedCards geladen
-  // Zeige Loading, wenn Posts noch nicht geladen sind (unabhängig von isFirstVisit)
-  const isLoading = posts === undefined || currentUser === undefined;
+  // Kein Loading Screen - zeige gecachte Daten sofort an
 
   // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
   // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
@@ -66,73 +168,121 @@ export default function Home() {
     // Alle Bilder parallel vorladen für sofortige Anzeige
     posts.forEach((post) => {
       if (post.imageUrl && !preloadedImages.current.has(post.imageUrl)) {
-        // Methode 1: Image-Objekt für Browser-Cache
+        // Image-Objekt für Browser-Cache (kein Link-Preload, um Warnungen zu vermeiden)
         const img = new Image();
         img.src = post.imageUrl;
         img.loading = "eager";
         img.fetchPriority = "high";
-        
-        // Methode 2: Link-Preload für persistenten Cache
-        const link = document.createElement("link");
-        link.rel = "preload";
-        link.as = "image";
-        link.href = post.imageUrl;
-        link.fetchPriority = "high";
-        document.head.appendChild(link);
-        
+
         preloadedImages.current.add(post.imageUrl);
       }
     });
   }, [posts]);
 
+  // Upload Progress Tracking
+  useEffect(() => {
+    const checkProgress = () => {
+      const progress = sessionStorage.getItem("uploadProgress");
+      if (progress) {
+        setUploadProgress(parseInt(progress));
+      } else {
+        setUploadProgress(null);
+      }
+    };
+
+    // Initial check
+    checkProgress();
+
+    // Poll every 100ms für smooth progress
+    const interval = setInterval(checkProgress, 100);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Konsistentes Layout immer beibehalten
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
+    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
-        {/* Mobile Sidebar */}
-        <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <div className="px-4 mb-4">
-        {/* Feed Toggle Buttons - Zentriert nach Figma Design */}
-        <div className="flex items-center justify-center gap-2 mb-4 mt-4">
+      {/* Mobile Sidebar */}
+      <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      
+      <div className="px-4 mb-4">
+        {/* Feed Filter Links */}
+        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto">
           <button
             onClick={() => setFeedType("all")}
-            className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
               feedType === "all"
-                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-                : "bg-[#261708] border border-[#000000] text-white"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
             }`}
           >
-            Für Dich
+            Alle
+          </button>
+          <button
+            onClick={() => setFeedType("major")}
+            disabled={isMajorDisabled}
+            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
+              feedType === "major"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
+            } ${isMajorDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            Studiengang
           </button>
           <button
             onClick={() => setFeedType("following")}
-            className={`w-[104px] h-[35px] rounded-[79px] text-sm font-medium transition-all ${
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
               feedType === "following"
-                ? "bg-gradient-to-r from-[#D08945] to-[#F4CFAB] text-black shadow-md"
-                : "bg-[#261708] border border-[#000000] text-white"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
             }`}
           >
             Folge Ich
           </button>
+          <button
+            onClick={() => setFeedType("interests")}
+            disabled={isInterestsDisabled}
+            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
+              feedType === "interests"
+                ? "bg-[#D08945] text-white"
+                : "bg-gray-100 text-gray-700 hover:opacity-80"
+            } ${isInterestsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            Interesse
+          </button>
         </div>
       </div>
       <div>
-        {isLoading ? (
+        {/* Upload Progress Bar - oberhalb der Posts, nur wenn Upload aktiv */}
+        {uploadProgress !== null && uploadProgress >= 0 && (
+          <div className="px-4 mb-4">
+            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Loading-Indikator oben im Feed (Twitter-ähnlich) - nur wenn neue Daten geladen werden */}
+        {isLoadingNewData && (
+          <div className="px-4 py-2 bg-white border-b border-gray-100">
+            <div className="flex items-center justify-center">
+              <Spinner size="sm" />
+            </div>
+          </div>
+        )}
+
+        {isInitialLoad ? (
           <div className="px-4">
             <LoadingScreen text="Feed wird geladen..." />
           </div>
-        ) : posts && posts.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <p className="text-sm text-[#000000]/60">
-              {feedType === "following"
-                ? "Du folgst noch niemandem oder es gibt noch keine Posts von den Usern, denen du folgst."
-                : "Noch keine Posts vorhanden."}
-            </p>
-          </div>
-        ) : (
+        ) : posts.length > 0 ? (
           <div style={{ gap: "0", margin: "0", padding: "0" }}>
-            {posts?.map((post, index) => (
-              <FeedCard 
+            {posts.map((post, index) => (
+              <FeedCard
                 key={post._id}
                 post={post}
                 currentUserId={currentUserId}
@@ -140,10 +290,13 @@ export default function Home() {
               />
             ))}
           </div>
-        )}
+        ) : null}
       </div>
       <BottomNavigation />
     </main>
   );
 }
+
+
+
 

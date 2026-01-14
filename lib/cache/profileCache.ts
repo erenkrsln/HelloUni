@@ -4,10 +4,15 @@ export interface ProfileData {
     user: {
         _id: Id<"users">;
         name: string;
+        username?: string;
         image?: string;
+        headerImage?: string;
         uni_name?: string;
         major?: string;
+        semester?: number;
         bio?: string;
+        interests?: string[];
+        createdAt?: number;
     };
     followerCount: number;
     followingCount: number;

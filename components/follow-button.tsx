@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -57,19 +56,20 @@ export function FollowButton({ currentUserId, targetUserId, preloadedIsFollowing
     }
 
     return (
-        <Button
+        <button
             onClick={handleFollowToggle}
             disabled={isLoading || isFollowing === undefined}
             className={`
-                px-6 py-2 rounded-full font-semibold transition-all duration-200
+                text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0
                 ${isFollowing
-                    ? "!bg-none !bg-[#261708] !border !border-[#EED6B5] !text-[#EED6B5] hover:!bg-[#261708]/80 !shadow-none"
-                    : "bg-[#F4CFAB] text-[#1A1A1A] hover:bg-[#F4CFAB]/90"
+                    ? "bg-gray-100 text-red-500 hover:opacity-80"
+                    : "bg-[#D08945] text-white hover:opacity-80"
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed
             `}
+            style={{ minWidth: "85px" }}
         >
-            {isFollowing ? "Folge ich" : "Folgen"}
-        </Button>
+            {isFollowing ? "Entfolgen" : "Folgen"}
+        </button>
     );
 }
