@@ -70,7 +70,7 @@ export default function ImprintPage() {
                         Fax: 0123/0123458 <br />
                     </p>
                     <p className="text-gray-700 leading-relaxed mb-4 ">
-                        <a href="https://www.hello-uni.de" target="_blank" rel="noopener noreferrer">
+                        <a href="https://www.hello-uni.de" target="_blank" rel="noopener noreferrer" className="underline">
                             www.hello-uni.de
                         </a>
                     </p>

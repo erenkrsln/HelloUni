@@ -53,14 +53,14 @@ export default function AboutPage() {
                 <section className="mb-8 bg-white rounded-3xl shadow-sm p-6 border border-[#F4CFAB]/20 input-card">
                     <h2 className="text-2xl font-semibold mb-4 text-black text-center">Unsere Idee</h2>
                     <p className="text-gray-700 leading-relaxed mb-4 text-center">
-                        Im digitalen Zeitalter sollte es leicht sein, neue Kontakte zu knüpfen und trotzdem fällt es vielen Studierenden überraschend schwer, wirklich anzukommen und Freundschaften zu finden.
+                        Im digitalen Zeitalter sollte es leicht sein, neue Kontakte zu knüpfen und trotzdem fällt es vielen Studierenden überraschend schwer, wirklich im Studium anzukommen und neue Freundschaften zu finden.
                     </p>
                     <p className="text-gray-700 leading-relaxed mb-4 text-center">
-                        Genau hier möchten wir mit unserem semesterübergreifendem Projekt HelloUni ansetzen: Wir bringen Studierende einer Hochschule gezielt zusammen, basierend auf Interessen, Studiengang und Hobbys.
+                        Genau hier möchten wir mit unserem semesterübergreifenden Projekt HelloUni ansetzen: Wir bringen Studierende einer Hochschule gezielt zusammen, basierend auf Interessen, Studiengang und Hobbys.
                     </p>
                     <p className="text-gray-700 leading-relaxed text-center">
                         Kein Chaos, keine Anonymität. <br />
-                        Stattdessen ein übersichtlicher Raum für Lerngruppen, Events, Sport, Projekte oder einfach neue Kontakte, denn ein gutes Studium lebt vor allem von den Menschen, die man dabei trifft.
+                        Stattdessen ein übersichtlicher Raum für Lerngruppen, Events und Projekte oder einfach um neue Menschen kennenzulernen - denn ein gutes Studium lebt vor allem von den Menschen, die man dabei trifft!
                     </p>
                 </section>
 
@@ -68,7 +68,9 @@ export default function AboutPage() {
                     <h2 className="text-2xl font-semibold mb-6 text-black text-center">Unser Team</h2>
                     <div>
                         <p className="text-gray-700 leading-relaxed text-center">
-                            Da wir ein relativ kleines Team aus Media Engineering-Studierenden der TH Nürnberg sind, gibt es bei uns keine starren Zuständigkeiten. Wir helfen mit, wo es gerade nötig ist und bringen unsere Stärken ein.
+                            Da wir ein relativ kleines Team aus Media Engineering-Studierenden der <a href="https://www.th-nuernberg.de" target="_blank" rel="noopener noreferrer" className="underline">
+                                TH Nürnberg
+                            </a> sind, gibt es bei uns keine starren Zuständigkeiten. Wir helfen mit, wo es gerade nötig ist und bringen unsere Stärken ein.
                         </p>
                     </div>
 
@@ -79,6 +81,7 @@ export default function AboutPage() {
                                 <h3 className="text-xl font-medium text-[#8C531E]">Branding und Design</h3>
                                 <p className="text-gray-600 mt-2 text-md">
                                     Im ersten der beiden Semester gab es viel im gestalterischen Bereich zu tun.
+                                    Wir mussten uns viel mit der Gestaltung unserer Marke, sowie mit dem Layout unserer Webapp auseinander setzen.
                                 </p>
                             </div>
 
@@ -129,6 +132,7 @@ export default function AboutPage() {
                                 <h3 className="text-xl font-medium text-[#8C531E]">Entwicklung</h3>
                                 <p className="text-gray-600 mt-2 text-md">
                                     Die Grundlagen der Entwicklung mussten ebenfalls geschaffen werden.
+                                    Wir haben uns mit verschiedenen Technologien beschäftigt und uns für unsere jetzige Lösung entschieden.
                                 </p>
                             </div>
 
@@ -162,7 +166,9 @@ export default function AboutPage() {
                             <div className="text-center">
                                 <h3 className="text-xl font-medium text-[#8C531E]">Social Media</h3>
                                 <p className="text-gray-600 mt-2 text-md">
-                                    Auch unsere Social Media Profile mussten erstellt und verwaltet werden.
+                                    Auch unser Instagram Profil <a href="https://www.instagram.com/hellouni_de/" target="_blank" rel="noopener noreferrer">
+                                        @hellouni_de
+                                    </a> musste erstellt und verwaltet werden.
                                 </p>
                             </div>
 
