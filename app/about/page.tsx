@@ -85,22 +85,9 @@ export default function AboutPage() {
                                 </p>
                             </div>
 
-                            <div className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                                <div className="flex gap-5">
-                                    {/* Linke Spalte */}
-                                    <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/lia.png"
-                                                alt="Lia"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Lia</p>
-                                    </div>
-
-                                    {/* Rechte Spalte */}
-                                    <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-5">
+                                    <div className="flex flex-col items-center">
                                         <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                             <img
                                                 src="/about/jannis.png"
@@ -111,8 +98,20 @@ export default function AboutPage() {
                                         <p className="text-md font-medium text-[#8C531E] text-center">Jannis</p>
                                     </div>
 
-                                    {/* Scroll Item */}
-                                    <div className="flex-shrink-0 w-[calc(50%_-_10px)] flex flex-col items-center">
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                            <img
+                                                src="/about/lia.png"
+                                                alt="Lia"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <p className="text-md font-medium text-[#8C531E] text-center">Lia</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <div className="flex flex-col items-center w-[calc(50%_-_10px)]">
                                         <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                             <img
                                                 src="/about/saly.png"
