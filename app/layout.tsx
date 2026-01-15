@@ -60,7 +60,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
       </head>
-      <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
+      <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`} suppressHydrationWarning>
         <NextAuthSessionProvider>
           <ConvexClientProvider>
             <PostsCacheWrapper>{children}</PostsCacheWrapper>

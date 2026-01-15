@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Plus, MapPin, Clock, Calendar as CalendarIcon, Trash2, Edit2 } from "lucide-react";
+import { Plus, MapPin, Clock, Calendar as CalendarIcon, Trash2, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 
 type Event = {
@@ -29,7 +29,7 @@ type Event = {
 
 export default function CalendarPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { currentUser } = useCurrentUser();
+    const { currentUser, isLoading: isAuthLoading } = useCurrentUser();
     const [viewMode, setViewMode] = useState("my"); // "my" | "public"
 
     // Data Loading
@@ -39,8 +39,11 @@ export default function CalendarPage() {
     );
     const publicEvents = useQuery(api.events.listPublic, {});
 
-    const events = viewMode === "my" ? myEvents : publicEvents;
-    const isLoading = events === undefined;
+    const events = viewMode === "my" ? (currentUser ? myEvents : []) : publicEvents;
+
+    const isLoading = viewMode === "my"
+        ? isAuthLoading || (!!currentUser && myEvents === undefined)
+        : publicEvents === undefined;
 
     // Mutators
     const createEvent = useMutation(api.events.create);
@@ -73,7 +76,10 @@ export default function CalendarPage() {
     };
 
     const handleCreate = async () => {
-        if (!currentUser) return;
+        if (!currentUser) {
+            alert("You must be logged in to create an event.");
+            return;
+        }
         const start = new Date(`${formData.date}T${formData.startTime}`).getTime();
         const end = new Date(`${formData.date}T${formData.endTime}`).getTime();
 
@@ -90,7 +96,10 @@ export default function CalendarPage() {
     };
 
     const handleUpdate = async () => {
-        if (!editingEvent || !currentUser) return;
+        if (!editingEvent || !currentUser) {
+            alert("You must be logged in to edit an event.");
+            return;
+        }
         const start = new Date(`${formData.date}T${formData.startTime}`).getTime();
         const end = new Date(`${formData.date}T${formData.endTime}`).getTime();
 
@@ -108,7 +117,10 @@ export default function CalendarPage() {
     };
 
     const handleDelete = async () => {
-        if (!editingEvent || !currentUser) return;
+        if (!editingEvent || !currentUser) {
+            alert("You must be logged in to delete an event.");
+            return;
+        }
         if (confirm("Are you sure you want to delete this event?")) {
             await removeEvent({
                 eventId: editingEvent._id,
@@ -148,7 +160,7 @@ export default function CalendarPage() {
         const days = [];
         // Empty slots for days before start of month
         for (let i = 0; i < firstDayOfMonth; i++) {
-            days.push(<div key={`empty-${i}`} className="h-24 bg-gray-50/50 border-[0.5px] border-gray-100" />);
+            days.push(<div key={`empty-${i}`} className="min-h-[3.5rem] bg-gray-50/50 border-[0.5px] border-gray-100" />);
         }
 
         // Days
@@ -165,16 +177,16 @@ export default function CalendarPage() {
             }) || [];
 
             days.push(
-                <div key={i} className="h-24 bg-white border-[0.5px] border-gray-100 p-1 overflow-hidden relative" onClick={() => {
+                <div key={i} className="min-h-[3.5rem] bg-white border-[0.5px] border-gray-100 p-0.5 overflow-hidden relative group" onClick={() => {
                     // Optional: click day to add event
                     setFormData(prev => ({ ...prev, date: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}` }));
                     setIsCreateOpen(true);
                 }}>
-                    <div className="text-xs font-semibold mb-1 text-gray-500">{i}</div>
-                    <div className="flex flex-col gap-1">
-                        {dayEvents.slice(0, 3).map(e => (
+                    <div className="text-[10px] font-semibold mb-0.5 ml-1 text-gray-500">{i}</div>
+                    <div className="flex flex-col gap-0.5">
+                        {dayEvents.slice(0, 2).map(e => (
                             <div key={e._id}
-                                className="text-[10px] bg-[#dcc6a1] text-black px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80"
+                                className="text-[9px] leading-tight bg-[#dcc6a1] text-black px-1 py-0.5 rounded-sm truncate cursor-pointer hover:opacity-80"
                                 onClick={(ev) => {
                                     ev.stopPropagation();
                                     openEdit(e);
@@ -183,7 +195,7 @@ export default function CalendarPage() {
                                 {e.title}
                             </div>
                         ))}
-                        {dayEvents.length > 3 && <div className="text-[9px] text-gray-400">+{dayEvents.length - 3} more</div>}
+                        {dayEvents.length > 2 && <div className="text-[8px] text-gray-400 pl-1">+{dayEvents.length - 2}</div>}
                     </div>
                 </div>
             );
@@ -217,17 +229,21 @@ export default function CalendarPage() {
                         <>
                             {/* Grid View Title and Navigation (Simple) */}
                             <div className="flex items-center justify-between mb-2 px-2">
-                                <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>&lt;</button>
+                                <Button variant="ghost" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
                                 <span className="font-semibold text-lg">
                                     {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                                 </span>
-                                <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>&gt;</button>
+                                <Button variant="ghost" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
                             </div>
 
                             {/* Month Grid */}
                             <div className="grid grid-cols-7 mb-6 border rounded-xl overflow-hidden shadow-sm">
-                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-                                    <div key={d} className="h-8 flex items-center justify-center text-xs font-bold bg-gray-50 border-b border-gray-100">{d}</div>
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                                    <div key={i} className="h-8 flex items-center justify-center text-xs font-bold bg-gray-50 border-b border-gray-100">{d}</div>
                                 ))}
                                 {renderCalendarGrid()}
                             </div>
