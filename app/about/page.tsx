@@ -191,7 +191,7 @@ export default function AboutPage() {
                             <div className="text-center">
                                 <h3 className="text-xl font-medium text-[#8C531E]">Organisation</h3>
                                 <p className="text-gray-600 mt-2 text-md">
-                                    Damit wir zusammenarbeiten konnten, brauchte es auch eine gute Organisation.
+                                    Damit wir zusammenarbeiten konnten, brauchte es eine gute Organisation.
                                 </p>
                             </div>
 
