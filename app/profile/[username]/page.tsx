@@ -7,6 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen, Spinner } from "@/components/ui/spinner";
+import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
 import { useQuery } from "convex/react";
@@ -23,6 +24,7 @@ import { useParams } from "next/navigation";
  */
 export default function UserProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const params = useParams();
     const username = params.username as string;
     const { currentUserId, currentUser } = useCurrentUser();
@@ -85,6 +87,7 @@ export default function UserProfilePage() {
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
                         isFollowing={profileData.isFollowing}
+                        onEditClick={isOwnProfile ? () => setIsEditModalOpen(true) : undefined}
                     />
 
                     {/* Posts section */}
@@ -106,6 +109,7 @@ export default function UserProfilePage() {
                                         post={post}
                                         currentUserId={currentUserId}
                                         showDivider={index < userPosts.length - 1}
+                                        isFirst={index === 0}
                                     />
                                 ))}
                             </div>
@@ -113,6 +117,27 @@ export default function UserProfilePage() {
                     </div>
                 </>
             ) : null}
+            
+            {/* Edit Profile Modal - nur wenn es das eigene Profil ist */}
+            {isOwnProfile && profileData && (
+                <EditProfileModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    userId={profileData.user._id}
+                    currentName={profileData.user.name}
+                    currentImage={profileData.user.image}
+                    currentHeaderImage={profileData.user.headerImage}
+                    currentBio={profileData.user.bio}
+                    currentMajor={profileData.user.major}
+                    currentSemester={profileData.user.semester}
+                    currentInterests={(profileData.user as any).interests}
+                    onUpdate={() => {
+                        // Refresh page data after update
+                        window.location.reload();
+                    }}
+                />
+            )}
+            
             <BottomNavigation />
         </main>
     );

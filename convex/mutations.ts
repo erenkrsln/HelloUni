@@ -13,7 +13,7 @@ export const createPost = mutation({
       v.literal("poll")
     )),
     title: v.optional(v.string()),
-    content: v.string(),
+    content: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     eventDate: v.optional(v.number()),
     eventTime: v.optional(v.string()),
@@ -28,7 +28,7 @@ export const createPost = mutation({
       userId: args.userId,
       postType: args.postType || "normal", // Default für normale Posts
       title: args.title,
-      content: args.content,
+      content: args.content || "", // Leerer String wenn kein Content vorhanden
       imageUrl: args.imageUrl,
       eventDate: args.eventDate,
       eventTime: args.eventTime,

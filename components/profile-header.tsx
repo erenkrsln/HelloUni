@@ -9,15 +9,20 @@ import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil,
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
+
+// Importiere den gemeinsamen globalen Bild-Cache
+import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
 
 interface ProfileHeaderProps {
     name: string;
     username?: string;
     image?: string;
     headerImage?: string;
+    headerColor?: string; // Hintergrundfarbe für Header (Twitter-ähnlich)
     major?: string;
     semester?: number;
     bio?: string;
@@ -39,6 +44,7 @@ export function ProfileHeader({
     username,
     image,
     headerImage,
+    headerColor,
     major,
     semester,
     bio,
@@ -54,7 +60,77 @@ export function ProfileHeader({
     onEditClick,
 }: ProfileHeaderProps) {
     const router = useRouter();
+    // State für Avatar-Ladezustand - initialisiere basierend auf globalem Cache
+    const [isAvatarLoaded, setIsAvatarLoaded] = useState(() => {
+      return isImageLoaded(image);
+    });
+    // State für sanftes Fade-In des Header-Bildes - initialisiere basierend auf globalem Cache
+    const [isHeaderImageLoaded, setIsHeaderImageLoaded] = useState(() => {
+      return isImageLoaded(headerImage);
+    });
+    // Extrahiere dominante Farbe aus dem Bild für Hintergrund
+    const [extractedColor, setExtractedColor] = useState<string | null>(null);
     const headerImageInputRef = useRef<HTMLInputElement>(null);
+    
+    // Reset Avatar loaded state wenn image sich ändert
+    useEffect(() => {
+      setIsAvatarLoaded(isImageLoaded(image));
+    }, [image]);
+    
+    // Reset loaded state wenn headerImage sich ändert
+    useEffect(() => {
+      setIsHeaderImageLoaded(isImageLoaded(headerImage));
+      setExtractedColor(null);
+    }, [headerImage]);
+    
+    // Extrahiere dominante Farbe aus dem Header-Bild für besseren Hintergrund
+    useEffect(() => {
+      if (!headerImage) return;
+      
+      const img = document.createElement('img');
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          
+          canvas.width = 50; // Kleine Auflösung für Performance
+          canvas.height = 50;
+          ctx.drawImage(img, 0, 0, 50, 50);
+          
+          // Extrahiere dominante Farbe aus der Mitte des Bildes
+          const imageData = ctx.getImageData(20, 15, 10, 10);
+          const data = imageData.data;
+          
+          let r = 0, g = 0, b = 0;
+          for (let i = 0; i < data.length; i += 4) {
+            r += data[i];
+            g += data[i + 1];
+            b += data[i + 2];
+          }
+          const pixelCount = data.length / 4;
+          r = Math.floor(r / pixelCount);
+          g = Math.floor(g / pixelCount);
+          b = Math.floor(b / pixelCount);
+          
+          // Konvertiere zu Hex
+          const hex = `#${[r, g, b].map(x => {
+            const hex = x.toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+          }).join('')}`;
+          
+          setExtractedColor(hex);
+        } catch (e) {
+          // Bei Fehler (z.B. CORS) verwende Fallback
+          console.warn('Could not extract color from header image:', e);
+        }
+      };
+      img.onerror = () => {
+        // Bei Fehler verwende Fallback
+      };
+      img.src = headerImage;
+    }, [headerImage]);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateUser = useMutation(api.mutations.updateUser);
     const createConversation = useMutation(api.mutations.createConversation);
@@ -180,27 +256,43 @@ export function ProfileHeader({
         >
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
             <div 
-                className="relative bg-[#0a0a0a] overflow-hidden group header-image-responsive" 
+                className={`relative overflow-hidden group header-image-responsive aspect-[3/1] ${
+                    !headerColor && !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
+                }`}
                 style={{ 
-                    aspectRatio: '3/1', 
+                    backgroundColor: headerColor || extractedColor || undefined, // Sofort sichtbare Hintergrundfarbe (aus Bild extrahiert oder Gradient-Fallback)
                     minHeight: '120px',
+                    transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
                 }}
             >
                 {/* Back Arrow Button - bottom left on mobile, top left on desktop with iOS safe area */}
                 <button
-                    onClick={() => router.push("/home")}
+                    onClick={() => router.back()}
                     className="absolute bottom-12 left-3 sm:bottom-auto sm:left-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
-                    aria-label="Zurück zur Startseite"
+                    aria-label="Zurück"
                 >
                     <ArrowLeft className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white" />
                 </button>
 
                 {headerImage ? (
-                    <img
-                        src={headerImage}
-                        alt="Header"
-                        className="w-full h-full object-cover"
-                    />
+                    <>
+                        {/* Header Bild mit priority und sanftem Fade-In */}
+                        <Image
+                            src={headerImage}
+                            alt="Header"
+                            fill
+                            sizes="100vw"
+                            priority
+                            className="object-cover transition-opacity duration-300"
+                            style={{
+                                opacity: isHeaderImageLoaded ? 1 : 0,
+                            }}
+                            onLoad={() => {
+                                markImageAsLoaded(headerImage);
+                                setIsHeaderImageLoaded(true);
+                            }}
+                        />
+                    </>
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
                 )}
@@ -210,12 +302,47 @@ export function ProfileHeader({
             <div className="relative px-4 z-10">
                 <div className="flex items-end justify-between -mt-12 sm:-mt-20 mb-2">
                     {/* Profile Picture - overlaps header by ~50%, thick white border */}
-                    <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-white shadow-xl" style={{ backgroundColor: 'white' }}>
-                        <AvatarImage src={image} alt={name} className="object-cover" />
-                        <AvatarFallback className="text-2xl sm:text-3xl bg-[#000000]/20 text-[#000000] font-semibold">
-                            {name[0]?.toUpperCase() || "U"}
-                        </AvatarFallback>
-                    </Avatar>
+                    <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center">
+                        {image ? (
+                            <>
+                                {/* Shimmer während des Ladens */}
+                                {!isAvatarLoaded && (
+                                    <div className="absolute inset-0 rounded-full shimmer-animation z-10" />
+                                )}
+                                {/* Profilbild mit priority für sofortiges Laden */}
+                                <Image
+                                    src={image}
+                                    alt={name}
+                                    width={128}
+                                    height={128}
+                                    quality={90}
+                                    priority
+                                    className="object-cover rounded-full transition-opacity duration-300"
+                                    style={{
+                                        opacity: isAvatarLoaded ? 1 : 0,
+                                        position: 'relative',
+                                        zIndex: isAvatarLoaded ? 20 : 0,
+                                    }}
+                                    onLoad={() => {
+                                        markImageAsLoaded(image);
+                                        setIsAvatarLoaded(true);
+                                    }}
+                                    onError={() => {
+                                        setIsAvatarLoaded(false);
+                                    }}
+                                />
+                            </>
+                        ) : (
+                            <div
+                                className="w-full h-full flex items-center justify-center font-semibold text-black text-2xl sm:text-3xl"
+                                style={{
+                                    backgroundColor: "rgba(0, 0, 0, 0.2)",
+                                }}
+                            >
+                                {name[0]?.toUpperCase() || "U"}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Action Buttons - right side, aligned with profile picture */}
                     {!isOwnProfile && (

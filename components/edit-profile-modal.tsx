@@ -133,6 +133,8 @@ export function EditProfileModal({
   const [isSemesterOpen, setIsSemesterOpen] = useState(false);
   const [isInterestsOpen, setIsInterestsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Extrahiere dominante Farbe aus dem Header-Bild für Hintergrund
+  const [extractedColor, setExtractedColor] = useState<string | null>(null);
 
   const updateUser = useMutation(api.mutations.updateUser);
   const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
@@ -343,6 +345,60 @@ export function EditProfileModal({
     onClose();
   };
 
+  // Extrahiere dominante Farbe aus dem Header-Bild für besseren Hintergrund
+  useEffect(() => {
+    const imageToExtract = headerImagePreview || currentHeaderImage;
+    if (!imageToExtract) {
+      setExtractedColor(null);
+      return;
+    }
+    
+    const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        canvas.width = 50; // Kleine Auflösung für Performance
+        canvas.height = 50;
+        ctx.drawImage(img, 0, 0, 50, 50);
+        
+        // Extrahiere dominante Farbe aus der Mitte des Bildes
+        const imageData = ctx.getImageData(20, 15, 10, 10);
+        const data = imageData.data;
+        
+        let r = 0, g = 0, b = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+        }
+        const pixelCount = data.length / 4;
+        r = Math.floor(r / pixelCount);
+        g = Math.floor(g / pixelCount);
+        b = Math.floor(b / pixelCount);
+        
+        // Konvertiere zu Hex
+        const hex = `#${[r, g, b].map(x => {
+          const hex = x.toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        }).join('')}`;
+        
+        setExtractedColor(hex);
+      } catch (e) {
+        // Bei Fehler (z.B. CORS) verwende Fallback
+        console.warn('Could not extract color from header image:', e);
+        setExtractedColor(null);
+      }
+    };
+    img.onerror = () => {
+      setExtractedColor(null);
+    };
+    img.src = imageToExtract;
+  }, [headerImagePreview, currentHeaderImage]);
+
   // Body-Lock: Verhindere Scrollen des Body, wenn Drawer offen ist
   useEffect(() => {
     if (isOpen) {
@@ -367,7 +423,7 @@ export function EditProfileModal({
 
       {/* Drawer */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 bg-white z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         } h-[100vh] overflow-hidden`}
         style={{
@@ -394,16 +450,20 @@ export function EditProfileModal({
             disabled={isSubmitting || !name.trim()}
             className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+            Speichern
           </button>
         </div>
 
         {/* Header Image */}
         <div 
-          className="relative bg-[#0a0a0a] overflow-hidden"
+          className={`relative overflow-hidden ${
+            !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
+          }`}
           style={{ 
             aspectRatio: '3/1', 
             minHeight: '120px',
+            backgroundColor: extractedColor || undefined, // Sofort sichtbare Hintergrundfarbe (aus Bild extrahiert oder Gradient-Fallback)
+            transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
           }}
         >
           {headerImagePreview ? (

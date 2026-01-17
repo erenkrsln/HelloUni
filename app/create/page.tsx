@@ -122,7 +122,11 @@ export default function CreatePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!currentUser || !content.trim() || isSubmitting) return;
+        // Erlaube Posts ohne Text, wenn ein Bild vorhanden ist
+        const hasContent = content.trim().length > 0;
+        const hasImage = selectedImage !== null;
+        
+        if (!currentUser || (!hasContent && !hasImage) || isSubmitting) return;
 
         // Validierung je nach Post-Typ
         if ((postType === "spontaneous_meeting" || postType === "recurring_meeting") && !eventDate) {
@@ -182,12 +186,12 @@ export default function CreatePage() {
                     ? pollOptions.filter(opt => opt.trim() !== "")
                     : undefined;
 
-                // Tags aus Content extrahieren
-                const extractedTags = extractTags(content.trim());
+                // Tags aus Content extrahieren (nur wenn Content vorhanden ist)
+                const extractedTags = content.trim() ? extractTags(content.trim()) : [];
                 const validTags = extractedTags.length > 0 ? extractedTags : undefined;
 
-                // Mentions aus Content extrahieren
-                const extractedMentions = extractMentions(content.trim());
+                // Mentions aus Content extrahieren (nur wenn Content vorhanden ist)
+                const extractedMentions = content.trim() ? extractMentions(content.trim()) : [];
                 const validMentions = extractedMentions.length > 0 ? extractedMentions : undefined;
 
                 if (selectedImage) {
@@ -199,7 +203,7 @@ export default function CreatePage() {
                     userId: currentUser._id,
                     postType,
                     title: title.trim() || undefined,
-                    content: content.trim(),
+                    content: content.trim() || "", // Leerer String wenn kein Text vorhanden
                     imageUrl,
                     eventDate: eventDateTimestamp,
                     eventTime: eventTime || undefined,
@@ -395,7 +399,7 @@ export default function CreatePage() {
                     <button
                         type="submit"
                         form="create-post-form"
-                        disabled={!content.trim()}
+                        disabled={!content.trim() && !selectedImage}
                         className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
                     >
                         Posten

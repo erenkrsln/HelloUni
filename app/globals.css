@@ -226,3 +226,13 @@ select option:disabled {
   margin-top: 0;
   padding-top: 0;
 }
+
+/* Shimmer-Animation für Bild-Loading (Twitter-ähnlich) */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
