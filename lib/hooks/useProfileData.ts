@@ -84,9 +84,15 @@ export function useProfileData(options: UseProfileDataOptions): UseProfileDataRe
   // If username query is used, prefer that; otherwise use userId query
   const resolvedUser = username ? user : (userById ?? user);
 
-  // Filter posts by user
+  // Filter posts by user and normalize image types (null -> undefined)
   const userPosts = resolvedUser
-    ? allPosts?.filter((post) => post.userId === resolvedUser._id) || []
+    ? (allPosts?.filter((post) => post.userId === resolvedUser._id) || []).map((post) => ({
+        ...post,
+        user: post.user ? {
+          ...post.user,
+          image: post.user.image ?? undefined, // Convert null to undefined
+        } : null,
+      }))
     : [];
 
   // Determine loading state
