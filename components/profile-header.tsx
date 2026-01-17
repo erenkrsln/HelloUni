@@ -74,7 +74,34 @@ export function ProfileHeader({
     
     // Reset Avatar loaded state wenn image sich ändert
     useEffect(() => {
-      setIsAvatarLoaded(isImageLoaded(image));
+      if (!image) {
+        setIsAvatarLoaded(true); // Wenn kein Bild, sofort als geladen markieren
+        return;
+      }
+      
+      const loaded = isImageLoaded(image);
+      setIsAvatarLoaded(loaded);
+      
+      // Wenn das Bild nicht im Cache ist, prüfe nochmal nach kurzer Verzögerung
+      // (in case next/image lädt es schnell und onLoad wird vorher getriggert)
+      if (!loaded && typeof window !== 'undefined') {
+        // Prüfe nach kurzer Verzögerung, ob das Bild bereits geladen ist
+        const checkLoaded = () => {
+          const img = document.querySelector(`img[src="${image}"]`) as HTMLImageElement;
+          if (img && img.complete && img.naturalWidth > 0) {
+            markImageAsLoaded(image);
+            setIsAvatarLoaded(true);
+          }
+        };
+        
+        // Prüfe sofort
+        checkLoaded();
+        
+        // Prüfe auch nach kurzer Verzögerung (falls es gerade geladen wird)
+        const timeout = setTimeout(checkLoaded, 100);
+        
+        return () => clearTimeout(timeout);
+      }
     }, [image]);
     
     // Reset loaded state wenn headerImage sich ändert
