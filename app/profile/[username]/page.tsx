@@ -45,9 +45,15 @@ export default function UserProfilePage() {
       currentUserId ? { userId: currentUserId } : {}
     );
 
-    // Filter posts by this user
+    // Filter posts by this user and normalize image types (null -> undefined)
     const userPosts = profileData?.user
-        ? allPosts?.filter((post) => post.userId === profileData.user._id) || []
+        ? (allPosts?.filter((post) => post.userId === profileData.user._id) || []).map((post) => ({
+            ...post,
+            user: post.user ? {
+                ...post.user,
+                image: post.user.image ?? undefined, // Convert null to undefined
+            } : null,
+        }))
         : [];
 
     return (
