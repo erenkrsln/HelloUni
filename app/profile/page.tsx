@@ -36,9 +36,15 @@ export default function ProfilePage() {
     // On second visit, profileData comes from cache immediately
     const isLoading = isProfileLoading && !profileData;
 
-    // Filter posts by current user
+    // Filter posts by current user and normalize image types (null -> undefined)
     const userPosts = profileData?.user
-        ? allPosts?.filter(post => post.userId === profileData.user._id) || []
+        ? (allPosts?.filter(post => post.userId === profileData.user._id) || []).map((post) => ({
+            ...post,
+            user: post.user ? {
+                ...post.user,
+                image: post.user.image ?? undefined, // Convert null to undefined
+            } : null,
+        }))
         : [];
 
     const handleProfileUpdate = () => {
