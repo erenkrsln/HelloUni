@@ -1287,3 +1287,210 @@ export const getMessages = query({
 
   },
 });
+
+// Global Search Query
+export const searchGlobal = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.query || args.query.length < 1) {
+      return { users: [], posts: [] };
+    }
+
+    const searchLower = args.query.toLowerCase();
+
+    // 1. Search Users
+    const allUsers = await ctx.db
+      .query("users")
+      .collect();
+
+    const matchingUsers = await Promise.all(
+      allUsers
+        .filter(user => (
+          (user.name && user.name.toLowerCase().includes(searchLower)) ||
+          (user.username && user.username.toLowerCase().includes(searchLower))
+        ))
+        // Limit user results
+        .slice(0, 20)
+        .map(async (user) => {
+          let imageUrl = user.image;
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+          }
+          return {
+            ...user,
+            image: imageUrl
+          };
+        })
+    );
+
+    // 2. Search Posts
+    const allPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    const matchingPosts = await Promise.all(
+      allPosts
+        .filter(post => (
+          (post.title && post.title.toLowerCase().includes(searchLower)) ||
+          (post.content && post.content.toLowerCase().includes(searchLower))
+        ))
+        // Limit post results
+        .slice(0, 20)
+        .map(async (post) => {
+          const user = await ctx.db.get(post.userId);
+          
+          let imageUrl = post.imageUrl;
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+          }
+
+          let userImageUrl = user?.image;
+          if (userImageUrl && !userImageUrl.startsWith('http')) {
+            userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+          }
+
+          // Calculate actual comments count
+          const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+          return {
+            ...post,
+            imageUrl,
+            commentsCount: actualCommentsCount,
+            user: user ? {
+              ...user,
+              image: userImageUrl,
+            } : null,
+          };
+        })
+    );
+
+    return {
+      users: matchingUsers,
+      posts: matchingPosts.filter(p => p.user !== null) // Ensure posts have valid users
+    };
+  },
+});
+
+// Search all users by name or username
+export const searchProfiles = query({
+    args: { searchTerm: v.string() },
+    handler: async (ctx, args) => {
+        if (!args.searchTerm || args.searchTerm.trim().length === 0) {
+            return [];
+        }
+
+        const searchLow = args.searchTerm.toLowerCase().trim();
+        const allUsers = await ctx.db
+            .query("users")
+            .collect();
+
+        // Filter users by name or username (case-insensitive)
+        const matchingUsers = allUsers
+            .filter(user =>
+                (user.name && user.name.toLowerCase().includes(searchLow)) ||
+                (user.username && user.username.toLowerCase().includes(searchLow))
+            )
+            .slice(0, 20); // Limit to 20 results
+
+        // Convert storage IDs to URLs
+        const usersWithImages = await Promise.all(
+            matchingUsers.map(async (user) => {
+                let imageUrl = user.image;
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+                }
+                return {
+                    ...user,
+                    image: imageUrl,
+                };
+            })
+        );
+
+        return usersWithImages;
+    },
+});
+
+// Search all posts by title or content
+export const searchPosts = query({
+    args: { searchTerm: v.string(), userId: v.optional(v.id("users")) },
+    handler: async (ctx, args) => {
+        if (!args.searchTerm || args.searchTerm.trim().length === 0) {
+            return [];
+        }
+
+        const searchLow = args.searchTerm.toLowerCase().trim();
+        const allPosts = await ctx.db
+            .query("posts")
+            .withIndex("by_created") // Use by_created as base
+            .order("desc")
+            .collect();
+
+        // Filter posts by title or content (case-insensitive)
+        const matchingPosts = allPosts
+            .filter(post =>
+                (post.title && post.title.toLowerCase().includes(searchLow)) ||
+                (post.content && post.content.toLowerCase().includes(searchLow))
+            )
+            .slice(0, 20); // Limit to 20 results
+
+        // Batch-Abfrage aller Likes fÃ¼r diesen User (Reuse logic from getFeed/getFilteredFeed)
+        let userLikesMap: Record<string, boolean> = {};
+        if (args.userId) {
+            const postIds = matchingPosts.map((p) => p._id);
+            const allLikes = await ctx.db
+                .query("likes")
+                .collect();
+
+            const userLikes = allLikes.filter(
+                (like) => like.userId === args.userId && postIds.includes(like.postId)
+            );
+
+            userLikes.forEach((like) => {
+                userLikesMap[like.postId as string] = true;
+            });
+        }
+
+        const postsWithUsers = await Promise.all(
+            matchingPosts.map(async (post) => {
+                const user = await ctx.db.get(post.userId);
+                let imageUrl = post.imageUrl;
+
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+                }
+
+                let userImageUrl = user?.image;
+                if (userImageUrl && !userImageUrl.startsWith('http')) {
+                    userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+                }
+
+                let actualParticipantsCount = post.participantsCount || 0;
+                if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+                    const participants = await ctx.db
+                        .query("participants")
+                        .withIndex("by_post", (q) => q.eq("postId", post._id))
+                        .collect();
+                    actualParticipantsCount = participants.length;
+                }
+
+                const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+                return {
+                    ...post,
+                    participantsCount: actualParticipantsCount,
+                    commentsCount: actualCommentsCount,
+                    imageUrl,
+                    isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+                    user: user ? {
+                        ...user,
+                        image: userImageUrl,
+                    } : null,
+                };
+            })
+        );
+
+        return postsWithUsers;
+    },
+});
