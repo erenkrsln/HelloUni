@@ -432,7 +432,7 @@ export function EditProfileModal({
       >
         {/* Header */}
         <div 
-          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0"
+          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0 bg-white relative z-10"
           style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))" }}
         >
           <button

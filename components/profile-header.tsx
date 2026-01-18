@@ -286,7 +286,7 @@ export function ProfileHeader({
                             src={headerImage}
                             alt="Header"
                             fill
-                            sizes="100vw"
+                            sizes="(max-width: 639px) 100vw, 428px"
                             priority
                             className="object-cover transition-opacity duration-300"
                             style={{
@@ -322,11 +322,10 @@ export function ProfileHeader({
                                     height={128}
                                     quality={90}
                                     priority
-                                    className="object-cover rounded-full transition-opacity duration-300"
+                                    className="object-cover rounded-full"
                                     style={{
-                                        opacity: isAvatarLoaded ? 1 : 0,
                                         position: 'relative',
-                                        zIndex: isAvatarLoaded ? 20 : 0,
+                                        zIndex: 20,
                                     }}
                                     onLoad={() => {
                                         markImageAsLoaded(image);

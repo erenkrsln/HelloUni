@@ -68,7 +68,7 @@ export default function UserProfilePage() {
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             {isLoading ? (
                 // Show spinner only on first visit (no cached data)
-                <LoadingScreen text="Profil wird geladen..." />
+                <LoadingScreen text="Profil wird geladen" />
             ) : notFound ? (
                 // User not found
                 <div className="flex-1 flex items-center justify-center text-[#000000] py-16">
@@ -138,8 +138,8 @@ export default function UserProfilePage() {
                     currentSemester={profileData.user.semester}
                     currentInterests={(profileData.user as any).interests}
                     onUpdate={() => {
-                        // Refresh page data after update
-                        window.location.reload();
+                        // No need to clear cache - Convex queries are reactive and will update automatically
+                        // The cache will be updated automatically when resolvedData changes
                     }}
                 />
             )}

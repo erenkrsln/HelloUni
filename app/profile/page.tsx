@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { ProfileHeader } from "@/components/profile-header";
 import { FeedCard } from "@/components/feed-card";
@@ -12,12 +11,10 @@ import { LoadingScreen, Spinner } from "@/components/ui/spinner";
 import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
-import { profileCache } from "@/lib/cache/profileCache";
 
 export default function ProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const router = useRouter();
     const { currentUser, currentUserId } = useCurrentUser();
 
     // Use unified hook for own profile as well (ensures caching works same way)
@@ -48,12 +45,8 @@ export default function ProfilePage() {
         : [];
 
     const handleProfileUpdate = () => {
-        // Clear cache to force refresh
-        if (currentUser?.username) {
-            const cacheKey = profileCache.getKey(currentUser.username, currentUserId);
-            profileCache.delete(cacheKey);
-        }
-        router.refresh();
+        // No need to clear cache - Convex queries are reactive and will update automatically
+        // The cache will be updated automatically when resolvedData changes
     };
 
 
@@ -85,7 +78,7 @@ export default function ProfilePage() {
                 />
             )}
             {isLoading ? (
-                <LoadingScreen text="Profil wird geladen..." />
+                <LoadingScreen text="Profil wird geladen" />
             ) : profileData ? (
                 <>
                     <ProfileHeader
