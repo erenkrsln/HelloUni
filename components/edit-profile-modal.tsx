@@ -423,9 +423,9 @@ export function EditProfileModal({
 
       {/* Drawer */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white z-[60] flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed inset-0 bg-white z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
-        } h-[100vh] overflow-hidden`}
+        } overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
         }}
