@@ -433,7 +433,10 @@ export function EditProfileModal({
         {/* Header */}
         <div 
           className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0 bg-white sticky top-0 z-[70]"
-          style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))" }}
+          style={{ 
+            paddingTop: "calc(1rem + max(env(safe-area-inset-top, 0px), 44px))",
+            minHeight: "calc(3rem + max(env(safe-area-inset-top, 0px), 44px))"
+          }}
         >
           <button
             onClick={handleClose}
