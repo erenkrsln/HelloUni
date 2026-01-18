@@ -158,18 +158,12 @@ export function CommentDrawer({
       // Berechne die Tastatur-Höhe
       const keyboardHeight = window.innerHeight - viewport.height;
       
-      // Wenn Tastatur offen ist ODER Input fokussiert ist, nutze viewport.height für Drawer-Höhe
-      // Das stellt sicher, dass der Drawer immer den gesamten sichtbaren Bereich abdeckt
-      if (keyboardHeight > 150 || isInputFocused) {
-        // Tastatur ist offen oder Input ist fokussiert - Drawer muss gesamte sichtbare Höhe einnehmen
-        // Berücksichtige die Safe Area oben (viewport.offsetTop), damit der Header nicht mit der Status Bar kollidiert
-        const topOffset = viewport.offsetTop || 0; // Safe Area oben (Status Bar)
-        const availableHeight = viewport.height - topOffset;
-        
-        drawerRef.current.style.height = `${availableHeight}px`;
-        drawerRef.current.style.maxHeight = `${availableHeight}px`;
-        drawerRef.current.style.top = `${topOffset}px`; // Position unterhalb der Safe Area
-        drawerRef.current.style.bottom = `auto`; // Entferne bottom, da wir top verwenden
+      // Nur wenn Tastatur wirklich offen ist (nicht nur Input fokussiert), nutze viewport.height
+      // Das verhindert, dass sich die Höhe auf Desktop ändert, wenn man auf das Eingabefeld klickt
+      if (keyboardHeight > 150) {
+        // Tastatur ist offen - Drawer muss gesamte sichtbare Höhe einnehmen
+        drawerRef.current.style.height = `${viewport.height}px`;
+        drawerRef.current.style.maxHeight = `${viewport.height}px`;
         
         // Input-Container: Safe Area auf 0 wenn Tastatur offen (Tastatur überdeckt Safe Area)
         if (inputContainerRef.current) {
@@ -179,8 +173,6 @@ export function CommentDrawer({
         // Tastatur ist geschlossen - normale Höhe (75dvh) und Safe Area berücksichtigen
         drawerRef.current.style.height = `75dvh`;
         drawerRef.current.style.maxHeight = `75dvh`;
-        drawerRef.current.style.top = `auto`; // Reset top position
-        drawerRef.current.style.bottom = `0`; // Zurück zu bottom-0
         
         if (inputContainerRef.current) {
           inputContainerRef.current.style.paddingBottom = `calc(0.375rem + env(safe-area-inset-bottom, 0px))`;
@@ -199,7 +191,7 @@ export function CommentDrawer({
       window.visualViewport?.removeEventListener("resize", updateDrawerAndInput);
       window.visualViewport?.removeEventListener("scroll", updateDrawerAndInput);
     };
-  }, [isInputFocused, isOpen]);
+  }, [isOpen]); // isInputFocused entfernt, da wir nur auf echte Tastatur-Höhe reagieren wollen
 
   // Prevent body scroll when drawer is open (Body Scroll Lock) - nur auf mobilen Geräten
   useEffect(() => {
