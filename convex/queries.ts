@@ -50,9 +50,14 @@ export const getFeed = query({
         }
 
         // Convert user image storage ID to URL if it exists
-        let userImageUrl = user?.image;
-        if (userImageUrl && !userImageUrl.startsWith('http')) {
-          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+        // Falls ein User kein Profilbild hat, gib null zurück
+        let userImageUrl: string | null = null;
+        if (user?.image) {
+          if (!user.image.startsWith('http')) {
+            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
+          } else {
+            userImageUrl = user.image;
+          }
         }
 
         // Calculate actual participants count for events
@@ -236,9 +241,14 @@ export const getUserPosts = query({
         }
 
         // Convert user image storage ID to URL if it exists
-        let userImageUrl = user?.image;
-        if (userImageUrl && !userImageUrl.startsWith('http')) {
-          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+        // Falls ein User kein Profilbild hat, gib null zurück
+        let userImageUrl: string | null = null;
+        if (user?.image) {
+          if (!user.image.startsWith('http')) {
+            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
+          } else {
+            userImageUrl = user.image;
+          }
         }
 
         // Calculate actual participants count for events
@@ -474,9 +484,14 @@ export const getFollowingFeed = query({
         }
 
         // Convert user image storage ID to URL if it exists
-        let userImageUrl = user?.image;
-        if (userImageUrl && !userImageUrl.startsWith('http')) {
-          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+        // Falls ein User kein Profilbild hat, gib null zurück
+        let userImageUrl: string | null = null;
+        if (user?.image) {
+          if (!user.image.startsWith('http')) {
+            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
+          } else {
+            userImageUrl = user.image;
+          }
         }
 
         // Calculate actual participants count for events
@@ -759,9 +774,15 @@ export const getFilteredFeed = query({
           imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
         }
 
-        let userImageUrl = user?.image;
-        if (userImageUrl && !userImageUrl.startsWith('http')) {
-          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+        // Convert user image storage ID to URL if it exists
+        // Falls ein User kein Profilbild hat, gib null zurück
+        let userImageUrl: string | null = null;
+        if (user?.image) {
+          if (!user.image.startsWith('http')) {
+            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
+          } else {
+            userImageUrl = user.image;
+          }
         }
 
         // Calculate actual participants count for events

@@ -7,6 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen, Spinner } from "@/components/ui/spinner";
+import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
 import { useQuery } from "convex/react";
@@ -23,6 +24,7 @@ import { useParams } from "next/navigation";
  */
 export default function UserProfilePage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const params = useParams();
     const username = params.username as string;
     const { currentUserId, currentUser } = useCurrentUser();
@@ -43,9 +45,15 @@ export default function UserProfilePage() {
       currentUserId ? { userId: currentUserId } : {}
     );
 
-    // Filter posts by this user
+    // Filter posts by this user and normalize image types (null -> undefined)
     const userPosts = profileData?.user
-        ? allPosts?.filter((post) => post.userId === profileData.user._id) || []
+        ? (allPosts?.filter((post) => post.userId === profileData.user._id) || []).map((post) => ({
+            ...post,
+            user: post.user ? {
+                ...post.user,
+                image: post.user.image ?? undefined, // Convert null to undefined
+            } : null,
+        }))
         : [];
 
     return (
@@ -60,7 +68,7 @@ export default function UserProfilePage() {
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             {isLoading ? (
                 // Show spinner only on first visit (no cached data)
-                <LoadingScreen text="Profil wird geladen..." />
+                <LoadingScreen text="Profil wird geladen" />
             ) : notFound ? (
                 // User not found
                 <div className="flex-1 flex items-center justify-center text-[#000000] py-16">
@@ -85,6 +93,7 @@ export default function UserProfilePage() {
                         followerCount={profileData.followerCount}
                         followingCount={profileData.followingCount}
                         isFollowing={profileData.isFollowing}
+                        onEditClick={isOwnProfile ? () => setIsEditModalOpen(true) : undefined}
                     />
 
                     {/* Posts section */}
@@ -106,6 +115,7 @@ export default function UserProfilePage() {
                                         post={post}
                                         currentUserId={currentUserId}
                                         showDivider={index < userPosts.length - 1}
+                                        isFirst={index === 0}
                                     />
                                 ))}
                             </div>
@@ -113,6 +123,27 @@ export default function UserProfilePage() {
                     </div>
                 </>
             ) : null}
+            
+            {/* Edit Profile Modal - nur wenn es das eigene Profil ist */}
+            {isOwnProfile && profileData && (
+                <EditProfileModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    userId={profileData.user._id}
+                    currentName={profileData.user.name}
+                    currentImage={profileData.user.image}
+                    currentHeaderImage={profileData.user.headerImage}
+                    currentBio={profileData.user.bio}
+                    currentMajor={profileData.user.major}
+                    currentSemester={profileData.user.semester}
+                    currentInterests={(profileData.user as any).interests}
+                    onUpdate={() => {
+                        // No need to clear cache - Convex queries are reactive and will update automatically
+                        // The cache will be updated automatically when resolvedData changes
+                    }}
+                />
+            )}
+            
             <BottomNavigation />
         </main>
     );

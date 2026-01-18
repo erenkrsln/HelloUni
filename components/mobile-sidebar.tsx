@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { markImageAsLoaded } from "@/lib/cache/imageCache";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -19,6 +20,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
   };
+
+  // Markiere das Profilbild im Cache, sobald es geladen ist
+  useEffect(() => {
+    if (currentUser?.image) {
+      markImageAsLoaded(currentUser.image);
+    }
+  }, [currentUser?.image]);
 
   // Body-Lock: Verhindere Scrollen des Body, wenn Sidebar offen ist
   useEffect(() => {

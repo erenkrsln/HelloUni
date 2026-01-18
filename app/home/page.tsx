@@ -3,9 +3,10 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { FeedCard } from "@/components/feed-card";
+import { FeedSkeleton } from "@/components/feed-skeleton";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
-import { LoadingScreen, Spinner } from "@/components/ui/spinner";
+import { LoadingScreen } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useEffect, useRef, useState, useMemo } from "react";
 
@@ -18,6 +19,7 @@ const isMobileDevice = (): boolean => {
 };
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { markImageAsLoaded } from "@/lib/cache/imageCache";
 import { usePostsCache } from "@/lib/contexts/posts-context";
 
 /**
@@ -33,6 +35,13 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Markiere das Profilbild des aktuellen Users im Cache, sobald es geladen ist
+  useEffect(() => {
+    if (currentUser?.image) {
+      markImageAsLoaded(currentUser.image);
+    }
+  }, [currentUser?.image]);
   
   // Prüfe, ob es ein mobiles Gerät ist
   useEffect(() => {
@@ -125,15 +134,10 @@ export default function Home() {
     return [];
   }, [postsFromQuery, cachedPostsForCurrentKey, isMobile]);
   
-  // Zeige Loading-Indikator nur auf Mobile:
-  // 1. Neue Daten werden geladen (postsFromQuery ist undefined)
-  // 2. UND wir haben bereits gecachte Posts (damit wir etwas anzeigen können)
-  const hasCachedPosts = cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0;
-  const isLoadingNewData = isMobile && postsFromQuery === undefined && hasCachedPosts;
-  
   // Initial Load: 
   // - Auf Mobile: Nur wenn keine gecachten Posts vorhanden sind
   // - Auf Desktop: Immer wenn keine neuen Daten verfügbar sind
+  const hasCachedPosts = cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0;
   const isInitialLoad = postsFromQuery === undefined && (!isMobile || !hasCachedPosts);
 
   // Zum Login umleiten, wenn nicht authentifiziert
@@ -266,20 +270,14 @@ export default function Home() {
           </div>
         )}
 
-        {/* Loading-Indikator oben im Feed (Twitter-ähnlich) - nur wenn neue Daten geladen werden */}
-        {isLoadingNewData && (
-          <div className="px-4 py-2 bg-white border-b border-gray-100">
-            <div className="flex items-center justify-center">
-              <Spinner size="sm" />
-            </div>
-          </div>
-        )}
-
-        {isInitialLoad ? (
-          <div className="px-4">
-            <LoadingScreen text="Feed wird geladen..." />
+        {/* Twitter-ähnlicher Ladeprozess: Skeleton → Daten → Bilder */}
+        {postsFromQuery === undefined ? (
+          // Schritt 1: Skeleton während des Data-Fetchings
+          <div style={{ gap: "0", margin: "0", padding: "0" }}>
+            <FeedSkeleton />
           </div>
         ) : posts.length > 0 ? (
+          // Schritt 2: Echte Daten mit sanftem Einblenden
           <div style={{ gap: "0", margin: "0", padding: "0" }}>
             {posts.map((post, index) => (
               <FeedCard
@@ -287,6 +285,7 @@ export default function Home() {
                 post={post}
                 currentUserId={currentUserId}
                 showDivider={index < posts.length - 1}
+                isFirst={index < 2} // Priority für die ersten 2 Bilder
               />
             ))}
           </div>
