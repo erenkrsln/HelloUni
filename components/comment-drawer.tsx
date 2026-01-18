@@ -57,7 +57,9 @@ export function CommentDrawer({
   const initialHadCommentsRef = useRef<boolean | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false); // Synchroner Check für doppelte Submits
+  const [isInputFocused, setIsInputFocused] = useState(false);
   
   // Store time ago strings for comments - calculated only once per comment
   const timeAgoCacheRef = useRef<Map<string, string>>(new Map());
@@ -141,22 +143,69 @@ export function CommentDrawer({
     }
   }, [commentText]);
 
-  // Prevent body scroll when drawer is open
+  // VisualViewport API für dynamische Tastatur-Höhe (iOS Standalone)
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport || !isOpen) return;
+
+    const updateDrawerAndInput = () => {
+      const viewport = window.visualViewport;
+      if (!viewport || !drawerRef.current) return;
+
+      // Wenn Tastatur offen ist, nutze viewport.height für Drawer-Höhe
+      const keyboardHeight = window.innerHeight - viewport.height;
+      
+      if (keyboardHeight > 150 && isInputFocused) {
+        // Tastatur ist offen - Drawer-Höhe anpassen
+        drawerRef.current.style.height = `${viewport.height}px`;
+        
+        // Input-Container: Safe Area auf 0 wenn Tastatur offen (Tastatur überdeckt Safe Area)
+        if (inputContainerRef.current) {
+          inputContainerRef.current.style.paddingBottom = `0.375rem`;
+        }
+      } else {
+        // Tastatur ist geschlossen - normale Höhe und Safe Area berücksichtigen
+        drawerRef.current.style.height = `75dvh`;
+        
+        if (inputContainerRef.current) {
+          inputContainerRef.current.style.paddingBottom = `calc(0.375rem + env(safe-area-inset-bottom, 0px))`;
+        }
+      }
+    };
+
+    // Initial position
+    updateDrawerAndInput();
+
+    // Listener für Viewport-Änderungen
+    window.visualViewport.addEventListener("resize", updateDrawerAndInput);
+    window.visualViewport.addEventListener("scroll", updateDrawerAndInput);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateDrawerAndInput);
+      window.visualViewport?.removeEventListener("scroll", updateDrawerAndInput);
+    };
+  }, [isInputFocused, isOpen]);
+
+  // Prevent body scroll when drawer is open (Body Scroll Lock)
   useEffect(() => {
     if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalOverscrollBehavior = document.body.style.overscrollBehavior;
       document.body.style.overflow = "hidden";
+      document.body.style.overscrollBehavior = "none"; // Verhindert Hüpfen auf iOS
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.overscrollBehavior = originalOverscrollBehavior;
+      };
     } else {
-      document.body.style.overflow = "";
       setCommentText("");
       setReplyingTo(null);
+      setIsInputFocused(false);
       setSortMode("neueste"); // Reset filter to default when drawer closes
       setIsFilterOpen(false); // Close filter dropdown when drawer closes
       // Clear time ago cache when drawer closes, so it recalculates on next open
       timeAgoCacheRef.current.clear();
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [isOpen]);
 
   // Close drawer on outside click
@@ -309,10 +358,8 @@ export function CommentDrawer({
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
       }
-      // Keep focus on textarea
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 100);
+      // Tastatur offen lassen - kein blur(), damit User direkt weiter schreiben kann
+      // Focus bleibt automatisch erhalten, da wir kein blur() aufrufen
     } catch (error) {
       console.error("Fehler beim Erstellen des Kommentars:", error);
     } finally {
@@ -619,9 +666,10 @@ export function CommentDrawer({
         ref={drawerRef}
         className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
-        } h-[75vh] overflow-hidden`}
+        } h-[75dvh] overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
+          overscrollBehavior: 'none', // Verhindert Hüpfen auf iOS
         }}
       >
         {/* Header */}
@@ -686,7 +734,13 @@ export function CommentDrawer({
         </div>
 
         {/* Comments List */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-1">
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden py-1"
+          style={{
+            overscrollBehavior: 'none', // Verhindert Rubber-Banding
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner size="md" />
@@ -706,9 +760,13 @@ export function CommentDrawer({
 
         {/* Sticky Input */}
         {currentUserId && (
-          <div className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 relative" style={{ transform: 'translateY(-16px)' }}>
-            {/* Horizontale Linie */}
-            <div className="absolute top-0 left-0 right-0 border-t border-gray-200"></div>
+          <div 
+            ref={inputContainerRef}
+            className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 border-t border-gray-200" 
+            style={{ 
+              paddingBottom: `calc(0.375rem + ${isInputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)'})`,
+            }}
+          >
             {replyingTo && (
               <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
                 <span className="text-xs text-gray-600">
@@ -743,13 +801,21 @@ export function CommentDrawer({
                   ref={textareaRef}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
+                  onFocus={(e) => {
+                    setIsInputFocused(true);
+                    // Verhindere Focus-Scroll-Issues
+                    e.target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                  }}
+                  onBlur={() => setIsInputFocused(false)}
                   placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
-                  className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-hidden"
+                  className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-y-auto scrollbar-hide"
                   rows={1}
+                  {...({ virtualkeyboardpolicy: "manual" } as any)}
                   style={{
                     maxHeight: "100px",
                     minHeight: "36px",
-                    fontSize: "16px", // Verhindert automatisches Zoomen auf iOS
+                    fontSize: "16px", // Verhindert automatisches Zoomen auf iOS (wichtig für PWA!)
+                    lineHeight: "1.5",
                   }}
                   disabled={isSubmitting}
                   onKeyDown={(e) => {
