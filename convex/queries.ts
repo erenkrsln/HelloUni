@@ -1404,21 +1404,25 @@ export const searchProfiles = query({
     interests: v.optional(v.array(v.string()))
   },
   handler: async (ctx, args) => {
-    if (!args.searchTerm || args.searchTerm.trim().length === 0) {
+    const hasFilters = args.major || (args.interests && args.interests.length > 0);
+    if ((!args.searchTerm || args.searchTerm.trim().length === 0) && !hasFilters) {
       return [];
     }
 
-    const searchLow = args.searchTerm.toLowerCase().trim();
+    // Link all users
     const allUsers = await ctx.db
       .query("users")
       .collect();
 
     // Filter users by name or username (case-insensitive)
-    let matchingUsers = allUsers
-      .filter(user =>
+    let matchingUsers = allUsers;
+    if (args.searchTerm && args.searchTerm.trim().length > 0) {
+      const searchLow = args.searchTerm.toLowerCase().trim();
+      matchingUsers = matchingUsers.filter(user =>
         (user.name && user.name.toLowerCase().includes(searchLow)) ||
         (user.username && user.username.toLowerCase().includes(searchLow))
       );
+    }
 
     // Filter by major if provided
     if (args.major) {
@@ -1473,11 +1477,11 @@ export const searchPosts = query({
     major: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    if (!args.searchTerm || args.searchTerm.trim().length === 0) {
+    const hasFilters = args.postType || args.major;
+    if ((!args.searchTerm || args.searchTerm.trim().length === 0) && !hasFilters) {
       return [];
     }
 
-    const searchLow = args.searchTerm.toLowerCase().trim();
     const allPosts = await ctx.db
       .query("posts")
       .withIndex("by_created") // Use by_created as base
@@ -1485,11 +1489,14 @@ export const searchPosts = query({
       .collect();
 
     // Filter posts by title or content (case-insensitive)
-    let matchingPosts = allPosts
-      .filter(post =>
+    let matchingPosts = allPosts;
+    if (args.searchTerm && args.searchTerm.trim().length > 0) {
+      const searchLow = args.searchTerm.toLowerCase().trim();
+      matchingPosts = matchingPosts.filter(post =>
         (post.title && post.title.toLowerCase().includes(searchLow)) ||
         (post.content && post.content.toLowerCase().includes(searchLow))
       );
+    }
 
     // Filter by postType
     if (args.postType) {

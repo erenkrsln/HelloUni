@@ -124,8 +124,9 @@ export default function SearchPage() {
         shouldSearchUsers ? {
             searchTerm: debouncedQuery,
             sortBy,
-            major: userMajor || undefined,
-            interests: userInterests ? userInterests.split(",").map(i => i.trim()).filter(Boolean) : undefined
+            // Only apply user filters if specifically in "people" tab
+            major: filterType === "people" ? (userMajor || undefined) : undefined,
+            interests: filterType === "people" && userInterests ? userInterests.split(",").map(i => i.trim()).filter(Boolean) : undefined
         } : "skip"
     );
 
@@ -135,8 +136,9 @@ export default function SearchPage() {
             searchTerm: debouncedQuery,
             userId: currentUserId,
             sortBy,
-            postType: postType || undefined,
-            major: postAuthorMajor || undefined
+            // Only apply post filters if specifically in "posts" tab
+            postType: filterType === "posts" ? (postType || undefined) : undefined,
+            major: filterType === "posts" ? (postAuthorMajor || undefined) : undefined
         } : "skip"
     );
 
@@ -408,91 +410,105 @@ export default function SearchPage() {
                         )}
                     </div>
 
-                    {!debouncedQuery ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                            <Search className="w-12 h-12 mb-4 opacity-20" />
-                            <p>
-                                {filterType === "people"
-                                    ? "Suche nach Personen"
-                                    : filterType === "posts"
-                                        ? "Suche nach Posts"
-                                        : "Suche nach Personen oder Posts"}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="space-y-8">
-                            {/* Personen Section */}
-                            {shouldSearchUsers && (
-                                <div>
-                                    <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
-                                    {userResults === undefined ? (
-                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
-                                    ) : userResults.length === 0 ? (
-                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Personen gefunden.</div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {userResults.map((user) => (
-                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                                                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
-                                                        {user.image ? (
-                                                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
-                                                                {user.name?.charAt(0).toUpperCase()}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                        <p className="text-sm text-gray-500 truncate">@{user.username}</p>
-                                                        {(user.uni_name || user.major) && (
-                                                            <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
-                                                                {user.uni_name && (
-                                                                    <span className="flex items-center truncate">
-                                                                        <MapPin size={10} className="mr-1" />
-                                                                        {user.uni_name}
-                                                                    </span>
-                                                                )}
-                                                                {user.major && (
-                                                                    <span className="flex items-center truncate">
+                    {
+                        // Calculate if we should show results based on query and active filters
+                        (() => {
+                            const hasQuery = !!debouncedQuery;
+                            const hasUserFilters = filterType === "people" && (!!userMajor || !!userInterests);
+                            const hasPostFilters = filterType === "posts" && (!!postType || !!postAuthorMajor);
+                            const shouldShowResults = hasQuery || hasUserFilters || hasPostFilters;
 
-                                                                        {user.major}
-                                                                    </span>
+                            if (!shouldShowResults) {
+                                return (
+                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                        <Search className="w-12 h-12 mb-4 opacity-20" />
+                                        <p>
+                                            {filterType === "people"
+                                                ? "Suche nach Personen"
+                                                : filterType === "posts"
+                                                    ? "Suche nach Posts"
+                                                    : "Suche nach Personen oder Posts"}
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="space-y-8">
+                                    {/* Personen Section */}
+                                    {shouldSearchUsers && (
+                                        <div>
+                                            <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
+                                            {userResults === undefined ? (
+                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                            ) : userResults.length === 0 ? (
+                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Personen gefunden.</div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {userResults.map((user) => (
+                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                {user.image ? (
+                                                                    <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                        {user.name?.charAt(0).toUpperCase()}
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </Link>
-                                            ))}
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                                                                <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                {(user.uni_name || user.major) && (
+                                                                    <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                        {user.uni_name && (
+                                                                            <span className="flex items-center truncate">
+                                                                                <MapPin size={10} className="mr-1" />
+                                                                                {user.uni_name}
+                                                                            </span>
+                                                                        )}
+                                                                        {user.major && (
+                                                                            <span className="flex items-center truncate">
+
+                                                                                {user.major}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Beiträge Section */}
+                                    {shouldSearchPosts && (
+                                        <div>
+                                            <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
+                                            {postResults === undefined ? (
+                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                            ) : postResults.length === 0 ? (
+                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                            ) : (
+                                                <div className="space-y-0">
+                                                    {postResults.map((post, index) => (
+                                                        <FeedCard
+                                                            key={post._id}
+                                                            post={post}
+                                                            currentUserId={currentUserId}
+                                                            showDivider={index < postResults.length - 1}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                            )}
-
-                            {/* Beiträge Section */}
-                            {shouldSearchPosts && (
-                                <div>
-                                    <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
-                                    {postResults === undefined ? (
-                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
-                                    ) : postResults.length === 0 ? (
-                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
-                                    ) : (
-                                        <div className="space-y-0">
-                                            {postResults.map((post, index) => (
-                                                <FeedCard
-                                                    key={post._id}
-                                                    post={post}
-                                                    currentUserId={currentUserId}
-                                                    showDivider={index < postResults.length - 1}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            );
+                        })()
+                    }
                 </div>
             )}
             <BottomNavigation />
