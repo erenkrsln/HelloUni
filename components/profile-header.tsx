@@ -60,13 +60,16 @@ export function ProfileHeader({
     onEditClick,
 }: ProfileHeaderProps) {
     const router = useRouter();
-    // State für Avatar-Ladezustand - initialisiere basierend auf globalem Cache
+    // State für Avatar-Ladezustand - zeige Bild sofort an wenn URL vorhanden
     const [isAvatarLoaded, setIsAvatarLoaded] = useState(() => {
-      return isImageLoaded(image);
+      // Zeige Bild sofort an, wenn URL vorhanden ist
+      // Das Fade-In ist nur für Bilder nützlich, die bereits im Cache sind
+      return image ? true : false;
     });
-    // State für sanftes Fade-In des Header-Bildes - initialisiere basierend auf globalem Cache
+    // State für sanftes Fade-In des Header-Bildes - zeige Bild sofort an wenn URL vorhanden
     const [isHeaderImageLoaded, setIsHeaderImageLoaded] = useState(() => {
-      return isImageLoaded(headerImage);
+      // Zeige Bild sofort an, wenn URL vorhanden ist
+      return headerImage ? true : false;
     });
     // Extrahiere dominante Farbe aus dem Bild für Hintergrund
     const [extractedColor, setExtractedColor] = useState<string | null>(null);
@@ -74,39 +77,14 @@ export function ProfileHeader({
     
     // Reset Avatar loaded state wenn image sich ändert
     useEffect(() => {
-      if (!image) {
-        setIsAvatarLoaded(true); // Wenn kein Bild, sofort als geladen markieren
-        return;
-      }
-      
-      const loaded = isImageLoaded(image);
-      setIsAvatarLoaded(loaded);
-      
-      // Wenn das Bild nicht im Cache ist, prüfe nochmal nach kurzer Verzögerung
-      // (in case next/image lädt es schnell und onLoad wird vorher getriggert)
-      if (!loaded && typeof window !== 'undefined') {
-        // Prüfe nach kurzer Verzögerung, ob das Bild bereits geladen ist
-        const checkLoaded = () => {
-          const img = document.querySelector(`img[src="${image}"]`) as HTMLImageElement;
-          if (img && img.complete && img.naturalWidth > 0) {
-            markImageAsLoaded(image);
-            setIsAvatarLoaded(true);
-          }
-        };
-        
-        // Prüfe sofort
-        checkLoaded();
-        
-        // Prüfe auch nach kurzer Verzögerung (falls es gerade geladen wird)
-        const timeout = setTimeout(checkLoaded, 100);
-        
-        return () => clearTimeout(timeout);
-      }
+      // Zeige Bild sofort an, wenn neue URL vorhanden ist
+      setIsAvatarLoaded(image ? true : false);
     }, [image]);
     
     // Reset loaded state wenn headerImage sich ändert
     useEffect(() => {
-      setIsHeaderImageLoaded(isImageLoaded(headerImage));
+      // Zeige Bild sofort an, wenn neue URL vorhanden ist
+      setIsHeaderImageLoaded(headerImage ? true : false);
       setExtractedColor(null);
     }, [headerImage]);
     
