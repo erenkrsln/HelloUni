@@ -143,28 +143,36 @@ export function CommentDrawer({
     }
   }, [commentText]);
 
-  // VisualViewport API für dynamische Tastatur-Höhe (iOS Standalone)
+  // VisualViewport API für dynamische Tastatur-Höhe (iOS Standalone) - nur auf mobilen Geräten
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport || !isOpen) return;
+
+    // Nur auf mobilen Geräten aktivieren
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
+    if (!isMobile) return;
 
     const updateDrawerAndInput = () => {
       const viewport = window.visualViewport;
       if (!viewport || !drawerRef.current) return;
 
-      // Wenn Tastatur offen ist, nutze viewport.height für Drawer-Höhe
+      // Berechne die Tastatur-Höhe
       const keyboardHeight = window.innerHeight - viewport.height;
       
-      if (keyboardHeight > 150 && isInputFocused) {
-        // Tastatur ist offen - Drawer-Höhe anpassen
+      // Wenn Tastatur offen ist ODER Input fokussiert ist, nutze viewport.height für Drawer-Höhe
+      // Das stellt sicher, dass der Drawer immer den gesamten sichtbaren Bereich abdeckt
+      if (keyboardHeight > 150 || isInputFocused) {
+        // Tastatur ist offen oder Input ist fokussiert - Drawer muss gesamte sichtbare Höhe einnehmen
         drawerRef.current.style.height = `${viewport.height}px`;
+        drawerRef.current.style.maxHeight = `${viewport.height}px`;
         
         // Input-Container: Safe Area auf 0 wenn Tastatur offen (Tastatur überdeckt Safe Area)
         if (inputContainerRef.current) {
           inputContainerRef.current.style.paddingBottom = `0.375rem`;
         }
       } else {
-        // Tastatur ist geschlossen - normale Höhe und Safe Area berücksichtigen
+        // Tastatur ist geschlossen - normale Höhe (75dvh) und Safe Area berücksichtigen
         drawerRef.current.style.height = `75dvh`;
+        drawerRef.current.style.maxHeight = `75dvh`;
         
         if (inputContainerRef.current) {
           inputContainerRef.current.style.paddingBottom = `calc(0.375rem + env(safe-area-inset-bottom, 0px))`;
@@ -185,18 +193,89 @@ export function CommentDrawer({
     };
   }, [isInputFocused, isOpen]);
 
-  // Prevent body scroll when drawer is open (Body Scroll Lock)
+  // Prevent body scroll when drawer is open (Body Scroll Lock) - nur auf mobilen Geräten
   useEffect(() => {
     if (isOpen) {
-      const originalOverflow = document.body.style.overflow;
-      const originalOverscrollBehavior = document.body.style.overscrollBehavior;
-      document.body.style.overflow = "hidden";
-      document.body.style.overscrollBehavior = "none"; // Verhindert Hüpfen auf iOS
+      // Mobile Detection: Touch-Support und Viewport-Breite < 768px
+      const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
       
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        document.body.style.overscrollBehavior = originalOverscrollBehavior;
-      };
+      if (isMobile) {
+        // Speichere Original-Werte
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalBodyOverscrollBehavior = document.body.style.overscrollBehavior;
+        const originalBodyPosition = document.body.style.position;
+        const originalBodyWidth = document.body.style.width;
+        const originalBodyTop = document.body.style.top;
+        
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+        const originalHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
+        
+        // Verhindere komplettes Scrollen des Body und HTML
+        const scrollY = window.scrollY;
+        
+        // Body sperren
+        document.body.style.overflow = "hidden";
+        document.body.style.overscrollBehavior = "none";
+        document.body.style.position = "fixed";
+        document.body.style.width = "100%";
+        document.body.style.top = `-${scrollY}px`;
+        
+        // HTML sperren (wichtig für mobile Browser)
+        document.documentElement.style.overflow = "hidden";
+        document.documentElement.style.overscrollBehavior = "none";
+        
+        // Verhindere Touch-Scroll auf Body (zusätzliche Sicherheit)
+        const preventScroll = (e: TouchEvent) => {
+          // Nur verhindern, wenn nicht im Drawer
+          if (!drawerRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
+          }
+        };
+        
+        // Verhindere Wheel-Scroll auf Body (zusätzliche Sicherheit)
+        const preventWheel = (e: WheelEvent) => {
+          // Nur verhindern, wenn nicht im Drawer
+          if (!drawerRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
+          }
+        };
+        
+        // Nur auf Body anwenden, nicht im Drawer
+        document.body.addEventListener("touchmove", preventScroll, { passive: false });
+        document.body.addEventListener("wheel", preventWheel, { passive: false });
+        
+        return () => {
+          // Entferne Event-Listener
+          document.body.removeEventListener("touchmove", preventScroll);
+          document.body.removeEventListener("wheel", preventWheel);
+          
+          // Stelle Original-Werte wieder her
+          document.body.style.overflow = originalBodyOverflow;
+          document.body.style.overscrollBehavior = originalBodyOverscrollBehavior;
+          document.body.style.position = originalBodyPosition;
+          document.body.style.width = originalBodyWidth;
+          document.body.style.top = originalBodyTop;
+          
+          document.documentElement.style.overflow = originalHtmlOverflow;
+          document.documentElement.style.overscrollBehavior = originalHtmlOverscrollBehavior;
+          
+          // Stelle Scroll-Position wieder her
+          if (originalBodyPosition === "" || originalBodyPosition === "static") {
+            window.scrollTo(0, scrollY);
+          }
+        };
+      }
+      
+      // Desktop: Nur einfache Overflow-Hidden (ohne position: fixed)
+      // Keine Event-Listener oder HTML-Overflow, da Desktop-Browser das nicht brauchen
+      if (!isMobile) {
+        const originalBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        
+        return () => {
+          document.body.style.overflow = originalBodyOverflow;
+        };
+      }
     } else {
       setCommentText("");
       setReplyingTo(null);
@@ -803,8 +882,12 @@ export function CommentDrawer({
                   onChange={(e) => setCommentText(e.target.value)}
                   onFocus={(e) => {
                     setIsInputFocused(true);
-                    // Verhindere Focus-Scroll-Issues
-                    e.target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    // Nur auf mobilen Geräten scrollIntoView verwenden (für Keyboard-Handling)
+                    // Auf Desktop würde das ungewolltes Scrollen verursachen
+                    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
+                    if (isMobile && inputContainerRef.current) {
+                      inputContainerRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
                   }}
                   onBlur={() => setIsInputFocused(false)}
                   placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
