@@ -308,6 +308,8 @@ export function EditProfileModal({
 
       onUpdate();
       onClose();
+      // Scroll to top after closing modal
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       console.error("Fehler beim Aktualisieren des Profils:", error);
       alert("Fehler beim Aktualisieren des Profils");
@@ -343,6 +345,8 @@ export function EditProfileModal({
       headerImageInputRef.current.value = "";
     }
     onClose();
+    // Scroll to top after closing modal
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Extrahiere dominante Farbe aus dem Header-Bild für besseren Hintergrund
