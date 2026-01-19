@@ -29,11 +29,11 @@ export const getFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -92,15 +92,83 @@ export const getFeed = query({
 });
 
 export const getPost = query({
-  args: { postId: v.id("posts") },
+  args: {
+    postId: v.id("posts"),
+    userId: v.optional(v.id("users"))
+  },
   handler: async (ctx, args) => {
     const post = await ctx.db.get(args.postId);
     if (!post) return null;
 
     const user = await ctx.db.get(post.userId);
+
+    // Convert storage ID to URL if it exists
+    let imageUrl = post.imageUrl;
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+    }
+
+    // Convert user image storage ID to URL if it exists
+    let userImageUrl: string | null = null;
+    if (user?.image) {
+      if (!user.image.startsWith('http')) {
+        userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
+      } else {
+        userImageUrl = user.image;
+      }
+    }
+
+    // Calculate actual participants count for events
+    let actualParticipantsCount = post.participantsCount || 0;
+    if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+      const participants = await ctx.db
+        .query("participants")
+        .withIndex("by_post", (q) => q.eq("postId", post._id))
+        .collect();
+      actualParticipantsCount = participants.length;
+    }
+
+    // Calculate actual comments count
+    const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+    // Check if liked
+    let isLiked = false;
+    if (args.userId) {
+      const like = await ctx.db
+        .query("likes")
+        .withIndex("by_user_post", (q) =>
+          q.eq("userId", args.userId!).eq("postId", args.postId)
+        )
+        .first();
+      isLiked = !!like;
+    }
+
+    // Check if joined (for events)
+    let hasJoined = false;
+    if (args.userId && (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting")) {
+      const participation = await ctx.db
+        .query("participants")
+        .withIndex("by_user_post", (q) =>
+          q.eq("userId", args.userId!).eq("postId", args.postId)
+        )
+        .first();
+      hasJoined = !!participation;
+    }
+
     return {
       ...post,
-      user,
+      participantsCount: actualParticipantsCount,
+      commentsCount: actualCommentsCount,
+      imageUrl,
+      hasLiked: isLiked, // Use hasLiked to match FeedCard expectation (though getFeed uses isLiked, we map it)
+      hasJoined,
+      user: user ? {
+        ...user,
+        image: userImageUrl ?? undefined,
+        username: user.username, // Ensure username is available
+        major: user.major,
+        semester: user.semester,
+      } : null,
     };
   },
 });
@@ -220,11 +288,11 @@ export const getUserPosts = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -462,11 +530,11 @@ export const getFollowingFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -739,11 +807,11 @@ export const getFilteredFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -1101,11 +1169,11 @@ export const getComments = query({
       const allCommentLikes = await ctx.db
         .query("commentLikes")
         .collect();
-      
+
       const userCommentLikes = allCommentLikes.filter(
         (like) => like.userId === args.userId && commentIds.includes(like.commentId)
       );
-      
+
       userCommentLikes.forEach((like) => {
         userCommentLikesMap[like.commentId as string] = true;
       });
@@ -1114,11 +1182,11 @@ export const getComments = query({
       const allCommentDislikes = await ctx.db
         .query("commentDislikes")
         .collect();
-      
+
       const userCommentDislikes = allCommentDislikes.filter(
         (dislike) => dislike.userId === args.userId && commentIds.includes(dislike.commentId)
       );
-      
+
       userCommentDislikes.forEach((dislike) => {
         userCommentDislikesMap[dislike.commentId as string] = true;
       });

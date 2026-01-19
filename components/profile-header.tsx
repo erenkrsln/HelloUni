@@ -62,84 +62,84 @@ export function ProfileHeader({
     const router = useRouter();
     // State für Avatar-Ladezustand - zeige Bild sofort an wenn URL vorhanden
     const [isAvatarLoaded, setIsAvatarLoaded] = useState(() => {
-      // Zeige Bild sofort an, wenn URL vorhanden ist
-      // Das Fade-In ist nur für Bilder nützlich, die bereits im Cache sind
-      return image ? true : false;
+        // Zeige Bild sofort an, wenn URL vorhanden ist
+        // Das Fade-In ist nur für Bilder nützlich, die bereits im Cache sind
+        return image ? true : false;
     });
     // State für sanftes Fade-In des Header-Bildes - zeige Bild sofort an wenn URL vorhanden
     const [isHeaderImageLoaded, setIsHeaderImageLoaded] = useState(() => {
-      // Zeige Bild sofort an, wenn URL vorhanden ist
-      return headerImage ? true : false;
+        // Zeige Bild sofort an, wenn URL vorhanden ist
+        return headerImage ? true : false;
     });
     // Extrahiere dominante Farbe aus dem Bild für Hintergrund
     const [extractedColor, setExtractedColor] = useState<string | null>(null);
     const headerImageInputRef = useRef<HTMLInputElement>(null);
-    
+
     // Reset Avatar loaded state wenn image sich ändert
     useEffect(() => {
-      // Zeige Bild sofort an, wenn neue URL vorhanden ist
-      setIsAvatarLoaded(image ? true : false);
+        // Zeige Bild sofort an, wenn neue URL vorhanden ist
+        setIsAvatarLoaded(image ? true : false);
     }, [image]);
-    
+
     // Reset loaded state wenn headerImage sich ändert
     useEffect(() => {
-      // Zeige Bild sofort an, wenn neue URL vorhanden ist
-      setIsHeaderImageLoaded(headerImage ? true : false);
-      setExtractedColor(null);
+        // Zeige Bild sofort an, wenn neue URL vorhanden ist
+        setIsHeaderImageLoaded(headerImage ? true : false);
+        setExtractedColor(null);
     }, [headerImage]);
-    
+
     // Extrahiere dominante Farbe aus dem Header-Bild für besseren Hintergrund
     useEffect(() => {
-      if (!headerImage) return;
-      
-      const img = document.createElement('img');
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          if (!ctx) return;
-          
-          canvas.width = 50; // Kleine Auflösung für Performance
-          canvas.height = 50;
-          ctx.drawImage(img, 0, 0, 50, 50);
-          
-          // Extrahiere dominante Farbe aus der Mitte des Bildes
-          const imageData = ctx.getImageData(20, 15, 10, 10);
-          const data = imageData.data;
-          
-          let r = 0, g = 0, b = 0;
-          for (let i = 0; i < data.length; i += 4) {
-            r += data[i];
-            g += data[i + 1];
-            b += data[i + 2];
-          }
-          const pixelCount = data.length / 4;
-          r = Math.floor(r / pixelCount);
-          g = Math.floor(g / pixelCount);
-          b = Math.floor(b / pixelCount);
-          
-          // Konvertiere zu Hex
-          const hex = `#${[r, g, b].map(x => {
-            const hex = x.toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
-          }).join('')}`;
-          
-          setExtractedColor(hex);
-        } catch (e) {
-          // Bei Fehler (z.B. CORS) verwende Fallback
-          console.warn('Could not extract color from header image:', e);
-        }
-      };
-      img.onerror = () => {
-        // Bei Fehler verwende Fallback
-      };
-      img.src = headerImage;
+        if (!headerImage) return;
+
+        const img = document.createElement('img');
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+
+                canvas.width = 50; // Kleine Auflösung für Performance
+                canvas.height = 50;
+                ctx.drawImage(img, 0, 0, 50, 50);
+
+                // Extrahiere dominante Farbe aus der Mitte des Bildes
+                const imageData = ctx.getImageData(20, 15, 10, 10);
+                const data = imageData.data;
+
+                let r = 0, g = 0, b = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    r += data[i];
+                    g += data[i + 1];
+                    b += data[i + 2];
+                }
+                const pixelCount = data.length / 4;
+                r = Math.floor(r / pixelCount);
+                g = Math.floor(g / pixelCount);
+                b = Math.floor(b / pixelCount);
+
+                // Konvertiere zu Hex
+                const hex = `#${[r, g, b].map(x => {
+                    const hex = x.toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                }).join('')}`;
+
+                setExtractedColor(hex);
+            } catch (e) {
+                // Bei Fehler (z.B. CORS) verwende Fallback
+                console.warn('Could not extract color from header image:', e);
+            }
+        };
+        img.onerror = () => {
+            // Bei Fehler verwende Fallback
+        };
+        img.src = headerImage;
     }, [headerImage]);
     const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateUser = useMutation(api.mutations.updateUser);
     const createConversation = useMutation(api.mutations.createConversation);
-    
+
     // Get conversations to check if a direct message already exists
     const conversations = useQuery(
         api.queries.getConversations,
@@ -253,18 +253,17 @@ export function ProfileHeader({
 
 
     return (
-        <div 
+        <div
             className="relative w-full sticky top-0 z-40 profile-header-sticky bg-white"
             style={{
                 overscrollBehavior: 'none',
             }}
         >
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
-            <div 
-                className={`relative overflow-hidden group header-image-responsive aspect-[3/1] ${
-                    !headerColor && !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
-                }`}
-                style={{ 
+            <div
+                className={`relative overflow-hidden group header-image-responsive aspect-[3/1] ${!headerColor && !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
+                    }`}
+                style={{
                     backgroundColor: headerColor || extractedColor || undefined, // Sofort sichtbare Hintergrundfarbe (aus Bild extrahiert oder Gradient-Fallback)
                     minHeight: '120px',
                     transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
@@ -361,16 +360,16 @@ export function ProfileHeader({
                             <button
                                 onClick={async () => {
                                     if (!currentUserId || !userId) return;
-                                    
+
                                     // Check if a direct message conversation already exists
                                     const existingConversation = conversations?.find(conv => {
                                         // Direct message: exactly 2 participants and not a group
-                                        return !conv.isGroup && 
-                                               conv.participants.length === 2 &&
-                                               conv.participants.includes(currentUserId) &&
-                                               conv.participants.includes(userId);
+                                        return !conv.isGroup &&
+                                            conv.participants.length === 2 &&
+                                            conv.participants.includes(currentUserId) &&
+                                            conv.participants.includes(userId);
                                     });
-                                    
+
                                     if (existingConversation) {
                                         // Navigate to existing conversation
                                         router.push(`/chat/${existingConversation._id}`);

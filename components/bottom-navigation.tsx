@@ -14,8 +14,12 @@ export function BottomNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser } = useCurrentUser();
+
   const unreadData = useQuery(api.queries.getUnreadCounts, currentUser ? { userId: currentUser._id } : "skip");
-  const unreadCount = unreadData?.totalUnread || 0;
+  const unreadChatCount = unreadData?.totalUnread || 0;
+
+  const notificationData = useQuery(api.notifications.get, currentUser ? { userId: currentUser._id } : "skip");
+  const unreadNotificationCount = notificationData?.unreadCount || 0;
 
   const isActive = (path: string) => {
     // Sowohl "/" als auch "/home" als Startseite betrachten
@@ -137,6 +141,9 @@ export function BottomNavigation() {
               backfaceVisibility: "hidden"
             }}
           />
+          {unreadNotificationCount > 0 && (
+            <div className="absolute top-2 right-2 w-3 h-3 bg-[#FF3B30] rounded-full border border-[#FF3B30]" />
+          )}
         </Link>
 
         {/* Chat */}
@@ -157,7 +164,7 @@ export function BottomNavigation() {
               backfaceVisibility: "hidden"
             }}
           />
-          {unreadCount > 0 && (
+          {unreadChatCount > 0 && (
             <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
           )}
         </Link>

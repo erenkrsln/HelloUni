@@ -51,6 +51,7 @@ interface FeedCardProps {
   currentUserId?: Id<"users">;
   showDivider?: boolean; // Zeigt Trennlinie nach den Buttons an
   isFirst?: boolean; // Wenn true, erhält das Beitragsbild priority (wichtig für LCP)
+  autoOpenCommentId?: string; // Auto-open drawer and highlight this comment
 }
 
 // Helper to remove degree titles
@@ -60,14 +61,21 @@ const cleanMajor = (major?: string) => {
   return major.replace(/\s*\(?\b(B\.?Eng|B\.?Sc|B\.?A|M\.?Sc|M\.?A|M\.?Eng|LL\.?B|LL\.?M)\.?\)?\s*/gi, "").trim();
 };
 
-export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const isOwnPost = currentUserId && post.userId === currentUserId;
   const joinEvent = useMutation(api.mutations.joinEvent);
   const leaveEvent = useMutation(api.mutations.leaveEvent);
   const votePoll = useMutation(api.mutations.votePoll);
-  
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Auto-open drawer if commentId is provided
+  useEffect(() => {
+    if (autoOpenCommentId) {
+      setIsDrawerOpen(true);
+    }
+  }, [autoOpenCommentId]);
 
   // Store time ago string on mount - only updates when component remounts (e.g. navigating to /home)
   const [timeAgo, setTimeAgo] = useState(() => formatTimeAgo(post.createdAt));
@@ -310,7 +318,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
   // Speichere die Bilddimensionen für den Shimmer (originale Größe)
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const lastKnownLikedState = useRef<boolean | null>(getStoredLikeState());
-  
+
   // Aktualisiere loaded State, wenn sich die imageUrl ändert
   useEffect(() => {
     if (post.imageUrl) {
@@ -320,11 +328,11 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
       }
     }
   }, [post.imageUrl, imageLoaded]);
-  
+
   // Lade Bilddimensionen im Hintergrund, um Shimmer mit originaler Aspect-Ratio anzuzeigen
   useEffect(() => {
     if (!post.imageUrl || imageLoaded || imageDimensions) return;
-    
+
     const img = document.createElement('img');
     img.onload = () => {
       setImageDimensions({
@@ -351,7 +359,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
   useEffect(() => {
     // Don't override optimistic state if we're currently liking/unliking
     if (isLiking) return;
-    
+
     if (isLiked !== undefined) {
       lastKnownLikedState.current = isLiked;
       if (optimisticLiked === null) {
@@ -372,15 +380,15 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
-    
+
     // Use displayIsLiked to get the current state (includes optimistic updates)
     const wasLiked = displayIsLiked;
     const newLikedState = !wasLiked;
-    
+
     // Optimistic update immediately - no delay
     setOptimisticLiked(newLikedState);
     setIsLiking(true);
-    
+
     try {
       await likePost({ userId: currentUserId, postId: post._id });
       // Update lastKnownState after successful like
@@ -642,9 +650,9 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
               {timeAgo}
             </time>
             <div className="ml-auto mr-2 w-8 h-8 flex items-center justify-center flex-shrink-0">
-            {isOwnPost && (
-              <PostMenu postId={post._id} userId={currentUserId} />
-            )}
+              {isOwnPost && (
+                <PostMenu postId={post._id} userId={currentUserId} />
+              )}
             </div>
           </div>
 
@@ -722,10 +730,10 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
             <div className="mt-3 w-full rounded-2xl overflow-hidden relative bg-muted">
               {/* Shimmer-Effekt während des Ladens - mit originaler Bildgröße */}
               {!imageLoaded && (
-                <div 
+                <div
                   className="absolute inset-0 w-full rounded-2xl z-10"
                   style={{
-                    aspectRatio: imageDimensions 
+                    aspectRatio: imageDimensions
                       ? `${imageDimensions.width} / ${imageDimensions.height}`
                       : '16 / 9', // Fallback auf 16:9 wenn Dimensionen noch nicht geladen
                     maxHeight: '80vh',
@@ -831,6 +839,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
         postId={post._id}
         currentUserId={currentUserId}
         commentsCount={post.commentsCount}
+        highlightCommentId={autoOpenCommentId}
       />
     </article>
   );

@@ -4,8 +4,10 @@ import { User, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { LogoSidebar } from "@/components/logo-sidebar";
+
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -25,6 +27,8 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
   };
+
+
 
   // Logout-Button auf allen Seiten ausblenden (wird durch Dropdown ersetzt)
   const showLogoutButton = false;
@@ -181,6 +185,8 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
             <span className="text-sm font-medium text-white">Edit</span>
           </button>
         )}
+
+
 
         {/* Mobile Menu Button - oben rechts */}
         {onMenuClick && (
