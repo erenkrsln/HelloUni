@@ -29,11 +29,11 @@ export const getFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -220,11 +220,11 @@ export const getUserPosts = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -462,11 +462,11 @@ export const getFollowingFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -739,11 +739,11 @@ export const getFilteredFeed = query({
       const allLikes = await ctx.db
         .query("likes")
         .collect();
-      
+
       const userLikes = allLikes.filter(
         (like) => like.userId === args.userId && postIds.includes(like.postId)
       );
-      
+
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
@@ -1101,11 +1101,11 @@ export const getComments = query({
       const allCommentLikes = await ctx.db
         .query("commentLikes")
         .collect();
-      
+
       const userCommentLikes = allCommentLikes.filter(
         (like) => like.userId === args.userId && commentIds.includes(like.commentId)
       );
-      
+
       userCommentLikes.forEach((like) => {
         userCommentLikesMap[like.commentId as string] = true;
       });
@@ -1114,11 +1114,11 @@ export const getComments = query({
       const allCommentDislikes = await ctx.db
         .query("commentDislikes")
         .collect();
-      
+
       const userCommentDislikes = allCommentDislikes.filter(
         (dislike) => dislike.userId === args.userId && commentIds.includes(dislike.commentId)
       );
-      
+
       userCommentDislikes.forEach((dislike) => {
         userCommentDislikesMap[dislike.commentId as string] = true;
       });
@@ -1306,5 +1306,287 @@ export const getMessages = query({
 
     return messagesWithUrls;
 
+  },
+});
+
+// Global Search Query
+export const searchGlobal = query({
+  args: { query: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.query || args.query.length < 1) {
+      return { users: [], posts: [] };
+    }
+
+    const searchLower = args.query.toLowerCase();
+
+    // 1. Search Users
+    const allUsers = await ctx.db
+      .query("users")
+      .collect();
+
+    const matchingUsers = await Promise.all(
+      allUsers
+        .filter(user => (
+          (user.name && user.name.toLowerCase().includes(searchLower)) ||
+          (user.username && user.username.toLowerCase().includes(searchLower))
+        ))
+        // Limit user results
+        .slice(0, 20)
+        .map(async (user) => {
+          let imageUrl = user.image;
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+          }
+          return {
+            ...user,
+            image: imageUrl
+          };
+        })
+    );
+
+    // 2. Search Posts
+    const allPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    const matchingPosts = await Promise.all(
+      allPosts
+        .filter(post => (
+          (post.title && post.title.toLowerCase().includes(searchLower)) ||
+          (post.content && post.content.toLowerCase().includes(searchLower))
+        ))
+        // Limit post results
+        .slice(0, 20)
+        .map(async (post) => {
+          const user = await ctx.db.get(post.userId);
+
+          let imageUrl = post.imageUrl;
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+          }
+
+          let userImageUrl = user?.image;
+          if (userImageUrl && !userImageUrl.startsWith('http')) {
+            userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+          }
+
+          // Calculate actual comments count
+          const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+          return {
+            ...post,
+            imageUrl,
+            commentsCount: actualCommentsCount,
+            user: user ? {
+              ...user,
+              image: userImageUrl,
+            } : null,
+          };
+        })
+    );
+
+    return {
+      users: matchingUsers,
+      posts: matchingPosts.filter(p => p.user !== null) // Ensure posts have valid users
+    };
+  },
+});
+
+// Search all users by name or username
+// Search all users by name or username
+export const searchProfiles = query({
+  args: {
+    searchTerm: v.string(),
+    sortBy: v.optional(v.string()),
+    major: v.optional(v.string()),
+    interests: v.optional(v.array(v.string()))
+  },
+  handler: async (ctx, args) => {
+    const hasFilters = args.major || (args.interests && args.interests.length > 0);
+    if ((!args.searchTerm || args.searchTerm.trim().length === 0) && !hasFilters) {
+      return [];
+    }
+
+    // Link all users
+    const allUsers = await ctx.db
+      .query("users")
+      .collect();
+
+    // Filter users by name or username (case-insensitive)
+    let matchingUsers = allUsers;
+    if (args.searchTerm && args.searchTerm.trim().length > 0) {
+      const searchLow = args.searchTerm.toLowerCase().trim();
+      matchingUsers = matchingUsers.filter(user =>
+        (user.name && user.name.toLowerCase().includes(searchLow)) ||
+        (user.username && user.username.toLowerCase().includes(searchLow))
+      );
+    }
+
+    // Filter by major if provided
+    if (args.major) {
+      matchingUsers = matchingUsers.filter(user => user.major === args.major);
+    }
+
+    // Filter by interests if provided (check if user has at least one matching interest)
+    if (args.interests && args.interests.length > 0) {
+      matchingUsers = matchingUsers.filter(user => {
+        const userInterests = user.interests || [];
+        return args.interests!.some(interest => userInterests.includes(interest));
+      });
+    }
+
+    // Apply sorting
+    if (args.sortBy === "alphabetical") {
+      matchingUsers.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    } else if (args.sortBy === "recent") {
+      // Use _creationTime as a proxy for recency if createdAt is missing
+      matchingUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
+    }
+
+    // Limit to 20 results after sorting and filtering
+    const limitedUsers = matchingUsers.slice(0, 20);
+
+    // Convert storage IDs to URLs
+    const usersWithImages = await Promise.all(
+      limitedUsers.map(async (user) => {
+        let imageUrl = user.image;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+        return {
+          ...user,
+          image: imageUrl,
+        };
+      })
+    );
+
+    return usersWithImages;
+  },
+});
+
+// Search all posts by title or content
+// Search all posts by title or content
+export const searchPosts = query({
+  args: {
+    searchTerm: v.string(),
+    userId: v.optional(v.id("users")),
+    sortBy: v.optional(v.string()),
+    postType: v.optional(v.string()),
+    major: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const hasFilters = args.postType || args.major;
+    if ((!args.searchTerm || args.searchTerm.trim().length === 0) && !hasFilters) {
+      return [];
+    }
+
+    const allPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_created") // Use by_created as base
+      .order("desc") // Initial fetch order
+      .collect();
+
+    // Filter posts by title or content (case-insensitive)
+    let matchingPosts = allPosts;
+    if (args.searchTerm && args.searchTerm.trim().length > 0) {
+      const searchLow = args.searchTerm.toLowerCase().trim();
+      matchingPosts = matchingPosts.filter(post =>
+        (post.title && post.title.toLowerCase().includes(searchLow)) ||
+        (post.content && post.content.toLowerCase().includes(searchLow))
+      );
+    }
+
+    // Filter by postType
+    if (args.postType) {
+      matchingPosts = matchingPosts.filter(post => post.postType === args.postType);
+    }
+
+    // Apply sorting
+    if (args.sortBy === "alphabetical") {
+      matchingPosts.sort((a, b) => {
+        const titleA = a.title || a.content || "";
+        const titleB = b.title || b.content || "";
+        return titleA.localeCompare(titleB);
+      });
+    } else if (args.sortBy === "recent" || !args.sortBy) {
+      // Already sorted by 'desc' from query, but good to ensure if logic changes
+      matchingPosts.sort((a, b) => b.createdAt - a.createdAt);
+    }
+
+    // Limit to 20 results (can increase if needed)
+    // We filter by major AFTER fetching user data, so let's take more initially or fetch users for all matches first
+    // Optimization: Fetch users for all matching posts first, then filter, then pagination slice
+    // For simplicity now: Fetch users for matching posts, filter by major, then slice.
+    const matchesCount = matchingPosts.length;
+    // const limitedPosts = matchingPosts.slice(0, 20); // DON'T SLICE YET if filtering by major
+
+    // Batch-Abfrage aller Likes fÃ¼r diesen User (Reuse logic from getFeed/getFilteredFeed)
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = matchingPosts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
+    const postsWithUsers = await Promise.all(
+      matchingPosts.map(async (post) => {
+        const user = await ctx.db.get(post.userId);
+
+        // Filter by Author's Major if provided
+        if (args.major && user?.major !== args.major) {
+          return null;
+        }
+
+        let imageUrl = post.imageUrl;
+
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
+        }
+
+        let userImageUrl = user?.image;
+        if (userImageUrl && !userImageUrl.startsWith('http')) {
+          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
+        }
+
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+        }
+
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+        return {
+          ...post,
+          participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
+          imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+          user: user ? {
+            ...user,
+            image: userImageUrl,
+          } : null,
+        };
+      })
+    );
+
+    // Filter out nulls (posts that failed major filter) and then apply limit
+    const finalResults = postsWithUsers.filter(p => p !== null).slice(0, 20);
+
+    return finalResults;
   },
 });

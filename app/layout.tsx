@@ -27,11 +27,11 @@ export const metadata: Metadata = {
     title: "HelloUni",
     statusBarStyle: "black-translucent",
     capable: true,
-    startupImage: "/hellouni.svg",
+    startupImage: "/logo2.svg",
   },
   icons: {
     icon: "/logo2.svg",
-    apple: "/hellouni.svg",
+    apple: "/logo2.svg",
   },
 };
 
