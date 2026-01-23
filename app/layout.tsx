@@ -22,17 +22,6 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "HelloUni",
   description: "Social Media App für Studierende",
-  manifest: "/site.webmanifest",
-  appleWebApp: {
-    title: "HelloUni",
-    statusBarStyle: "black-translucent",
-    capable: true,
-    startupImage: "/hellouni.svg",
-  },
-  icons: {
-    icon: "/logo2.svg",
-    apple: "/hellouni.svg",
-  },
 };
 
 export const viewport: Viewport = {
@@ -52,14 +41,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <head>
-        {/* PWA Meta Tags für bessere Installation */}
-        <link rel="manifest" href="/site.webmanifest" />
-        <link rel="apple-touch-icon" href="/hellouni.svg" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="HelloUni" />
-      </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`}>
         <NextAuthSessionProvider>
           <ConvexClientProvider>
