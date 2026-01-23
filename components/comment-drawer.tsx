@@ -330,62 +330,95 @@ export function CommentDrawer({
 
   // Scroll to and highlight specific comment when provided
   useEffect(() => {
-    if (isOpen && highlightCommentId && allComments && allComments.length > 0) {
-      // Don't re-highlight if we already did it for this ID
-      if (processedHighlightRef.current === highlightCommentId) {
-        return;
-      }
-
-      // 1. Auto-expand parents if it's a reply
-      const parentIds = new Set<string>();
-      let currentId = highlightCommentId;
-      let foundInAll = false;
-
-      // Find the comment and its parents
-      while (currentId) {
-        const comment = allComments.find(c => c._id === currentId);
-        if (comment) {
-          foundInAll = true;
-          if (comment.parentCommentId) {
-            const parentId = comment.parentCommentId as string;
-            parentIds.add(parentId);
-            currentId = parentId as any;
-          } else {
-            currentId = null as any;
-          }
-        } else {
-          currentId = null as any;
-        }
-      }
-
-      if (parentIds.size > 0) {
-        setExpandedReplies(prev => {
-          const next = new Set(prev);
-          parentIds.forEach(id => next.add(id));
-          return next;
-        });
-      }
-
-      // 2. Wait for rendering then scroll and highlight
-      const timer = setTimeout(() => {
-        const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
-        if (commentElement && commentsContainerRef.current) {
-          // Scroll to comment
-          commentElement.scrollIntoView({ behavior: "smooth", block: "center" });
-
-          // Highlight comment
-          setHighlightedCommentId(highlightCommentId);
-          processedHighlightRef.current = highlightCommentId;
-
-          // Remove highlight after 2.5 seconds
-          setTimeout(() => {
-            setHighlightedCommentId(null);
-          }, 2500);
-        }
-      }, 400); // Slightly larger delay to allow for thread expansion
-
-      return () => clearTimeout(timer);
+    // Warte bis Drawer offen ist, highlightCommentId vorhanden ist, und Kommentare geladen sind
+    if (!isOpen || !highlightCommentId || !allComments || allComments.length === 0) {
+      return;
     }
+
+    // Don't re-highlight if we already did it for this ID
+    if (processedHighlightRef.current === highlightCommentId) {
+      return;
+    }
+
+    // Finde den zu highlightenden Kommentar
+    const targetComment = allComments.find(c => c._id === highlightCommentId);
+    
+    // Wenn Kommentar nicht gefunden, warte auf nächsten Render
+    if (!targetComment) {
+      console.log('Kommentar noch nicht geladen:', highlightCommentId);
+      return;
+    }
+
+    console.log('Highlighte Kommentar:', highlightCommentId, targetComment);
+
+    // 1. Auto-expand parents if it's a reply
+    const parentIds = new Set<string>();
+    let currentId: string | null = highlightCommentId;
+
+    // Find the comment and its parents
+    while (currentId) {
+      const comment = allComments.find(c => c._id === currentId);
+      if (comment?.parentCommentId) {
+        const parentId = comment.parentCommentId as string;
+        parentIds.add(parentId);
+        currentId = parentId;
+      } else {
+        currentId = null;
+      }
+    }
+
+    // Expand all parent comments sofort (nicht mit setState delay)
+    if (parentIds.size > 0) {
+      setExpandedReplies(prev => {
+        const next = new Set(prev);
+        parentIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+
+    // 2. Wait for rendering then scroll and highlight
+    // Längere Verzögerung um sicherzustellen dass alles gerendert ist
+    const timer = setTimeout(() => {
+      const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
+      
+      if (commentElement && commentsContainerRef.current) {
+        console.log('Scrolle zu Kommentar Element');
+        
+        // Scroll to comment mit mehr Padding
+        commentElement.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "center",
+          inline: "nearest"
+        });
+
+        // Highlight comment
+        setHighlightedCommentId(highlightCommentId);
+        processedHighlightRef.current = highlightCommentId;
+
+        // Remove highlight after 3 seconds (etwas länger)
+        setTimeout(() => {
+          setHighlightedCommentId(null);
+        }, 3000);
+      } else {
+        console.log('Kommentar Element nicht im DOM gefunden');
+        // Retry nach weiteren 500ms wenn Element noch nicht gerendert
+        setTimeout(() => {
+          const retryElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
+          if (retryElement) {
+            retryElement.scrollIntoView({ 
+              behavior: "smooth", 
+              block: "center",
+              inline: "nearest"
+            });
+            setHighlightedCommentId(highlightCommentId);
+            processedHighlightRef.current = highlightCommentId;
+            setTimeout(() => setHighlightedCommentId(null), 3000);
+          }
+        }, 500);
+      }
+    }, 600); // Längere Verzögerung für Thread expansion
+
+    return () => clearTimeout(timer);
   }, [isOpen, highlightCommentId, allComments]);
 
   // Organize comments into threads and cache time ago strings
