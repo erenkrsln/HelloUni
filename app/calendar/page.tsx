@@ -212,8 +212,7 @@ export default function CalendarPage() {
 
     return (
         <main className="min-h-screen w-full max-w-md mx-auto pb-32 bg-white">
-            <Header onMenuClick={() => setIsSidebarOpen(true)} title="Calendar" />
-
+            <Header onMenuClick={() => setIsSidebarOpen(true)} />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             <div className="px-4 py-6">
