@@ -12,9 +12,10 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 interface HeaderProps {
   onMenuClick?: () => void;
   onEditClick?: () => void;
+  title?: string;
 }
 
-export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
+export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
   const [isProfileHovered, setIsProfileHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
@@ -109,10 +110,11 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
                 color: "#000000"
               }}
             >
-              {pathname === "/home" ? "Posts" :
-                pathname === "/search" ? "Suche" :
-                  pathname === "/chat" ? "Chats" :
-                    "HelloUni"}
+              {title ? title :
+                pathname === "/home" ? "Posts" :
+                  pathname === "/search" ? "Suche" :
+                    pathname === "/chat" ? "Chats" :
+                      "HelloUni"}
             </h1>
           )}
 
