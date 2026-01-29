@@ -11,8 +11,12 @@ import { LoadingScreen, Spinner } from "@/components/ui/spinner";
 import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
+import { useRouter } from "next/navigation";
+
 
 export default function ProfilePage() {
+    const router = useRouter();
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const { currentUser, currentUserId } = useCurrentUser();
@@ -25,8 +29,8 @@ export default function ProfilePage() {
     });
 
     const allPosts = useQuery(
-      api.queries.getFeed,
-      currentUserId ? { userId: currentUserId } : {}
+        api.queries.getFeed,
+        currentUserId ? { userId: currentUserId } : {}
     );
 
     // Only show loading if we don't have profile data yet
@@ -51,7 +55,7 @@ export default function ProfilePage() {
 
 
     return (
-        <main 
+        <main
             className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden"
             style={{
                 overscrollBehaviorY: 'none',
@@ -77,6 +81,7 @@ export default function ProfilePage() {
                     onUpdate={handleProfileUpdate}
                 />
             )}
+
             {isLoading ? (
                 <LoadingScreen text="Profil wird geladen" />
             ) : profileData ? (
@@ -99,6 +104,23 @@ export default function ProfilePage() {
                         onHeaderImageUpdate={handleProfileUpdate}
                         onEditClick={() => setIsEditModalOpen(true)}
                     />
+
+
+                    {/* Calendar Link - Only show on own profile */}
+                    {currentUser && (
+                        <div className="px-4 mb-4">
+                            <button
+                                onClick={() => router.push("/calendar")}
+                                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#f0f0f0] active:bg-[#e0e0e0] transition-colors"
+                            >
+                                <span className="text-[#000000] font-medium">Open Calendar</span>
+                            </button>
+                        </div>
+                    )}
+
+
+
+
 
                     {/* Posts section */}
                     <div data-posts-section>

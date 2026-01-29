@@ -170,6 +170,18 @@ export default defineSchema({
   })
     .index("by_user_created", ["userId", "createdAt"])
     .index("by_user_read", ["userId", "isRead"]),
+
+  events: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    startTime: v.number(),
+    endTime: v.number(),
+    location: v.optional(v.string()),
+    createdBy: v.id("users"),
+    isPrivate: v.optional(v.boolean()),
+  })
+    .index("by_start_time", ["startTime"])
+    .index("by_user", ["createdBy"]),
 });
 
 
