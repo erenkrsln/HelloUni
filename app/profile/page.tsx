@@ -11,8 +11,12 @@ import { LoadingScreen, Spinner } from "@/components/ui/spinner";
 import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useFullUserProfile } from "@/lib/hooks/useFullUserProfile";
+import { useRouter } from "next/navigation";
+
 
 export default function ProfilePage() {
+    const router = useRouter();
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const { currentUser, currentUserId } = useCurrentUser();
@@ -116,17 +120,7 @@ export default function ProfilePage() {
 
 
 
-                    {/* Calendar Link - Only show on own profile */}
-                    {currentUser && (
-                        <div className="px-4 mb-4">
-                            <button
-                                onClick={() => router.push("/calendar")}
-                                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#f0f0f0] active:bg-[#e0e0e0] transition-colors"
-                            >
-                                <span className="text-[#000000] font-medium">Open Calendar</span>
-                            </button>
-                        </div>
-                    )}
+
 
                     {/* Posts section */}
                     <div data-posts-section>

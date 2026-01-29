@@ -160,42 +160,48 @@ export default function CalendarPage() {
         const days = [];
         // Empty slots for days before start of month
         for (let i = 0; i < firstDayOfMonth; i++) {
-            days.push(<div key={`empty-${i}`} className="min-h-[3.5rem] bg-gray-50/50 border-[0.5px] border-gray-100" />);
+            days.push(<div key={`empty-${i}`} className="min-h-[4rem] bg-gray-50/30 border-b border-r border-gray-100 last:border-r-0" />);
         }
 
         // Days
         for (let i = 1; i <= daysInMonth; i++) {
-            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-            const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD local (careful with UTC, but this simple app uses local inputs)
-            // Wait, toISOString is UTC. We need local matching.
-            // Better to construct comparison carefully.
+            // Check if today
+            const isToday =
+                i === new Date().getDate() &&
+                currentDate.getMonth() === new Date().getMonth() &&
+                currentDate.getFullYear() === new Date().getFullYear();
 
-            // Just matching day/month/year for simplicity
             const dayEvents = events?.filter(e => {
                 const ed = new Date(e.startTime);
                 return ed.getDate() === i && ed.getMonth() === currentDate.getMonth() && ed.getFullYear() === currentDate.getFullYear();
             }) || [];
 
             days.push(
-                <div key={i} className="min-h-[3.5rem] bg-white border-[0.5px] border-gray-100 p-0.5 overflow-hidden relative group" onClick={() => {
-                    // Optional: click day to add event
-                    setFormData(prev => ({ ...prev, date: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}` }));
-                    setIsCreateOpen(true);
-                }}>
-                    <div className="text-[10px] font-semibold mb-0.5 ml-1 text-gray-500">{i}</div>
-                    <div className="flex flex-col gap-0.5">
-                        {dayEvents.slice(0, 2).map(e => (
+                <div key={i}
+                    className={`min-h-[4rem] bg-white border-b border-r border-gray-100 last:border-r-0 p-1 relative active:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-1 ${isToday ? 'bg-blue-50/10' : ''}`}
+                    onClick={() => {
+                        setFormData(prev => ({ ...prev, date: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}` }));
+                        setIsCreateOpen(true);
+                    }}
+                >
+                    <div className={`text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'bg-black text-white' : 'text-gray-500'}`}>
+                        {i}
+                    </div>
+
+                    <div className="flex flex-col gap-1 w-full">
+                        {dayEvents.slice(0, 3).map(e => (
                             <div key={e._id}
-                                className="text-[9px] leading-tight bg-[#dcc6a1] text-black px-1 py-0.5 rounded-sm truncate cursor-pointer hover:opacity-80"
+                                className="h-1.5 w-full rounded-full bg-amber-200"
+                                title={e.title}
                                 onClick={(ev) => {
                                     ev.stopPropagation();
                                     openEdit(e);
                                 }}
-                            >
-                                {e.title}
-                            </div>
+                            />
                         ))}
-                        {dayEvents.length > 2 && <div className="text-[8px] text-gray-400 pl-1">+{dayEvents.length - 2}</div>}
+                        {dayEvents.length > 3 && (
+                            <div className="h-1.5 w-1.5 rounded-full bg-gray-300 self-center" />
+                        )}
                     </div>
                 </div>
             );
@@ -205,103 +211,129 @@ export default function CalendarPage() {
 
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-white">
+        <main className="min-h-screen w-full max-w-md mx-auto pb-32 bg-white">
             <Header onMenuClick={() => setIsSidebarOpen(true)} />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-            <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-2xl font-bold">Calendar</h1>
-                    <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="bg-black text-white hover:bg-gray-800 rounded-xl">
-                        <Plus className="w-4 h-4 mr-1" /> New
+            <div className="px-4 py-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
+                        <p className="text-sm text-gray-500">Manage your schedule</p>
+                    </div>
+                    <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} size="icon" className="h-10 w-10 bg-black text-white hover:bg-gray-800 rounded-full shadow-lg">
+                        <Plus className="w-5 h-5" />
                     </Button>
                 </div>
 
-                <Tabs defaultValue="my" className="w-full mb-6" onValueChange={setViewMode}>
-                    <TabsList className="mb-4">
-                        <TabsTrigger value="my">My Events</TabsTrigger>
-                        <TabsTrigger value="public">Public Feed</TabsTrigger>
+                <Tabs defaultValue="my" className="w-full mb-8" onValueChange={setViewMode}>
+                    <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100/80 p-1 rounded-2xl h-12">
+                        <TabsTrigger value="my" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">My Events</TabsTrigger>
+                        <TabsTrigger value="public" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Public Feed</TabsTrigger>
                     </TabsList>
 
                     {isLoading ? (
-                        <div className="py-10 text-center"><LoadingScreen text="Loading..." /></div>
+                        <div className="py-20 text-center"><LoadingScreen text="Loading calendar..." /></div>
                     ) : (
-                        <>
-                            {/* Grid View Title and Navigation (Simple) */}
-                            <div className="flex items-center justify-between mb-2 px-2">
-                                <Button variant="ghost" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
-                                    <ChevronLeft className="w-4 h-4" />
-                                </Button>
-                                <span className="font-semibold text-lg">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {/* Calendar Navigation */}
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="font-bold text-lg text-gray-900 ml-1">
                                     {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                                 </span>
-                                <Button variant="ghost" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
+                                <div className="flex gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
+                                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
+                                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                                    </Button>
+                                </div>
                             </div>
 
                             {/* Month Grid */}
-                            <div className="grid grid-cols-7 mb-6 border rounded-xl overflow-hidden shadow-sm">
-                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                                    <div key={i} className="h-8 flex items-center justify-center text-xs font-bold bg-gray-50 border-b border-gray-100">{d}</div>
-                                ))}
-                                {renderCalendarGrid()}
+                            <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-gray-50/50 mb-8">
+                                <div className="grid grid-cols-7 border-b border-gray-200">
+                                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                                        <div key={i} className="py-2 text-center text-[10px] uppercase tracking-wider font-semibold text-gray-400">{d}</div>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-7 bg-gray-200 gap-px border-l border-gray-200">
+                                    {/* Using gap for borders, parent bg makes lines */}
+                                    {renderCalendarGrid()}
+                                </div>
                             </div>
 
-                            {/* List View */}
-                            <div className="mt-6">
-                                <h3 className="font-semibold mb-3 text-lg">Upcoming</h3>
+                            {/* List View of Events in Month (or selected day - let's keep it simple for now and show upcoming) */}
+                            <div>
+                                <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
+                                    Upcoming Events
+                                    <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{events?.length || 0}</span>
+                                </h3>
+
                                 {events && events.length === 0 ? (
-                                    <p className="text-gray-400 text-sm">No events found.</p>
+                                    <div className="border-2 border-dashed border-gray-100 rounded-2xl p-8 text-center">
+                                        <CalendarIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                                        <p className="text-gray-400 text-sm font-medium">No events scheduled</p>
+                                    </div>
                                 ) : (
                                     <div className="space-y-3">
                                         {events && events.map(e => (
-                                            <div key={e._id} onClick={() => openEdit(e)} className="p-4 rounded-xl border border-gray-100 shadow-sm bg-white active:scale-[0.99] transition-transform cursor-pointer flex flex-col gap-2">
-                                                <div className="flex justify-between items-start">
-                                                    <h4 className="font-semibold text-base">{e.title}</h4>
-                                                    {e.isPrivate && <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">Private</span>}
+                                            <div key={e._id} onClick={() => openEdit(e)} className="group p-4 rounded-2xl border border-gray-100 bg-white hover:border-gray-200 transition-all cursor-pointer flex gap-4 items-start shadow-sm hover:shadow-md">
+                                                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl w-14 h-14 shrink-0 border border-gray-100 group-hover:bg-black group-hover:text-white transition-colors">
+                                                    <span className="text-xs font-bold uppercase">{new Date(e.startTime).toLocaleString('default', { month: 'short' })}</span>
+                                                    <span className="text-xl font-bold leading-none">{new Date(e.startTime).getDate()}</span>
                                                 </div>
-                                                <div className="flex items-center text-xs text-gray-500 gap-3">
-                                                    <div className="flex items-center gap-1">
-                                                        <CalendarIcon className="w-3 h-3" />
-                                                        {new Date(e.startTime).toLocaleDateString()}
+
+                                                <div className="flex-1 min-w-0 pt-0.5">
+                                                    <div className="flex justify-between items-start mb-0.5">
+                                                        <h4 className="font-semibold text-base text-gray-900 truncate pr-2">{e.title}</h4>
+                                                        {e.isPrivate && <span className="shrink-0 text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Private</span>}
                                                     </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />
-                                                        {new Date(e.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        -
-                                                        {new Date(e.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+
+                                                    <div className="flex items-center text-xs text-gray-500 gap-3 mb-1.5">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                                            {new Date(e.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            {' - '}
+                                                            {new Date(e.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
                                                     </div>
+
+                                                    {e.location && (
+                                                        <div className="flex items-center text-xs text-gray-500 gap-1.5">
+                                                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                                                            <span className="truncate">{e.location}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                {e.location && (
-                                                    <div className="flex items-center text-xs text-gray-500 gap-1">
-                                                        <MapPin className="w-3 h-3" />
-                                                        {e.location}
-                                                    </div>
-                                                )}
+
+                                                <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity -ml-2">
+                                                    <ChevronRight className="w-5 h-5 text-gray-300" />
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                        </>
+                        </div>
                     )}
                 </Tabs>
             </div>
 
             {/* Create Modal */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent>
-                    <DialogHeader>
+                <DialogContent className="max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl w-[90vw] max-w-md">
+                    <DialogHeader className="px-6 py-4 border-b">
                         <DialogTitle>New Event</DialogTitle>
                         <DialogDescription>Add a new event to your calendar.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-2">
+                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                         <div className="space-y-2">
                             <Label>Title</Label>
                             <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Event Title" />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Date</Label>
                                 <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
@@ -319,7 +351,7 @@ export default function CalendarPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Start</Label>
                                 <Input type="time" value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
@@ -333,6 +365,8 @@ export default function CalendarPage() {
                             <Label>Location (Optional)</Label>
                             <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="Room 101" />
                         </div>
+                    </div>
+                    <div className="p-4 border-t bg-white mt-auto">
                         <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={handleCreate}>Create Event</Button>
                     </div>
                 </DialogContent>
@@ -340,12 +374,12 @@ export default function CalendarPage() {
 
             {/* Edit Modal */}
             <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-                <DialogContent>
-                    <DialogHeader>
+                <DialogContent className="max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl w-[90vw] max-w-md">
+                    <DialogHeader className="px-6 py-4 border-b">
                         <DialogTitle>Event Details</DialogTitle>
                     </DialogHeader>
                     {editingEvent && (
-                        <div className="space-y-4 py-2">
+                        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                             {/* Check ownership */}
                             {currentUser && editingEvent.createdBy === currentUser._id ? (
                                 <>
@@ -353,7 +387,7 @@ export default function CalendarPage() {
                                         <Label>Title</Label>
                                         <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label>Date</Label>
                                             <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
@@ -371,7 +405,7 @@ export default function CalendarPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label>Start</Label>
                                             <Input type="time" value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
@@ -384,10 +418,6 @@ export default function CalendarPage() {
                                     <div className="space-y-2">
                                         <Label>Location</Label>
                                         <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
-                                    </div>
-                                    <div className="flex gap-2 pt-2">
-                                        <Button className="flex-1 bg-black text-white hover:bg-gray-800" onClick={handleUpdate}>Save Changes</Button>
-                                        <Button variant="destructive" onClick={handleDelete} className="px-3"><Trash2 className="w-4 h-4" /></Button>
                                     </div>
                                 </>
                             ) : (
@@ -412,6 +442,13 @@ export default function CalendarPage() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
+                    {/* Footer for actions */}
+                    {editingEvent && currentUser && editingEvent.createdBy === currentUser._id && (
+                        <div className="p-4 border-t bg-white mt-auto flex gap-2">
+                            <Button className="flex-1 bg-black text-white hover:bg-gray-800" onClick={handleUpdate}>Save Changes</Button>
+                            <Button variant="destructive" onClick={handleDelete} className="px-3"><Trash2 className="w-4 h-4" /></Button>
                         </div>
                     )}
                 </DialogContent>
