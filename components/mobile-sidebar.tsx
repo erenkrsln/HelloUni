@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { markImageAsLoaded } from "@/lib/cache/imageCache";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -19,6 +20,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
   };
+
+  // Markiere das Profilbild im Cache, sobald es geladen ist
+  useEffect(() => {
+    if (currentUser?.image) {
+      markImageAsLoaded(currentUser.image);
+    }
+  }, [currentUser?.image]);
 
   // Body-Lock: Verhindere Scrollen des Body, wenn Sidebar offen ist
   useEffect(() => {
@@ -37,7 +45,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       {/* Overlay - Full-bleed */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[55] transition-opacity"
+          className="fixed inset-0 bg-black/50 z-[75] transition-opacity"
           onClick={onClose}
           style={{
             opacity: isOpen ? 1 : 0,
@@ -48,7 +56,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
       {/* Sidebar Container */}
       <div
-        className="fixed top-0 right-0 bottom-0 w-80 bg-white z-[60] shadow-2xl transition-transform duration-300 ease-in-out"
+        className="fixed top-0 right-0 bottom-0 w-80 bg-white z-[80] shadow-2xl transition-transform duration-300 ease-in-out"
         style={{
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
           willChange: "transform",

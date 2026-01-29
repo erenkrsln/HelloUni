@@ -148,6 +148,29 @@ export default defineSchema({
     .index("by_conversation", ["conversationId"])
     .index("by_user_conversation", ["userId", "conversationId"]),
 
+  notifications: defineTable({
+    userId: v.id("users"), // Recipient of the notification
+    issuerId: v.id("users"), // Person who triggered the notification
+    type: v.union(
+      v.literal("follow"),
+      v.literal("post_like"),
+      v.literal("comment"),
+      v.literal("comment_like"),
+      v.literal("event_join")
+    ),
+    targetId: v.optional(v.string()), // ID of post, comment, or event
+    eventMetadata: v.optional(v.object({
+      eventType: v.union(
+        v.literal("spontaneous_meeting"),
+        v.literal("recurring_meeting")
+      ),
+    })),
+    isRead: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user_created", ["userId", "createdAt"])
+    .index("by_user_read", ["userId", "isRead"]),
+
   events: defineTable({
     title: v.string(),
     description: v.optional(v.string()),

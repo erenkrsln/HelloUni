@@ -69,7 +69,13 @@ export function FollowButton({ currentUserId, targetUserId, preloadedIsFollowing
             `}
             style={{ minWidth: "85px" }}
         >
-            {isFollowing ? "Entfolgen" : "Folgen"}
+            {isFollowing === undefined ? (
+                <span className="opacity-0">Folgen</span> // Invisible placeholder to keep width
+            ) : isFollowing ? (
+                "Entfolgen"
+            ) : (
+                "Folgen"
+            )}
         </button>
     );
 }

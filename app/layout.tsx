@@ -27,11 +27,11 @@ export const metadata: Metadata = {
     title: "HelloUni",
     statusBarStyle: "black-translucent",
     capable: true,
-    startupImage: "/hellouni.svg",
+    startupImage: "/logo2.svg",
   },
   icons: {
-    icon: "/logo.svg",
-    apple: "/hellouni.svg",
+    icon: "/logo2.svg",
+    apple: "/logo2.svg",
   },
 };
 
@@ -51,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
+    <html lang="de" suppressHydrationWarning>
       <head>
         {/* PWA Meta Tags für bessere Installation */}
         <link rel="manifest" href="/site.webmanifest" />

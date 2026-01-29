@@ -36,6 +36,7 @@ interface CommentDrawerProps {
   postId: Id<"posts">;
   currentUserId?: Id<"users">;
   commentsCount: number;
+  highlightCommentId?: string;
 }
 
 export function CommentDrawer({
@@ -44,6 +45,7 @@ export function CommentDrawer({
   postId,
   currentUserId,
   commentsCount,
+  highlightCommentId,
 }: CommentDrawerProps) {
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<Id<"comments"> | null>(null);
@@ -57,11 +59,16 @@ export function CommentDrawer({
   const initialHadCommentsRef = useRef<boolean | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false); // Synchroner Check für doppelte Submits
-  
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const processedHighlightRef = useRef<string | null>(null);
+
   // Store time ago strings for comments - calculated only once per comment
   const timeAgoCacheRef = useRef<Map<string, string>>(new Map());
-  
+
   // Cache for comments per post - persists across drawer opens/closes
   const commentsCacheRef = useRef<Map<string, Comment[]>>(new Map());
   const hasLoadedCommentsRef = useRef<Set<string>>(new Set());
@@ -76,7 +83,7 @@ export function CommentDrawer({
     api.queries.getComments,
     { postId, userId: currentUserId }
   );
-  
+
   // Cache comments when loaded
   useEffect(() => {
     if (allCommentsFromQuery !== undefined) {
@@ -87,12 +94,12 @@ export function CommentDrawer({
       hasLoadedCommentsRef.current.add(postIdStr);
     }
   }, [allCommentsFromQuery, postId]);
-  
+
   // Use cached comments if available, otherwise use query result
   const postIdStr = postId as string;
   const hasCachedComments = hasLoadedCommentsRef.current.has(postIdStr);
   const cachedComments = commentsCacheRef.current.get(postIdStr);
-  
+
   // Determine which comments to use
   // Priority: Always use cached comments if available (even if query is loading)
   // Only use query result if it's available AND we don't have cached comments, or if query has new data
@@ -107,7 +114,7 @@ export function CommentDrawer({
     // No cached comments - use query result (might be undefined while loading)
     allComments = allCommentsFromQuery;
   }
-  
+
   // Show loading spinner only on first load when query is still loading
   // But if commentsCount is 0, we know there are no comments, so don't show loading
   // Also don't show loading if we have cached comments to display
@@ -141,22 +148,148 @@ export function CommentDrawer({
     }
   }, [commentText]);
 
-  // Prevent body scroll when drawer is open
+  // VisualViewport API für dynamische Tastatur-Höhe (iOS Standalone) - nur auf mobilen Geräten
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport || !isOpen) return;
+
+    // Nur auf mobilen Geräten aktivieren
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
+    if (!isMobile) return;
+
+    const updateDrawerAndInput = () => {
+      const viewport = window.visualViewport;
+      if (!viewport || !drawerRef.current) return;
+
+      // Berechne die Tastatur-Höhe
+      const keyboardHeight = window.innerHeight - viewport.height;
+
+      // Nur wenn Tastatur wirklich offen ist (nicht nur Input fokussiert), nutze viewport.height
+      // Das verhindert, dass sich die Höhe auf Desktop ändert, wenn man auf das Eingabefeld klickt
+      if (keyboardHeight > 150) {
+        // Tastatur ist offen - Drawer muss gesamte sichtbare Höhe einnehmen
+        drawerRef.current.style.height = `${viewport.height}px`;
+        drawerRef.current.style.maxHeight = `${viewport.height}px`;
+
+        // Input-Container: Safe Area auf 0 wenn Tastatur offen (Tastatur überdeckt Safe Area)
+        if (inputContainerRef.current) {
+          inputContainerRef.current.style.paddingBottom = `0.375rem`;
+        }
+      } else {
+        // Tastatur ist geschlossen - normale Höhe (75dvh) und Safe Area berücksichtigen
+        drawerRef.current.style.height = `75dvh`;
+        drawerRef.current.style.maxHeight = `75dvh`;
+
+        if (inputContainerRef.current) {
+          inputContainerRef.current.style.paddingBottom = `calc(0.375rem + env(safe-area-inset-bottom, 0px))`;
+        }
+      }
+    };
+
+    // Initial position
+    updateDrawerAndInput();
+
+    // Listener für Viewport-Änderungen
+    window.visualViewport.addEventListener("resize", updateDrawerAndInput);
+    window.visualViewport.addEventListener("scroll", updateDrawerAndInput);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateDrawerAndInput);
+      window.visualViewport?.removeEventListener("scroll", updateDrawerAndInput);
+    };
+  }, [isOpen]); // isInputFocused entfernt, da wir nur auf echte Tastatur-Höhe reagieren wollen
+
+  // Prevent body scroll when drawer is open (Body Scroll Lock) - nur auf mobilen Geräten
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      // Mobile Detection: Touch-Support und Viewport-Breite < 768px
+      const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
+
+      if (isMobile) {
+        // Speichere Original-Werte
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalBodyOverscrollBehavior = document.body.style.overscrollBehavior;
+        const originalBodyPosition = document.body.style.position;
+        const originalBodyWidth = document.body.style.width;
+        const originalBodyTop = document.body.style.top;
+
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+        const originalHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
+
+        // Verhindere komplettes Scrollen des Body und HTML
+        const scrollY = window.scrollY;
+
+        // Body sperren
+        document.body.style.overflow = "hidden";
+        document.body.style.overscrollBehavior = "none";
+        document.body.style.position = "fixed";
+        document.body.style.width = "100%";
+        document.body.style.top = `-${scrollY}px`;
+
+        // HTML sperren (wichtig für mobile Browser)
+        document.documentElement.style.overflow = "hidden";
+        document.documentElement.style.overscrollBehavior = "none";
+
+        // Verhindere Touch-Scroll auf Body (zusätzliche Sicherheit)
+        const preventScroll = (e: TouchEvent) => {
+          // Nur verhindern, wenn nicht im Drawer
+          if (!drawerRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
+          }
+        };
+
+        // Verhindere Wheel-Scroll auf Body (zusätzliche Sicherheit)
+        const preventWheel = (e: WheelEvent) => {
+          // Nur verhindern, wenn nicht im Drawer
+          if (!drawerRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
+          }
+        };
+
+        // Nur auf Body anwenden, nicht im Drawer
+        document.body.addEventListener("touchmove", preventScroll, { passive: false });
+        document.body.addEventListener("wheel", preventWheel, { passive: false });
+
+        return () => {
+          // Entferne Event-Listener
+          document.body.removeEventListener("touchmove", preventScroll);
+          document.body.removeEventListener("wheel", preventWheel);
+
+          // Stelle Original-Werte wieder her
+          document.body.style.overflow = originalBodyOverflow;
+          document.body.style.overscrollBehavior = originalBodyOverscrollBehavior;
+          document.body.style.position = originalBodyPosition;
+          document.body.style.width = originalBodyWidth;
+          document.body.style.top = originalBodyTop;
+
+          document.documentElement.style.overflow = originalHtmlOverflow;
+          document.documentElement.style.overscrollBehavior = originalHtmlOverscrollBehavior;
+
+          // Stelle Scroll-Position wieder her
+          if (originalBodyPosition === "" || originalBodyPosition === "static") {
+            window.scrollTo(0, scrollY);
+          }
+        };
+      }
+
+      // Desktop: Nur einfache Overflow-Hidden (ohne position: fixed)
+      // Keine Event-Listener oder HTML-Overflow, da Desktop-Browser das nicht brauchen
+      if (!isMobile) {
+        const originalBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        return () => {
+          document.body.style.overflow = originalBodyOverflow;
+        };
+      }
     } else {
-      document.body.style.overflow = "";
       setCommentText("");
       setReplyingTo(null);
+      setIsInputFocused(false);
       setSortMode("neueste"); // Reset filter to default when drawer closes
       setIsFilterOpen(false); // Close filter dropdown when drawer closes
       // Clear time ago cache when drawer closes, so it recalculates on next open
       timeAgoCacheRef.current.clear();
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [isOpen]);
 
   // Close drawer on outside click
@@ -188,6 +321,106 @@ export function CommentDrawer({
     };
   }, [isOpen, onClose, isFilterOpen]);
 
+  // Reset processed highlight if the ID changes
+  useEffect(() => {
+    if (highlightCommentId !== processedHighlightRef.current) {
+      processedHighlightRef.current = null;
+    }
+  }, [highlightCommentId]);
+
+  // Scroll to and highlight specific comment when provided
+  useEffect(() => {
+    // Warte bis Drawer offen ist, highlightCommentId vorhanden ist, und Kommentare geladen sind
+    if (!isOpen || !highlightCommentId || !allComments || allComments.length === 0) {
+      return;
+    }
+
+    // Don't re-highlight if we already did it for this ID
+    if (processedHighlightRef.current === highlightCommentId) {
+      return;
+    }
+
+    // Finde den zu highlightenden Kommentar
+    const targetComment = allComments.find(c => c._id === highlightCommentId);
+    
+    // Wenn Kommentar nicht gefunden, warte auf nächsten Render
+    if (!targetComment) {
+      console.log('Kommentar noch nicht geladen:', highlightCommentId);
+      return;
+    }
+
+    console.log('Highlighte Kommentar:', highlightCommentId, targetComment);
+
+    // 1. Auto-expand parents if it's a reply
+    const parentIds = new Set<string>();
+    let currentId: string | null = highlightCommentId;
+
+    // Find the comment and its parents
+    while (currentId) {
+      const comment = allComments.find(c => c._id === currentId);
+      if (comment?.parentCommentId) {
+        const parentId = comment.parentCommentId as string;
+        parentIds.add(parentId);
+        currentId = parentId;
+      } else {
+        currentId = null;
+      }
+    }
+
+    // Expand all parent comments sofort (nicht mit setState delay)
+    if (parentIds.size > 0) {
+      setExpandedReplies(prev => {
+        const next = new Set(prev);
+        parentIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+
+    // 2. Wait for rendering then scroll and highlight
+    // Längere Verzögerung um sicherzustellen dass alles gerendert ist
+    const timer = setTimeout(() => {
+      const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
+      
+      if (commentElement && commentsContainerRef.current) {
+        console.log('Scrolle zu Kommentar Element');
+        
+        // Scroll to comment mit mehr Padding
+        commentElement.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "center",
+          inline: "nearest"
+        });
+
+        // Highlight comment
+        setHighlightedCommentId(highlightCommentId);
+        processedHighlightRef.current = highlightCommentId;
+
+        // Remove highlight after 3 seconds (etwas länger)
+        setTimeout(() => {
+          setHighlightedCommentId(null);
+        }, 3000);
+      } else {
+        console.log('Kommentar Element nicht im DOM gefunden');
+        // Retry nach weiteren 500ms wenn Element noch nicht gerendert
+        setTimeout(() => {
+          const retryElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
+          if (retryElement) {
+            retryElement.scrollIntoView({ 
+              behavior: "smooth", 
+              block: "center",
+              inline: "nearest"
+            });
+            setHighlightedCommentId(highlightCommentId);
+            processedHighlightRef.current = highlightCommentId;
+            setTimeout(() => setHighlightedCommentId(null), 3000);
+          }
+        }, 500);
+      }
+    }, 600); // Längere Verzögerung für Thread expansion
+
+    return () => clearTimeout(timer);
+  }, [isOpen, highlightCommentId, allComments]);
+
   // Organize comments into threads and cache time ago strings
   const organizeComments = (comments: Comment[] | undefined, sortMode: "top" | "neueste") => {
     // If commentsCount is 0, we know there are no comments, so return empty
@@ -203,7 +436,7 @@ export function CommentDrawer({
       if (!timeAgoCacheRef.current.has(commentIdStr)) {
         timeAgoCacheRef.current.set(commentIdStr, formatTimeAgo(comment.createdAt));
       }
-      
+
       if (comment.parentCommentId) {
         const parentId = comment.parentCommentId as string;
         if (!replies.has(parentId)) {
@@ -240,10 +473,10 @@ export function CommentDrawer({
   // Only organize comments if they exist
   // Use cached comments if allComments is undefined but we have cached comments
   // This ensures immediate display of cached comments without waiting for query
-  const commentsToOrganize = allComments !== undefined 
-    ? allComments 
+  const commentsToOrganize = allComments !== undefined
+    ? allComments
     : (hasCachedComments && cachedComments ? cachedComments : undefined);
-  
+
   const { topLevel, replies } = useMemo(() => {
     if (commentsToOrganize !== undefined) {
       return organizeComments(commentsToOrganize, sortMode);
@@ -256,7 +489,7 @@ export function CommentDrawer({
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
     // Synchroner Check mit useRef, um doppelte Submits zu verhindern
     if (isSubmittingRef.current) return;
     if (!currentUserId || !commentText.trim()) return;
@@ -266,7 +499,7 @@ export function CommentDrawer({
     setIsSubmitting(true);
     const textToSubmit = commentText.trim();
     const replyToId = replyingTo;
-    
+
     try {
       await createComment({
         userId: currentUserId,
@@ -274,17 +507,17 @@ export function CommentDrawer({
         parentCommentId: replyToId || undefined,
         content: textToSubmit || "",
       });
-      
+
       // If this was a reply, automatically expand all parent comments in the hierarchy
       // This ensures nested replies are visible immediately
       if (replyToId) {
         setExpandedReplies((prev) => {
           const next = new Set(prev);
           const replyToIdStr = replyToId as string;
-          
+
           // Add the direct parent comment
           next.add(replyToIdStr);
-          
+
           // Find all parent comments in the hierarchy and expand them
           // This ensures nested replies (replies to replies) are visible
           const findAndExpandParents = (commentId: string) => {
@@ -296,23 +529,21 @@ export function CommentDrawer({
               findAndExpandParents(parentId);
             }
           };
-          
+
           findAndExpandParents(replyToIdStr);
-          
+
           return next;
         });
       }
-      
+
       // Clear form but keep drawer open
       setCommentText("");
       setReplyingTo(null);
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
       }
-      // Keep focus on textarea
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 100);
+      // Tastatur offen lassen - kein blur(), damit User direkt weiter schreiben kann
+      // Focus bleibt automatisch erhalten, da wir kein blur() aufrufen
     } catch (error) {
       console.error("Fehler beim Erstellen des Kommentars:", error);
     } finally {
@@ -323,7 +554,7 @@ export function CommentDrawer({
 
   const handleLike = async (commentId: Id<"comments">) => {
     if (!currentUserId) return;
-    
+
     const commentIdStr = commentId as string;
     const comment = allComments?.find((c) => c._id === commentId);
     if (!comment) return;
@@ -354,7 +585,7 @@ export function CommentDrawer({
 
   const handleDislike = async (commentId: Id<"comments">) => {
     if (!currentUserId) return;
-    
+
     const commentIdStr = commentId as string;
     const comment = allComments?.find((c) => c._id === commentId);
     if (!comment) return;
@@ -375,7 +606,7 @@ export function CommentDrawer({
       const wasLiked = optimisticLikes.has(commentIdStr)
         ? optimisticLikes.get(commentIdStr)!
         : comment.isLiked;
-      
+
       if (wasLiked) {
         setOptimisticLikes((prev) => {
           const next = new Map(prev);
@@ -425,7 +656,7 @@ export function CommentDrawer({
     const displayIsDisliked = optimisticDislikes.has(commentIdStr)
       ? optimisticDislikes.get(commentIdStr)!
       : (comment.isDisliked ?? false);
-    
+
     // Get cached time ago string - already calculated in organizeComments
     // If not in cache, calculate it now (fallback)
     let timeAgo = timeAgoCacheRef.current.get(commentIdStr);
@@ -437,13 +668,18 @@ export function CommentDrawer({
     // Ein Kommentar ist eine Antwort, wenn er ein parentCommentId hat
     // Aber alle Antworten sollen die gleiche Position haben, unabhängig von der Verschachtelungstiefe
     const isReply = !!comment.parentCommentId;
+    const isHighlighted = highlightedCommentId === commentIdStr;
 
     return (
-      <div 
-        className={`py-2.5 border-b border-gray-100 last:border-b-0 overflow-x-hidden ${isReply ? "" : "px-4"}`}
-        style={isReply ? { marginLeft: 0, marginRight: 0, paddingLeft: 0, paddingRight: 0 } : {}}
+      <div
+        data-comment-id={commentIdStr}
+        className={`py-2.5 border-b border-gray-100 last:border-b-0 overflow-x-hidden ${isReply ? "" : "px-4"} transition-all duration-1000 ease-out`}
+        style={{
+          ...(isReply ? { marginLeft: 0, marginRight: 0, paddingLeft: 0, paddingRight: 0 } : {}),
+          ...(isHighlighted ? { backgroundColor: "rgba(251, 191, 36, 0.2)" } : {})
+        }}
       >
-        <div 
+        <div
           className="flex gap-2.5 overflow-x-hidden"
           style={isReply ? { marginLeft: 0, marginRight: 0, paddingLeft: 0, paddingRight: 0 } : {}}
         >
@@ -466,7 +702,7 @@ export function CommentDrawer({
                   {timeAgo}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 flex-shrink-0" style={{ marginRight: '-20px' }}>
                 {/* Like Button - fixed width to prevent shifting */}
                 <button
@@ -476,11 +712,10 @@ export function CommentDrawer({
                   disabled={!currentUserId}
                 >
                   <Heart
-                    className={`transition-all duration-200 ${
-                      displayIsLiked
-                        ? "text-red-500 fill-red-500 scale-110"
-                        : "text-gray-400"
-                    }`}
+                    className={`transition-all duration-200 ${displayIsLiked
+                      ? "text-red-500 fill-red-500 scale-110"
+                      : "text-gray-400"
+                      }`}
                     style={{
                       height: "18px",
                       width: "18px",
@@ -492,13 +727,12 @@ export function CommentDrawer({
                       strokeWidth: 2,
                     }}
                   />
-                  <span className={`text-xs tabular-nums transition-colors ${
-                    displayIsLiked ? "text-red-500" : "text-gray-500"
-                  }`} style={{ flexShrink: 0, minWidth: '1.5ch', display: 'inline-block' }}>
+                  <span className={`text-xs tabular-nums transition-colors ${displayIsLiked ? "text-red-500" : "text-gray-500"
+                    }`} style={{ flexShrink: 0, minWidth: '1.5ch', display: 'inline-block' }}>
                     {comment.likesCount > 0 ? comment.likesCount : <span className="invisible">0</span>}
                   </span>
                 </button>
-                
+
                 {/* Dislike Button */}
                 <button
                   onClick={() => handleDislike(comment._id)}
@@ -507,11 +741,10 @@ export function CommentDrawer({
                   disabled={!currentUserId}
                 >
                   <ThumbsDown
-                    className={`transition-all duration-200 ${
-                      displayIsDisliked
-                        ? "text-gray-600 fill-gray-600 scale-110"
-                        : "text-gray-400"
-                    }`}
+                    className={`transition-all duration-200 ${displayIsDisliked
+                      ? "text-gray-600 fill-gray-600 scale-110"
+                      : "text-gray-400"
+                      }`}
                     style={{
                       height: "18px",
                       width: "18px",
@@ -608,20 +841,19 @@ export function CommentDrawer({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
         onClick={onClose}
       />
 
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${
-          isOpen ? "translate-y-0" : "translate-y-full"
-        } h-[75vh] overflow-hidden`}
+        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"
+          } h-[75dvh] overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
+          overscrollBehavior: 'none', // Verhindert Hüpfen auf iOS
         }}
       >
         {/* Header */}
@@ -636,11 +868,10 @@ export function CommentDrawer({
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   className="p-1.5 touch-manipulation relative"
-                  style={{ left: '8px' }}  
+                  style={{ left: '8px' }}
                 >
-                  <SlidersHorizontal className={`text-gray-600 transition-colors ${
-                    isFilterOpen ? "text-[#D08945]" : ""
-                  }`} style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
+                  <SlidersHorizontal className={`text-gray-600 transition-colors ${isFilterOpen ? "text-[#D08945]" : ""
+                    }`} style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
                 </button>
                 {/* Dropdown Menu */}
                 {isFilterOpen && (
@@ -686,7 +917,14 @@ export function CommentDrawer({
         </div>
 
         {/* Comments List */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-1">
+        <div
+          ref={commentsContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden py-1"
+          style={{
+            overscrollBehavior: 'none', // Verhindert Rubber-Banding
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner size="md" />
@@ -706,9 +944,13 @@ export function CommentDrawer({
 
         {/* Sticky Input */}
         {currentUserId && (
-          <div className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 relative" style={{ transform: 'translateY(-16px)' }}>
-            {/* Horizontale Linie */}
-            <div className="absolute top-0 left-0 right-0 border-t border-gray-200"></div>
+          <div
+            ref={inputContainerRef}
+            className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 border-t border-gray-200"
+            style={{
+              paddingBottom: `calc(0.375rem + ${isInputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)'})`,
+            }}
+          >
             {replyingTo && (
               <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
                 <span className="text-xs text-gray-600">
@@ -743,13 +985,25 @@ export function CommentDrawer({
                   ref={textareaRef}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
+                  onFocus={(e) => {
+                    setIsInputFocused(true);
+                    // Nur auf mobilen Geräten scrollIntoView verwenden (für Keyboard-Handling)
+                    // Auf Desktop würde das ungewolltes Scrollen verursachen
+                    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
+                    if (isMobile && inputContainerRef.current) {
+                      inputContainerRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                  }}
+                  onBlur={() => setIsInputFocused(false)}
                   placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
-                  className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-hidden"
+                  className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-y-auto scrollbar-hide"
                   rows={1}
+                  {...({ virtualkeyboardpolicy: "manual" } as any)}
                   style={{
                     maxHeight: "100px",
                     minHeight: "36px",
-                    fontSize: "16px", // Verhindert automatisches Zoomen auf iOS
+                    fontSize: "16px", // Verhindert automatisches Zoomen auf iOS (wichtig für PWA!)
+                    lineHeight: "1.5",
                   }}
                   disabled={isSubmitting}
                   onKeyDown={(e) => {

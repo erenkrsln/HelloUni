@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 // Updated mutation with all new post fields
 export const createPost = mutation({
@@ -13,7 +14,7 @@ export const createPost = mutation({
       v.literal("poll")
     )),
     title: v.optional(v.string()),
-    content: v.string(),
+    content: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     eventDate: v.optional(v.number()),
     eventTime: v.optional(v.string()),
@@ -28,7 +29,7 @@ export const createPost = mutation({
       userId: args.userId,
       postType: args.postType || "normal", // Default für normale Posts
       title: args.title,
-      content: args.content,
+      content: args.content || "", // Leerer String wenn kein Content vorhanden
       imageUrl: args.imageUrl,
       eventDate: args.eventDate,
       eventTime: args.eventTime,
@@ -99,6 +100,36 @@ export const likePost = mutation({
           await ctx.db.patch(args.postId, {
             likesCount: allLikes.length,
           });
+
+          // Create notification for post owner (only if liker is not the post owner)
+          if (post.userId !== args.userId) {
+            // Check for duplicate in last 5 minutes
+            const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+            const recentNotifications = await ctx.db
+              .query("notifications")
+              .withIndex("by_user_created", (q) => q.eq("userId", post.userId))
+              .filter((q) => q.gte(q.field("createdAt"), fiveMinutesAgo))
+              .collect();
+
+            const duplicate = recentNotifications.find(
+              (n) =>
+                n.issuerId === args.userId &&
+                n.type === "post_like" &&
+                n.targetId === args.postId
+            );
+
+            if (!duplicate) {
+              await ctx.db.insert("notifications", {
+                userId: post.userId,
+                issuerId: args.userId,
+                type: "post_like",
+                targetId: args.postId,
+                isRead: false,
+                createdAt: Date.now(),
+              });
+            }
+          }
+
           return { liked: true };
         }
       } catch (error: any) {
@@ -179,6 +210,35 @@ export const createComment = mutation({
     await ctx.db.patch(args.postId, {
       commentsCount: topLevelCount,
     });
+
+    // Create notification for post owner (only if commenter is not the post owner)
+    if (post.userId !== args.userId) {
+      // Check for duplicate in last 5 minutes
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      const recentNotifications = await ctx.db
+        .query("notifications")
+        .withIndex("by_user_created", (q) => q.eq("userId", post.userId))
+        .filter((q) => q.gte(q.field("createdAt"), fiveMinutesAgo))
+        .collect();
+
+      const duplicate = recentNotifications.find(
+        (n) =>
+          n.issuerId === args.userId &&
+          n.type === "comment" &&
+          n.targetId === commentId
+      );
+
+      if (!duplicate) {
+        await ctx.db.insert("notifications", {
+          userId: post.userId,
+          issuerId: args.userId,
+          type: "comment",
+          targetId: commentId,
+          isRead: false,
+          createdAt: Date.now(),
+        });
+      }
+    }
 
     return { success: true, commentId };
   },
@@ -309,6 +369,36 @@ export const likeComment = mutation({
       await ctx.db.patch(args.commentId, {
         likesCount: allLikes.length,
       });
+
+      // Create notification for comment owner (only if liker is not the comment owner)
+      if (comment.userId !== args.userId) {
+        // Check for duplicate in last 5 minutes
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        const recentNotifications = await ctx.db
+          .query("notifications")
+          .withIndex("by_user_created", (q) => q.eq("userId", comment.userId))
+          .filter((q) => q.gte(q.field("createdAt"), fiveMinutesAgo))
+          .collect();
+
+        const duplicate = recentNotifications.find(
+          (n) =>
+            n.issuerId === args.userId &&
+            n.type === "comment_like" &&
+            n.targetId === args.commentId
+        );
+
+        if (!duplicate) {
+          await ctx.db.insert("notifications", {
+            userId: comment.userId,
+            issuerId: args.userId,
+            type: "comment_like",
+            targetId: args.commentId,
+            isRead: false,
+            createdAt: Date.now(),
+          });
+        }
+      }
+
       return { liked: true };
     }
   },
@@ -394,6 +484,31 @@ export const followUser = mutation({
       followerId: args.followerId,
       followingId: args.followingId,
     });
+
+    // Create notification for the followed user
+    // Check for duplicate in last 5 minutes
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    const recentNotifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_user_created", (q) => q.eq("userId", args.followingId))
+      .filter((q) => q.gte(q.field("createdAt"), fiveMinutesAgo))
+      .collect();
+
+    const duplicate = recentNotifications.find(
+      (n) =>
+        n.issuerId === args.followerId &&
+        n.type === "follow"
+    );
+
+    if (!duplicate) {
+      await ctx.db.insert("notifications", {
+        userId: args.followingId,
+        issuerId: args.followerId,
+        type: "follow",
+        isRead: false,
+        createdAt: Date.now(),
+      });
+    }
 
     return { success: true };
   },
@@ -520,6 +635,38 @@ export const joinEvent = mutation({
     await ctx.db.patch(args.postId, {
       participantsCount: (post.participantsCount ?? 0) + 1,
     });
+
+    // Create notification for event creator (only if participant is not the creator)
+    if (post.userId !== args.userId) {
+      // Check for duplicate in last 5 minutes
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      const recentNotifications = await ctx.db
+        .query("notifications")
+        .withIndex("by_user_created", (q) => q.eq("userId", post.userId))
+        .filter((q) => q.gte(q.field("createdAt"), fiveMinutesAgo))
+        .collect();
+
+      const duplicate = recentNotifications.find(
+        (n) =>
+          n.issuerId === args.userId &&
+          n.type === "event_join" &&
+          n.targetId === args.postId
+      );
+
+      if (!duplicate) {
+        await ctx.db.insert("notifications", {
+          userId: post.userId,
+          issuerId: args.userId,
+          type: "event_join",
+          targetId: args.postId,
+          eventMetadata: {
+            eventType: post.postType as "spontaneous_meeting" | "recurring_meeting",
+          },
+          isRead: false,
+          createdAt: Date.now(),
+        });
+      }
+    }
 
     return { success: true };
   },

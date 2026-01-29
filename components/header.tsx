@@ -3,8 +3,11 @@
 import { User, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { LogoSidebar } from "@/components/logo-sidebar";
+
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -14,6 +17,7 @@ interface HeaderProps {
 export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
   const [isProfileHovered, setIsProfileHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
+  const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
@@ -24,38 +28,53 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
     await signOut({ callbackUrl: "/" });
   };
 
+
+
   // Logout-Button auf allen Seiten ausblenden (wird durch Dropdown ersetzt)
   const showLogoutButton = false;
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 w-full bg-white z-50 pt-safe-top"
+      className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top"
       style={{
         height: `calc(94px + env(safe-area-inset-top, 0px))`,
         minHeight: `calc(94px + env(safe-area-inset-top, 0px))`
       }}
     >
       <div className="relative w-full h-[94px]">
-        <div
-          className="absolute flex items-center justify-center overflow-hidden"
+        {/* Clickable area for logo sidebar - left third of header */}
+        <button
+          onClick={() => setIsLogoSidebarOpen(true)}
+          className="absolute top-0 left-0 h-full cursor-pointer"
           style={{
-            left: "12px",
-            top: "-20px",
+            width: "33.33%",
+            zIndex: 1,
+          }}
+          aria-label="Open menu"
+        />
+
+        {/* Logo button - visual element */}
+        <button
+          onClick={() => setIsLogoSidebarOpen(true)}
+          className="absolute flex items-center justify-center overflow-hidden cursor-pointer active:scale-95 transition-transform"
+          style={{
+            top: "-15px",
             width: "120px",
             height: "130px",
             willChange: "transform",
             transform: "translateZ(0)",
-            backfaceVisibility: "hidden"
+            backfaceVisibility: "hidden",
+            zIndex: 2,
           }}
         >
           <img
-            src="/logo.svg"
+            src="/logo2.svg"
             alt="Logo"
-            width={120}
-            height={130}
+            width={50}
+            height={50}
             style={{
-              width: "120px",
-              height: "130px",
+              width: "50px",
+              height: "50px",
               objectFit: "contain",
               display: "block",
               willChange: "transform",
@@ -70,7 +89,8 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
               }
             }}
           />
-        </div>
+
+        </button>
         {pathname !== "/profile" &&
           !pathname.startsWith("/profile/") &&
           pathname !== "/create" && (
@@ -166,6 +186,8 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
           </button>
         )}
 
+
+
         {/* Mobile Menu Button - oben rechts */}
         {onMenuClick && (
           <button
@@ -200,6 +222,7 @@ export function Header({ onMenuClick, onEditClick }: HeaderProps = {}) {
           </button>
         )}
       </div>
+      <LogoSidebar isOpen={isLogoSidebarOpen} onClose={() => setIsLogoSidebarOpen(false)} />
     </header>
   );
 }

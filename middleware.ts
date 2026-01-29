@@ -20,8 +20,12 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Zugriff auf Login-Seite ohne Authentifizierung erlauben
-        if (req.nextUrl.pathname === "/") {
+        if (
+          req.nextUrl.pathname === "/" ||
+          req.nextUrl.pathname === "/about" ||
+          req.nextUrl.pathname === "/imprint" ||
+          req.nextUrl.pathname === "/privacy"
+        ) {
           return true;
         }
         // Für alle anderen Routen ist Authentifizierung erforderlich

@@ -9,11 +9,14 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { PostMenu } from "./post-menu";
 import { PostActions } from "./post-actions";
 import { PollOptions } from "./poll-options";
 import { EventDetails } from "./event-details";
 import { CommentDrawer } from "./comment-drawer";
+// Importiere den gemeinsamen globalen Bild-Cache
+import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
 
 interface FeedCardProps {
   post: {
@@ -47,6 +50,8 @@ interface FeedCardProps {
   };
   currentUserId?: Id<"users">;
   showDivider?: boolean; // Zeigt Trennlinie nach den Buttons an
+  isFirst?: boolean; // Wenn true, erhält das Beitragsbild priority (wichtig für LCP)
+  autoOpenCommentId?: string; // Auto-open drawer and highlight this comment
 }
 
 // Helper to remove degree titles
@@ -56,14 +61,21 @@ const cleanMajor = (major?: string) => {
   return major.replace(/\s*\(?\b(B\.?Eng|B\.?Sc|B\.?A|M\.?Sc|M\.?A|M\.?Eng|LL\.?B|LL\.?M)\.?\)?\s*/gi, "").trim();
 };
 
-export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const isOwnPost = currentUserId && post.userId === currentUserId;
   const joinEvent = useMutation(api.mutations.joinEvent);
   const leaveEvent = useMutation(api.mutations.leaveEvent);
   const votePoll = useMutation(api.mutations.votePoll);
-  
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Auto-open drawer if commentId is provided
+  useEffect(() => {
+    if (autoOpenCommentId) {
+      setIsDrawerOpen(true);
+    }
+  }, [autoOpenCommentId]);
 
   // Store time ago string on mount - only updates when component remounts (e.g. navigating to /home)
   const [timeAgo, setTimeAgo] = useState(() => formatTimeAgo(post.createdAt));
@@ -295,8 +307,45 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
 
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(getStoredLikeState);
   const [isLiking, setIsLiking] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  // Prüfe, ob dieses Bild bereits im globalen Cache ist
+  const [imageLoaded, setImageLoaded] = useState(() => {
+    return post.imageUrl ? globalLoadedImagesCache.has(post.imageUrl) : false;
+  });
+  // Avatar Loading State
+  const [avatarLoaded, setAvatarLoaded] = useState(() => {
+    return post.user?.image ? globalLoadedImagesCache.has(post.user.image) : true; // Wenn kein Bild, sofort als geladen markieren
+  });
+  // Speichere die Bilddimensionen für den Shimmer (originale Größe)
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const lastKnownLikedState = useRef<boolean | null>(getStoredLikeState());
+
+  // Aktualisiere loaded State, wenn sich die imageUrl ändert
+  useEffect(() => {
+    if (post.imageUrl) {
+      const wasLoaded = globalLoadedImagesCache.has(post.imageUrl);
+      if (wasLoaded && !imageLoaded) {
+        setImageLoaded(true);
+      }
+    }
+  }, [post.imageUrl, imageLoaded]);
+
+  // Lade Bilddimensionen im Hintergrund, um Shimmer mit originaler Aspect-Ratio anzuzeigen
+  useEffect(() => {
+    if (!post.imageUrl || imageLoaded || imageDimensions) return;
+
+    const img = document.createElement('img');
+    img.onload = () => {
+      setImageDimensions({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      });
+    };
+    img.onerror = () => {
+      // Fallback auf Standard-Größe bei Fehler
+      setImageDimensions({ width: 1200, height: 675 }); // 16:9 Aspect Ratio
+    };
+    img.src = post.imageUrl;
+  }, [post.imageUrl, imageLoaded, imageDimensions]);
 
   const isLikedFromQuery = useQuery(
     api.queries.getUserLikes,
@@ -310,7 +359,7 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
   useEffect(() => {
     // Don't override optimistic state if we're currently liking/unliking
     if (isLiking) return;
-    
+
     if (isLiked !== undefined) {
       lastKnownLikedState.current = isLiked;
       if (optimisticLiked === null) {
@@ -331,15 +380,15 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
-    
+
     // Use displayIsLiked to get the current state (includes optimistic updates)
     const wasLiked = displayIsLiked;
     const newLikedState = !wasLiked;
-    
+
     // Optimistic update immediately - no delay
     setOptimisticLiked(newLikedState);
     setIsLiking(true);
-    
+
     try {
       await likePost({ userId: currentUserId, postId: post._id });
       // Update lastKnownState after successful like
@@ -470,37 +519,52 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
               WebkitBackfaceVisibility: "hidden"
             }}
           >
-            <Avatar className="w-12 h-12 rounded-full" style={{
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
-            }}>
-              <AvatarImage
-                src={post.user.image}
-                alt={post.user.name}
-                className="object-cover"
-                style={{
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              />
-              <AvatarFallback
-                className="font-semibold rounded-full"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.2)",
-                  color: "#000000",
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              >
-                {post.user.name?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+              {post.user.image ? (
+                <>
+                  {/* Avatar Shimmer */}
+                  {!avatarLoaded && (
+                    <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
+                  )}
+                  <Image
+                    src={post.user.image}
+                    alt={post.user.name}
+                    width={48}
+                    height={48}
+                    quality={90}
+                    className="object-cover rounded-full transition-opacity duration-300"
+                    style={{
+                      opacity: avatarLoaded ? 1 : 0,
+                      willChange: "transform",
+                      transform: "translateZ(0)",
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      position: 'relative',
+                      zIndex: avatarLoaded ? 20 : 0,
+                    }}
+                    onLoad={() => {
+                      if (post.user?.image) {
+                        globalLoadedImagesCache.add(post.user.image);
+                      }
+                      setAvatarLoaded(true);
+                    }}
+                  />
+                </>
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center font-semibold text-black"
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.2)",
+                    willChange: "transform",
+                    transform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden"
+                  }}
+                >
+                  {post.user.name?.[0]?.toUpperCase() || "U"}
+                </div>
+              )}
+            </div>
           </Link>
         ) : (
           <div className="flex-shrink-0" style={{
@@ -509,37 +573,52 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden"
           }}>
-            <Avatar className="w-12 h-12 rounded-full" style={{
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
-            }}>
-              <AvatarImage
-                src={post.user?.image}
-                alt={post.user?.name}
-                className="object-cover"
-                style={{
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              />
-              <AvatarFallback
-                className="font-semibold rounded-full"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.2)",
-                  color: "#000000",
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              >
-                {post.user?.name?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+              {post.user?.image ? (
+                <>
+                  {/* Avatar Shimmer */}
+                  {!avatarLoaded && (
+                    <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
+                  )}
+                  <Image
+                    src={post.user.image}
+                    alt={post.user?.name || "User"}
+                    width={48}
+                    height={48}
+                    quality={90}
+                    className="object-cover rounded-full transition-opacity duration-300"
+                    style={{
+                      opacity: avatarLoaded ? 1 : 0,
+                      willChange: "transform",
+                      transform: "translateZ(0)",
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      position: 'relative',
+                      zIndex: avatarLoaded ? 20 : 0,
+                    }}
+                    onLoad={() => {
+                      if (post.user?.image) {
+                        globalLoadedImagesCache.add(post.user.image);
+                      }
+                      setAvatarLoaded(true);
+                    }}
+                  />
+                </>
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center font-semibold text-black"
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.2)",
+                    willChange: "transform",
+                    transform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden"
+                  }}
+                >
+                  {post.user?.name?.[0]?.toUpperCase() || "U"}
+                </div>
+              )}
+            </div>
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -571,9 +650,9 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
               {timeAgo}
             </time>
             <div className="ml-auto mr-2 w-8 h-8 flex items-center justify-center flex-shrink-0">
-            {isOwnPost && (
-              <PostMenu postId={post._id} userId={currentUserId} />
-            )}
+              {isOwnPost && (
+                <PostMenu postId={post._id} userId={currentUserId} />
+              )}
             </div>
           </div>
 
@@ -648,17 +727,57 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
             />
           )}
           {post.imageUrl && (
-            <div className="mt-3 w-full rounded-2xl overflow-hidden">
-              <img
-                ref={imgRef}
-                src={post.imageUrl}
-                alt="Post image"
-                className="w-full h-auto object-cover rounded-2xl"
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+            <div className="mt-3 w-full rounded-2xl overflow-hidden relative bg-muted">
+              {/* Shimmer-Effekt während des Ladens - mit originaler Bildgröße */}
+              {!imageLoaded && (
+                <div
+                  className="absolute inset-0 w-full rounded-2xl z-10"
+                  style={{
+                    aspectRatio: imageDimensions
+                      ? `${imageDimensions.width} / ${imageDimensions.height}`
+                      : '16 / 9', // Fallback auf 16:9 wenn Dimensionen noch nicht geladen
+                    maxHeight: '80vh',
+                    background: 'linear-gradient(90deg, hsl(var(--muted)) 0%, hsl(var(--muted)) 40%, rgba(255,255,255,0.1) 50%, hsl(var(--muted)) 60%, hsl(var(--muted)) 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 1.5s infinite',
+                  }}
+                />
+              )}
+              {/* Bild mit sanftem Fade-In (500ms Transition) - originale Größe */}
+              {/* WICHTIG: Bild muss immer im DOM sein (nicht hidden), damit es geladen wird */}
+              <div className="relative w-full">
+                <Image
+                  key={post.imageUrl}
+                  src={post.imageUrl}
+                  alt="Post image"
+                  width={1200}
+                  height={1200}
+                  sizes="(max-width: 768px) 100vw, 600px"
+                  className="w-full h-auto object-contain rounded-2xl transition-opacity duration-500"
+                  style={{
+                    opacity: imageLoaded ? 1 : 0,
+                    maxHeight: '80vh', // Verhindert, dass sehr hohe Bilder den Feed sprengen
+                    position: 'relative',
+                    zIndex: imageLoaded ? 20 : 0,
+                  }}
+                  loading={isFirst ? "eager" : "lazy"}
+                  priority={isFirst}
+                  onLoad={() => {
+                    // Markiere Bild als geladen im globalen Cache
+                    if (post.imageUrl) {
+                      globalLoadedImagesCache.add(post.imageUrl);
+                    }
+                    setImageLoaded(true);
+                  }}
+                  onError={() => {
+                    // Auch bei Fehler markieren, um erneutes Laden zu vermeiden
+                    if (post.imageUrl) {
+                      globalLoadedImagesCache.add(post.imageUrl);
+                    }
+                    setImageLoaded(true);
+                  }}
+                />
+              </div>
             </div>
           )}
 
@@ -720,6 +839,7 @@ export function FeedCard({ post, currentUserId, showDivider = true }: FeedCardPr
         postId={post._id}
         currentUserId={currentUserId}
         commentsCount={post.commentsCount}
+        highlightCommentId={autoOpenCommentId}
       />
     </article>
   );
