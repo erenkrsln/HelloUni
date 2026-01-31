@@ -9,11 +9,9 @@ import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useQuery, useMutation } from "convex/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, MapPin, Clock, Calendar as CalendarIcon, Trash2, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, MapPin, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Globe, Lock } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 
 type Event = {
@@ -321,135 +319,364 @@ export default function CalendarPage() {
                 </Tabs>
             </div>
 
-            {/* Create Modal */}
+            {/* Create Modal - Fullscreen Design */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent className="max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl w-[90vw] max-w-md">
-                    <DialogHeader className="px-6 py-4 border-b">
-                        <DialogTitle>New Event</DialogTitle>
-                        <DialogDescription>Add a new event to your calendar.</DialogDescription>
-                    </DialogHeader>
-                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label>Title</Label>
-                            <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Event Title" />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Date</Label>
-                                <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                <DialogContent 
+                    hideCloseButton
+                    withoutEnterAnimation
+                    withoutExitAnimation
+                    className="fixed inset-0 translate-x-0 translate-y-0 w-full min-h-[100dvh] max-w-none max-h-none rounded-none p-0 border-0 flex flex-col bg-white z-[100] animate-in slide-in-from-bottom duration-300 overscroll-none"
+                >
+                    <DialogTitle className="sr-only">Neues Event erstellen</DialogTitle>
+                    {/* Header - mit Safe Area für iOS Notch */}
+                    <div 
+                        className="px-5 h-14 flex items-center justify-between border-b border-gray-100 shrink-0"
+                        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+                    >
+                        <button 
+                            type="button"
+                            onClick={() => setIsCreateOpen(false)}
+                            className="text-base font-medium text-gray-900 active:opacity-50 transition-opacity touch-manipulation"
+                        >
+                            Abbrechen
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={handleCreate}
+                            disabled={!formData.title.trim()}
+                            className="text-base font-medium text-[#D08945] active:opacity-50 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
+                        >
+                            Erstellen
+                        </button>
+                    </div>
+
+                    {/* Content - mit Safe Area für iOS Home Indicator */}
+                    <div 
+                        className="flex-1 overflow-y-auto px-6 pt-6 overscroll-contain"
+                        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
+                    >
+                        {/* Title Input - wie bei /create */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Titel</label>
+                            <div className="border border-gray-300 rounded-lg">
+                                <input
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    placeholder="Event Titel"
+                                    className="w-full px-4 py-3 bg-transparent text-base placeholder-gray-400 focus:outline-none focus:ring-0 border-none"
+                                />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Private?</Label>
-                                <div className="flex items-center h-10">
-                                    <input
-                                        type="checkbox"
-                                        className="w-5 h-5 accent-black"
-                                        checked={formData.isPrivate}
-                                        onChange={e => setFormData({ ...formData, isPrivate: e.target.checked })}
+                        </div>
+
+                        {/* Options - alle untereinander */}
+                        <div className="space-y-4">
+                            {/* Datum */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Datum</label>
+                                <div className="border border-gray-300 rounded-lg">
+                                    <input 
+                                        type="date" 
+                                        value={formData.date} 
+                                        onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
                                     />
-                                    <span className="ml-2 text-sm text-gray-600">Only me</span>
+                                </div>
+                            </div>
+
+                            {/* Ort */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Ort (optional)</label>
+                                <div className="border border-gray-300 rounded-lg">
+                                    <input 
+                                        value={formData.location} 
+                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                        placeholder="z.B. Raum 101"
+                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 placeholder-gray-400 border-0 outline-none focus:ring-0"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Zeitraum */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Uhrzeit</label>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1 border border-gray-300 rounded-lg">
+                                        <input 
+                                            type="time" 
+                                            value={formData.startTime} 
+                                            onChange={e => setFormData({ ...formData, startTime: e.target.value })}
+                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
+                                        />
+                                    </div>
+                                    <span className="text-gray-400">bis</span>
+                                    <div className="flex-1 border border-gray-300 rounded-lg">
+                                        <input 
+                                            type="time" 
+                                            value={formData.endTime} 
+                                            onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Privacy Toggle */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Sichtbarkeit</label>
+                                <div className="border border-gray-300 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}>
+                                                {formData.isPrivate ? (
+                                                    <Lock className="w-5 h-5 text-white" />
+                                                ) : (
+                                                    <Globe className="w-5 h-5 text-white" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-gray-900">
+                                                    {formData.isPrivate ? 'Privat' : 'Öffentlich'}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    {formData.isPrivate ? 'Nur du kannst es sehen' : 'Sichtbar für alle'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, isPrivate: !formData.isPrivate })}
+                                            className={`relative w-14 h-8 rounded-full transition-colors touch-manipulation ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}
+                                        >
+                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${formData.isPrivate ? 'left-1' : 'left-7'}`} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Start</Label>
-                                <Input type="time" value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>End</Label>
-                                <Input type="time" value={formData.endTime} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Location (Optional)</Label>
-                            <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="Room 101" />
-                        </div>
-                    </div>
-                    <div className="p-4 border-t bg-white mt-auto">
-                        <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={handleCreate}>Create Event</Button>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Modal */}
+            {/* Edit Modal - Fullscreen Design */}
             <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-                <DialogContent className="max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl w-[90vw] max-w-md">
-                    <DialogHeader className="px-6 py-4 border-b">
-                        <DialogTitle>Event Details</DialogTitle>
-                    </DialogHeader>
+                <DialogContent 
+                    hideCloseButton
+                    withoutEnterAnimation
+                    withoutExitAnimation
+                    className="fixed inset-0 translate-x-0 translate-y-0 w-full min-h-[100dvh] max-w-none max-h-none rounded-none p-0 border-0 flex flex-col bg-white z-[100] animate-in slide-in-from-bottom duration-300 overscroll-none"
+                >
+                    <DialogTitle className="sr-only">Event bearbeiten</DialogTitle>
                     {editingEvent && (
-                        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                            {/* Check ownership */}
-                            {currentUser && editingEvent.createdBy === currentUser._id ? (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label>Title</Label>
-                                        <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Date</Label>
-                                            <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Private?</Label>
-                                            <div className="flex items-center h-10">
+                        <>
+                            {/* Header - mit Safe Area für iOS Notch */}
+                            <div 
+                                className="px-5 h-14 flex items-center justify-between border-b border-gray-100 shrink-0"
+                                style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+                            >
+                                <button 
+                                    type="button"
+                                    onClick={() => setEditingEvent(null)}
+                                    className="text-base font-medium text-gray-900 active:opacity-50 transition-opacity touch-manipulation"
+                                >
+                                    Abbrechen
+                                </button>
+                                {currentUser && editingEvent.createdBy === currentUser._id && (
+                                    <button 
+                                        type="button"
+                                        onClick={handleUpdate}
+                                        disabled={!formData.title.trim()}
+                                        className="text-base font-medium text-[#D08945] active:opacity-50 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
+                                    >
+                                        Speichern
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Content - mit Safe Area für iOS Home Indicator */}
+                            <div 
+                                className="flex-1 overflow-y-auto px-6 pt-6 overscroll-contain"
+                                style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
+                            >
+                                {currentUser && editingEvent.createdBy === currentUser._id ? (
+                                    /* Edit Mode */
+                                    <>
+                                        {/* Title Input - wie bei /create */}
+                                        <div className="mb-6">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Titel</label>
+                                            <div className="border border-gray-300 rounded-lg">
                                                 <input
-                                                    type="checkbox"
-                                                    className="w-5 h-5 accent-black"
-                                                    checked={formData.isPrivate}
-                                                    onChange={e => setFormData({ ...formData, isPrivate: e.target.checked })}
+                                                    value={formData.title}
+                                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                                    placeholder="Event Titel"
+                                                    className="w-full px-4 py-3 bg-transparent text-base placeholder-gray-400 focus:outline-none focus:ring-0 border-none"
                                                 />
-                                                <span className="ml-2 text-sm text-gray-600">Only me</span>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Start</Label>
-                                            <Input type="time" value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
+
+                                        {/* Options - alle untereinander */}
+                                        <div className="space-y-4">
+                                            {/* Datum */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Datum</label>
+                                                <div className="border border-gray-300 rounded-lg">
+                                                    <input 
+                                                        type="date" 
+                                                        value={formData.date} 
+                                                        onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Ort */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Ort (optional)</label>
+                                                <div className="border border-gray-300 rounded-lg">
+                                                    <input 
+                                                        value={formData.location} 
+                                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                                        placeholder="z.B. Raum 101"
+                                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 placeholder-gray-400 border-0 outline-none focus:ring-0"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Zeitraum */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Uhrzeit</label>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex-1 border border-gray-300 rounded-lg">
+                                                        <input 
+                                                            type="time" 
+                                                            value={formData.startTime} 
+                                                            onChange={e => setFormData({ ...formData, startTime: e.target.value })}
+                                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
+                                                        />
+                                                    </div>
+                                                    <span className="text-gray-400">bis</span>
+                                                    <div className="flex-1 border border-gray-300 rounded-lg">
+                                                        <input 
+                                                            type="time" 
+                                                            value={formData.endTime} 
+                                                            onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Privacy Toggle */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Sichtbarkeit</label>
+                                                <div className="border border-gray-300 rounded-lg p-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}>
+                                                                {formData.isPrivate ? (
+                                                                    <Lock className="w-5 h-5 text-white" />
+                                                                ) : (
+                                                                    <Globe className="w-5 h-5 text-white" />
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-gray-900">
+                                                                    {formData.isPrivate ? 'Privat' : 'Öffentlich'}
+                                                                </p>
+                                                                <p className="text-xs text-gray-500">
+                                                                    {formData.isPrivate ? 'Nur du kannst es sehen' : 'Sichtbar für alle'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFormData({ ...formData, isPrivate: !formData.isPrivate })}
+                                                            className={`relative w-14 h-8 rounded-full transition-colors touch-manipulation ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}
+                                                        >
+                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${formData.isPrivate ? 'left-1' : 'left-7'}`} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Delete Button */}
+                                            <button
+                                                type="button"
+                                                onClick={handleDelete}
+                                                className="w-full py-4 text-base font-medium text-red-500 active:bg-red-50 rounded-lg border border-red-200 transition-colors touch-manipulation"
+                                            >
+                                                Event löschen
+                                            </button>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>End</Label>
-                                            <Input type="time" value={formData.endTime} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
+                                    </>
+                                ) : (
+                                    /* Read-Only Mode */
+                                    <div className="space-y-4">
+                                        {/* Event Info Cards */}
+                                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                                                        <CalendarIcon className="w-6 h-6 text-blue-600" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Datum</p>
+                                                        <p className="text-lg font-semibold text-gray-900">
+                                                            {new Date(editingEvent.startTime).toLocaleDateString('de-DE', { 
+                                                                weekday: 'long', 
+                                                                day: 'numeric', 
+                                                                month: 'long', 
+                                                                year: 'numeric' 
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-px bg-gray-100" />
+
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
+                                                        <Clock className="w-6 h-6 text-purple-600" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Uhrzeit</p>
+                                                        <p className="text-lg font-semibold text-gray-900">
+                                                            {new Date(editingEvent.startTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                                            {' - '}
+                                                            {new Date(editingEvent.endTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {editingEvent.location && (
+                                                    <>
+                                                        <div className="h-px bg-gray-100" />
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+                                                                <MapPin className="w-6 h-6 text-emerald-600" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Ort</p>
+                                                                <p className="text-lg font-semibold text-gray-900">{editingEvent.location}</p>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Read-only Notice */}
+                                        <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                                            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                                <Lock className="w-4 h-4 text-amber-600" />
+                                            </div>
+                                            <p className="text-sm text-amber-800">
+                                                Dieses Event wurde von jemand anderem erstellt. Du kannst es nur ansehen.
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>Location</Label>
-                                        <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="space-y-4">
-                                    <h3 className="text-xl font-bold">{editingEvent.title}</h3>
-                                    <div className="flex gap-2 text-sm text-gray-600">
-                                        <CalendarIcon className="w-4 h-4" />
-                                        {new Date(editingEvent.startTime).toLocaleDateString()}
-                                    </div>
-                                    <div className="flex gap-2 text-sm text-gray-600">
-                                        <Clock className="w-4 h-4" />
-                                        {new Date(editingEvent.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(editingEvent.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </div>
-                                    {editingEvent.location && (
-                                        <div className="flex gap-2 text-sm text-gray-600">
-                                            <MapPin className="w-4 h-4" />
-                                            {editingEvent.location}
-                                        </div>
-                                    )}
-                                    <div className="pt-4 text-xs text-gray-400">
-                                        Read-only (You are not the owner)
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    {/* Footer for actions */}
-                    {editingEvent && currentUser && editingEvent.createdBy === currentUser._id && (
-                        <div className="p-4 border-t bg-white mt-auto flex gap-2">
-                            <Button className="flex-1 bg-black text-white hover:bg-gray-800" onClick={handleUpdate}>Save Changes</Button>
-                            <Button variant="destructive" onClick={handleDelete} className="px-3"><Trash2 className="w-4 h-4" /></Button>
-                        </div>
+                                )}
+                            </div>
+                        </>
                     )}
                 </DialogContent>
             </Dialog>
