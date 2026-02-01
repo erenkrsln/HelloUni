@@ -81,7 +81,7 @@ export function LogoSidebar({ isOpen, onClose }: LogoSidebarProps) {
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
                                 <h2 className="text-lg font-semibold text-black truncate">
-                                    Hello Uni
+                                    HelloUni
                                 </h2>
                                 <p className="text-sm text-gray-600 truncate">
                                     Your Campus. Your People.
