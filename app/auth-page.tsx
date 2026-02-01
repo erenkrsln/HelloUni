@@ -147,7 +147,7 @@ export default function AuthPage() {
 
         {/* Headline - zentriert unter Logo */}
         <h1 className="text-4xl font-semibold text-black text-center -mt-16 w-full" style={{ fontFamily: 'var(--font-poppins), sans-serif' }}>
-          Hello Uni
+          HelloUni
         </h1>
 
         {/* Beige Card - fester Abstand, unabhängig von Logo/Headline-Position */}
