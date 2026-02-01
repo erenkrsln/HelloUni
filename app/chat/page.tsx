@@ -243,7 +243,7 @@ export default function ChatPage() {
       {/* New Chat Modal/Sheet */}
       {
         isNewChatOpen && (
-          <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+          <div className="fixed inset-0 z-[80] flex flex-col bg-white">
             <div
               className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white"
               style={{
