@@ -1,13 +1,15 @@
 "use client";
 
-import { User, LogOut, Menu } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LogoSidebar } from "@/components/logo-sidebar";
+import Image from "next/image";
 
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { globalLoadedImagesCache } from "@/lib/cache/imageCache";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -21,6 +23,27 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
   const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const { currentUser, isLoading: isUserLoading } = useCurrentUser();
+  
+  // Drei Zustände:
+  // 1. currentUser === undefined → User lädt noch (zeige grauen pulsierenden Kreis)
+  // 2. currentUser geladen aber kein image → zeige Fallback-Icon
+  // 3. currentUser.image vorhanden → zeige Bild
+  
+  // Avatar Image Loading State (nur relevant wenn User geladen UND Bild vorhanden)
+  const [imageLoaded, setImageLoaded] = useState(() => {
+    return currentUser?.image ? globalLoadedImagesCache.has(currentUser.image) : false;
+  });
+
+  // Aktualisiere imageLoaded State, wenn sich das Bild ändert
+  useEffect(() => {
+    if (currentUser?.image) {
+      const wasLoaded = globalLoadedImagesCache.has(currentUser.image);
+      setImageLoaded(wasLoaded);
+    } else {
+      setImageLoaded(false);
+    }
+  }, [currentUser?.image]);
 
   // Profil-Icon auf allen Seiten ausblenden (wird durch Dropdown ersetzt)
   const showProfileIcon = false;
@@ -38,11 +61,11 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
     <header
       className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top"
       style={{
-        height: `calc(94px + env(safe-area-inset-top, 0px))`,
-        minHeight: `calc(94px + env(safe-area-inset-top, 0px))`
+        height: `calc(80px + env(safe-area-inset-top, 0px))`,
+        minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
       }}
     >
-      <div className="relative w-full h-[94px]">
+      <div className="relative w-full h-[80px]">
         {/* Clickable area for logo sidebar - left third of header */}
         <button
           onClick={() => setIsLogoSidebarOpen(true)}
@@ -54,14 +77,15 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
           aria-label="Open menu"
         />
 
-        {/* Logo button - visual element */}
+        {/* Logo button - visual element (gleiche Größe wie Profilbild: 44x44px) */}
         <button
           onClick={() => setIsLogoSidebarOpen(true)}
-          className="absolute flex items-center justify-center overflow-hidden cursor-pointer active:scale-95 transition-transform"
+          className="absolute flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
           style={{
-            top: "-15px",
-            width: "120px",
-            height: "130px",
+            left: "20px",
+            top: "18px",
+            width: "44px",
+            height: "44px",
             willChange: "transform",
             transform: "translateZ(0)",
             backfaceVisibility: "hidden",
@@ -71,11 +95,11 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
           <img
             src="/logo2.svg"
             alt="Logo"
-            width={50}
-            height={50}
+            width={44}
+            height={44}
             style={{
-              width: "50px",
-              height: "50px",
+              width: "44px",
+              height: "44px",
               objectFit: "contain",
               display: "block",
               willChange: "transform",
@@ -86,11 +110,10 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               const target = e.target as HTMLImageElement;
               target.style.display = "none";
               if (target.parentElement) {
-                target.parentElement.innerHTML = '<span class="text-2xl font-bold" style="color: #000000">C</span>';
+                target.parentElement.innerHTML = '<span class="text-xl font-bold" style="color: #000000">H</span>';
               }
             }}
           />
-
         </button>
         {pathname !== "/profile" &&
           !pathname.startsWith("/profile/") &&
@@ -99,15 +122,14 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               className="absolute font-bold"
               style={{
                 position: "absolute",
-                width: "100%",
-                height: "30px",
                 left: "50%",
-                top: "50px",
-                transform: "translateX(-50%)",
-                fontSize: "30px",
-                lineHeight: "24px",
+                top: "40px", /* Vertikal zentriert mit Logo/Profilbild (18px + 44px/2 = 40px) */
+                transform: "translate(-50%, -50%)",
+                fontSize: "24px",
+                lineHeight: "1",
                 textAlign: "center",
-                color: "#000000"
+                color: "#000000",
+                whiteSpace: "nowrap"
               }}
             >
               {title ? title :
@@ -190,37 +212,62 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
 
 
 
-        {/* Mobile Menu Button - oben rechts */}
+        {/* Mobile Menu Button - Profilbild oben rechts */}
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            className="absolute flex items-center justify-center w-12 h-12 transition-opacity hover:opacity-70"
+            className="absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
             style={{
               right: "20px",
-              top: "20px",
-              willChange: "opacity",
+              top: "18px",
+              willChange: "transform",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
             }}
+            aria-label="Menü öffnen"
           >
-            <Menu
-              className="w-9 h-9"
-              style={{
-                color: "#000000",
-                fill: "none",
-                stroke: "#000000",
-                strokeWidth: 2,
-                strokeLinecap: "round",
-                strokeLinejoin: "round",
-                willChange: "auto",
-                transform: "translateZ(0)",
-                backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden",
-                imageRendering: "crisp-edges",
-                WebkitFontSmoothing: "antialiased",
-              }}
-            />
+            {/* Feste Größe für Layout-Stabilität (kein Layout Shift) - 44x44px */}
+            <div className="relative w-11 h-11 rounded-full border-2 border-gray-200 shadow-sm overflow-hidden flex items-center justify-center">
+              {/* Zustand 1: User lädt noch → Grauer pulsierender Platzhalter */}
+              {currentUser === undefined ? (
+                <div className="w-full h-full rounded-full bg-gray-200 animate-pulse" />
+              ) : currentUser?.image ? (
+                /* Zustand 3: User geladen UND hat Bild → Zeige Profilbild */
+                <>
+                  {/* Shimmer während Bild lädt */}
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 rounded-full bg-gray-200 animate-pulse z-10" />
+                  )}
+                  <Image
+                    src={currentUser.image}
+                    alt={currentUser.name || "Benutzer"}
+                    width={44}
+                    height={44}
+                    quality={90}
+                    className="object-cover rounded-full transition-opacity duration-300"
+                    style={{
+                      opacity: imageLoaded ? 1 : 0,
+                      position: 'relative',
+                      zIndex: imageLoaded ? 20 : 0,
+                    }}
+                    onLoad={() => {
+                      if (currentUser.image) {
+                        globalLoadedImagesCache.add(currentUser.image);
+                      }
+                      setImageLoaded(true);
+                    }}
+                  />
+                </>
+              ) : (
+                /* Zustand 2: User geladen aber KEIN Bild → Fallback-Icon */
+                <div
+                  className="w-full h-full flex items-center justify-center bg-gray-200"
+                >
+                  <User className="w-6 h-6 text-gray-500" />
+                </div>
+              )}
+            </div>
           </button>
         )}
       </div>

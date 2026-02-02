@@ -29,8 +29,8 @@ export default function ImprintPage() {
             <header
                 className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top border-b border-gray-100"
                 style={{
-                    height: `calc(94px + env(safe-area-inset-top, 0px))`,
-                    minHeight: `calc(94px + env(safe-area-inset-top, 0px))`
+                    height: `calc(80px + env(safe-area-inset-top, 0px))`,
+                    minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
                 }}
             >
                 <div className="relative flex h-full w-full items-center px-4">

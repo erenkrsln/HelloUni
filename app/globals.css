@@ -166,7 +166,7 @@ select option:disabled {
 
 /* Base utility for top spacing that accounts for fixed header */
 .header-spacing {
-  padding-top: calc(94px + env(safe-area-inset-top, 0px));
+  padding-top: calc(80px + env(safe-area-inset-top, 0px));
 }
 
 /* Profile header buttons - safe area aware on iOS */
@@ -235,4 +235,15 @@ select option:disabled {
   100% {
     background-position: 200% 0;
   }
+}
+
+.shimmer-animation {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.06) 0%,
+    rgba(0, 0, 0, 0.12) 50%,
+    rgba(0, 0, 0, 0.06) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
 }
