@@ -266,19 +266,18 @@ export default function AuthPage() {
                   {isSignUp ? "Wird registriert..." : "Wird angemeldet..."}
                 </span>
               ) : (
-                "Anmelden"
+                isSignUp ? "Registrieren" : "Anmelden"
               )}
             </button>
           </form>
 
-          {/* Toggle zwischen Login und Sign Up - vorübergehend ausgeblendet */}
-          {/* <div className="mt-6 text-center">
+          {/* Toggle zwischen Login und Sign Up */}
+          <div className="mt-6 text-center">
             <button
               type="button"
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError("");
-                // Formular zurücksetzen
                 setLoginData({ username: "", password: "" });
                 setRegisterData({ name: "", username: "", password: "", confirmPassword: "" });
               }}
@@ -289,7 +288,7 @@ export default function AuthPage() {
                 : "Noch keinen Account? Registrieren"
               }
             </button>
-          </div> */}
+          </div>
         </div>
       </div>
 
