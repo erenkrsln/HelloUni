@@ -7,6 +7,6 @@ export async function getImageUrl(ctx: any, imageValue: string | null | undefine
   }
 }
 
-export function shouldDeleteR2File(oldUrl: string | null | undefined, newUrl: string | null | undefined): boolean {
+export function shouldDeleteR2File(oldUrl: string | null | undefined, newUrl: string | null | undefined): oldUrl is string {
   return !!(oldUrl && oldUrl.startsWith("http") && oldUrl !== newUrl);
 }
