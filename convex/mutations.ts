@@ -1,6 +1,7 @@
-import { mutation } from "./_generated/server";
+import { mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { shouldDeleteR2File } from "./helpers";
 
 // Updated mutation with all new post fields
 export const createPost = mutation({
@@ -321,6 +322,15 @@ export const deleteComment = mutation({
       commentsCount: topLevelCount,
     });
 
+    if (comment.imageUrl && comment.imageUrl.startsWith("http")) {
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: comment.imageUrl });
+    }
+    for (const reply of replies) {
+      if (reply.imageUrl && reply.imageUrl.startsWith("http")) {
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: reply.imageUrl });
+      }
+    }
+
     return { success: true };
   },
 });
@@ -539,10 +549,6 @@ export const unfollowUser = mutation({
   },
 });
 
-export const generateUploadUrl = mutation(async (ctx) => {
-  return await ctx.storage.generateUploadUrl();
-});
-
 export const updateUser = mutation({
   args: {
     userId: v.id("users"),
@@ -565,11 +571,15 @@ export const updateUser = mutation({
       updates.name = args.name;
     }
     if (args.image !== undefined) {
-      // If image is empty string, set to undefined to delete it
+      if (shouldDeleteR2File(user.image, args.image)) {
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: user.image });
+      }
       updates.image = args.image === "" ? undefined : args.image;
     }
     if (args.headerImage !== undefined) {
-      // If headerImage is empty string, set to undefined to delete it
+      if (shouldDeleteR2File(user.headerImage, args.headerImage)) {
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: user.headerImage });
+      }
       updates.headerImage = args.headerImage === "" ? undefined : args.headerImage;
     }
     if (args.bio !== undefined) {
@@ -722,6 +732,10 @@ export const updateGroupImage = mutation({
       if (!isAdmin) throw new Error("Only admins can change group image");
     }
 
+    if (shouldDeleteR2File(conversation.image, args.imageId)) {
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: conversation.image });
+    }
+
     await ctx.db.patch(args.conversationId, {
       image: args.imageId === "" ? undefined : args.imageId
     });
@@ -786,7 +800,7 @@ export const sendMessage = mutation({
     senderId: v.id("users"),
     content: v.string(),
     type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"))),
-    storageId: v.optional(v.id("_storage")),
+    storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
   },
@@ -1102,24 +1116,24 @@ export const deleteConversation = mutation({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) throw new Error("Conversation not found");
 
-    // If userId is provided and this is a group, check that user is the creator
     if (args.userId && conversation.isGroup) {
       if (conversation.creatorId !== args.userId) {
         throw new Error("Only the group creator can delete the group");
       }
     }
 
-    // 1. Delete all messages associated with the conversation
     const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .collect();
 
     for (const msg of messages) {
+      if (msg.storageId && msg.storageId.startsWith("http")) {
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: msg.storageId });
+      }
       await ctx.db.delete(msg._id);
     }
 
-    // 2. Delete all last_reads associated with the conversation
     const lastReads = await ctx.db
       .query("last_reads")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
@@ -1129,7 +1143,10 @@ export const deleteConversation = mutation({
       await ctx.db.delete(read._id);
     }
 
-    // 3. Delete the conversation itself
+    if (conversation.image && conversation.image.startsWith("http")) {
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: conversation.image });
+    }
+
     await ctx.db.delete(args.conversationId);
 
     return { success: true };
@@ -1217,18 +1234,10 @@ export const deletePost = mutation({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    // Prüfe, ob der Post existiert und dem User gehört
     const post = await ctx.db.get(args.postId);
-    if (!post) {
-      throw new Error("Post nicht gefunden");
-    }
+    if (!post) throw new Error("Post nicht gefunden");
+    if (post.userId !== args.userId) throw new Error("Nicht berechtigt, diesen Post zu löschen");
 
-    if (post.userId !== args.userId) {
-      throw new Error("Nicht berechtigt, diesen Post zu löschen");
-    }
-
-    // Lösche alle zugehörigen Daten
-    // Likes löschen
     const likes = await ctx.db
       .query("likes")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
@@ -1238,7 +1247,6 @@ export const deletePost = mutation({
       await ctx.db.delete(like._id);
     }
 
-    // Participants löschen
     const participants = await ctx.db
       .query("participants")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
@@ -1248,7 +1256,6 @@ export const deletePost = mutation({
       await ctx.db.delete(participant._id);
     }
 
-    // Poll Votes löschen
     const pollVotes = await ctx.db
       .query("pollVotes")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
@@ -1258,8 +1265,33 @@ export const deletePost = mutation({
       await ctx.db.delete(vote._id);
     }
 
-    // Post löschen
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+
+    for (const comment of comments) {
+      const commentLikes = await ctx.db
+        .query("commentLikes")
+        .withIndex("by_comment", (q) => q.eq("commentId", comment._id))
+        .collect();
+      
+      for (const like of commentLikes) {
+        await ctx.db.delete(like._id);
+      }
+
+      if (comment.imageUrl && comment.imageUrl.startsWith("http")) {
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: comment.imageUrl });
+      }
+
+      await ctx.db.delete(comment._id);
+    }
+
     await ctx.db.delete(args.postId);
+
+    if (post.imageUrl && post.imageUrl.startsWith("http")) {
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: post.imageUrl });
+    }
 
     return { success: true };
   },

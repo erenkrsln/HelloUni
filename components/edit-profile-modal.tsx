@@ -137,9 +137,7 @@ export function EditProfileModal({
   const [extractedColor, setExtractedColor] = useState<string | null>(null);
 
   const updateUser = useMutation(api.mutations.updateUser);
-  const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
-  // Schließe Dropdowns wenn außerhalb geklickt wird
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isMajorOpen) {
@@ -172,7 +170,7 @@ export function EditProfileModal({
   }, [isMajorOpen, isSemesterOpen, isInterestsOpen]);
 
   const toggleInterest = (interest: string) => {
-    setSelectedInterests(prev => 
+    setSelectedInterests(prev =>
       prev.includes(interest)
         ? prev.filter(i => i !== interest)
         : [...prev, interest]
@@ -217,12 +215,12 @@ export function EditProfileModal({
         setHeaderImagePreview(reader.result as string);
       };
       reader.readAsDataURL(croppedBlob);
-      
+
       // Store the blob for later upload
       const file = new File([croppedBlob], "header-image.jpg", { type: "image/jpeg" });
       setSelectedHeaderImage(file);
       setIsHeaderImageRemoved(false);
-      
+
       // Close modal
       setIsHeaderCropModalOpen(false);
       setSelectedHeaderImageSrc("");
@@ -259,51 +257,64 @@ export function EditProfileModal({
     e.preventDefault();
     if (!name.trim() || isSubmitting) return;
 
-      setIsSubmitting(true);
+    setIsSubmitting(true);
     try {
       let imageUrl: string | undefined = undefined;
       let headerImageUrl: string | undefined = undefined;
 
-      // Profilbild hochladen, falls ein neues ausgewählt wurde
       if (selectedImage) {
-        const uploadUrl = await generateUploadUrl();
-        const result = await fetch(uploadUrl, {
+        const { uploadUrl, publicUrl } = await fetch("/api/upload", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: selectedImage.name,
+            contentType: selectedImage.type,
+            fileSize: selectedImage.size,
+          }),
+        }).then(r => r.json());
+
+        await fetch(uploadUrl, {
+          method: "PUT",
           headers: { "Content-Type": selectedImage.type },
           body: selectedImage,
         });
-        const { storageId } = await result.json();
-        imageUrl = storageId;
+
+        imageUrl = publicUrl;
       } else if (isImageRemoved) {
-        // Bild wurde entfernt, setze auf leeren String
         imageUrl = "";
       }
 
-      // Header-Bild hochladen, falls ein neues ausgewählt wurde
       if (selectedHeaderImage) {
-        const uploadUrl = await generateUploadUrl();
-        const result = await fetch(uploadUrl, {
+        const { uploadUrl, publicUrl } = await fetch("/api/upload", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: selectedHeaderImage.name,
+            contentType: selectedHeaderImage.type,
+            fileSize: selectedHeaderImage.size,
+          }),
+        }).then(r => r.json());
+
+        await fetch(uploadUrl, {
+          method: "PUT",
           headers: { "Content-Type": selectedHeaderImage.type },
           body: selectedHeaderImage,
         });
-        const { storageId } = await result.json();
-        headerImageUrl = storageId;
+
+        headerImageUrl = publicUrl;
       } else if (isHeaderImageRemoved) {
-        // Header-Bild wurde entfernt, setze auf leeren String
         headerImageUrl = "";
       }
 
-      // User aktualisieren
       await updateUser({
         userId,
         name: name.trim(),
-        image: imageUrl, // undefined = behalten, "" = löschen, string = neues Bild
-        headerImage: headerImageUrl, // undefined = behalten, "" = löschen, string = neues Bild
-        bio: bio.trim() || "", // Send empty string to delete bio
-        major: major || undefined, // Send undefined if empty
-        semester: semester || undefined, // Send undefined if not set
-        interests: selectedInterests, // Send array (empty array to clear all interests)
+        image: imageUrl,
+        headerImage: headerImageUrl,
+        bio: bio.trim() || "",
+        major: major || undefined,
+        semester: semester || undefined,
+        interests: selectedInterests,
       });
 
       onUpdate();
@@ -317,13 +328,10 @@ export function EditProfileModal({
   };
 
   const handleClose = () => {
-    // Reset form when closing
     setName(currentName);
     setBio(currentBio || "");
-    // Prüfe ob currentMajor in der Liste der Studiengänge existiert
     const isValidMajor = currentMajor && STUDY_PROGRAMS.includes(currentMajor);
     setMajor(isValidMajor ? currentMajor : "");
-    // Prüfe ob currentSemester gültig ist (zwischen 1 und 10)
     const isValidSemester = currentSemester && currentSemester >= 1 && currentSemester <= 10;
     setSemester(isValidSemester ? currentSemester : undefined);
     setSelectedInterests(currentInterests || []);
@@ -345,14 +353,13 @@ export function EditProfileModal({
     onClose();
   };
 
-  // Extrahiere dominante Farbe aus dem Header-Bild für besseren Hintergrund
   useEffect(() => {
     const imageToExtract = headerImagePreview || currentHeaderImage;
     if (!imageToExtract) {
       setExtractedColor(null);
       return;
     }
-    
+
     const img = document.createElement('img');
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -360,15 +367,14 @@ export function EditProfileModal({
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        
-        canvas.width = 50; // Kleine Auflösung für Performance
+
+        canvas.width = 50;
         canvas.height = 50;
         ctx.drawImage(img, 0, 0, 50, 50);
-        
-        // Extrahiere dominante Farbe aus der Mitte des Bildes
+
         const imageData = ctx.getImageData(20, 15, 10, 10);
         const data = imageData.data;
-        
+
         let r = 0, g = 0, b = 0;
         for (let i = 0; i < data.length; i += 4) {
           r += data[i];
@@ -379,13 +385,13 @@ export function EditProfileModal({
         r = Math.floor(r / pixelCount);
         g = Math.floor(g / pixelCount);
         b = Math.floor(b / pixelCount);
-        
+
         // Konvertiere zu Hex
         const hex = `#${[r, g, b].map(x => {
           const hex = x.toString(16);
           return hex.length === 1 ? '0' + hex : hex;
         }).join('')}`;
-        
+
         setExtractedColor(hex);
       } catch (e) {
         // Bei Fehler (z.B. CORS) verwende Fallback
@@ -399,7 +405,6 @@ export function EditProfileModal({
     img.src = imageToExtract;
   }, [headerImagePreview, currentHeaderImage]);
 
-  // Body-Lock: Verhindere Scrollen des Body, wenn Drawer offen ist
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
@@ -415,25 +420,23 @@ export function EditProfileModal({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
         onClick={handleClose}
       />
 
       {/* Drawer */}
       <div
-        className={`fixed inset-0 bg-white z-[60] flex flex-col transition-transform duration-300 ease-out ${
-          isOpen ? "translate-y-0" : "translate-y-full"
-        } overflow-hidden`}
+        className={`fixed inset-0 bg-white z-[60] flex flex-col transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"
+          } overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
         }}
       >
         {/* Header */}
-        <div 
+        <div
           className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0 bg-white sticky top-0 z-[70]"
-          style={{ 
+          style={{
             paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
             minHeight: "calc(3rem + env(safe-area-inset-top, 0px))"
           }}
@@ -458,12 +461,11 @@ export function EditProfileModal({
         </div>
 
         {/* Header Image */}
-        <div 
-          className={`relative overflow-hidden ${
-            !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
-          }`}
-          style={{ 
-            aspectRatio: '3/1', 
+        <div
+          className={`relative overflow-hidden ${!extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
+            }`}
+          style={{
+            aspectRatio: '3/1',
             minHeight: '120px',
             backgroundColor: extractedColor || undefined, // Sofort sichtbare Hintergrundfarbe (aus Bild extrahiert oder Gradient-Fallback)
             transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
@@ -478,7 +480,7 @@ export function EditProfileModal({
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20" />
           )}
-          
+
           {/* Edit Header Image Button */}
           <input
             ref={headerImageInputRef}
@@ -538,224 +540,221 @@ export function EditProfileModal({
         <div className="flex-1 overflow-y-auto px-4 py-6 overscroll-contain">
           <form onSubmit={handleSubmit} className="space-y-6 flex-1">
             {/* Name Input */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-2">
-              Name
-            </label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Dein Name"
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Studiengang Dropdown */}
-          <div className="relative major-dropdown">
-            <label htmlFor="major" className="block text-sm font-medium mb-2">
-              Studiengang
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsMajorOpen(!isMajorOpen);
-                }}
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium mb-2">
+                Name
+              </label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Dein Name"
+                required
                 disabled={isSubmitting}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className={major ? "text-gray-900" : "text-gray-500"}>
-                  {major || "Studiengang auswählen"}
-                </span>
-                <ChevronDown 
-                  className={`h-4 w-4 text-gray-500 transition-transform ${isMajorOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {isMajorOpen && (
-                <div 
-                  className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
-                >
-                  <div className="py-1">
-                    {STUDY_PROGRAMS.map((program) => (
-                      <button
-                        key={program}
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setMajor(program);
-                          setIsMajorOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${
-                          major === program ? "" : ""
-                        }`}
-                      >
-                        {program}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              />
             </div>
-          </div>
 
-          {/* Semester Dropdown */}
-          <div className="relative semester-dropdown">
-            <label htmlFor="semester" className="block text-sm font-medium mb-2">
-              Semester
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsSemesterOpen(!isSemesterOpen);
-                }}
-                disabled={isSubmitting}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className={semester ? "text-gray-900" : "text-gray-500"}>
-                  {semester ? `${semester}. Semester` : "Semester auswählen"}
-                </span>
-                <ChevronDown 
-                  className={`h-4 w-4 text-gray-500 transition-transform ${isSemesterOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {isSemesterOpen && (
-                <div 
-                  className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+            {/* Studiengang Dropdown */}
+            <div className="relative major-dropdown">
+              <label htmlFor="major" className="block text-sm font-medium mb-2">
+                Studiengang
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsMajorOpen(!isMajorOpen);
+                  }}
+                  disabled={isSubmitting}
+                  className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <div className="py-1">
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((sem) => (
-                      <button
-                        key={sem}
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setSemester(sem);
-                          setIsSemesterOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${
-                          semester === sem ? "" : ""
-                        }`}
-                      >
-                        {sem}. Semester
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Interessen Multi-Select */}
-          <div className="relative interests-dropdown">
-            <label htmlFor="interests" className="block text-sm font-medium mb-2">
-              Interessen
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsInterestsOpen(!isInterestsOpen);
-                }}
-                disabled={isSubmitting}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className={selectedInterests.length > 0 ? "text-gray-900" : "text-gray-500"}>
-                  {selectedInterests.length > 0 
-                    ? `${selectedInterests.length} ${selectedInterests.length === 1 ? 'Interesse' : 'Interessen'} ausgewählt`
-                    : "Interessen auswählen"}
-                </span>
-                <ChevronDown 
-                  className={`h-4 w-4 text-gray-500 transition-transform ${isInterestsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {isInterestsOpen && (
-                <div 
-                  className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
-                >
-                  <div className="p-2">
-                    <div className="flex flex-wrap gap-2">
-                      {AVAILABLE_INTERESTS.map((interest) => {
-                        const isSelected = selectedInterests.includes(interest);
-                        return (
-                          <button
-                            key={interest}
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleInterest(interest);
-                            }}
-                            className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
-                              isSelected
-                                ? "bg-[#D08945] text-white border-[#D08945]"
-                                : "bg-white text-gray-700 border-gray-300 hover:border-[#D08945] hover:text-[#D08945]"
+                  <span className={major ? "text-gray-900" : "text-gray-500"}>
+                    {major || "Studiengang auswählen"}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-500 transition-transform ${isMajorOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {isMajorOpen && (
+                  <div
+                    className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    <div className="py-1">
+                      {STUDY_PROGRAMS.map((program) => (
+                        <button
+                          key={program}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setMajor(program);
+                            setIsMajorOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${major === program ? "" : ""
                             }`}
-                          >
-                            {interest}
-                          </button>
-                        );
-                      })}
+                        >
+                          {program}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* Semester Dropdown */}
+            <div className="relative semester-dropdown">
+              <label htmlFor="semester" className="block text-sm font-medium mb-2">
+                Semester
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsSemesterOpen(!isSemesterOpen);
+                  }}
+                  disabled={isSubmitting}
+                  className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span className={semester ? "text-gray-900" : "text-gray-500"}>
+                    {semester ? `${semester}. Semester` : "Semester auswählen"}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-500 transition-transform ${isSemesterOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {isSemesterOpen && (
+                  <div
+                    className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    <div className="py-1">
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map((sem) => (
+                        <button
+                          key={sem}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSemester(sem);
+                            setIsSemesterOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${semester === sem ? "" : ""
+                            }`}
+                        >
+                          {sem}. Semester
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Interessen Multi-Select */}
+            <div className="relative interests-dropdown">
+              <label htmlFor="interests" className="block text-sm font-medium mb-2">
+                Interessen
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsInterestsOpen(!isInterestsOpen);
+                  }}
+                  disabled={isSubmitting}
+                  className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span className={selectedInterests.length > 0 ? "text-gray-900" : "text-gray-500"}>
+                    {selectedInterests.length > 0
+                      ? `${selectedInterests.length} ${selectedInterests.length === 1 ? 'Interesse' : 'Interessen'} ausgewählt`
+                      : "Interessen auswählen"}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-500 transition-transform ${isInterestsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {isInterestsOpen && (
+                  <div
+                    className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    <div className="p-2">
+                      <div className="flex flex-wrap gap-2">
+                        {AVAILABLE_INTERESTS.map((interest) => {
+                          const isSelected = selectedInterests.includes(interest);
+                          return (
+                            <button
+                              key={interest}
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleInterest(interest);
+                              }}
+                              className={`px-3 py-1.5 text-sm rounded-full border transition-all ${isSelected
+                                ? "bg-[#D08945] text-white border-[#D08945]"
+                                : "bg-white text-gray-700 border-gray-300 hover:border-[#D08945] hover:text-[#D08945]"
+                                }`}
+                            >
+                              {interest}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {selectedInterests.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedInterests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#D08945]/10 text-[#D08945] border border-[#D08945]/20"
+                    >
+                      {interest}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggleInterest(interest);
+                        }}
+                        className="hover:text-[#C07835]"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
-            {selectedInterests.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedInterests.map((interest) => (
-                  <span
-                    key={interest}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#D08945]/10 text-[#D08945] border border-[#D08945]/20"
-                  >
-                    {interest}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleInterest(interest);
-                      }}
-                      className="hover:text-[#C07835]"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Bio Input */}
-          <div>
-            <label htmlFor="bio" className="block text-sm font-medium mb-2">
-              Biografie
-            </label>
-            <textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Erzähle etwas über dich..."
-              rows={4}
-              maxLength={150}
-              disabled={isSubmitting}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-base resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            <p className="text-xs text-gray-500 mt-1 text-right">
-              {bio.length}/150
-            </p>
-          </div>
-        </form>
+            {/* Bio Input */}
+            <div>
+              <label htmlFor="bio" className="block text-sm font-medium mb-2">
+                Biografie
+              </label>
+              <textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Erzähle etwas über dich..."
+                rows={4}
+                maxLength={150}
+                disabled={isSubmitting}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-base resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <p className="text-xs text-gray-500 mt-1 text-right">
+                {bio.length}/150
+              </p>
+            </div>
+          </form>
         </div>
       </div>
 

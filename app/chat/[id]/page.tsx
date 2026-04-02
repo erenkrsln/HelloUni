@@ -45,7 +45,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         }
     }, [newMessage]);
 
-    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,21 +53,28 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         if (!file || !currentUser) return;
 
         try {
-            const postUrl = await generateUploadUrl();
-
-            const result = await fetch(postUrl, {
+            const { uploadUrl, publicUrl } = await fetch("/api/upload", {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    filename: file.name,
+                    contentType: file.type,
+                    fileSize: file.size,
+                }),
+            }).then(r => r.json());
+
+            await fetch(uploadUrl, {
+                method: "PUT",
                 headers: { "Content-Type": file.type },
                 body: file,
             });
-            const { storageId } = await result.json();
 
             await sendMessage({
                 conversationId,
                 senderId: currentUser._id,
                 content: file.name,
                 type: file.type.startsWith("image/") ? "image" : "pdf",
-                storageId,
+                storageId: publicUrl,
                 fileName: file.name,
                 contentType: file.type,
             });

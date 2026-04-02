@@ -8,8 +8,10 @@
  * @module
  */
 
+import type * as actions from "../actions.js";
 import type * as auth from "../auth.js";
 import type * as events from "../events.js";
+import type * as helpers from "../helpers.js";
 import type * as mutations from "../mutations.js";
 import type * as notifications from "../notifications.js";
 import type * as queries from "../queries.js";
@@ -21,8 +23,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  actions: typeof actions;
   auth: typeof auth;
   events: typeof events;
+  helpers: typeof helpers;
   mutations: typeof mutations;
   notifications: typeof notifications;
   queries: typeof queries;

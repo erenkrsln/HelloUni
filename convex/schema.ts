@@ -129,11 +129,11 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"))), // Nachrichtentyp
-    storageId: v.optional(v.id("_storage")), // Für Dateien
-    fileName: v.optional(v.string()), // Originaldateiname
-    contentType: v.optional(v.string()), // MIME-Type
-    visibleTo: v.optional(v.array(v.id("users"))), // Array von User IDs, die die Nachricht sehen dürfen (wenn leer/undefined -> alle)
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"))),
+    storageId: v.optional(v.string()),
+    fileName: v.optional(v.string()),
+    contentType: v.optional(v.string()),
+    visibleTo: v.optional(v.array(v.id("users"))),
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])

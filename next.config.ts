@@ -12,7 +12,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.convex.cloud",
-        // Convex Storage URLs können verschiedene Pfade haben
+      },
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
       },
     ],
     // Optimierungen für bessere Performance
@@ -27,6 +30,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
-
-
+export default nextConfig

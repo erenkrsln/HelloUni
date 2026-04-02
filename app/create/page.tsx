@@ -97,8 +97,6 @@ export default function CreatePage() {
 
     // Mutations werden sofort initialisiert, blockieren nicht
     const createPost = useMutation(api.mutations.createPost);
-    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
-
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -155,21 +153,28 @@ export default function CreatePage() {
             try {
                 let imageUrl: string | undefined = undefined;
 
-                // Bild hochladen mit Progress-Tracking über sessionStorage
                 if (selectedImage) {
                     sessionStorage.setItem("uploadProgress", "10");
-                    const uploadUrl = await generateUploadUrl();
+                    
+                    const { uploadUrl, publicUrl } = await fetch("/api/upload", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            filename: selectedImage.name,
+                            contentType: selectedImage.type,
+                            fileSize: selectedImage.size,
+                        }),
+                    }).then(r => r.json());
                     sessionStorage.setItem("uploadProgress", "30");
                     
-                    const result = await fetch(uploadUrl, {
-                        method: "POST",
+                    await fetch(uploadUrl, {
+                        method: "PUT",
                         headers: { "Content-Type": selectedImage.type },
                         body: selectedImage,
                     });
                     sessionStorage.setItem("uploadProgress", "60");
                     
-                    const { storageId } = await result.json();
-                    imageUrl = storageId;
+                    imageUrl = publicUrl;
                     sessionStorage.setItem("uploadProgress", "80");
                 }
 

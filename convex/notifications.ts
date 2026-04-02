@@ -1,11 +1,8 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { getImageUrl } from "./helpers";
 
-/**
- * Get all notifications for the current user
- * Returns notifications with issuer details and target information
- */
 export const get = query({
     args: {
         userId: v.id("users"),
@@ -25,15 +22,7 @@ export const get = query({
                 const issuer = await ctx.db.get(notification.issuerId);
                 if (!issuer) return null;
 
-                // Resolve issuer avatar URL if exists
-                let issuerAvatarUrl = null;
-                if (issuer.image) {
-                    try {
-                        issuerAvatarUrl = await ctx.storage.getUrl(issuer.image as Id<"_storage">);
-                    } catch {
-                        issuerAvatarUrl = null;
-                    }
-                }
+                const issuerAvatarUrl = await getImageUrl(ctx, issuer.image);
 
                 // Get target data based on notification type
                 let targetData = null;
@@ -41,18 +30,10 @@ export const get = query({
                     if (notification.type === "post_like") {
                         const post = await ctx.db.get(notification.targetId as Id<"posts">);
                         if (post) {
-                            let thumbnailUrl = null;
-                            if (post.imageUrl) {
-                                try {
-                                    thumbnailUrl = await ctx.storage.getUrl(post.imageUrl as Id<"_storage">);
-                                } catch {
-                                    thumbnailUrl = null;
-                                }
-                            }
                             targetData = {
                                 type: "post",
                                 postId: post._id,
-                                thumbnail: thumbnailUrl,
+                                thumbnail: await getImageUrl(ctx, post.imageUrl),
                                 content: post.content?.substring(0, 50),
                             };
                         }
@@ -60,59 +41,35 @@ export const get = query({
                         const comment = await ctx.db.get(notification.targetId as Id<"comments">);
                         if (comment) {
                             const post = await ctx.db.get(comment.postId);
-                            let thumbnailUrl = null;
-                            if (post?.imageUrl) {
-                                try {
-                                    thumbnailUrl = await ctx.storage.getUrl(post.imageUrl as Id<"_storage">);
-                                } catch {
-                                    thumbnailUrl = null;
-                                }
-                            }
                             targetData = {
                                 type: "comment",
                                 commentId: comment._id,
                                 postId: comment.postId,
                                 snippet: comment.content.substring(0, 50),
-                                thumbnail: thumbnailUrl,
+                                thumbnail: await getImageUrl(ctx, post?.imageUrl),
                             };
                         }
                     } else if (notification.type === "comment_like") {
                         const comment = await ctx.db.get(notification.targetId as Id<"comments">);
                         if (comment) {
                             const post = await ctx.db.get(comment.postId);
-                            let thumbnailUrl = null;
-                            if (post?.imageUrl) {
-                                try {
-                                    thumbnailUrl = await ctx.storage.getUrl(post.imageUrl as Id<"_storage">);
-                                } catch {
-                                    thumbnailUrl = null;
-                                }
-                            }
                             targetData = {
                                 type: "comment",
                                 commentId: comment._id,
                                 postId: comment.postId,
                                 snippet: comment.content.substring(0, 50),
-                                thumbnail: thumbnailUrl,
+                                thumbnail: await getImageUrl(ctx, post?.imageUrl),
                             };
                         }
                     } else if (notification.type === "event_join") {
                         const post = await ctx.db.get(notification.targetId as Id<"posts">);
                         if (post) {
-                            let thumbnailUrl = null;
-                            if (post.imageUrl) {
-                                try {
-                                    thumbnailUrl = await ctx.storage.getUrl(post.imageUrl as Id<"_storage">);
-                                } catch {
-                                    thumbnailUrl = null;
-                                }
-                            }
                             targetData = {
                                 type: "event",
                                 postId: post._id,
                                 eventType: notification.eventMetadata?.eventType,
                                 title: post.title,
-                                thumbnail: thumbnailUrl,
+                                thumbnail: await getImageUrl(ctx, post.imageUrl),
                             };
                         }
                     }
