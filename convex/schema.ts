@@ -134,6 +134,10 @@ export default defineSchema({
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
     visibleTo: v.optional(v.array(v.id("users"))),
+    reactions: v.optional(v.array(v.object({
+      emoji: v.string(),
+      userId: v.id("users")
+    }))),
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])

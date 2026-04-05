@@ -835,6 +835,42 @@ export const sendMessage = mutation({
   },
 });
 
+export const toggleMessageReaction = mutation({
+  args: {
+    messageId: v.id("messages"),
+    userId: v.id("users"),
+    emoji: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+
+    const reactions = message.reactions || [];
+    const existingIndex = reactions.findIndex((r) => r.userId === args.userId);
+
+    let newReactions;
+    if (existingIndex !== -1) {
+      const existingReaction = reactions[existingIndex];
+      if (existingReaction.emoji === args.emoji) {
+        // Remove reaction (toggle off)
+        newReactions = [
+          ...reactions.slice(0, existingIndex),
+          ...reactions.slice(existingIndex + 1),
+        ];
+      } else {
+        // Replace with new emoji
+        newReactions = [...reactions];
+        newReactions[existingIndex] = { emoji: args.emoji, userId: args.userId };
+      }
+    } else {
+      // Add new reaction
+      newReactions = [...reactions, { emoji: args.emoji, userId: args.userId }];
+    }
+
+    await ctx.db.patch(args.messageId, { reactions: newReactions });
+  },
+});
+
 export const addConversationMember = mutation({
   args: {
     conversationId: v.id("conversations"),

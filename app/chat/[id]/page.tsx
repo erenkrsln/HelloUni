@@ -5,7 +5,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, Search, X, Folder, FileText } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
@@ -28,6 +29,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const sendMessage = useMutation(api.mutations.sendMessage);
     const deleteConversation = useMutation(api.mutations.deleteConversation);
     const markAsRead = useMutation(api.mutations.markAsRead);
+    const toggleMessageReaction = useMutation(api.mutations.toggleMessageReaction);
+
+    const EMOJIS = ["👍", "❤️", "😹", "🙀", "😿", "🙏", "🦫"];
 
     useEffect(() => {
         if (conversationId && currentUser) {
@@ -260,6 +264,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         const prevMessageDate = prevMsg ? new Date(prevMsg._creationTime) : null;
                         const isNewDay = !prevMessageDate || currentMessageDate.toDateString() !== prevMessageDate.toDateString();
 
+                        const reactionCounts = (msg as any).reactions?.reduce((acc: any, curr: any) => {
+                            if (!acc[curr.emoji]) acc[curr.emoji] = { count: 0, hasReacted: false };
+                            acc[curr.emoji].count++;
+                            if (curr.userId === currentUser._id) acc[curr.emoji].hasReacted = true;
+                            return acc;
+                        }, {} as Record<string, { count: number, hasReacted: boolean }>) || {};
+                        const hasReactions = Object.keys(reactionCounts).length > 0;
+
                         let dateDivider = null;
                         if (isNewDay) {
                             const today = new Date();
@@ -427,58 +439,103 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                             </div>
                                         )}
 
-                                        <div
-                                            className={`
-                                            ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
-                                            ${isMe
-                                                    ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
-                                                    : 'text-black rounded-2xl bg-white shadow-sm'
-                                                }
-                                            ${!isNextSameSender
-                                                    ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
-                                                    : ''
-                                                }
-                                        `}
-                                            style={{
-                                                wordBreak: 'break-word',
-                                                overflowWrap: 'break-word',
-                                                whiteSpace: 'pre-wrap'
-                                            }}
-                                        >
-                                            <div className="flex flex-col">
-                                                {msg.type === "image" && (msg as any).url ? (
-                                                    <div className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px]">
-                                                        <img
-                                                            src={(msg as any).url}
-                                                            alt="Bild"
-                                                            className="w-full h-full object-cover cursor-pointer"
-                                                            onClick={() => setSelectedImage((msg as any).url)}
-                                                        />
-                                                    </div>
-                                                ) : msg.type === "pdf" ? (
-                                                    <a
-                                                        href={(msg as any).url || "#"}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945]">
-                                                            <FileText size={34} />
+                                        <div className={`flex flex-col relative group max-w-full ${isMe ? 'items-end' : 'items-start'}`}>
+                                            <div
+                                                className={`
+                                                ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
+                                                ${isMe
+                                                        ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
+                                                        : 'text-black rounded-2xl bg-white shadow-sm'
+                                                    }
+                                                ${!isNextSameSender
+                                                        ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
+                                                        : ''
+                                                    }
+                                                relative w-fit max-w-full
+                                            `}
+                                                style={{
+                                                    wordBreak: 'break-word',
+                                                    overflowWrap: 'break-word',
+                                                    whiteSpace: 'pre-wrap'
+                                                }}
+                                            >
+                                                <div className="flex flex-col">
+                                                    {msg.type === "image" && (msg as any).url ? (
+                                                        <div className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px]">
+                                                            <img
+                                                                src={(msg as any).url}
+                                                                alt="Bild"
+                                                                className="w-full h-full object-cover cursor-pointer"
+                                                                onClick={() => setSelectedImage((msg as any).url)}
+                                                            />
                                                         </div>
-                                                        <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
-                                                    </a>
-                                                ) : (
-                                                    <div>
-                                                        {linkifyText(msg.content)}
+                                                    ) : msg.type === "pdf" ? (
+                                                        <a
+                                                            href={(msg as any).url || "#"}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945]">
+                                                                <FileText size={34} />
+                                                            </div>
+                                                            <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
+                                                        </a>
+                                                    ) : (
+                                                        <div>
+                                                            {linkifyText(msg.content)}
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center justify-end mt-1 gap-1.5 opacity-70">
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <button className="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+                                                                    <SmilePlus size={12} className="text-black" />
+                                                                </button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent side="top" align={isMe ? 'end' : 'start'} className="w-auto p-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_10px_20px_-2px_rgba(0,0,0,0.04)] rounded-full bg-white border border-gray-100 z-[60]">
+                                                                <div className="flex gap-1">
+                                                                    {EMOJIS.map(emoji => (
+                                                                        <button
+                                                                            key={emoji}
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
+                                                                            }}
+                                                                            className="hover:scale-125 transition-transform text-lg flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100"
+                                                                        >
+                                                                            {emoji}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <span className="text-[10px]">
+                                                            {new Date(msg._creationTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
                                                     </div>
-                                                )}
-                                                <div className="text-[10px] text-right opacity-70 flex justify-end">
-                                                    {new Date(msg._creationTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                    {hasReactions && (
+                                        <div className={`flex flex-wrap gap-1 mt-1.5 z-10 relative ${isMe ? 'mr-0' : (conversation?.isGroup ? 'ml-10' : 'ml-0')}`}>
+                                            {Object.entries(reactionCounts).map(([emoji, data]: [string, any]) => (
+                                                <button
+                                                    key={emoji}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
+                                                    }}
+                                                    className={`flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
+                                                >
+                                                    <span>{emoji}</span>
+                                                    <span className="font-medium text-[10px]">{data.count}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </Fragment>
                         );
