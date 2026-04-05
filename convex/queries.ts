@@ -1515,3 +1515,48 @@ export const searchPosts = query({
     return finalResults;
   },
 });
+
+// Get chat poll data by ID
+export const getChatPoll = query({
+  args: { chatPollId: v.id("chatPolls") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.chatPollId);
+  },
+});
+
+// Get vote counts per option for a chat poll
+export const getChatPollResults = query({
+  args: { chatPollId: v.id("chatPolls") },
+  handler: async (ctx, args) => {
+    const poll = await ctx.db.get(args.chatPollId);
+    if (!poll) return null;
+
+    const votes = await ctx.db
+      .query("chatPollVotes")
+      .withIndex("by_poll", (q) => q.eq("chatPollId", args.chatPollId))
+      .collect();
+
+    // Count votes per option index
+    const results = poll.options.map((_, index) =>
+      votes.reduce((count, vote) =>
+        vote.optionIndices.includes(index) ? count + 1 : count, 0)
+    );
+
+    return { results, totalVoters: votes.length };
+  },
+});
+
+// Get current user's vote for a chat poll (returns array of chosen indices)
+export const getChatPollVote = query({
+  args: { chatPollId: v.id("chatPolls"), userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const vote = await ctx.db
+      .query("chatPollVotes")
+      .withIndex("by_poll_user", (q) =>
+        q.eq("chatPollId", args.chatPollId).eq("userId", args.userId)
+      )
+      .first();
+
+    return vote ? vote.optionIndices : [];
+  },
+});

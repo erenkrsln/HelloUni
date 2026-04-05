@@ -5,11 +5,13 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, File } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
+import { ChatPollModal } from "@/components/chat-poll-modal";
+import { ChatPollMessage } from "@/components/chat-poll-message";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -50,6 +52,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     }, [newMessage]);
 
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
+    const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+    const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -482,6 +486,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             </div>
                                                             <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
                                                         </a>
+                                                    ) : msg.type === "poll" && (msg as any).chatPollId ? (
+                                                        <ChatPollMessage
+                                                            chatPollId={(msg as any).chatPollId as Id<"chatPolls">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
                                                     ) : (
                                                         <div>
                                                             {linkifyText(msg.content)}
@@ -564,64 +574,113 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 />
             )}
 
+            {/* Chat Poll Modal */}
+            {currentUser && (
+                <ChatPollModal
+                    isOpen={isPollModalOpen}
+                    onClose={() => setIsPollModalOpen(false)}
+                    conversationId={conversationId}
+                    senderId={currentUser._id}
+                />
+            )}
+
             {/* Input */}
             {!isLeft ? (
                 <div
-                    className="p-3 bg-[#FDFBF7]"
-                    style={{
-                        paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`
-                    }}
+                    className="bg-[#FDFBF7]"
+                    style={{ paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))` }}
                 >
-                    <form
-                        onSubmit={handleSend}
-                        className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
-                    >
-                        <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            className="hidden"
-                            ref={fileInputRef}
-                            onChange={handleFileSelect}
-                        />
+                    {/* Attachment tray — above the input bar */}
+                    {isAttachMenuOpen && (
+                        <>
+                            {/* Invisible backdrop */}
+                            <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setIsAttachMenuOpen(false)}
+                            />
+                            <div className="relative z-20 flex gap-3 px-4 pt-3 pb-1">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        fileInputRef.current?.click();
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <File size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Datei</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        setIsPollModalOpen(true);
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <BarChart2 size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Umfrage</span>
+                                </button>
+                            </div>
+                        </>
+                    )}
 
-                        <textarea
-                            ref={textareaRef}
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    const isMobile = window.matchMedia("(pointer: coarse)").matches;
-                                    if (!isMobile) {
-                                        e.preventDefault();
-                                        handleSend();
+                    <div className="p-3 pt-2">
+                        <form
+                            onSubmit={handleSend}
+                            className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
+                        >
+                            <input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleFileSelect}
+                            />
+
+                            <textarea
+                                ref={textareaRef}
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        const isMobile = window.matchMedia("(pointer: coarse)").matches;
+                                        if (!isMobile) {
+                                            e.preventDefault();
+                                            handleSend();
+                                        }
                                     }
-                                }
-                            }}
-                            placeholder="Schreibe eine Nachricht..."
-                            className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
-                            rows={1}
-                            style={{ minHeight: '24px' }}
-                        />
+                                }}
+                                placeholder="Schreibe eine Nachricht..."
+                                className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
+                                rows={1}
+                                style={{ minHeight: '24px' }}
+                            />
 
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="p-2 rounded-full transition-all flex-shrink-0 text-[#D08945]"
-                        >
-                            <Paperclip size={20} />
-                        </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
+                                className={`p-2 rounded-full transition-all flex-shrink-0 ${isAttachMenuOpen ? 'text-[#8C531E]' : 'text-[#D08945]'}`}
+                            >
+                                <Paperclip size={20} />
+                            </button>
 
-                        <button
-                            type="submit"
-                            disabled={!newMessage.trim()}
-                            className={`p-2 rounded-full transition-all flex-shrink-0 ${newMessage.trim()
-                                ? 'text-[#D08945]'
-                                : 'text-gray-400 cursor-not-allowed'
-                                }`}
-                        >
-                            <Send size={20} />
-                        </button>
-                    </form>
+                            <button
+                                type="submit"
+                                disabled={!newMessage.trim()}
+                                className={`p-2 rounded-full transition-all flex-shrink-0 ${newMessage.trim()
+                                    ? 'text-[#D08945]'
+                                    : 'text-gray-400 cursor-not-allowed'
+                                    }`}
+                            >
+                                <Send size={20} />
+                            </button>
+                        </form>
+                    </div>
                 </div>
             ) : (
                 <div
