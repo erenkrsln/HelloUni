@@ -25,7 +25,7 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
         <div className="min-w-[220px] h-20 rounded-2xl animate-pulse bg-black/10" />
     );
 
-    const isClosed = !!poll.closeAt && Date.now() > poll.closeAt;
+    const isClosed = !!poll.closeAt && Date.now() >= poll.closeAt;
     const currentMyVotes = optimisticMyVotes ?? myVotes ?? [];
     const totalVoters = results?.totalVoters ?? 0;
     const optionResults = results?.results ?? poll.options.map(() => 0);
