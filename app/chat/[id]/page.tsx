@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef, Fragment } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -256,191 +256,231 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         const prevMsg = messages[index - 1];
                         const isPrevSameSender = prevMsg && prevMsg.senderId === msg.senderId && prevMsg.type !== "system";
 
-                        // System messages
-                        if (msg.type === "system") {
-                            return (
-                                <div key={msg._id} className="flex justify-center my-4">
-                                    <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full shadow-sm text-center">
-                                        {(() => {
-                                            let content = msg.content;
-                                            if (currentUser) {
+                        const currentMessageDate = new Date(msg._creationTime);
+                        const prevMessageDate = prevMsg ? new Date(prevMsg._creationTime) : null;
+                        const isNewDay = !prevMessageDate || currentMessageDate.toDateString() !== prevMessageDate.toDateString();
 
-                                                const leftMatch = content.match(/(.*) hat die Gruppe verlassen/);
-                                                if (leftMatch) {
-                                                    const [_, userName] = leftMatch;
-                                                    if (userName === currentUser.name) {
-                                                        return "Du hast die Gruppe verlassen";
-                                                    }
-                                                    return content;
-                                                }
+                        let dateDivider = null;
+                        if (isNewDay) {
+                            const today = new Date();
+                            const yesterday = new Date();
+                            yesterday.setDate(today.getDate() - 1);
 
-                                                const removedMatch = content.match(/(.*) hat (.*) entfernt/);
-                                                if (removedMatch) {
-                                                    const [_, adminName, removedName] = removedMatch;
-                                                    if (removedName === currentUser.name && adminName === currentUser.name) {
-                                                        return "Du hast dich entfernt";
-                                                    }
-                                                    if (removedName === currentUser.name) {
-                                                        return `${adminName} hat dich entfernt`;
-                                                    }
-                                                    if (adminName === currentUser.name) {
-                                                        return `Du hast ${removedName} entfernt`;
-                                                    }
-                                                    return content;
-                                                }
+                            let dateString = "";
+                            if (currentMessageDate.toDateString() === today.toDateString()) {
+                                dateString = "Heute";
+                            } else if (currentMessageDate.toDateString() === yesterday.toDateString()) {
+                                dateString = "Gestern";
+                            } else {
+                                dateString = currentMessageDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                            }
 
-                                                const addedMatch = content.match(/(.*) hat (.*) hinzugefügt/);
-                                                if (addedMatch) {
-                                                    const [_, adminName, addedName] = addedMatch;
-                                                    if (addedName === currentUser.name && adminName === currentUser.name) {
-                                                        return "Du hast dich hinzugefügt";
-                                                    }
-                                                    if (addedName === currentUser.name) {
-                                                        return `${adminName} hat dich hinzugefügt`;
-                                                    }
-                                                    if (adminName === currentUser.name) {
-                                                        return `Du hast ${addedName} hinzugefügt`;
-                                                    }
-                                                    return content;
-                                                }
-
-                                                const transferMatch = content.match(/(.*) hat die Gruppenleitung an (.*) übertragen/);
-                                                if (transferMatch) {
-                                                    const [_, oldCreator, newCreator] = transferMatch;
-                                                    if (oldCreator === currentUser.name && newCreator === currentUser.name) {
-                                                        return "Du hast die Gruppenleitung an dich übertragen";
-                                                    }
-                                                    if (oldCreator === currentUser.name) {
-                                                        return `Du hast die Gruppenleitung an ${newCreator} übertragen`;
-                                                    }
-                                                    if (newCreator === currentUser.name) {
-                                                        return `${oldCreator} hat die Gruppenleitung an dich übertragen`;
-                                                    }
-                                                    return content;
-                                                }
-
-                                                const promotedMatch = content.match(/(.*) hat (.*) zum Admin ernannt/);
-                                                if (promotedMatch) {
-                                                    const [_, adminName, targetName] = promotedMatch;
-                                                    if (targetName === currentUser.name) {
-                                                        return `${adminName === currentUser.name ? "Du hast dich" : adminName + " hat dich"} zum Admin ernannt`;
-                                                    }
-                                                    if (adminName === currentUser.name) {
-                                                        return `Du hast ${targetName} zum Admin ernannt`;
-                                                    }
-                                                }
-
-                                                const demotedMatch = content.match(/(.*) hat (.*) Admin-Rechte entzogen/);
-                                                if (demotedMatch) {
-                                                    const [_, adminName, targetName] = demotedMatch;
-                                                    if (targetName === currentUser.name) {
-                                                        return `${adminName === currentUser.name ? "Du hast dir" : adminName + " hat dir"} Admin-Rechte entzogen`;
-                                                    }
-                                                    if (adminName === currentUser.name) {
-                                                        return `Du hast ${targetName} Admin-Rechte entzogen`;
-                                                    }
-                                                }
-
-                                                const nameChangeMatch = content.match(/(.*) hat den Gruppennamen von "(.*)" zu "(.*)" geändert/);
-                                                if (nameChangeMatch) {
-                                                    const [_, userName, oldName, newName] = nameChangeMatch;
-                                                    if (userName === currentUser.name) {
-                                                        return `Du hast den Gruppennamen von "${oldName}" zu "${newName}" geändert`;
-                                                    }
-                                                    return content;
-                                                }
-
-                                                const imageChangeMatch = content.match(/(.*) hat das Gruppenbild geändert/);
-                                                if (imageChangeMatch) {
-                                                    const [_, userName] = imageChangeMatch;
-                                                    if (userName === currentUser.name) {
-                                                        return "Du hast das Gruppenbild geändert";
-                                                    }
-                                                    return content;
-                                                }
-                                            }
-                                            return content;
-                                        })()}
+                            dateDivider = (
+                                <div className="flex justify-center my-4 w-full">
+                                    <span className="text-[11px] bg-[#f2ebd9] text-[#8C531E] px-3 py-1 rounded-lg opacity-90 font-medium shadow-sm">
+                                        {dateString}
                                     </span>
                                 </div>
                             );
                         }
 
+                        // System messages
+                        if (msg.type === "system") {
+                            return (
+                                <Fragment key={msg._id}>
+                                    {dateDivider}
+                                    <div className="flex justify-center my-4">
+                                        <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-lg shadow-sm text-center">
+                                            {(() => {
+                                                let content = msg.content;
+                                                if (currentUser) {
+
+                                                    const leftMatch = content.match(/(.*) hat die Gruppe verlassen/);
+                                                    if (leftMatch) {
+                                                        const [_, userName] = leftMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast die Gruppe verlassen";
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const removedMatch = content.match(/(.*) hat (.*) entfernt/);
+                                                    if (removedMatch) {
+                                                        const [_, adminName, removedName] = removedMatch;
+                                                        if (removedName === currentUser.name && adminName === currentUser.name) {
+                                                            return "Du hast dich entfernt";
+                                                        }
+                                                        if (removedName === currentUser.name) {
+                                                            return `${adminName} hat dich entfernt`;
+                                                        }
+                                                        if (adminName === currentUser.name) {
+                                                            return `Du hast ${removedName} entfernt`;
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const addedMatch = content.match(/(.*) hat (.*) hinzugefügt/);
+                                                    if (addedMatch) {
+                                                        const [_, adminName, addedName] = addedMatch;
+                                                        if (addedName === currentUser.name && adminName === currentUser.name) {
+                                                            return "Du hast dich hinzugefügt";
+                                                        }
+                                                        if (addedName === currentUser.name) {
+                                                            return `${adminName} hat dich hinzugefügt`;
+                                                        }
+                                                        if (adminName === currentUser.name) {
+                                                            return `Du hast ${addedName} hinzugefügt`;
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const transferMatch = content.match(/(.*) hat die Gruppenleitung an (.*) übertragen/);
+                                                    if (transferMatch) {
+                                                        const [_, oldCreator, newCreator] = transferMatch;
+                                                        if (oldCreator === currentUser.name && newCreator === currentUser.name) {
+                                                            return "Du hast die Gruppenleitung an dich übertragen";
+                                                        }
+                                                        if (oldCreator === currentUser.name) {
+                                                            return `Du hast die Gruppenleitung an ${newCreator} übertragen`;
+                                                        }
+                                                        if (newCreator === currentUser.name) {
+                                                            return `${oldCreator} hat die Gruppenleitung an dich übertragen`;
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const promotedMatch = content.match(/(.*) hat (.*) zum Admin ernannt/);
+                                                    if (promotedMatch) {
+                                                        const [_, adminName, targetName] = promotedMatch;
+                                                        if (targetName === currentUser.name) {
+                                                            return `${adminName === currentUser.name ? "Du hast dich" : adminName + " hat dich"} zum Admin ernannt`;
+                                                        }
+                                                        if (adminName === currentUser.name) {
+                                                            return `Du hast ${targetName} zum Admin ernannt`;
+                                                        }
+                                                    }
+
+                                                    const demotedMatch = content.match(/(.*) hat (.*) Admin-Rechte entzogen/);
+                                                    if (demotedMatch) {
+                                                        const [_, adminName, targetName] = demotedMatch;
+                                                        if (targetName === currentUser.name) {
+                                                            return `${adminName === currentUser.name ? "Du hast dir" : adminName + " hat dir"} Admin-Rechte entzogen`;
+                                                        }
+                                                        if (adminName === currentUser.name) {
+                                                            return `Du hast ${targetName} Admin-Rechte entzogen`;
+                                                        }
+                                                    }
+
+                                                    const nameChangeMatch = content.match(/(.*) hat den Gruppennamen von "(.*)" zu "(.*)" geändert/);
+                                                    if (nameChangeMatch) {
+                                                        const [_, userName, oldName, newName] = nameChangeMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return `Du hast den Gruppennamen von "${oldName}" zu "${newName}" geändert`;
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const imageChangeMatch = content.match(/(.*) hat das Gruppenbild geändert/);
+                                                    if (imageChangeMatch) {
+                                                        const [_, userName] = imageChangeMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast das Gruppenbild geändert";
+                                                        }
+                                                        return content;
+                                                    }
+                                                }
+                                                return content;
+                                            })()}
+                                        </span>
+                                    </div>
+                                </Fragment>
+                            );
+                        }
+
                         return (
-                            <div
-                                key={msg._id}
-                                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-0.5' : 'mb-1.5'}`}
-                            >
+                            <Fragment key={msg._id}>
+                                {dateDivider}
+                                <div
+                                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNextSameSender ? 'mb-0.5' : 'mb-1.5'}`}
+                                >
 
-                                {conversation?.isGroup && !isMe && sender && !isPrevSameSender && (
-                                    <span className="text-[10px] text-[#8C531E] ml-12 mb-1">
-                                        {sender.name}
-                                    </span>
-                                )}
-                                <div className={`flex items-end gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-
-                                    {conversation?.isGroup && !isMe && (
-                                        <div className="w-8 h-8 flex-shrink-0 mb-1">
-                                            {!isNextSameSender ? (
-                                                <div className="w-full h-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
-                                                    {sender?.image ? (
-                                                        <img src={sender.image} alt={sender.name} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-xs font-bold" style={{ color: "#000000" }}>
-                                                            {sender?.name?.charAt(0).toUpperCase() || "?"}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : null}
-                                        </div>
+                                    {conversation?.isGroup && !isMe && sender && !isPrevSameSender && (
+                                        <span className="text-[10px] text-[#8C531E] ml-12 mb-1">
+                                            {sender.name}
+                                        </span>
                                     )}
+                                    <div className={`flex items-end gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
 
-                                    <div
-                                        className={`
+                                        {conversation?.isGroup && !isMe && (
+                                            <div className="w-8 h-8 flex-shrink-0 mb-1">
+                                                {!isNextSameSender ? (
+                                                    <div className="w-full h-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                                                        {sender?.image ? (
+                                                            <img src={sender.image} alt={sender.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-xs font-bold" style={{ color: "#000000" }}>
+                                                                {sender?.name?.charAt(0).toUpperCase() || "?"}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        )}
+
+                                        <div
+                                            className={`
                                             ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
                                             ${isMe
-                                                ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
-                                                : 'text-black rounded-2xl bg-white shadow-sm'
-                                            }
+                                                    ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
+                                                    : 'text-black rounded-2xl bg-white shadow-sm'
+                                                }
                                             ${!isNextSameSender
-                                                ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
-                                                : ''
-                                            }
+                                                    ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
+                                                    : ''
+                                                }
                                         `}
-                                        style={{
-                                            wordBreak: 'break-word',
-                                            overflowWrap: 'break-word',
-                                            whiteSpace: 'pre-wrap'
-                                        }}
-                                    >
-                                        {msg.type === "image" && (msg as any).url ? (
-                                            <div className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px]">
-                                                <img
-                                                    src={(msg as any).url}
-                                                    alt="Bild"
-                                                    className="w-full h-full object-cover cursor-pointer"
-                                                    onClick={() => setSelectedImage((msg as any).url)}
-                                                />
-                                            </div>
-                                        ) : msg.type === "pdf" ? (
-                                            <a
-                                                href={(msg as any).url || "#"}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945]">
-                                                    <FileText size={34} />
+                                            style={{
+                                                wordBreak: 'break-word',
+                                                overflowWrap: 'break-word',
+                                                whiteSpace: 'pre-wrap'
+                                            }}
+                                        >
+                                            <div className="flex flex-col">
+                                                {msg.type === "image" && (msg as any).url ? (
+                                                    <div className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px]">
+                                                        <img
+                                                            src={(msg as any).url}
+                                                            alt="Bild"
+                                                            className="w-full h-full object-cover cursor-pointer"
+                                                            onClick={() => setSelectedImage((msg as any).url)}
+                                                        />
+                                                    </div>
+                                                ) : msg.type === "pdf" ? (
+                                                    <a
+                                                        href={(msg as any).url || "#"}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945]">
+                                                            <FileText size={34} />
+                                                        </div>
+                                                        <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
+                                                    </a>
+                                                ) : (
+                                                    <div>
+                                                        {linkifyText(msg.content)}
+                                                    </div>
+                                                )}
+                                                <div className="text-[10px] text-right opacity-70 flex justify-end">
+                                                    {new Date(msg._creationTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
-                                                <span className="truncate max-w-[150px]">{(msg as any).fileName || "Dokument"}</span>
-                                            </a>
-                                        ) : (
-                                            linkifyText(msg.content)
-                                        )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Fragment>
                         );
                     })
                 )}
