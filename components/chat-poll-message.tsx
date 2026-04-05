@@ -60,7 +60,7 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
             <div className="flex items-center gap-1.5 mb-2">
                 <BarChart2 size={12} className="text-[#D08945] flex-shrink-0" />
                 <span className="text-[10px] font-bold text-[#D08945] uppercase tracking-wider">
-                    {poll.allowMultiple ? "Mehrfachauswahl" : "Umfrage"}
+                    {poll.allowMultiple ? "Umfrage" : "Umfrage"}
                 </span>
                 {isClosed && (
                     <span className="ml-auto text-[9px] font-semibold text-white bg-black/30 rounded-full px-1.5 py-0.5 leading-none">

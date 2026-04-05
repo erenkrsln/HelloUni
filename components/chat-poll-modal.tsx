@@ -13,29 +13,44 @@ interface ChatPollModalProps {
     senderId: Id<"users">;
 }
 
-const CLOSE_OPTIONS = [
-    { label: "1 Stunde", value: 60 * 60 * 1000 },
-    { label: "6 Stunden", value: 6 * 60 * 60 * 1000 },
-    { label: "12 Stunden", value: 12 * 60 * 60 * 1000 },
-    { label: "1 Tag", value: 24 * 60 * 60 * 1000 },
-    { label: "3 Tage", value: 3 * 24 * 60 * 60 * 1000 },
-    { label: "1 Woche", value: 7 * 24 * 60 * 60 * 1000 },
-];
+/** Returns today's date as YYYY-MM-DD in local time */
+function todayString() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
+/** Default time: current hour + 1, rounded to :00 */
+function defaultTimeString() {
+    const d = new Date();
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+    return `${String(d.getHours()).padStart(2, "0")}:00`;
+}
+
+/** Combine a YYYY-MM-DD date string and HH:MM time string into a timestamp */
+function toTimestamp(dateStr: string, timeStr: string): number | undefined {
+    if (!dateStr || !timeStr) return undefined;
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const [hour, minute] = timeStr.split(":").map(Number);
+    const d = new Date(year, month - 1, day, hour, minute, 0, 0);
+    return isNaN(d.getTime()) ? undefined : d.getTime();
+}
 
 export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: ChatPollModalProps) {
     const [question, setQuestion] = useState("");
     const [options, setOptions] = useState(["", ""]);
     const [allowMultiple, setAllowMultiple] = useState(false);
     const [enableCloseAt, setEnableCloseAt] = useState(false);
-    const [closeAtDuration, setCloseAtDuration] = useState(CLOSE_OPTIONS[3].value); // default 1 day
+    const [closeDate, setCloseDate] = useState(todayString());
+    const [closeTime, setCloseTime] = useState(defaultTimeString());
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const sendChatPoll = useMutation(api.mutations.sendChatPoll);
 
     const addOption = () => {
-        if (options.length < 10) {
-            setOptions([...options, ""]);
-        }
+        if (options.length < 10) setOptions([...options, ""]);
     };
 
     const removeOption = (index: number) => {
@@ -49,12 +64,13 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
         setOptions(newOptions);
     };
 
+    const closeAtTimestamp = enableCloseAt ? toTimestamp(closeDate, closeTime) : undefined;
+    const closeAtIsValid = !enableCloseAt || (!!closeAtTimestamp && closeAtTimestamp > Date.now());
+
     const handleSubmit = async () => {
         const trimmedQuestion = question.trim();
         const trimmedOptions = options.map(o => o.trim()).filter(o => o !== "");
-
-        if (!trimmedQuestion) return;
-        if (trimmedOptions.length < 2) return;
+        if (!trimmedQuestion || trimmedOptions.length < 2 || !closeAtIsValid) return;
 
         setIsSubmitting(true);
         try {
@@ -64,7 +80,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                 question: trimmedQuestion,
                 options: trimmedOptions,
                 allowMultiple,
-                closeAt: enableCloseAt ? Date.now() + closeAtDuration : undefined,
+                closeAt: closeAtTimestamp,
             });
             handleClose();
         } catch (error) {
@@ -79,14 +95,17 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
         setOptions(["", ""]);
         setAllowMultiple(false);
         setEnableCloseAt(false);
-        setCloseAtDuration(CLOSE_OPTIONS[3].value);
+        setCloseDate(todayString());
+        setCloseTime(defaultTimeString());
         onClose();
     };
 
     const validOptions = options.map(o => o.trim()).filter(o => o !== "");
-    const canSubmit = question.trim() !== "" && validOptions.length >= 2 && !isSubmitting;
+    const canSubmit = question.trim() !== "" && validOptions.length >= 2 && closeAtIsValid && !isSubmitting;
 
     if (!isOpen) return null;
+
+    const inputClass = "bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors cursor-pointer w-full";
 
     return (
         <>
@@ -108,10 +127,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-gray-100">
-                    <button
-                        onClick={handleClose}
-                        className="text-[#D08945] text-sm font-medium"
-                    >
+                    <button onClick={handleClose} className="text-[#D08945] text-sm font-medium">
                         Abbrechen
                     </button>
                     <div className="flex items-center gap-2">
@@ -121,9 +137,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                     <button
                         onClick={handleSubmit}
                         disabled={!canSubmit}
-                        className={`text-sm font-semibold transition-colors ${
-                            canSubmit ? "text-[#D08945]" : "text-gray-300"
-                        }`}
+                        className={`text-sm font-semibold transition-colors ${canSubmit ? "text-[#D08945]" : "text-gray-300"}`}
                     >
                         {isSubmitting ? "Senden..." : "Senden"}
                     </button>
@@ -134,9 +148,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
 
                     {/* Question */}
                     <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                            Frage
-                        </label>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Frage</label>
                         <textarea
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
@@ -156,9 +168,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                             {options.map((option, index) => (
                                 <div key={index} className="flex items-center gap-2">
                                     <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2 focus-within:ring-2 focus-within:ring-[#D08945]/30 focus-within:border-[#D08945] transition-all">
-                                        <span className="text-xs font-bold text-[#D08945] w-4 flex-shrink-0">
-                                            {index + 1}
-                                        </span>
+                                        <span className="text-xs font-bold text-[#D08945] w-4 flex-shrink-0">{index + 1}</span>
                                         <input
                                             type="text"
                                             value={option}
@@ -179,7 +189,6 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                                 </div>
                             ))}
                         </div>
-
                         {options.length < 10 && (
                             <button
                                 onClick={addOption}
@@ -195,9 +204,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
 
                     {/* Settings */}
                     <div className="space-y-3">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                            Einstellungen
-                        </label>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Einstellungen</label>
 
                         {/* Multiple answers toggle */}
                         <div className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3">
@@ -207,52 +214,58 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                             </div>
                             <button
                                 onClick={() => setAllowMultiple(!allowMultiple)}
-                                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                                    allowMultiple ? "bg-[#D08945]" : "bg-gray-300"
-                                }`}
+                                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${allowMultiple ? "bg-[#D08945]" : "bg-gray-300"}`}
                             >
-                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                                    allowMultiple ? "translate-x-5" : "translate-x-0"
-                                }`} />
+                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${allowMultiple ? "translate-x-5" : "translate-x-0"}`} />
                             </button>
                         </div>
 
-                        {/* Auto-close toggle + dropdown */}
+                        {/* Auto-close toggle + date/time picker */}
                         <div className="bg-gray-50 rounded-2xl overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-3">
                                 <div>
                                     <p className="text-sm font-medium text-gray-900">Automatisch schließen</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">Umfrage nach einer Zeit beenden</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">Enddatum und -uhrzeit festlegen</p>
                                 </div>
                                 <button
                                     onClick={() => setEnableCloseAt(!enableCloseAt)}
-                                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                                        enableCloseAt ? "bg-[#D08945]" : "bg-gray-300"
-                                    }`}
+                                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${enableCloseAt ? "bg-[#D08945]" : "bg-gray-300"}`}
                                 >
-                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                                        enableCloseAt ? "translate-x-5" : "translate-x-0"
-                                    }`} />
+                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${enableCloseAt ? "translate-x-5" : "translate-x-0"}`} />
                                 </button>
                             </div>
 
                             {enableCloseAt && (
-                                <div className="border-t border-gray-200 px-4 py-3">
-                                    <p className="text-xs text-gray-500 mb-2">Schließt nach:</p>
-                                    <select
-                                        value={closeAtDuration}
-                                        onChange={(e) => setCloseAtDuration(Number(e.target.value))}
-                                        className="w-full text-sm font-medium px-3 py-2 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors cursor-pointer text-gray-900"
-                                    >
-                                        {CLOSE_OPTIONS.map(opt => (
-                                            <option key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </option>
-                                        ))}
-                                    </select>
+                                <div className="border-t border-gray-200 px-4 py-3 space-y-3">
+                                    {/* Date */}
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1.5">Datum</p>
+                                        <input
+                                            type="date"
+                                            value={closeDate}
+                                            min={todayString()}
+                                            onChange={(e) => setCloseDate(e.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                    {/* Time */}
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1.5">Uhrzeit</p>
+                                        <input
+                                            type="time"
+                                            value={closeTime}
+                                            onChange={(e) => setCloseTime(e.target.value)}
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                    {/* Validation hint */}
+                                    {closeAtTimestamp && closeAtTimestamp <= Date.now() && (
+                                        <p className="text-xs text-red-500">
+                                            Bitte wähle einen Zeitpunkt in der Zukunft.
+                                        </p>
+                                    )}
                                 </div>
                             )}
-
                         </div>
                     </div>
                 </div>
