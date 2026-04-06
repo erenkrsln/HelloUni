@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, File } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
@@ -608,7 +608,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     className="flex flex-col items-center gap-1.5"
                                 >
                                     <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
-                                        <File size={20} className="text-[#D08945]" />
+                                        <FileText size={20} className="text-[#D08945]" />
                                     </div>
                                     <span className="text-[11px] text-gray-600 font-medium">Datei</span>
                                 </button>
