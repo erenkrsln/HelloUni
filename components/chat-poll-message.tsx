@@ -27,9 +27,10 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
 
     const isClosed = !!poll.closeAt && Date.now() >= poll.closeAt;
     const currentMyVotes = optimisticMyVotes ?? myVotes ?? [];
-    const totalVoters = results?.totalVoters ?? 0;
     const optionResults = results?.results ?? poll.options.map(() => 0);
     const totalOptimisticVotes = optionResults.reduce((a, b) => a + b, 0);
+
+
 
     const handleVote = async (index: number) => {
         if (isVoting || isClosed) return;
@@ -60,10 +61,10 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
             <div className="flex items-center gap-1.5 mb-2">
                 <BarChart2 size={12} className="text-[#D08945] flex-shrink-0" />
                 <span className="text-[10px] font-bold text-[#D08945] uppercase tracking-wider">
-                    {poll.allowMultiple ? "Umfrage" : "Umfrage"}
+                    Umfrage
                 </span>
                 {isClosed && (
-                    <span className="ml-auto text-[9px] font-semibold text-white bg-black/30 rounded-full px-1.5 py-0.5 leading-none">
+                    <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-white bg-gray-600 rounded-full px-1.5 py-0.5 leading-none">
                         Beendet
                     </span>
                 )}
@@ -88,45 +89,26 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
                             key={index}
                             onClick={() => handleVote(index)}
                             disabled={isVoting || isClosed}
-                            className={`w-full text-left rounded-xl relative overflow-hidden transition-all duration-150
-                                ${!isClosed ? "active:scale-[0.98]" : "cursor-default"}
-                                ${isSelected ? "ring-1 ring-[#D08945] ring-inset" : ""}
-                            `}
+                            className={`w-full text-left pb-3 pl-3 pr-3 rounded-lg border-2 transition-all ${isSelected
+                                ? "border-[#D08945] bg-[#D08945]/20"
+                                : "border-gray-200"
+                                }`}
                         >
-                            {/* Progress fill */}
-                            <div
-                                className={`absolute inset-y-0 left-0 transition-all duration-500 rounded-xl
-                                    ${isSelected ? "bg-[#D08945]/20" : "bg-black/8"}
-                                `}
-                                style={{ width: `${percentage}%`, backgroundColor: isSelected ? "rgba(208,137,69,0.18)" : "rgba(0,0,0,0.07)" }}
-                            />
-
-                            {/* Content */}
                             <div className="relative flex items-center gap-2 px-3 py-2.5">
-                                {/* Indicator */}
-                                <div className={`flex-shrink-0 ${isSelected ? "text-[#D08945]" : "opacity-35"}`}>
-                                    {poll.allowMultiple ? (
-                                        isSelected ? <CheckSquare size={14} /> : <Square size={14} />
-                                    ) : (
-                                        <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center
-                                            ${isSelected ? "border-[#D08945]" : "border-current"}`}
-                                        >
-                                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#D08945]" />}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Label */}
                                 <span className={`text-xs flex-1 leading-snug ${isSelected ? "font-semibold" : "opacity-75"}`}>
                                     {option}
                                 </span>
 
-                                {/* Percentage */}
-                                <span className={`text-[10px] font-bold flex-shrink-0 tabular-nums
-                                    ${isSelected ? "text-[#D08945]" : "opacity-40"}`}
-                                >
-                                    {percentage}%
+                                <span className={`text-xs ${isSelected ? "text-[#D08945]" : "opacity-40"}`}>
+                                    {Math.round(percentage)}%
                                 </span>
+                            </div>
+
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                    className="bg-[#D08945] h-2 rounded-full transition-all"
+                                    style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+                                />
                             </div>
                         </button>
                     );
