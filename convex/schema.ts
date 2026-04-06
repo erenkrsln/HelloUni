@@ -129,15 +129,40 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"), v.literal("poll"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
+    chatPollId: v.optional(v.id("chatPolls")),
     visibleTo: v.optional(v.array(v.id("users"))),
+    reactions: v.optional(v.array(v.object({
+      emoji: v.string(),
+      userId: v.id("users")
+    }))),
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_created", ["conversationId", "createdAt"]),
+
+  chatPolls: defineTable({
+    conversationId: v.id("conversations"),
+    creatorId: v.id("users"),
+    question: v.string(),
+    options: v.array(v.string()),
+    allowMultiple: v.boolean(),
+    closeAt: v.optional(v.number()), // timestamp when poll closes, optional
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"]),
+
+  chatPollVotes: defineTable({
+    chatPollId: v.id("chatPolls"),
+    userId: v.id("users"),
+    optionIndices: v.array(v.number()), // supports multiple answers
+    votedAt: v.number(),
+  })
+    .index("by_poll", ["chatPollId"])
+    .index("by_poll_user", ["chatPollId", "userId"]),
 
   last_reads: defineTable({
     userId: v.id("users"),

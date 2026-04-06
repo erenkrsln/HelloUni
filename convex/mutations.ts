@@ -799,10 +799,11 @@ export const sendMessage = mutation({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"), v.literal("poll"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
+    chatPollId: v.optional(v.id("chatPolls")),
   },
   handler: async (ctx, args) => {
     // Validate membership
@@ -822,6 +823,7 @@ export const sendMessage = mutation({
       storageId: args.storageId,
       fileName: args.fileName,
       contentType: args.contentType,
+      chatPollId: args.chatPollId,
       createdAt: Date.now(),
     });
 
@@ -832,6 +834,144 @@ export const sendMessage = mutation({
     });
 
     return messageId;
+  },
+});
+
+export const sendChatPoll = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    senderId: v.id("users"),
+    question: v.string(),
+    options: v.array(v.string()),
+    allowMultiple: v.boolean(),
+    closeAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.participants.includes(args.senderId)) {
+      throw new Error("User is not a participant of this conversation");
+    }
+    if (args.options.length < 2) throw new Error("Poll must have at least 2 options");
+    if (args.question.trim() === "") throw new Error("Poll question cannot be empty");
+
+    const pollId = await ctx.db.insert("chatPolls", {
+      conversationId: args.conversationId,
+      creatorId: args.senderId,
+      question: args.question.trim(),
+      options: args.options.map(o => o.trim()).filter(o => o !== ""),
+      allowMultiple: args.allowMultiple,
+      closeAt: args.closeAt,
+      createdAt: Date.now(),
+    });
+
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      senderId: args.senderId,
+      content: args.question.trim(),
+      type: "poll",
+      chatPollId: pollId,
+      createdAt: Date.now(),
+    });
+
+    await ctx.db.patch(args.conversationId, {
+      lastMessageId: messageId,
+      updatedAt: Date.now(),
+    });
+
+    return { pollId, messageId };
+  },
+});
+
+export const voteChatPoll = mutation({
+  args: {
+    chatPollId: v.id("chatPolls"),
+    userId: v.id("users"),
+    optionIndices: v.array(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const poll = await ctx.db.get(args.chatPollId);
+    if (!poll) throw new Error("Poll not found");
+
+    // Check conversation membership
+    const conversation = await ctx.db.get(poll.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.participants.includes(args.userId)) {
+      throw new Error("Only chat members can vote");
+    }
+
+    // Check if poll is closed
+    if (poll.closeAt && Date.now() > poll.closeAt) {
+      throw new Error("Poll has closed");
+    }
+
+    // Validate option indices
+    for (const idx of args.optionIndices) {
+      if (idx < 0 || idx >= poll.options.length) {
+        throw new Error("Invalid option index");
+      }
+    }
+
+    // If single-answer, ensure only one option
+    const indices = poll.allowMultiple
+      ? args.optionIndices
+      : args.optionIndices.slice(0, 1);
+
+    // Upsert vote
+    const existing = await ctx.db
+      .query("chatPollVotes")
+      .withIndex("by_poll_user", (q) => q.eq("chatPollId", args.chatPollId).eq("userId", args.userId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { optionIndices: indices, votedAt: Date.now() });
+    } else {
+      await ctx.db.insert("chatPollVotes", {
+        chatPollId: args.chatPollId,
+        userId: args.userId,
+        optionIndices: indices,
+        votedAt: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+
+export const toggleMessageReaction = mutation({
+  args: {
+    messageId: v.id("messages"),
+    userId: v.id("users"),
+    emoji: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+
+    const reactions = message.reactions || [];
+    const existingIndex = reactions.findIndex((r) => r.userId === args.userId);
+
+    let newReactions;
+    if (existingIndex !== -1) {
+      const existingReaction = reactions[existingIndex];
+      if (existingReaction.emoji === args.emoji) {
+        // Remove reaction (toggle off)
+        newReactions = [
+          ...reactions.slice(0, existingIndex),
+          ...reactions.slice(existingIndex + 1),
+        ];
+      } else {
+        // Replace with new emoji
+        newReactions = [...reactions];
+        newReactions[existingIndex] = { emoji: args.emoji, userId: args.userId };
+      }
+    } else {
+      // Add new reaction
+      newReactions = [...reactions, { emoji: args.emoji, userId: args.userId }];
+    }
+
+    await ctx.db.patch(args.messageId, { reactions: newReactions });
   },
 });
 
@@ -1275,7 +1415,7 @@ export const deletePost = mutation({
         .query("commentLikes")
         .withIndex("by_comment", (q) => q.eq("commentId", comment._id))
         .collect();
-      
+
       for (const like of commentLikes) {
         await ctx.db.delete(like._id);
       }

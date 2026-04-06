@@ -80,6 +80,9 @@ export default function ChatPage() {
   const selectableUsers = allUsers?.filter(u => u._id !== currentUser?._id) || [];
 
   const filteredConversations = conversations?.filter(conv => {
+    const isDirectEmptyChat = !conv.isGroup && !conv.lastMessage;
+    if (isDirectEmptyChat) return false;
+
     const matchesSearch = conv.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
     const matchesFilter =
       filterType === "all" ? true :
