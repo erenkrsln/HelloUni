@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { BarChart2, CheckSquare, Square, Clock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ChatPollMessageProps {
     chatPollId: Id<"chatPolls">;
@@ -16,6 +16,18 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
     const poll = useQuery(api.queries.getChatPoll, { chatPollId });
     const results = useQuery(api.queries.getChatPollResults, { chatPollId });
     const myVotes = useQuery(api.queries.getChatPollVote, { chatPollId, userId: currentUserId });
+
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        if (!poll?.closeAt) return;
+
+        const interval = setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [poll?.closeAt]);
     const voteChatPoll = useMutation(api.mutations.voteChatPoll);
 
     const [isVoting, setIsVoting] = useState(false);
@@ -25,7 +37,7 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
         <div className="min-w-[220px] h-20 rounded-2xl animate-pulse bg-black/10" />
     );
 
-    const isClosed = !!poll.closeAt && Date.now() >= poll.closeAt;
+    const isClosed = !!poll.closeAt && now >= poll.closeAt;
     const currentMyVotes = optimisticMyVotes ?? myVotes ?? [];
     const optionResults = results?.results ?? poll.options.map(() => 0);
     const totalOptimisticVotes = optionResults.reduce((a, b) => a + b, 0);
@@ -99,8 +111,8 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
                                     {option}
                                 </span>
 
-                                <span className={`text-xs ${isSelected ? "text-[#D08945]" : "opacity-40"}`}>
-                                    {Math.round(percentage)}%
+                                <span className={`text-xs tab ${isSelected ? "text-[#D08945]" : "opacity-40"}`}>
+                                    {count} ({Math.round(percentage)}%)
                                 </span>
                             </div>
 
