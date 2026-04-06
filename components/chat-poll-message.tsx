@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { BarChart2, CheckSquare, Square, Clock } from "lucide-react";
+import { BarChart2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface ChatPollMessageProps {
@@ -123,7 +123,6 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
                 })}
             </div>
 
-            {/* Footer */}
             <div className="flex items-start gap-1.5 mt-2.5">
                 <span className="text-[10px] opacity-50 leading-snug">
 
