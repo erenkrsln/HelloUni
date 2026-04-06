@@ -69,7 +69,6 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
 
     return (
         <div className="min-w-[220px]">
-            {/* Badge row */}
             <div className="flex items-center gap-1.5 mb-2">
                 <BarChart2 size={12} className="text-[#D08945] flex-shrink-0" />
                 <span className="text-[10px] font-bold text-[#D08945] uppercase tracking-wider">
@@ -82,12 +81,9 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
                 )}
             </div>
 
-            {/* Question */}
             <p className="text-sm font-semibold leading-snug mb-3">
                 {poll.question}
             </p>
-
-            {/* Options */}
             <div className="space-y-2">
                 {poll.options.map((option, index) => {
                     const isSelected = currentMyVotes.includes(index);
@@ -106,7 +102,7 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
                                 : "border-gray-200"
                                 }`}
                         >
-                            <div className="relative flex items-center gap-2 px-3 py-2.5">
+                            <div className="relative min-w-[220px] w-full max-w-[320px] flex items-center gap-2 px-3 py-2.5">
                                 <span className={`text-xs flex-1 leading-snug ${isSelected ? "font-semibold" : "opacity-75"}`}>
                                     {option}
                                 </span>
