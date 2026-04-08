@@ -7,12 +7,22 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft, X } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { formatChatTimestamp } from "@/lib/utils";
+import { isDesktop } from "@/lib/call-window";
+
+function formatCallDuration(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
 
 export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -21,7 +31,14 @@ export default function ChatPage() {
   const [groupName, setGroupName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "direct" | "group">("all");
+  const [now, setNow] = useState(() => Date.now());
   const router = useRouter();
+
+  // Sekundenticker für die Anruf-Dauer
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const { currentUser } = useCurrentUser();
   const [isFirstVisit, setIsFirstVisit] = useState(true);
@@ -42,9 +59,39 @@ export default function ChatPage() {
   const conversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
   const allUsers = useQuery(api.queries.getAllUsers);
 
+  // Alle Konversations-IDs des Users für die joinable-Calls-Query
+  const conversationIds = conversations?.map((c) => c._id) ?? [];
+  const joinableCalls = useQuery(
+    api.calls.getJoinableCallsForConversations,
+    currentUser && conversationIds.length > 0
+      ? { conversationIds, userId: currentUser._id }
+      : "skip"
+  );
+
   const isLoading = isFirstVisit && (currentUser === undefined || conversations === undefined);
   const createConversation = useMutation(api.mutations.createConversation);
   const deleteConversationFromList = useMutation(api.mutations.deleteConversationFromList);
+  const joinCall = useMutation(api.calls.joinCall);
+
+  // Map conversationId → aktiver Anruf dem der User noch nicht beigetreten ist
+  // Nutzt getJoinableCallsForConversations → funktioniert auch nach "Ablehnen"
+  const activeCallMap = new Map(
+    (joinableCalls ?? []).map((c) => [c.conversationId, c])
+  );
+
+  const handleJoinCall = async (e: React.MouseEvent, callId: Id<"callSessions">, type: string, conversationId: Id<"conversations">) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!currentUser) return;
+    if (isDesktop()) {
+      const tab = window.open("about:blank", "_blank");
+      await joinCall({ callId, userId: currentUser._id });
+      if (tab) tab.location.href = `/call/${callId}?type=${type}`;
+    } else {
+      await joinCall({ callId, userId: currentUser._id });
+      router.push(`/call/${callId}?type=${type}`);
+    }
+  };
 
   const toggleUserSelection = (userId: Id<"users">) => {
     setSelectedUsers(prev =>
@@ -158,9 +205,9 @@ export default function ChatPage() {
               </div>
             ) : (
               filteredConversations?.map((conv) => {
-                // Cast conv to any to access membership property if types are not generated yet
                 const membership = (conv as any).membership;
                 const isLeft = membership === "left";
+                const activeCall = activeCallMap.get(conv._id);
 
                 return (
                   <div key={conv._id} className="relative group">
@@ -168,16 +215,19 @@ export default function ChatPage() {
                       href={`/chat/${conv._id}`}
                       className={`flex items-center pb-6 ${isLeft ? "opacity-50" : ""}`}
                     >
-
-                      <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
-                        {conv.displayImage ? (
-                          <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
-                            {conv.displayName?.charAt(0).toUpperCase() || "?"}
-                          </div>
-                        )}
+                      {/* Avatar mit optionalem Live-Punkt */}
+                      <div className="relative mr-3 flex-shrink-0">
+                        <div className="w-12 h-12 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                          {conv.displayImage ? (
+                            <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
+                              {conv.displayName?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
+                        </div>
                       </div>
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
@@ -185,7 +235,7 @@ export default function ChatPage() {
                             <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
                               {formatChatTimestamp(conv.updatedAt)}
                             </span>
-                            {conv.unreadCount > 0 && (
+                            {conv.unreadCount > 0 && !activeCall && (
                               <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
                                 {conv.unreadCount}
                               </div>
@@ -193,13 +243,10 @@ export default function ChatPage() {
                             {isLeft && (
                               <button
                                 onClick={(e) => {
-                                  e.preventDefault(); // Prevent navigation
+                                  e.preventDefault();
                                   e.stopPropagation();
                                   if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
-                                    deleteConversationFromList({
-                                      conversationId: conv._id,
-                                      userId: currentUser!._id
-                                    });
+                                    deleteConversationFromList({ conversationId: conv._id, userId: currentUser!._id });
                                   }
                                 }}
                                 className="mt-1 p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
@@ -210,28 +257,38 @@ export default function ChatPage() {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-500 truncate flex items-center pl-0.5">
-                          {conv.lastMessage ? (
-                            (conv.lastMessage as any).type === "image" ? (
-                              <>
-                                <Image size={14} className="flex-shrink-0" />
-                                <span>Foto</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "pdf" ? (
-                              <>
-                                <FileIcon size={14} className="flex-shrink-0" />
-                                <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
-                              </>
+
+                        {/* Aktiver Anruf → Banner statt letzter Nachricht */}
+                        {activeCall ? (
+                          <div className="flex items-center justify-between mt-0.5">
+                            <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+                              <Phone size={12} className="flex-shrink-0" />
+                              {formatCallDuration(now - activeCall.createdAt)}
+                            </span>
+                            <button
+                              onClick={(e) => handleJoinCall(e, activeCall._id, activeCall.type, conv._id)}
+                              className="ml-2 flex-shrink-0 px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-full transition-colors active:scale-95"
+                            >
+                              Beitreten
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 truncate flex items-center gap-1 pl-0.5">
+                            {conv.lastMessage ? (
+                              (conv.lastMessage as any).type === "image" ? (
+                                <><Image size={14} className="flex-shrink-0" /><span>Foto</span></>
+                              ) : (conv.lastMessage as any).type === "pdf" ? (
+                                <><FileIcon size={14} className="flex-shrink-0" /><span>{(conv.lastMessage as any).fileName || "Dokument"}</span></>
+                              ) : (
+                                conv.lastMessage.content
+                              )
                             ) : (
-                              conv.lastMessage.content
-                            )
-                          ) : (
-                            "Noch keine Nachrichten"
-                          )}
-                        </p>
+                              "Noch keine Nachrichten"
+                            )}
+                          </p>
+                        )}
                       </div>
                     </Link>
-
                   </div>
                 );
               })

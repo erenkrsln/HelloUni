@@ -29,6 +29,7 @@ function CallWindowContent() {
   );
 
   const joinCall = useMutation(api.calls.joinCall);
+  const leaveCall = useMutation(api.calls.leaveCall);
 
   // Sicherstellen dass der Nutzer als Teilnehmer eingetragen ist
   useEffect(() => {
@@ -43,14 +44,15 @@ function CallWindowContent() {
     document.title = callType === "video" ? "Videoanruf – HelloUni" : "Sprachanruf – HelloUni";
   }, [callType]);
 
-  // Fenster beim Schließen sauber beenden
+  // Beim Schließen des Tabs leaveCall aufrufen, damit der Avatar sofort verschwindet
   useEffect(() => {
+    if (!currentUser) return;
     const handleUnload = () => {
-      // Nichts extra nötig – VideoCall's onEnd übernimmt
+      leaveCall({ callId, userId: currentUser._id });
     };
     window.addEventListener("beforeunload", handleUnload);
     return () => window.removeEventListener("beforeunload", handleUnload);
-  }, []);
+  }, [currentUser, callId, leaveCall]);
 
   if (!currentUser || !callSession || !callMembers) {
     return <CallLoadingScreen callType={callType} />;

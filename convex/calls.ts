@@ -84,22 +84,26 @@ export const leaveCall = mutation({
     if (!call) return;
 
     const newParticipants = call.activeParticipants.filter((id) => id !== args.userId);
+    // Auch aus invitedParticipants entfernen, damit kein erneuter Alert erscheint
+    const newInvited = call.invitedParticipants.filter((id) => id !== args.userId);
 
     if (newParticipants.length === 0) {
       await ctx.db.patch(args.callId, {
         activeParticipants: [],
+        invitedParticipants: newInvited,
         status: "ended",
         endedAt: Date.now(),
       });
     } else {
       await ctx.db.patch(args.callId, {
         activeParticipants: newParticipants,
+        invitedParticipants: newInvited,
       });
     }
   },
 });
 
-// Einen Anruf ablehnen (Status: ended wenn alle abgelehnt haben)
+// Einen Anruf ablehnen
 export const declineCall = mutation({
   args: {
     callId: v.id("callSessions"),
@@ -109,14 +113,25 @@ export const declineCall = mutation({
     const call = await ctx.db.get(args.callId);
     if (!call) return;
 
-    // Wenn der Anrufer selbst ablehnt oder nur noch einer übrig ist → beenden
+    // User aus beiden Listen entfernen → Alert verschwindet sofort
     const remainingInvited = call.invitedParticipants.filter((id) => id !== args.userId);
-    if (call.status === "calling" && remainingInvited.length === 0) {
+    const stillActive = call.activeParticipants.filter((id) => id !== args.userId);
+
+    // Wenn niemand mehr eingeladen oder aktiv ist → Anruf beenden
+    if (remainingInvited.length === 0 && stillActive.length === 0) {
       await ctx.db.patch(args.callId, {
+        invitedParticipants: remainingInvited,
+        activeParticipants: stillActive,
         status: "ended",
         endedAt: Date.now(),
       });
+      return;
     }
+
+    await ctx.db.patch(args.callId, {
+      invitedParticipants: remainingInvited,
+      activeParticipants: stillActive,
+    });
   },
 });
 
@@ -206,6 +221,30 @@ export const getPendingSignals = query({
   },
 });
 
+// Beitretbare Anrufe für eine Liste von Konversationen (unabhängig von invitedParticipants).
+// Wird in der Chat-Liste genutzt, damit auch nach "Ablehnen" ein Beitreten-Button erscheint.
+export const getJoinableCallsForConversations = query({
+  args: {
+    conversationIds: v.array(v.id("conversations")),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const results = [];
+    for (const conversationId of args.conversationIds) {
+      const call = await ctx.db
+        .query("callSessions")
+        .withIndex("by_conversation", (q) => q.eq("conversationId", conversationId))
+        .filter((q) => q.neq(q.field("status"), "ended"))
+        .first();
+      // Nur anzeigen wenn der User noch nicht aktiv teilnimmt
+      if (call && !call.activeParticipants.includes(args.userId)) {
+        results.push(call);
+      }
+    }
+    return results;
+  },
+});
+
 // Anruf-Session nach ID abfragen
 export const getCallSession = query({
   args: {
@@ -216,7 +255,10 @@ export const getCallSession = query({
   },
 });
 
-// Alle eingehenden Anrufe für einen Nutzer (status: "calling")
+// Alle eingehenden Anrufe für einen Nutzer.
+// Wichtig für Gruppenanrufe: Sobald jemand annimmt, wechselt status auf "active".
+// Die übrigen Eingeladenen sollen den Alert trotzdem weiter sehen,
+// bis sie selbst beitreten oder der Anruf endet.
 export const getIncomingCalls = query({
   args: {
     userId: v.id("users"),
@@ -227,7 +269,12 @@ export const getIncomingCalls = query({
       .withIndex("by_status", (q) => q.eq("status", "calling"))
       .collect();
 
-    return callingSessions.filter(
+    const activeSessions = await ctx.db
+      .query("callSessions")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .collect();
+
+    return [...callingSessions, ...activeSessions].filter(
       (call) =>
         call.invitedParticipants.includes(args.userId) &&
         !call.activeParticipants.includes(args.userId)
