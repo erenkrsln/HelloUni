@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as calls from "../calls.js";
 import type * as events from "../events.js";
 import type * as mutations from "../mutations.js";
 import type * as notifications from "../notifications.js";
@@ -22,6 +23,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  calls: typeof calls;
   events: typeof events;
   mutations: typeof mutations;
   notifications: typeof notifications;

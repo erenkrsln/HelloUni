@@ -182,6 +182,37 @@ export default defineSchema({
   })
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),
+
+  callSessions: defineTable({
+    conversationId: v.id("conversations"),
+    initiatorId: v.id("users"),
+    initiatorName: v.optional(v.string()),
+    invitedParticipants: v.array(v.id("users")),
+    activeParticipants: v.array(v.id("users")),
+    status: v.union(v.literal("calling"), v.literal("active"), v.literal("ended")),
+    type: v.union(v.literal("voice"), v.literal("video")),
+    createdAt: v.number(),
+    endedAt: v.optional(v.number()),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_status", ["status"]),
+
+  webrtcSignals: defineTable({
+    callId: v.id("callSessions"),
+    fromUserId: v.id("users"),
+    toUserId: v.id("users"),
+    type: v.union(
+      v.literal("webrtc_start"),
+      v.literal("offer"),
+      v.literal("answer"),
+      v.literal("ice-candidate")
+    ),
+    data: v.string(),
+    processed: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_call_to_user", ["callId", "toUserId", "processed"])
+    .index("by_call", ["callId"]),
 });
 
 

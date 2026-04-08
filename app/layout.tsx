@@ -6,6 +6,7 @@ import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { NextAuthSessionProvider } from "@/components/session-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
+import { IncomingCallListener } from "@/components/incoming-call-listener";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -64,6 +65,7 @@ export default function RootLayout({
         <NextAuthSessionProvider>
           <ConvexClientProvider>
             <PostsCacheWrapper>{children}</PostsCacheWrapper>
+            <IncomingCallListener />
           </ConvexClientProvider>
         </NextAuthSessionProvider>
       </body>

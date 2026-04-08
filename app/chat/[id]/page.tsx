@@ -5,10 +5,12 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, Search, X, Folder, FileText } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, Phone, Video } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
+import { VideoCall } from "@/components/video-call";
+import { isDesktop } from "@/lib/call-window";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -28,6 +30,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const sendMessage = useMutation(api.mutations.sendMessage);
     const deleteConversation = useMutation(api.mutations.deleteConversation);
     const markAsRead = useMutation(api.mutations.markAsRead);
+
+    // Anruf-State (nur Mobile – Desktop öffnet separates Fenster)
+    const [activeCallId, setActiveCallId] = useState<Id<"callSessions"> | null>(null);
+    const [activeCallType, setActiveCallType] = useState<"voice" | "video">("voice");
+    const initiateCall = useMutation(api.calls.initiateCall);
 
     useEffect(() => {
         if (conversationId && currentUser) {
@@ -122,6 +129,28 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     };
 
     const getMember = (userId: string) => members?.find(m => m._id === userId);
+
+    const handleStartCall = async (type: "voice" | "video") => {
+        if (!currentUser || !members) return;
+        const invited = members
+            .filter(m => m._id !== currentUser._id)
+            .map(m => m._id);
+        const callId = await initiateCall({
+            conversationId,
+            initiatorId: currentUser._id,
+            invitedParticipants: invited,
+            type,
+        });
+        if (isDesktop()) {
+            // Desktop: neuer Tab (kein Popup)
+            window.open(`/call/${callId}?type=${type}`, "_blank");
+        } else {
+            // Mobile: Vollbild in der App
+            setActiveCallType(type);
+            setActiveCallId(callId);
+        }
+    };
+
 
     const linkifyText = (text: string) => {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -220,15 +249,35 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
 
                 {/* Right side */}
-                {conversation && (
-                    <button
-                        className="p-2 text-[#D08945]"
-                        onClick={() => setIsFilesModalOpen(true)}
-                        title="Geteilte Dateien"
-                    >
-                        <Folder size={20} />
-                    </button>
-                )}
+                <div className="flex items-center gap-1">
+                    {conversation && !isLeft && (
+                        <>
+                            <button
+                                className="p-2 text-[#D08945]"
+                                onClick={() => handleStartCall("voice")}
+                                title="Sprachanruf"
+                            >
+                                <Phone size={20} />
+                            </button>
+                            <button
+                                className="p-2 text-[#D08945]"
+                                onClick={() => handleStartCall("video")}
+                                title="Videoanruf"
+                            >
+                                <Video size={20} />
+                            </button>
+                        </>
+                    )}
+                    {conversation && (
+                        <button
+                            className="p-2 text-[#D08945]"
+                            onClick={() => setIsFilesModalOpen(true)}
+                            title="Geteilte Dateien"
+                        >
+                            <Folder size={20} />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Messages */}
@@ -531,6 +580,21 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
             )}
 
+            {/* Aktiver Anruf – nur Mobile (Desktop öffnet separates Fenster) */}
+            {activeCallId && currentUser && members && (
+                <VideoCall
+                    callId={activeCallId}
+                    currentUserId={currentUser._id}
+                    callType={activeCallType}
+                    onEnd={() => setActiveCallId(null)}
+                    participants={members.map(m => ({
+                        _id: m._id,
+                        name: m.name,
+                        image: m.image,
+                    }))}
+                />
+            )}
+
             {/* Image Preview Overlay */}
             {selectedImage && (
                 <div
@@ -550,6 +614,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     />
                 </div>
             )}
+
         </main>
     );
 }
