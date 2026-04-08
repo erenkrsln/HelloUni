@@ -11,8 +11,9 @@ export function isDesktop(): boolean {
 export function openCallWindow(callId: string, type: "voice" | "video") {
   const w = type === "video" ? 1280 : 520;
   const h = type === "video" ? 800 : 700;
-  const left = Math.round(window.screen.availLeft + (window.screen.availWidth - w) / 2);
-  const top = Math.round(window.screen.availTop + (window.screen.availHeight - h) / 2);
+  // TS-sichere Berechnung für zentrierte Position (browserübergreifend)
+  const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - w) / 2));
+  const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - h) / 2));
   window.open(
     `/call/${callId}?type=${type}`,
     `hellounii_call_${callId}`,
