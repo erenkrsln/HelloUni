@@ -15,6 +15,7 @@ import { PostActions } from "./post-actions";
 import { PollOptions } from "./poll-options";
 import { EventDetails } from "./event-details";
 import { CommentDrawer } from "./comment-drawer";
+import { SharePostModal } from "./share-post-modal";
 // Importiere den gemeinsamen globalen Bild-Cache
 import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
 
@@ -69,6 +70,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
   const votePoll = useMutation(api.mutations.votePoll);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Auto-open drawer if commentId is provided
   useEffect(() => {
@@ -828,9 +830,20 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
             isLiking={isLiking}
             currentUserId={currentUserId}
             onCommentClick={() => setIsDrawerOpen(true)}
+            onShareClick={() => setIsShareModalOpen(true)}
           />
         </div>
       </div>
+
+      {/* Share Post Modal */}
+      {currentUserId && (
+        <SharePostModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          postId={post._id}
+          currentUserId={currentUserId}
+        />
+      )}
 
       {/* Comment Drawer */}
       <CommentDrawer

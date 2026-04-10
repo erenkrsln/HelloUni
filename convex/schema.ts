@@ -129,11 +129,12 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"), v.literal("poll"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
     chatPollId: v.optional(v.id("chatPolls")),
+    sharedPostId: v.optional(v.id("posts")),
     visibleTo: v.optional(v.array(v.id("users"))),
     reactions: v.optional(v.array(v.object({
       emoji: v.string(),

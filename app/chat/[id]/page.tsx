@@ -12,6 +12,7 @@ import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
 import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
+import { SharedPostMessage } from "@/components/shared-post-message";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -446,7 +447,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         <div className={`flex flex-col relative group max-w-full ${isMe ? 'items-end' : 'items-start'}`}>
                                             <div
                                                 className={`
-                                                ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
+                                                ${(msg.type === "image" || msg.type === "post") ? 'p-1' : 'px-4 py-2'} text-sm
                                                 ${isMe
                                                         ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
                                                         : 'text-black rounded-2xl bg-white shadow-sm'
@@ -489,6 +490,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     ) : msg.type === "poll" && (msg as any).chatPollId ? (
                                                         <ChatPollMessage
                                                             chatPollId={(msg as any).chatPollId as Id<"chatPolls">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "post" && (msg as any).sharedPostId ? (
+                                                        <SharedPostMessage
+                                                            postId={(msg as any).sharedPostId as Id<"posts">}
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
                                                         />

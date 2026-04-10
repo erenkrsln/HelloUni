@@ -225,6 +225,8 @@ export default function ChatPage() {
                                 <FileIcon size={14} className="flex-shrink-0" />
                                 <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
                               </>
+                            ) : (conv.lastMessage as any).type === "post" ? (
+                              <span>Geteilter Beitrag</span>
                             ) : (
                               conv.lastMessage.content
                             )
