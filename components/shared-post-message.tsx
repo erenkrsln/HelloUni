@@ -46,7 +46,7 @@ export function SharedPostMessage({ postId, currentUserId, isMe }: SharedPostMes
   return (
     <div
       onClick={() => router.push(`/posts/${postId}`)}
-      className="flex flex-col w-full max-w-[320px] sm:max-w-[360px] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm mt-1 cursor-pointer hover:opacity-95 transition-opacity"
+      className="flex flex-col w-full max-w-[320px] sm:max-w-[360px] bg-white rounded-2xl overflow-hidden mt-1 cursor-pointer"
     >
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
@@ -60,6 +60,7 @@ export function SharedPostMessage({ postId, currentUserId, isMe }: SharedPostMes
           post={mappedPost as any}
           currentUserId={currentUserId}
           showDivider={false}
+          hideActions={true}
         />
       </div>
     </div>

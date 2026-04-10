@@ -53,6 +53,7 @@ interface FeedCardProps {
   showDivider?: boolean; // Zeigt Trennlinie nach den Buttons an
   isFirst?: boolean; // Wenn true, erhält das Beitragsbild priority (wichtig für LCP)
   autoOpenCommentId?: string; // Auto-open drawer and highlight this comment
+  hideActions?: boolean;
 }
 
 // Helper to remove degree titles
@@ -62,7 +63,7 @@ const cleanMajor = (major?: string) => {
   return major.replace(/\s*\(?\b(B\.?Eng|B\.?Sc|B\.?A|M\.?Sc|M\.?A|M\.?Eng|LL\.?B|LL\.?M)\.?\)?\s*/gi, "").trim();
 };
 
-export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId, hideActions = false }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const isOwnPost = currentUserId && post.userId === currentUserId;
   const joinEvent = useMutation(api.mutations.joinEvent);
@@ -822,16 +823,18 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
             </div>
           )}
 
-          <PostActions
-            likesCount={post.likesCount}
-            commentsCount={post.commentsCount}
-            isLiked={displayIsLiked}
-            onLike={handleLike}
-            isLiking={isLiking}
-            currentUserId={currentUserId}
-            onCommentClick={() => setIsDrawerOpen(true)}
-            onShareClick={() => setIsShareModalOpen(true)}
-          />
+          {!hideActions && (
+            <PostActions
+              likesCount={post.likesCount}
+              commentsCount={post.commentsCount}
+              isLiked={displayIsLiked}
+              onLike={handleLike}
+              isLiking={isLiking}
+              currentUserId={currentUserId}
+              onCommentClick={() => setIsDrawerOpen(true)}
+              onShareClick={() => setIsShareModalOpen(true)}
+            />
+          )}
         </div>
       </div>
 
