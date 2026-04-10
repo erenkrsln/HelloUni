@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft, X } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft, X, BarChart2, StickyNote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -217,16 +217,24 @@ export default function ChatPage() {
                           {conv.lastMessage ? (
                             (conv.lastMessage as any).type === "image" ? (
                               <>
-                                <Image size={14} className="flex-shrink-0" />
+                                <Image size={14} className="flex-shrink-0 mr-1" />
                                 <span>Foto</span>
                               </>
                             ) : (conv.lastMessage as any).type === "pdf" ? (
                               <>
-                                <FileIcon size={14} className="flex-shrink-0" />
+                                <FileIcon size={14} className="flex-shrink-0 mr-1" />
                                 <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
                               </>
                             ) : (conv.lastMessage as any).type === "post" ? (
-                              <span>Geteilter Beitrag</span>
+                              <>
+                                <StickyNote size={14} className="flex-shrink-0 mr-1" />
+                                <span>Geteilter Beitrag</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "poll" ? (
+                              <>
+                                <BarChart2 size={14} className="flex-shrink-0 mr-1" />
+                                <span>Umfrage</span>
+                              </>
                             ) : (
                               conv.lastMessage.content
                             )
