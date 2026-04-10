@@ -5,7 +5,7 @@ import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, ArrowLeft } from "lucide-react";
+import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, ArrowLeft, Send } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
@@ -13,6 +13,7 @@ import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
+import { ShareProfileModal } from "./share-profile-modal";
 
 // Importiere den gemeinsamen globalen Bild-Cache
 import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
@@ -147,6 +148,7 @@ export function ProfileHeader({
 
     // State for crop modal
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [selectedImageSrc, setSelectedImageSrc] = useState<string>("");
     const [isUploading, setIsUploading] = useState(false);
 
@@ -397,6 +399,14 @@ export function ProfileHeader({
                             >
                                 <MessageCircle className="w-5 h-5 text-gray-700" />
                             </button>
+                            <button
+                                onClick={() => setIsShareModalOpen(true)}
+                                className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
+                                style={{ flexShrink: 0 }}
+                                aria-label="Profil teilen"
+                            >
+                                <Send className="w-4 h-4 text-gray-700 ml-[-2px] mt-[2px]" />
+                            </button>
                             <div style={{ flexShrink: 0 }}>
                                 <FollowButton
                                     currentUserId={currentUserId}
@@ -500,6 +510,16 @@ export function ProfileHeader({
                     imageSrc={selectedImageSrc}
                     onCropComplete={handleCropComplete}
                     isUploading={isUploading}
+                />
+            )}
+
+            {/* Share Profile Modal */}
+            {currentUserId && (
+                <ShareProfileModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    profileId={userId}
+                    currentUserId={currentUserId}
                 />
             )}
         </div>

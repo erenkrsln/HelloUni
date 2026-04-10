@@ -13,6 +13,7 @@ import { ChatFilesModal } from "@/components/chat-files-modal";
 import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
 import { SharedPostMessage } from "@/components/shared-post-message";
+import { SharedProfileMessage } from "@/components/shared-profile-message";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -496,6 +497,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     ) : msg.type === "post" && (msg as any).sharedPostId ? (
                                                         <SharedPostMessage
                                                             postId={(msg as any).sharedPostId as Id<"posts">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "profile" && (msg as any).sharedProfileId ? (
+                                                        <SharedProfileMessage
+                                                            profileId={(msg as any).sharedProfileId as Id<"users">}
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
                                                         />
