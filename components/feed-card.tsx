@@ -56,13 +56,6 @@ interface FeedCardProps {
   hideActions?: boolean;
 }
 
-// Helper to remove degree titles
-const cleanMajor = (major?: string) => {
-  if (!major) return undefined;
-  // Removes B.Eng, B.Sc, B.A, M.Sc, M.A, M.Eng, LL.B, LL.M (case insensitive, with or without dots/parentheses)
-  return major.replace(/\s*\(?\b(B\.?Eng|B\.?Sc|B\.?A|M\.?Sc|M\.?A|M\.?Eng|LL\.?B|LL\.?M)\.?\)?\s*/gi, "").trim();
-};
-
 export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId, hideActions = false }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const isOwnPost = currentUserId && post.userId === currentUserId;
@@ -662,7 +655,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
           {/* Major & Semester */}
           {(post.user.major || post.user.semester) && (
             <div className="text-[13px] text-gray-500 -mt-2 mb-3 truncate">
-              {cleanMajor(post.user.major)}
+              {post.user.major}
               {post.user.major && post.user.semester && " · "}
               {post.user.semester && `${post.user.semester}. Semester`}
             </div>
