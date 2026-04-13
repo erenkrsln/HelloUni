@@ -358,13 +358,7 @@ export function ProfileHeader({
                     {/* Action Buttons - right side, aligned with profile picture */}
                     {!isOwnProfile && (
                         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 -mb-2 sm:mb-0 -ml-2 sm:-ml-6" style={{ marginLeft: "-2px" }}>
-                            <button
-                                className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
-                                style={{ flexShrink: 0 }}
-                                aria-label="Mehr Optionen"
-                            >
-                                <MoreHorizontal className="w-5 h-5 text-gray-700" />
-                            </button>
+
                             <button
                                 onClick={async () => {
                                     if (!currentUserId || !userId) return;
