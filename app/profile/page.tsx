@@ -119,9 +119,6 @@ export default function ProfilePage() {
                     )}
 
 
-
-
-
                     {/* Posts section */}
                     <div data-posts-section>
                         <h3 className="px-4 text-lg font-semibold text-[#000000] mb-4 border-b border-[#000000]/20 pb-2">
