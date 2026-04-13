@@ -634,11 +634,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             onSubmit={handleSend}
                             className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                         >
-                            <input
-                                type="file"
-                                accept="image/*,application/pdf"
-                                className="hidden"
-                                ref={fileInputRef}
+                        <input
+                            type="file"
+                            accept="image/*,video/*,application/pdf"
+                            className="hidden"
+                            ref={fileInputRef}
                                 onChange={handleFileSelect}
                             />
 
