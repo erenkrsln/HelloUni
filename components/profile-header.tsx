@@ -261,12 +261,7 @@ export function ProfileHeader({
 
 
     return (
-        <div
-            className="relative w-full sticky top-0 z-40 profile-header-sticky bg-white"
-            style={{
-                overscrollBehavior: 'none',
-            }}
-        >
+        <div className="relative w-full bg-white">
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
             <div
                 className={`relative overflow-hidden group header-image-responsive aspect-[3/1] ${!headerColor && !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
