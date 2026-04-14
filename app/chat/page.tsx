@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft, X, BarChart2, StickyNote, User } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, BarChart2, StickyNote, User, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -219,6 +219,11 @@ export default function ChatPage() {
                               <>
                                 <Image size={14} className="flex-shrink-0 mr-1" />
                                 <span>Foto</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "video" ? (
+                              <>
+                                <Play size={14} className="flex-shrink-0 mr-1" />
+                                <span>Video</span>
                               </>
                             ) : (conv.lastMessage as any).type === "pdf" ? (
                               <>
