@@ -52,9 +52,21 @@ const magicLinkEmailHtml = (url: string) => `
 </html>`;
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
+  const baseURL =
+    process.env.BETTER_AUTH_URL ??
+    process.env.SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+
+  const trustedOrigins = [
+    process.env.BETTER_AUTH_URL,
+    process.env.SITE_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  ].filter((origin): origin is string => Boolean(origin));
+
   return {
     appName: "HelloUni",
-    baseURL: process.env.SITE_URL,
+    baseURL,
+    trustedOrigins,
     secret: process.env.BETTER_AUTH_SECRET,
     database: authComponent.adapter(ctx),
     // Passwort-Login deaktiviert – nur Magic Link

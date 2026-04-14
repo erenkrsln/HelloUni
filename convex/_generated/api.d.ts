@@ -8,13 +8,13 @@
  * @module
  */
 
-import type * as allowedEmail from "../allowedEmail.js";
 import type * as actions from "../actions.js";
+import type * as allowedEmail from "../allowedEmail.js";
 import type * as auth from "../auth.js";
 import type * as calls from "../calls.js";
 import type * as events from "../events.js";
-import type * as http from "../http.js";
 import type * as helpers from "../helpers.js";
+import type * as http from "../http.js";
 import type * as mutations from "../mutations.js";
 import type * as notifications from "../notifications.js";
 import type * as queries from "../queries.js";
@@ -26,13 +26,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  allowedEmail: typeof allowedEmail;
   actions: typeof actions;
+  allowedEmail: typeof allowedEmail;
   auth: typeof auth;
   calls: typeof calls;
   events: typeof events;
-  http: typeof http;
   helpers: typeof helpers;
+  http: typeof http;
   mutations: typeof mutations;
   notifications: typeof notifications;
   queries: typeof queries;
