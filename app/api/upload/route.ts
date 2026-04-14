@@ -17,10 +17,14 @@ const ALLOWED_TYPES = new Set([
     "image/png",
     "image/gif",
     "image/webp",
+    "image/heic",
+    "image/heif",
     "application/pdf",
+    "video/mp4",
+    "video/quicktime",
 ]);
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
     try {

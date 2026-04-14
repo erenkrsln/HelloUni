@@ -84,16 +84,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             return;
         }
 
-        const extension = file.name.split(".").pop()?.toLowerCase();
-        const allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "pdf", "mp4", "mov", "heic", "heif"];
-        if (extension && !allowedExtensions.includes(extension)) {
-            alert("Ungültige Dateierweiterung. Nur Bilder, Videos und PDF sind erlaubt.");
-            resetFileInput();
-            return;
-        }
-
         try {
-            const { uploadUrl, publicUrl } = await fetch("/api/upload", {
+            const apiRes = await fetch("/api/upload", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -101,10 +93,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     contentType: file.type,
                     fileSize: file.size,
                 }),
-            }).then(r => {
-                if (!r.ok) throw new Error("Upload-URL konnte nicht erstellt werden");
-                return r.json();
             });
+
+            if (!apiRes.ok) {
+                const errData = await apiRes.json().catch(() => ({}));
+                console.error("Backend rejecting upload:", errData);
+                throw new Error(errData.error || "Upload-URL konnte nicht erstellt werden");
+            }
+
+            const { uploadUrl, publicUrl } = await apiRes.json();
+
+            if (!uploadUrl) {
+                throw new Error("Backend did not return an uploadUrl");
+            }
 
             await fetch(uploadUrl, {
                 method: "PUT",
@@ -196,7 +197,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     };
 
     const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
 
 
     if (!currentUser) return null;
@@ -505,17 +506,26 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                 src={(msg as any).url}
                                                                 alt="Bild"
                                                                 className="w-full h-full object-cover cursor-pointer"
-                                                                onClick={() => setSelectedImage((msg as any).url)}
+                                                                onClick={() => setSelectedMedia({ url: (msg as any).url, type: 'image' })}
                                                             />
                                                         </div>
                                                     ) : msg.type === "video" && (msg as any).url ? (
-                                                        <div className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px]">
+                                                        <div 
+                                                            className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px] cursor-pointer relative group"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedMedia({ url: (msg as any).url, type: 'video' });
+                                                            }}
+                                                        >
+                                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10 group-hover:bg-black/30 transition-colors">
+                                                                <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
+                                                                    <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[14px] border-l-white border-b-8 border-b-transparent ml-1"></div>
+                                                                </div>
+                                                            </div>
                                                             <video
                                                                 src={(msg as any).url}
-                                                                controls
-                                                                playsInline
-                                                                className="w-full max-h-[320px] object-cover"
-                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="w-full max-h-[320px] object-cover pointer-events-none"
+                                                                preload="metadata"
                                                             />
                                                         </div>
                                                     ) : msg.type === "pdf" ? (
@@ -750,23 +760,34 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
             )}
 
-            {/* Image Preview Overlay */}
-            {selectedImage && (
+            {/* Media Preview Overlay */}
+            {selectedMedia && (
                 <div
                     className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2"
-                    onClick={() => setSelectedImage(null)}
+                    onClick={() => setSelectedMedia(null)}
                 >
                     <button
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
-                        onClick={() => setSelectedImage(null)}
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[110]"
+                        onClick={() => setSelectedMedia(null)}
                     >
                         <X size={32} />
                     </button>
-                    <img
-                        src={selectedImage}
-                        alt="Vorschau"
-                        className="max-w-full max-h-[90vh] object-contain"
-                    />
+                    {selectedMedia.type === 'video' ? (
+                        <video
+                            src={selectedMedia.url}
+                            controls
+                            autoPlay
+                            playsInline
+                            className="max-w-[100vw] max-h-[100vh] w-full h-full object-contain"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <img
+                            src={selectedMedia.url}
+                            alt="Vorschau"
+                            className="max-w-full max-h-[90vh] object-contain"
+                        />
+                    )}
                 </div>
             )}
         </main>
