@@ -10,6 +10,7 @@
 
 import type * as actions from "../actions.js";
 import type * as auth from "../auth.js";
+import type * as chatEvents from "../chatEvents.js";
 import type * as events from "../events.js";
 import type * as helpers from "../helpers.js";
 import type * as mutations from "../mutations.js";
@@ -25,6 +26,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   auth: typeof auth;
+  chatEvents: typeof chatEvents;
   events: typeof events;
   helpers: typeof helpers;
   mutations: typeof mutations;

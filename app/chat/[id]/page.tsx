@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2 } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarHeart } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
@@ -14,6 +14,8 @@ import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
 import { SharedPostMessage } from "@/components/shared-post-message";
 import { SharedProfileMessage } from "@/components/shared-profile-message";
+import { ChatEventModal } from "@/components/chat-event-modal";
+import { ChatEventMessage } from "@/components/chat-event-message";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -55,6 +57,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+    const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -559,6 +562,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
                                                         />
+                                                    ) : msg.type === "event_invite" && (msg as any).chatEventId ? (
+                                                        <ChatEventMessage
+                                                            chatEventId={(msg as any).chatEventId as Id<"chatEvents">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
                                                     ) : (
                                                         <div>
                                                             {linkifyText(msg.content)}
@@ -651,6 +660,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 />
             )}
 
+            {/* Chat Event Modal */}
+            {currentUser && (
+                <ChatEventModal
+                    isOpen={isEventModalOpen}
+                    onClose={() => setIsEventModalOpen(false)}
+                    conversationId={conversationId}
+                    senderId={currentUser._id}
+                />
+            )}
+
             {/* Input */}
             {!isLeft ? (
                 <div
@@ -691,6 +710,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         <BarChart2 size={20} className="text-[#D08945]" />
                                     </div>
                                     <span className="text-[11px] text-gray-600 font-medium">Umfrage</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        setIsEventModalOpen(true);
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <CalendarHeart size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Termin</span>
                                 </button>
                             </div>
                         </>
