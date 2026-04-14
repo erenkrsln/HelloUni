@@ -510,7 +510,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             />
                                                         </div>
                                                     ) : msg.type === "video" && (msg as any).url ? (
-                                                        <div 
+                                                        <div
                                                             className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px] cursor-pointer relative group"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
