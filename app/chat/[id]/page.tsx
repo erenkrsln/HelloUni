@@ -58,9 +58,39 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB limit for files and videos
+
+    const resetFileInput = () => {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
+
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf";
+        const isVideo = file.type === "video/mp4" || file.type === "video/quicktime";
+
+        if (!isImage && !isPdf && !isVideo) {
+            alert(`Nicht unterstützter Dateityp: ${file.type || "unbekannt"}.\n\nErlaubte Typen: Bilder, Videos (MP4/MOV) und PDF.`);
+            resetFileInput();
+            return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`Datei ist zu groß (${(file.size / (1024 * 1024)).toFixed(1)} MB).\n\nMaximale Größe: ${MAX_FILE_SIZE / (1024 * 1024)} MB.`);
+            resetFileInput();
+            return;
+        }
+
+        const extension = file.name.split(".").pop()?.toLowerCase();
+        const allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "pdf", "mp4", "mov", "heic", "heif"];
+        if (extension && !allowedExtensions.includes(extension)) {
+            alert("Ungültige Dateierweiterung. Nur Bilder, Videos und PDF sind erlaubt.");
+            resetFileInput();
+            return;
+        }
 
         try {
             const { uploadUrl, publicUrl } = await fetch("/api/upload", {
@@ -71,7 +101,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     contentType: file.type,
                     fileSize: file.size,
                 }),
-            }).then(r => r.json());
+            }).then(r => {
+                if (!r.ok) throw new Error("Upload-URL konnte nicht erstellt werden");
+                return r.json();
+            });
 
             await fetch(uploadUrl, {
                 method: "PUT",
@@ -83,16 +116,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 conversationId,
                 senderId: currentUser._id,
                 content: file.name,
-                type: file.type.startsWith("image/") ? "image" : "pdf",
+                type: isImage ? "image" : isVideo ? "video" : "pdf",
                 storageId: publicUrl,
                 fileName: file.name,
                 contentType: file.type,
             });
         } catch (error) {
             console.error("Failed to upload file:", error);
-            alert("Fehler beim Hochladen der Datei.");
+            alert("Fehler beim Hochladen der Datei. Bitte versuche es erneut.");
         } finally {
-            if (fileInputRef.current) fileInputRef.current.value = "";
+            resetFileInput();
         }
     };
 
@@ -475,6 +508,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                 onClick={() => setSelectedImage((msg as any).url)}
                                                             />
                                                         </div>
+                                                    ) : msg.type === "video" && (msg as any).url ? (
+                                                        <div className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px]">
+                                                            <video
+                                                                src={(msg as any).url}
+                                                                controls
+                                                                playsInline
+                                                                className="w-full max-h-[320px] object-cover"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            />
+                                                        </div>
                                                     ) : msg.type === "pdf" ? (
                                                         <a
                                                             href={(msg as any).url || "#"}
@@ -650,7 +693,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         >
                             <input
                                 type="file"
-                                accept="image/*,application/pdf"
+                                accept="image/*,application/pdf,video/mp4,video/quicktime"
                                 className="hidden"
                                 ref={fileInputRef}
                                 onChange={handleFileSelect}
