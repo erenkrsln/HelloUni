@@ -1,55 +1,57 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-/**
- * NextAuth-Middleware zum Schutz von Routen
- * Leitet automatisch zu "/" um, wenn der Benutzer nicht authentifiziert ist
- */
-export default withAuth(
-  function middleware(req) {
-    // Ignoriere Requests, die wie Convex-IDs aussehen (z.B. kg283gptp92vz668wnk2t73sbs7wwpzz)
-    // Diese sollten nicht als Routen behandelt werden
-    const pathname = req.nextUrl.pathname;
-    // Convex-IDs sind typischerweise 20+ Zeichen lang und bestehen nur aus Kleinbuchstaben und Zahlen
-    if (pathname.length > 20 && pathname.length < 50 && /^\/[a-z0-9]+$/.test(pathname)) {
-      // Sieht aus wie eine Convex-ID, leite zu 404 um oder blockiere den Request
-      return new NextResponse(null, { status: 404 });
-    }
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        if (
-          req.nextUrl.pathname === "/" ||
-          req.nextUrl.pathname === "/about" ||
-          req.nextUrl.pathname === "/imprint" ||
-          req.nextUrl.pathname === "/privacy"
-        ) {
-          return true;
-        }
-        // Für alle anderen Routen ist Authentifizierung erforderlich
-        return !!token;
-      },
-    },
-    pages: {
-      signIn: "/",
-    },
+// Routen, die ohne Login zugänglich sind
+const PUBLIC_PATHS = [
+  "/",
+  "/about",
+  "/imprint",
+  "/privacy",
+  "/auth/magic-link-fehler",
+];
+
+// Routen, die nie durch die Middleware blockiert werden sollen
+const ALWAYS_ALLOWED = [
+  "/api/auth",
+  "/api/register",
+  "/api/migrate-auth",
+  "/_next",
+  "/favicon.ico",
+];
+
+export default function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Convex-ID-artige Pfade abfangen (z.B. /kg283gptp92vz...)
+  if (pathname.length > 20 && pathname.length < 50 && /^\/[a-z0-9]+$/.test(pathname)) {
+    return new NextResponse(null, { status: 404 });
   }
-);
 
-// Konfigurieren, welche Routen geschützt werden sollen
+  // Immer erlaubte Pfade durchlassen
+  if (ALWAYS_ALLOWED.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // Öffentliche Seiten durchlassen
+  if (PUBLIC_PATHS.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Session-Cookie von Better Auth prüfen
+  // Better Auth setzt 'better-auth.session_token' nach erfolgreichem Login
+  const sessionCookie =
+    req.cookies.get("better-auth.session_token") ??
+    req.cookies.get("__Secure-better-auth.session_token");
+
+  if (!sessionCookie?.value) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  return NextResponse.next();
+}
+
 export const config = {
   matcher: [
-    /*
-     * Alle Routen schützen außer:
-     * - /api/auth/* (NextAuth-Routen)
-     * - /api/register (Registrierungsroute)
-     * - /_next/* (statische Next.js-Dateien)
-     * - /favicon.ico
-     * - öffentliche Dateien
-     */
-    "/((?!api/auth|api/register|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.webmanifest).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.webmanifest).*)",
   ],
 };
-

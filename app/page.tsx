@@ -1,40 +1,38 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import AuthPage from "./auth-page";
 
 /**
- * Landing Page - Zeigt Login/Registrierung oder leitet zu /home um, wenn authentifiziert
+ * Landing Page — zeigt Login/Registrierung oder leitet zu /home um.
  */
 export default function LandingPage() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
+  /** Nach erster Session-Antwort kein Vollbild-Lädt mehr bei kurzen isPending-Spitzen (z. B. Hintergrund-Refetch). */
+  const authResolvedOnce = useRef(false);
 
-  // Zu /home umleiten, wenn bereits authentifiziert
   useEffect(() => {
-    if (status === "authenticated") {
+    if (!isPending) authResolvedOnce.current = true;
+  }, [isPending]);
+
+  useEffect(() => {
+    if (!isPending && session) {
       router.push("/home");
     }
-  }, [status, router]);
+  }, [isPending, session, router]);
 
-  // Ladeindikator anzeigen, während Authentifizierung überprüft wird
-  if (status === "loading") {
+  if (isPending && !authResolvedOnce.current) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-white">
-        <div className="text-center">
-          <p className="text-sm text-gray-600">Lädt...</p>
-        </div>
+        <p className="text-sm text-gray-600">Lädt...</p>
       </div>
     );
   }
 
-  // Wenn authentifiziert, nichts anzeigen (wird umgeleitet)
-  if (session) {
-    return null;
-  }
+  if (session) return null;
 
-  // Authentifizierungsseite anzeigen
   return <AuthPage />;
 }

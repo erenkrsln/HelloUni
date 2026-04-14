@@ -1318,7 +1318,7 @@ export const getConversationFiles = query({
 export const getMessages = query({
   args: {
     conversationId: v.id("conversations"),
-    activeUserId: v.optional(v.id("users")) // Passed from client because auth is via NextAuth
+    activeUserId: v.optional(v.id("users")) // Passed from client based on Better Auth session
   },
   handler: async (ctx, args) => {
     const messages = await ctx.db
@@ -1658,3 +1658,4 @@ export const searchPosts = query({
     return finalResults;
   },
 });
+

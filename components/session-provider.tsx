@@ -1,12 +1,3 @@
-"use client";
-
-import { SessionProvider } from "next-auth/react";
-
-/**
- * Wrapper für NextAuth SessionProvider
- * Ermöglicht die Verwendung von useSession in Client-Komponenten
- */
-export function NextAuthSessionProvider({ children }: { children: React.ReactNode }) {
-  return <SessionProvider>{children}</SessionProvider>;
-}
-
+// Diese Datei ist nach der Migration zu Better Auth nicht mehr benötigt.
+// Die Session wird von ConvexBetterAuthProvider in components/convex-provider.tsx verwaltet.
+export {};

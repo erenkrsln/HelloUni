@@ -4,9 +4,9 @@ import { Inter, Gloock, Poppins } from "next/font/google";
 import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
-import { NextAuthSessionProvider } from "@/components/session-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
 import { IncomingCallListener } from "@/components/incoming-call-listener";
+import { getToken } from "@/lib/auth-server";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -46,11 +46,14 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Auth-Token SSR-seitig vorladen (null wenn kein aktiver Login oder Verbindungsfehler)
+  const token = await getToken().catch(() => null);
+
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
@@ -62,12 +65,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
       </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`} suppressHydrationWarning>
-        <NextAuthSessionProvider>
-          <ConvexClientProvider>
-            <PostsCacheWrapper>{children}</PostsCacheWrapper>
-            <IncomingCallListener />
-          </ConvexClientProvider>
-        </NextAuthSessionProvider>
+        <ConvexClientProvider initialToken={token}>
+          <PostsCacheWrapper>{children}</PostsCacheWrapper>
+          <IncomingCallListener />
+        </ConvexClientProvider>
       </body>
     </html>
   );

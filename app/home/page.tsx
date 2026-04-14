@@ -6,7 +6,6 @@ import { FeedCard } from "@/components/feed-card";
 import { FeedSkeleton } from "@/components/feed-skeleton";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
-import { LoadingScreen } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useEffect, useRef, useState, useMemo } from "react";
 
@@ -18,7 +17,7 @@ const isMobileDevice = (): boolean => {
   ) || (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
 };
 import { useRouter } from "next/navigation";
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useRequireProfile } from "@/lib/hooks/useRequireProfile";
 import { markImageAsLoaded } from "@/lib/cache/imageCache";
 import { usePostsCache } from "@/lib/contexts/posts-context";
 
@@ -28,7 +27,8 @@ import { usePostsCache } from "@/lib/contexts/posts-context";
  */
 export default function Home() {
   const router = useRouter();
-  const { session, currentUserId, currentUser } = useCurrentUser();
+  const { session, currentUserId, currentUser, isLoading: isAuthProfileLoading } =
+    useRequireProfile();
   const [feedType, setFeedType] = useState<"all" | "major" | "following" | "interests">("all");
   const preloadedImages = useRef<Set<string>>(new Set());
   const [isFirstVisit, setIsFirstVisit] = useState(true);
@@ -140,12 +140,13 @@ export default function Home() {
   const hasCachedPosts = cachedPostsForCurrentKey && cachedPostsForCurrentKey.length > 0;
   const isInitialLoad = postsFromQuery === undefined && (!isMobile || !hasCachedPosts);
 
-  // Zum Login umleiten, wenn nicht authentifiziert
+  // Zum Login umleiten, wenn nicht authentifiziert (nicht während Session noch lädt — data ist sonst null und würde fälschlich zu "/" flackern)
   useEffect(() => {
-    if (session === null) {
+    if (isAuthProfileLoading) return;
+    if (session == null) {
       router.push("/");
     }
-  }, [session, router]);
+  }, [session, isAuthProfileLoading, router]);
 
   // Prüfe, ob Seite bereits besucht wurde
   useEffect(() => {

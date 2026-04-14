@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { signOut } from "@/lib/auth-client";
 import { X, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -18,7 +18,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const { currentUser } = useCurrentUser();
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
+    await signOut({ fetchOptions: { onSuccess: () => window.location.replace("/") } });
   };
 
   // Markiere das Profilbild im Cache, sobald es geladen ist

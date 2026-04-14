@@ -8,9 +8,11 @@
  * @module
  */
 
+import type * as allowedEmail from "../allowedEmail.js";
 import type * as auth from "../auth.js";
 import type * as calls from "../calls.js";
 import type * as events from "../events.js";
+import type * as http from "../http.js";
 import type * as mutations from "../mutations.js";
 import type * as notifications from "../notifications.js";
 import type * as queries from "../queries.js";
@@ -22,9 +24,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  allowedEmail: typeof allowedEmail;
   auth: typeof auth;
   calls: typeof calls;
   events: typeof events;
+  http: typeof http;
   mutations: typeof mutations;
   notifications: typeof notifications;
   queries: typeof queries;
@@ -56,4 +60,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  betterAuth: import("../betterAuth/_generated/component.js").ComponentApi<"betterAuth">;
+};

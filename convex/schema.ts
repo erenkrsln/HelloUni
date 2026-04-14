@@ -4,17 +4,21 @@ import { v } from "convex/values";
 export default defineSchema({
   users: defineTable({
     name: v.string(),
-    username: v.string(), // Für Authentifizierung
-    passwordHash: v.string(), // Gehashtes Passwort
+    username: v.string(),
+    email: v.optional(v.string()),
+    betterAuthUserId: v.optional(v.string()), // Link zu Better Auth (user.id)
+    passwordHash: v.optional(v.string()), // Nur noch für Legacy-Migration vorhanden
     image: v.optional(v.string()),
-    headerImage: v.optional(v.string()), // Header/Titelbild
-    uni_name: v.optional(v.string()), // Jetzt optional für initiale Registrierung
-    major: v.optional(v.string()), // Jetzt optional für initiale Registrierung
-    semester: v.optional(v.number()), // Semester (1-10)
-    bio: v.optional(v.string()), // Biografie des Benutzers
-    interests: v.optional(v.array(v.string())), // Interessen/Tags des Benutzers
-    createdAt: v.optional(v.number()), // Erstellungsdatum für "Joined"
-  }).index("by_username", ["username"]), // Index für schnelle Suche nach Benutzername
+    headerImage: v.optional(v.string()),
+    uni_name: v.optional(v.string()),
+    major: v.optional(v.string()),
+    semester: v.optional(v.number()),
+    bio: v.optional(v.string()),
+    interests: v.optional(v.array(v.string())),
+    createdAt: v.optional(v.number()),
+  })
+    .index("by_username", ["username"])
+    .index("by_better_auth_id", ["betterAuthUserId"]),
 
   posts: defineTable({
     userId: v.id("users"),
@@ -182,6 +186,14 @@ export default defineSchema({
   })
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),
+
+  pendingRegistrations: defineTable({
+    email: v.string(),
+    name: v.string(),
+    username: v.string(),
+    studiengang: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
 
   callSessions: defineTable({
     conversationId: v.id("conversations"),

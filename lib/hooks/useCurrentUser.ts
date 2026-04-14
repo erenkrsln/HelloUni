@@ -1,37 +1,34 @@
-import { useSession } from "next-auth/react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { useSession } from "@/lib/auth-client";
 
 /**
- * Hook zum Abrufen des aktuell eingeloggten Users
- * Verwendet die NextAuth Session, um die richtige User-ID zu erhalten
- * 
- * @returns Object mit currentUser, currentUserId, isLoading und session
+ * Hook zum Abrufen des aktuell eingeloggten Nutzers.
+ *
+ * needsSetup: true  → Nutzer ist authentifiziert, hat aber noch kein Convex-Profil.
+ *                     Weiterleitung zu /setup erforderlich.
+ * needsSetup: false → Profil existiert oder Nutzer ist nicht eingeloggt.
  */
 export function useCurrentUser() {
-  const { data: session, status } = useSession();
-  
-  // Hole User-ID aus Session
-  const currentUserId = (session?.user as any)?.id as Id<"users"> | undefined;
-  
-  // Query User-Daten von Convex
+  const { data: session, isPending } = useSession();
+
   const currentUser = useQuery(
-    api.queries.getUserById,
-    currentUserId ? { userId: currentUserId } : "skip"
+    api.auth.getCurrentUser,
+    session ? {} : "skip",
   );
 
+  // Ohne „session“-Check: kurzes isPending bei Session-Refetch würde die ganze UI blockieren, obwohl die Session schon bekannt ist.
+  const isLoading =
+    (isPending && !session) || (!!session && currentUser === undefined);
+
+  // Authentifiziert, aber kein Profil vorhanden → Setup erforderlich
+  const needsSetup = !isLoading && !!session && currentUser === null;
+
   return {
-    currentUser,
-    currentUserId,
-    isLoading: status === "loading" || (currentUserId && currentUser === undefined),
+    currentUser: currentUser ?? null,
+    currentUserId: currentUser?._id ?? undefined,
+    isLoading,
+    needsSetup,
     session,
   };
 }
-
-
-
-
-
-
-
