@@ -33,7 +33,6 @@ export function EditGroupImageModal({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const updateGroupImage = useMutation(api.mutations.updateGroupImage);
-    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -72,17 +71,24 @@ export function EditGroupImageModal({
             let imageUrl: string | undefined = undefined;
 
             if (selectedImage) {
-                // Upload new image
-                const uploadUrl = await generateUploadUrl();
-                const result = await fetch(uploadUrl, {
+                const { uploadUrl, publicUrl } = await fetch("/api/upload", {
                     method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        filename: selectedImage.name,
+                        contentType: selectedImage.type,
+                        fileSize: selectedImage.size,
+                    }),
+                }).then(r => r.json());
+
+                await fetch(uploadUrl, {
+                    method: "PUT",
                     headers: { "Content-Type": selectedImage.type },
                     body: selectedImage,
                 });
-                const { storageId } = await result.json();
-                imageUrl = storageId;
+
+                imageUrl = publicUrl;
             } else if (isImageRemoved) {
-                // Remove image
                 imageUrl = "";
             }
 

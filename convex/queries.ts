@@ -1,6 +1,7 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { getImageUrl } from "./helpers";
 
 // Helper function to calculate actual comments count for a post
 async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
@@ -45,20 +46,8 @@ export const getFeed = query({
         let imageUrl = post.imageUrl;
 
         // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
-
-        // Convert user image storage ID to URL if it exists
-        // Falls ein User kein Profilbild hat, gib null zurück
-        let userImageUrl: string | null = null;
-        if (user?.image) {
-          if (!user.image.startsWith('http')) {
-            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
-          } else {
-            userImageUrl = user.image;
-          }
-        }
+        imageUrl = await getImageUrl(ctx, imageUrl);
+        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -104,19 +93,8 @@ export const getPost = query({
 
     // Convert storage ID to URL if it exists
     let imageUrl = post.imageUrl;
-    if (imageUrl && !imageUrl.startsWith('http')) {
-      imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-    }
-
-    // Convert user image storage ID to URL if it exists
-    let userImageUrl: string | null = null;
-    if (user?.image) {
-      if (!user.image.startsWith('http')) {
-        userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
-      } else {
-        userImageUrl = user.image;
-      }
-    }
+    imageUrl = await getImageUrl(ctx, imageUrl);
+    const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
 
     // Calculate actual participants count for events
     let actualParticipantsCount = post.participantsCount || 0;
@@ -238,17 +216,8 @@ export const getUser = query({
       return null;
     }
 
-    // Convert storage ID to URL if it exists
-    let imageUrl = user.image;
-    if (imageUrl && !imageUrl.startsWith('http')) {
-      imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-    }
-
-    // Convert headerImage storage ID to URL if it exists
-    let headerImageUrl = user.headerImage;
-    if (headerImageUrl && !headerImageUrl.startsWith('http')) {
-      headerImageUrl = (await ctx.storage.getUrl(headerImageUrl as any)) ?? headerImageUrl;
-    }
+    const imageUrl = await getImageUrl(ctx, user.image);
+    const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
     let createdAt = user.createdAt;
@@ -304,20 +273,8 @@ export const getUserPosts = query({
         let imageUrl = post.imageUrl;
 
         // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
-
-        // Convert user image storage ID to URL if it exists
-        // Falls ein User kein Profilbild hat, gib null zurück
-        let userImageUrl: string | null = null;
-        if (user?.image) {
-          if (!user.image.startsWith('http')) {
-            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
-          } else {
-            userImageUrl = user.image;
-          }
-        }
+        imageUrl = await getImageUrl(ctx, imageUrl);
+        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -370,17 +327,8 @@ export const getUserById = query({
       return null;
     }
 
-    // Convert storage ID to URL if it exists
-    let imageUrl = user.image;
-    if (imageUrl && !imageUrl.startsWith('http')) {
-      imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-    }
-
-    // Convert headerImage storage ID to URL if it exists
-    let headerImageUrl = user.headerImage;
-    if (headerImageUrl && !headerImageUrl.startsWith('http')) {
-      headerImageUrl = (await ctx.storage.getUrl(headerImageUrl as any)) ?? headerImageUrl;
-    }
+    const imageUrl = await getImageUrl(ctx, user.image);
+    const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
     let createdAt = user.createdAt;
@@ -429,10 +377,7 @@ export const searchUsers = query({
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       matchingUsers.map(async (user) => {
-        let imageUrl = user.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrl = await getImageUrl(ctx, user.image);
         return {
           _id: user._id,
           name: user.name,
@@ -459,17 +404,8 @@ export const getUserByUsername = query({
       return null;
     }
 
-    // Convert storage ID to URL if it exists
-    let imageUrl = user.image;
-    if (imageUrl && !imageUrl.startsWith('http')) {
-      imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-    }
-
-    // Convert headerImage storage ID to URL if it exists
-    let headerImageUrl = user.headerImage;
-    if (headerImageUrl && !headerImageUrl.startsWith('http')) {
-      headerImageUrl = (await ctx.storage.getUrl(headerImageUrl as any)) ?? headerImageUrl;
-    }
+    const imageUrl = await getImageUrl(ctx, user.image);
+    const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
     let createdAt = user.createdAt;
@@ -547,20 +483,8 @@ export const getFollowingFeed = query({
         let imageUrl = post.imageUrl;
 
         // Convert storage ID to URL if it exists
-        if (imageUrl && !imageUrl.startsWith("http")) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
-
-        // Convert user image storage ID to URL if it exists
-        // Falls ein User kein Profilbild hat, gib null zurück
-        let userImageUrl: string | null = null;
-        if (user?.image) {
-          if (!user.image.startsWith('http')) {
-            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
-          } else {
-            userImageUrl = user.image;
-          }
-        }
+        imageUrl = await getImageUrl(ctx, imageUrl);
+        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -743,10 +667,7 @@ export const getParticipants = query({
         if (!user) return null;
 
         // Convert storage ID to URL if it exists
-        let imageUrl = user.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrl = await getImageUrl(ctx, user.image);
 
         return {
           _id: user._id,
@@ -838,20 +759,8 @@ export const getFilteredFeed = query({
         }
 
         let imageUrl = post.imageUrl;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
-
-        // Convert user image storage ID to URL if it exists
-        // Falls ein User kein Profilbild hat, gib null zurück
-        let userImageUrl: string | null = null;
-        if (user?.image) {
-          if (!user.image.startsWith('http')) {
-            userImageUrl = (await ctx.storage.getUrl(user.image as any)) ?? null;
-          } else {
-            userImageUrl = user.image;
-          }
-        }
+        imageUrl = await getImageUrl(ctx, imageUrl);
+        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -918,10 +827,7 @@ export const getAllUsers = query({
     // Fix image URLs for all users
     const usersWithImages = await Promise.all(
       users.map(async (user) => {
-        let imageUrl = user.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrl = await getImageUrl(ctx, user.image);
         return {
           ...user,
           image: imageUrl
@@ -999,20 +905,14 @@ export const getConversations = query({
 
         if (conv.isGroup) {
           displayName = conv.name || "Gruppenchat";
-          if (conv.image) {
-            displayImage = await ctx.storage.getUrl(conv.image as any);
-          }
+          displayImage = await getImageUrl(ctx, conv.image);
         } else {
           // 1:1 Chat: Partner Info anzeigen
           const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId;
           const partner = await ctx.db.get(partnerId);
           if (partner) {
             displayName = partner.name;
-            let partnerImageUrl = partner.image;
-            if (partnerImageUrl && !partnerImageUrl.startsWith('http')) {
-              partnerImageUrl = (await ctx.storage.getUrl(partnerImageUrl as any)) ?? partnerImageUrl;
-            }
-            displayImage = partnerImageUrl;
+            displayImage = await getImageUrl(ctx, partner.image);
           }
         }
 
@@ -1125,10 +1025,7 @@ export const getConversationMembers = query({
         const user = await ctx.db.get(userId);
         if (!user) return null;
 
-        let imageUrl = user.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrl = await getImageUrl(ctx, user.image);
 
         const userIdString = userId.toString();
         const creatorIdString = conversation.creatorId?.toString();
@@ -1197,16 +1094,9 @@ export const getComments = query({
         const user = await ctx.db.get(comment.userId);
         if (!user) return null;
 
-        let imageUrl = user.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrl = await getImageUrl(ctx, user.image);
 
-        // Convert comment image storage ID to URL if it exists
-        let commentImageUrl = comment.imageUrl;
-        if (commentImageUrl && !commentImageUrl.startsWith('http')) {
-          commentImageUrl = (await ctx.storage.getUrl(commentImageUrl as any)) ?? commentImageUrl;
-        }
+        const commentImageUrl = await getImageUrl(ctx, comment.imageUrl);
 
         return {
           _id: comment._id,
@@ -1283,10 +1173,7 @@ export const getConversationFiles = query({
 
     for (const m of visibleMessages) {
       if (m.type === "image" || m.type === "pdf") {
-        let url = null;
-        if (m.storageId) {
-          url = await ctx.storage.getUrl(m.storageId);
-        }
+        const url = await getImageUrl(ctx, m.storageId);
         files.push({
           ...m,
           url
@@ -1360,16 +1247,10 @@ export const getMessages = query({
 
     // Resolve URLs for files
     const messagesWithUrls = await Promise.all(
-      visibleMessages.map(async (msg) => {
-        let url = null;
-        if (msg.storageId) {
-          url = await ctx.storage.getUrl(msg.storageId);
-        }
-        return {
-          ...msg,
-          url
-        };
-      })
+      visibleMessages.map(async (msg) => ({
+        ...msg,
+        url: await getImageUrl(ctx, msg.storageId),
+      }))
     );
 
     return messagesWithUrls;
@@ -1400,16 +1281,10 @@ export const searchGlobal = query({
         ))
         // Limit user results
         .slice(0, 20)
-        .map(async (user) => {
-          let imageUrl = user.image;
-          if (imageUrl && !imageUrl.startsWith('http')) {
-            imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-          }
-          return {
-            ...user,
-            image: imageUrl
-          };
-        })
+        .map(async (user) => ({
+          ...user,
+          image: await getImageUrl(ctx, user.image),
+        }))
     );
 
     // 2. Search Posts
@@ -1430,15 +1305,8 @@ export const searchGlobal = query({
         .map(async (post) => {
           const user = await ctx.db.get(post.userId);
 
-          let imageUrl = post.imageUrl;
-          if (imageUrl && !imageUrl.startsWith('http')) {
-            imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-          }
-
-          let userImageUrl = user?.image;
-          if (userImageUrl && !userImageUrl.startsWith('http')) {
-            userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
-          }
+          const imageUrl = await getImageUrl(ctx, post.imageUrl);
+          const userImageUrl = await getImageUrl(ctx, user?.image);
 
           // Calculate actual comments count
           const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
@@ -1519,10 +1387,7 @@ export const searchProfiles = query({
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       limitedUsers.map(async (user) => {
-        let imageUrl = user.image;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
+        const imageUrl = await getImageUrl(ctx, user.image);
         return {
           ...user,
           image: imageUrl,
@@ -1616,16 +1481,8 @@ export const searchPosts = query({
           return null;
         }
 
-        let imageUrl = post.imageUrl;
-
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-        }
-
-        let userImageUrl = user?.image;
-        if (userImageUrl && !userImageUrl.startsWith('http')) {
-          userImageUrl = (await ctx.storage.getUrl(userImageUrl as any)) ?? userImageUrl;
-        }
+        const imageUrl = await getImageUrl(ctx, post.imageUrl);
+        const userImageUrl = await getImageUrl(ctx, user?.image);
 
         let actualParticipantsCount = post.participantsCount || 0;
         if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
@@ -1659,3 +1516,47 @@ export const searchPosts = query({
   },
 });
 
+// Get chat poll data by ID
+export const getChatPoll = query({
+  args: { chatPollId: v.id("chatPolls") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.chatPollId);
+  },
+});
+
+// Get vote counts per option for a chat poll
+export const getChatPollResults = query({
+  args: { chatPollId: v.id("chatPolls") },
+  handler: async (ctx, args) => {
+    const poll = await ctx.db.get(args.chatPollId);
+    if (!poll) return null;
+
+    const votes = await ctx.db
+      .query("chatPollVotes")
+      .withIndex("by_poll", (q) => q.eq("chatPollId", args.chatPollId))
+      .collect();
+
+    // Count votes per option index
+    const results = poll.options.map((_, index) =>
+      votes.reduce((count, vote) =>
+        vote.optionIndices.includes(index) ? count + 1 : count, 0)
+    );
+
+    return { results, totalVoters: votes.length };
+  },
+});
+
+// Get current user's vote for a chat poll (returns array of chosen indices)
+export const getChatPollVote = query({
+  args: { chatPollId: v.id("chatPolls"), userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const vote = await ctx.db
+      .query("chatPollVotes")
+      .withIndex("by_poll_user", (q) =>
+        q.eq("chatPollId", args.chatPollId).eq("userId", args.userId)
+      )
+      .first();
+
+    return vote ? vote.optionIndices : [];
+  },
+});

@@ -50,7 +50,6 @@ export function GroupInfoModal({
     // New mutations
     const updateGroupName = useMutation(api.mutations.updateGroupName);
     const updateGroupImage = useMutation(api.mutations.updateGroupImage);
-    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
 
     const myself = members?.find(m => m._id === currentUserId);
     const iAmCreator = myself?.role === "creator";
@@ -194,17 +193,25 @@ export function GroupInfoModal({
         if (!file) return;
 
         try {
-            const postUrl = await generateUploadUrl();
-            const result = await fetch(postUrl, {
+            const { uploadUrl, publicUrl } = await fetch("/api/upload", {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    filename: file.name,
+                    contentType: file.type,
+                    fileSize: file.size,
+                }),
+            }).then(r => r.json());
+
+            await fetch(uploadUrl, {
+                method: "PUT",
                 headers: { "Content-Type": file.type },
                 body: file,
             });
-            const { storageId } = await result.json();
 
             await updateGroupImage({
                 conversationId,
-                imageId: storageId,
+                imageId: publicUrl,
                 userId: currentUserId,
             });
         } catch (error) {
