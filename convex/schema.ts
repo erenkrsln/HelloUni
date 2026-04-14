@@ -179,9 +179,50 @@ export default defineSchema({
     location: v.optional(v.string()),
     createdBy: v.id("users"),
     isPrivate: v.optional(v.boolean()),
+    workspaceId: v.optional(v.string()), // Löst die Verbindung zu einem Group/Event Hub
   })
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),
+
+  workspace_tasks: defineTable({
+    workspaceId: v.string(), // z.B. "group:xyz" oder "event:xyz"
+    title: v.string(),
+    deadline: v.optional(v.string()), // z.B. "Today", "Tomorrow" oder ISO string
+    assigneeId: v.optional(v.id("users")),
+    createdBy: v.id("users"),
+    isCompleted: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_assignee", ["assigneeId"]),
+
+  workspace_files: defineTable({
+    workspaceId: v.string(),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    fileType: v.string(),
+    uploaderId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_polls: defineTable({
+    workspaceId: v.string(),
+    question: v.string(),
+    options: v.array(v.string()),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_poll_votes: defineTable({
+    pollId: v.id("workspace_polls"),
+    userId: v.id("users"),
+    optionIndex: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_poll", ["pollId"])
+    .index("by_poll_user", ["pollId", "userId"]),
 });
 
 

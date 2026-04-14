@@ -3,6 +3,7 @@
 import { Plus, Bell, MessageCircle } from "lucide-react";
 import { HomeIcon } from "@/components/home-icon";
 import { SearchIcon } from "@/components/search-icon";
+import { WorkspaceIcon } from "@/components/workspace-icon"; // Added
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -91,6 +92,20 @@ export function BottomNavigation() {
           <SearchIcon
             isActive={isActive("/search")}
             size={32}
+            color="#000000"
+          />
+        </Link>
+
+        {/* Workspace */}
+        <Link
+          href="/workspace"
+          prefetch={true}
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+        >
+          <WorkspaceIcon
+            isActive={isActive("/workspace")}
+            size={28}
             color="#000000"
           />
         </Link>
