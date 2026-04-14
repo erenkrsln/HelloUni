@@ -58,7 +58,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB limit for files and videos
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
     const resetFileInput = () => {
         if (fileInputRef.current) fileInputRef.current.value = "";
