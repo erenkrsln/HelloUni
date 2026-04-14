@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "./useCurrentUser";
@@ -12,11 +11,10 @@ import { useSession } from "@/lib/auth-client";
  *    → Profil wird im Hintergrund erstellt, Nutzer bleibt auf der aktuellen Seite.
  *
  * B) Keine Registrierungsdaten
- *    → Weiterleitung zu /setup (manuelle Eingabe von Name/Username/Studiengang).
+ *    → kein Redirect mehr; die App läuft ohne Setup-Route weiter.
  */
 export function useRequireProfile() {
   const result = useCurrentUser();
-  const router = useRouter();
   const { data: session } = useSession();
   const createOrLinkProfile = useMutation(api.auth.createOrLinkUserProfile);
   const [autoSetupAttempted, setAutoSetupAttempted] = useState(false);
@@ -43,14 +41,9 @@ export function useRequireProfile() {
         studiengang: pendingReg.studiengang ?? undefined,
       }).catch((err) => {
         console.error("Auto-Setup fehlgeschlagen:", err);
-        // Fallback: manuelle Eingabe
-        router.replace("/setup");
       });
-    } else {
-      // Keine Registrierungsdaten → manuelles Onboarding
-      router.replace("/setup");
     }
-  }, [result.needsSetup, pendingReg, autoSetupAttempted, createOrLinkProfile, router]);
+  }, [result.needsSetup, pendingReg, autoSetupAttempted, createOrLinkProfile]);
 
   return result;
 }

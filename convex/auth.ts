@@ -43,7 +43,7 @@ export const savePendingRegistration = mutation({
 
 /**
  * Liest gespeicherte Registrierungsdaten für eine E-Mail aus.
- * Wird auf der /setup-Seite nach dem Magic-Link-Klick aufgerufen.
+ * Wird nach dem Magic-Link-Klick fürs automatische Profil-Setup genutzt.
  */
 export const getPendingRegistration = query({
   args: { email: v.string() },

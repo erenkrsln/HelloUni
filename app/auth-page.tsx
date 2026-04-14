@@ -16,7 +16,7 @@ type State = "idle" | "loading" | "sent";
 const inputCls =
   "w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all";
 
-/** Nach Klick auf Magic Link: zuerst Splash, dann Feed/Setup — nicht direkt /home. */
+/** Nach Klick auf Magic Link: zuerst Splash, dann /home. */
 const MAGIC_LINK_CALLBACK = "/splash?ml=1";
 const MAGIC_LINK_ERROR = "/auth/magic-link-fehler";
 
@@ -117,7 +117,7 @@ export default function AuthPage() {
 
     setState("loading");
     try {
-      // Registrierungsdaten in Convex sichern – werden auf /setup abgerufen
+      // Registrierungsdaten in Convex sichern – können nach dem Login fürs Auto-Setup genutzt werden
       await savePending({
         email: trimmedEmail,
         name: trimmedName,

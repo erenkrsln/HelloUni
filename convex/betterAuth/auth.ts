@@ -57,11 +57,21 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     process.env.SITE_URL ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
 
+  const envTrustedOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   const trustedOrigins = [
     process.env.BETTER_AUTH_URL,
     process.env.SITE_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
-  ].filter((origin): origin is string => Boolean(origin));
+    // Lokale Entwicklung erlauben, damit Requests von Next.js dev nicht als "Invalid origin" scheitern.
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    ...envTrustedOrigins,
+  ].filter((origin, index, all): origin is string => Boolean(origin) && all.indexOf(origin) === index);
 
   return {
     appName: "HelloUni",

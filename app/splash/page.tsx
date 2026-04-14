@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 /** Mindestens so lange Splash nach erfolgreichem Magic-Link (Callback mit ?ml=1). */
 const SPLASH_MIN_MS = 1000;
@@ -28,7 +27,6 @@ function SplashInner() {
   const isMagicLinkFlow = searchParams.get("ml") === "1";
 
   const { data: session, isPending } = useSession();
-  const { currentUser, needsSetup, isLoading } = useCurrentUser();
   const mountedAt = useRef(Date.now());
 
   // Direktaufruf /splash ohne Magic-Link-Parameter: kein erzwungener Splash (Lesezeichen, alte Links)
@@ -47,15 +45,14 @@ function SplashInner() {
       router.replace("/");
       return;
     }
-    if (isLoading) return;
 
     const elapsed = Date.now() - mountedAt.current;
     const remaining = Math.max(0, SPLASH_MIN_MS - elapsed);
     const id = window.setTimeout(() => {
-      router.replace(needsSetup ? "/setup" : "/home");
+      router.replace("/home");
     }, remaining);
     return () => window.clearTimeout(id);
-  }, [isMagicLinkFlow, isPending, session, isLoading, needsSetup, router]);
+  }, [isMagicLinkFlow, isPending, session, router]);
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-white px-6">

@@ -6,7 +6,7 @@ import { useSession } from "@/lib/auth-client";
  * Hook zum Abrufen des aktuell eingeloggten Nutzers.
  *
  * needsSetup: true  → Nutzer ist authentifiziert, hat aber noch kein Convex-Profil.
- *                     Weiterleitung zu /setup erforderlich.
+ *                     Profil kann im Hintergrund erstellt werden.
  * needsSetup: false → Profil existiert oder Nutzer ist nicht eingeloggt.
  */
 export function useCurrentUser() {
@@ -21,7 +21,7 @@ export function useCurrentUser() {
   const isLoading =
     (isPending && !session) || (!!session && currentUser === undefined);
 
-  // Authentifiziert, aber kein Profil vorhanden → Setup erforderlich
+  // Authentifiziert, aber kein Profil vorhanden
   const needsSetup = !isLoading && !!session && currentUser === null;
 
   return {
