@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { CalendarHeart, Check, HelpCircle, X as XIcon, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Check, HelpCircle, X as XIcon, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 interface ChatEventMessageProps {
@@ -66,13 +66,12 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
     return (
         <div className="min-w-[260px] max-w-[320px]">
             <div className="flex items-center gap-1.5 mb-2">
-                <CalendarHeart size={14} className="text-[#D08945] flex-shrink-0" />
+                <CalendarDays size={14} className="text-[#D08945] flex-shrink-0" />
                 <span className="text-[10px] font-bold text-[#D08945] uppercase tracking-wider">
                     Terminfindung
                 </span>
                 {isConfirmed && (
-                    <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-emerald-600 bg-emerald-100 rounded-full px-1.5 py-0.5 leading-none flex items-center gap-1">
-                        <CheckCircle2 size={10} />
+                    <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-white bg-gray-600 rounded-full px-1.5 py-0.5 leading-none">
                         Bestätigt
                     </span>
                 )}
@@ -93,7 +92,7 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                     const yesVotes = slotVotes.filter(v => v.vote === "yes");
                     const maybeVotes = slotVotes.filter(v => v.vote === "maybe");
                     const noVotes = slotVotes.filter(v => v.vote === "no");
-                    
+
                     const myVote = slotVotes.find(v => v.userId === currentUserId)?.vote;
                     const isWinningSlot = chatEvent.confirmedTimeSlotIndex === index;
                     const isOtherSlotConfirmed = isConfirmed && chatEvent.confirmedTimeSlotIndex !== index;
@@ -101,11 +100,11 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                     if (isOtherSlotConfirmed) return null; // Hide other slots if confirmed
 
                     return (
-                        <div 
-                            key={index} 
-                            className={`rounded-xl border border-gray-200 overflow-hidden bg-white/50 transition-all ${(isWinningSlot || (myVote && !isConfirmed)) ? 'border-[#D08945]/30 shadow-sm' : ''}`}
+                        <div
+                            key={index}
+                            className={`rounded-xl border border-gray-200 overflow-hidden bg-white/70 transition-all ${(isWinningSlot || (myVote && !isConfirmed)) ? 'border-[#D08945]/30 shadow-sm' : ''}`}
                         >
-                            <div className={`p-3 ${isWinningSlot ? 'bg-emerald-50' : 'bg-gray-50/50'} border-b border-gray-100 flex justify-between items-start`}>
+                            <div className={`p-3 ${isWinningSlot ? 'bg-gray-100' : 'bg-gray-50/50'} border-b border-gray-100 flex justify-between items-start`}>
                                 <div>
                                     <p className="font-semibold text-gray-900 text-sm">
                                         {formatSlotDate(slot.startTime)}
@@ -115,16 +114,16 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                     </p>
                                 </div>
                                 {!isConfirmed && isCreator && (
-                                    <button 
+                                    <button
                                         onClick={() => handleConfirm(index)}
                                         disabled={isVoting}
-                                        className="text-[10px] font-bold text-white bg-slate-900 px-3 py-1.5 rounded-full hover:bg-slate-800 transition-colors"
+                                        className="text-[10px] font-bold text-white bg-slate-900 px-3 py-1.5 rounded-full hover:bg-slate-800 transition-colors uppercase tracking-wider"
                                     >
                                         Bestätigen
                                     </button>
                                 )}
                             </div>
-                            
+
                             <div className="p-2 space-y-2">
                                 {/* Voting Buttons */}
                                 <div className="flex gap-1">
@@ -150,12 +149,12 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                         <XIcon size={16} />
                                     </button>
                                 </div>
-                                
+
                                 {/* Results */}
                                 <div className="flex justify-between px-1 text-[11px] font-medium text-gray-500">
                                     <div className="flex gap-2">
                                         {yesVotes.length > 0 && <span className="text-emerald-600">{yesVotes.length} Ja</span>}
-                                        {maybeVotes.length > 0 && <span className="text-amber-600">{maybeVotes.length} Vllt</span>}
+                                        {maybeVotes.length > 0 && <span className="text-amber-600">{maybeVotes.length} Vielleicht</span>}
                                         {noVotes.length > 0 && <span className="text-red-600">{noVotes.length} Nein</span>}
                                         {slotVotes.length === 0 && <span className="opacity-50">Noch keine Stimmen</span>}
                                     </div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Plus, Trash2, CalendarHeart } from "lucide-react";
+import { Plus, Trash2, CalendarDays } from "lucide-react";
 
 interface ChatEventModalProps {
     isOpen: boolean;
@@ -44,12 +44,12 @@ type TimeSlotState = {
 export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: ChatEventModalProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    
+
     const [timeSlots, setTimeSlots] = useState<TimeSlotState[]>([
         { date: todayString(), startTime: defaultTimeString(1), endTime: defaultTimeString(2) },
         { date: todayString(), startTime: defaultTimeString(3), endTime: defaultTimeString(4) },
     ]);
-    
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const createChatEvent = useMutation(api.chatEvents.createChatEvent);
@@ -138,7 +138,7 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
                         Abbrechen
                     </button>
                     <div className="flex items-center gap-2">
-                        <CalendarHeart size={18} className="text-[#D08945]" />
+                        <CalendarDays size={18} className="text-[#D08945]" />
                         <h2 className="font-semibold text-base text-gray-900">Termin finden</h2>
                     </div>
                     <button
@@ -165,7 +165,7 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
                             className="mt-2 w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 focus:border-[#D08945] transition-all"
                         />
                     </div>
-                    
+
                     {/* Description */}
                     <div>
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Details (optional)</label>
@@ -188,55 +188,56 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
                             {timeSlots.map((slot, index) => {
                                 const isValid = parsedSlots[index].endTime > parsedSlots[index].startTime || parsedSlots[index].startTime === 0;
                                 return (
-                                <div key={index} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 transition-all focus-within:ring-2 focus-within:ring-[#D08945]/30 focus-within:border-[#D08945]">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-xs font-bold text-[#D08945]">Vorschlag {index + 1}</span>
-                                        {timeSlots.length > 2 && (
-                                            <button
-                                                onClick={() => removeTimeSlot(index)}
-                                                className="text-gray-400 hover:text-red-500 transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">Datum</p>
-                                            <input
-                                                type="date"
-                                                value={slot.date}
-                                                min={todayString()}
-                                                onChange={(e) => updateTimeSlot(index, "date", e.target.value)}
-                                                className={inputClass}
-                                            />
+                                    <div key={index} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 transition-all focus-within:ring-2 focus-within:ring-[#D08945]/30 focus-within:border-[#D08945]">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-xs font-bold text-[#D08945]">Vorschlag {index + 1}</span>
+                                            {timeSlots.length > 2 && (
+                                                <button
+                                                    onClick={() => removeTimeSlot(index)}
+                                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-1">
-                                                <p className="text-xs text-gray-500 mb-1">Start</p>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Datum</p>
                                                 <input
-                                                    type="time"
-                                                    value={slot.startTime}
-                                                    onChange={(e) => updateTimeSlot(index, "startTime", e.target.value)}
+                                                    type="date"
+                                                    value={slot.date}
+                                                    min={todayString()}
+                                                    onChange={(e) => updateTimeSlot(index, "date", e.target.value)}
                                                     className={inputClass}
                                                 />
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-xs text-gray-500 mb-1">Ende</p>
-                                                <input
-                                                    type="time"
-                                                    value={slot.endTime}
-                                                    onChange={(e) => updateTimeSlot(index, "endTime", e.target.value)}
-                                                    className={`${inputClass} ${!isValid && slot.endTime ? "border-red-300 focus:ring-red-500" : ""}`}
-                                                />
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1">
+                                                    <p className="text-xs text-gray-500 mb-1">Start</p>
+                                                    <input
+                                                        type="time"
+                                                        value={slot.startTime}
+                                                        onChange={(e) => updateTimeSlot(index, "startTime", e.target.value)}
+                                                        className={inputClass}
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-xs text-gray-500 mb-1">Ende</p>
+                                                    <input
+                                                        type="time"
+                                                        value={slot.endTime}
+                                                        onChange={(e) => updateTimeSlot(index, "endTime", e.target.value)}
+                                                        className={`${inputClass} ${!isValid && slot.endTime ? "border-red-300 focus:ring-red-500" : ""}`}
+                                                    />
+                                                </div>
                                             </div>
+                                            {!isValid && slot.endTime && (
+                                                <p className="text-xs text-red-500">Das Ende muss nach dem Start liegen.</p>
+                                            )}
                                         </div>
-                                        {!isValid && slot.endTime && (
-                                           <p className="text-xs text-red-500">Das Ende muss nach dem Start liegen.</p>
-                                        )}
                                     </div>
-                                </div>
-                            )})}
+                                )
+                            })}
                         </div>
                         {timeSlots.length < 4 && (
                             <button

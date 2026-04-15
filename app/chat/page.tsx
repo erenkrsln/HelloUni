@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, BarChart2, StickyNote, User, Play, CalendarHeart } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, BarChart2, StickyNote, User, Play, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -247,7 +247,7 @@ export default function ChatPage() {
                               </>
                             ) : (conv.lastMessage as any).type === "event_invite" ? (
                               <>
-                                <CalendarHeart size={14} className="flex-shrink-0 mr-1" />
+                                <CalendarDays size={14} className="flex-shrink-0 mr-1" />
                                 <span>{conv.lastMessage.content || "Termin"}</span>
                               </>
                             ) : (
