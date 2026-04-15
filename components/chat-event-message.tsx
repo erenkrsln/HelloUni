@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { CalendarDays, Check, HelpCircle, X as XIcon, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Check, HelpCircle, X as XIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface ChatEventMessageProps {
@@ -112,7 +112,7 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                     const isWinningSlot = chatEvent.confirmedTimeSlotIndex === index;
                     const isOtherSlotConfirmed = isConfirmed && chatEvent.confirmedTimeSlotIndex !== index;
 
-                    if (isOtherSlotConfirmed) return null; // Hide other slots if confirmed
+                    if (isOtherSlotConfirmed) return null;
 
                     return (
                         <div
@@ -151,7 +151,7 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                     </button>
                                     <button
                                         onClick={() => handleVote(index, "maybe")}
-                                        disabled={isVoting || isWinningSlot || isClosed} // Often you can't vote maybe if confirmed, but we allow changing to Yes/No
+                                        disabled={isVoting || isWinningSlot || isClosed}
                                         className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'maybe' ? 'bg-amber-100 border-amber-200 text-amber-800' : `bg-white border-gray-100 text-gray-400 ${!(isVoting || isWinningSlot || isClosed) ? 'hover:bg-amber-50 hover:text-amber-600' : ''}`} ${(isWinningSlot || isClosed) ? 'opacity-50 cursor-default' : ''}`}
                                     >
                                         <HelpCircle size={16} />
