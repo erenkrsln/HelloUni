@@ -58,7 +58,6 @@ export default function ChatPage() {
     if (!currentUser || selectedUsers.length === 0) return;
     if (selectedUsers.length > 1 && !groupName.trim()) return;
 
-    // Add current user to participants
     const participants = [currentUser._id, ...selectedUsers];
 
     try {

@@ -16,11 +16,11 @@ interface ChatFilesModalProps {
 
 export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId }: ChatFilesModalProps) {
     const files = useQuery(api.queries.getConversationFiles, { conversationId, userId: currentUserId });
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<"images" | "pdfs" | "links">("images");
+    const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
+    const [activeTab, setActiveTab] = useState<"media" | "pdfs" | "links">("media");
 
     // Separate and sort files by type
-    const imageFiles = files?.filter(f => f.type === "image").sort((a, b) => b.createdAt - a.createdAt) || [];
+    const mediaFiles = files?.filter(f => f.type === "image" || f.type === "video").sort((a, b) => b.createdAt - a.createdAt) || [];
     const pdfFiles = files?.filter(f => f.type === "pdf").sort((a, b) => b.createdAt - a.createdAt) || [];
     const linkFiles = files?.filter(f => f.type === "link").sort((a, b) => b.createdAt - a.createdAt) || [];
 
@@ -43,33 +43,44 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
         return grouped;
     };
 
-    const groupedImages = groupFilesByDate(imageFiles);
+    const groupedMedia = groupFilesByDate(mediaFiles);
     const groupedPdfs = groupFilesByDate(pdfFiles);
     const groupedLinks = groupFilesByDate(linkFiles);
 
-    const currentFiles = activeTab === "images" ? groupedImages : activeTab === "pdfs" ? groupedPdfs : groupedLinks;
-    const currentCount = activeTab === "images" ? imageFiles.length : activeTab === "pdfs" ? pdfFiles.length : linkFiles.length;
+    const currentFiles = activeTab === "media" ? groupedMedia : activeTab === "pdfs" ? groupedPdfs : groupedLinks;
+    const currentCount = activeTab === "media" ? mediaFiles.length : activeTab === "pdfs" ? pdfFiles.length : linkFiles.length;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className={selectedImage
+            <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className={selectedMedia
                 ? "duration-0 p-0 border-0 rounded-none max-w-none w-screen h-screen bg-transparent"
                 : "duration-0 w-[90vw] sm:w-[80vw] max-w-[600px] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white"
             }>
-                {selectedImage ? (
-                    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2">
+                {selectedMedia ? (
+                    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2" onClick={() => setSelectedMedia(null)}>
                         <button
-                            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
-                            onClick={() => setSelectedImage(null)}
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[110]"
+                            onClick={() => setSelectedMedia(null)}
                         >
                             <X size={32} />
                         </button>
-                        <img
-                            src={selectedImage}
-                            alt="Vollbild"
-                            className="max-w-full max-h-full object-contain select-none"
-                            draggable={false}
-                        />
+                        {selectedMedia.type === 'video' ? (
+                            <video
+                                src={selectedMedia.url}
+                                controls
+                                autoPlay
+                                playsInline
+                                className="max-w-[100vw] max-h-[100vh] w-full h-full object-contain"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        ) : (
+                            <img
+                                src={selectedMedia.url}
+                                alt="Vollbild"
+                                className="max-w-full max-h-full object-contain select-none"
+                                draggable={false}
+                            />
+                        )}
                     </div>
                 ) : (
                     <>
@@ -86,13 +97,13 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                         {/* Tabs */}
                         <div className="flex border-b bg-white">
                             <button
-                                onClick={() => setActiveTab("images")}
-                                className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "images"
+                                onClick={() => setActiveTab("media")}
+                                className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "media"
                                     ? "text-[#D08945] border-[#D08945]"
                                     : "text-gray-500 hover:text-gray-700 border-transparent"
                                     }`}
                             >
-                                Bilder
+                                Medien
                             </button>
                             <button
                                 onClick={() => setActiveTab("pdfs")}
@@ -119,7 +130,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                 <div className="text-center text-gray-400 py-8">Lade Dateien...</div>
                             ) : currentCount === 0 ? (
                                 <div className="text-center text-gray-400 py-8">
-                                    Keine {activeTab === "images" ? "Bilder" : activeTab === "pdfs" ? "PDFs" : "Links"} geteilt.
+                                    Keine {activeTab === "media" ? "Medien" : activeTab === "pdfs" ? "PDFs" : "Links"} geteilt.
                                 </div>
                             ) : (
                                 <div className="space-y-6">
@@ -134,8 +145,8 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                         key={file._id}
                                                         className={`bg-white rounded-lg border border-gray-300 overflow-hidden flex transition-shadow cursor-pointer hover:shadow-md ${activeTab === "links" ? "flex-row items-center p-3" : "flex-col"}`}
                                                         onClick={() => {
-                                                            if (file.type === "image" && file.url) {
-                                                                setSelectedImage(file.url);
+                                                            if ((file.type === "image" || file.type === "video") && file.url) {
+                                                                setSelectedMedia({ url: file.url, type: file.type });
                                                             } else if (file.url) {
                                                                 window.open(file.url, '_blank');
                                                             }
@@ -168,6 +179,19 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                                                 alt={file.fileName || "Bild"}
                                                                                 className="w-full h-full object-cover"
                                                                             />
+                                                                        ) : file.type === "video" && file.url ? (
+                                                                            <div className="w-full h-full relative group">
+                                                                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-[1] group-hover:bg-black/30 transition-colors">
+                                                                                    <div className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
+                                                                                        <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-white border-b-[6px] border-b-transparent ml-1"></div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <video
+                                                                                    src={file.url}
+                                                                                    className="w-full h-full object-cover"
+                                                                                    preload="metadata"
+                                                                                />
+                                                                            </div>
                                                                         ) : (
                                                                             <FileText size={60} className="text-[#D08945]" />
                                                                         )}
@@ -176,7 +200,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                                 <div className="p-2 border-t border-[#efeadd]">
                                                                     <div className="w-full">
                                                                         <p className="text-xs font-medium truncate" title={file.fileName}>
-                                                                            {file.fileName || (file.type === "image" ? "Bild" : "Dokument")}
+                                                                            {file.fileName || (file.type === "image" ? "Bild" : file.type === "video" ? "Video" : "Dokument")}
                                                                         </p>
                                                                         <p className="text-[10px] text-gray-400">
                                                                             {new Date(file.createdAt).toLocaleTimeString('de-DE', {
