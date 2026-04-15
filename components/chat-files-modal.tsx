@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileText, X, Download, ExternalLink, Image } from "lucide-react";
+import { FileText, X, Download, ExternalLink, Image, CirclePlay } from "lucide-react";
 
 interface ChatFilesModalProps {
     isOpen: boolean;
@@ -182,9 +182,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                                         ) : file.type === "video" && file.url ? (
                                                                             <div className="w-full h-full relative group">
                                                                                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-[1] group-hover:bg-black/30 transition-colors">
-                                                                                    <div className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
-                                                                                        <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-white border-b-[6px] border-b-transparent ml-1"></div>
-                                                                                    </div>
+                                                                                    <CirclePlay size={40} className="text-white/90 drop-shadow-lg" strokeWidth={1.5} />
                                                                                 </div>
                                                                                 <video
                                                                                     src={file.url}

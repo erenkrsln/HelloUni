@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
@@ -521,9 +521,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             }}
                                                         >
                                                             <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10 group-hover:bg-black/30 transition-colors">
-                                                                <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
-                                                                    <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[14px] border-l-white border-b-8 border-b-transparent ml-1"></div>
-                                                                </div>
+                                                                <CirclePlay size={48} className="text-white/90 drop-shadow-lg" strokeWidth={1.5} />
                                                             </div>
                                                             <video
                                                                 src={(msg as any).url}
