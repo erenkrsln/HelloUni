@@ -168,8 +168,8 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                 {/* Results */}
                                 <div className="flex justify-between px-1 text-[11px] font-medium text-gray-500">
                                     <div className="flex gap-2">
-                                        {yesVotes.length > 0 && <span className="text-emerald-600">{yesVotes.length} Ja</span>}
-                                        {maybeVotes.length > 0 && <span className="text-amber-600">{maybeVotes.length} Vielleicht</span>}
+                                        {yesVotes.length > 0 && <span className="text-emerald-600">{yesVotes.length + maybeVotes.length} Teilnehmer ({yesVotes.length} sicher)</span>}
+                                        {yesVotes.length === 0 && maybeVotes.length > 0 && <span className="text-amber-600">{maybeVotes.length} Potentielle Teilnehmer</span>}
                                         {noVotes.length > 0 && <span className="text-red-600">{noVotes.length} Nein</span>}
                                         {slotVotes.length === 0 && <span className="opacity-50">Noch keine Stimmen</span>}
                                     </div>
