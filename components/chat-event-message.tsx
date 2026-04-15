@@ -20,18 +20,12 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
     const confirmChatEvent = useMutation(api.chatEvents.confirmChatEvent);
 
     const [isVoting, setIsVoting] = useState(false);
-
-    if (!chatEvent || !votes) return (
-        <div className="min-w-[240px] h-32 rounded-2xl animate-pulse bg-black/10" />
-    );
-
-    const isCreator = currentUserId === chatEvent.creatorId;
-    const isConfirmed = chatEvent.confirmedTimeSlotIndex !== undefined;
-
     const [now, setNow] = useState(Date.now());
 
+    const isConfirmed = chatEvent?.confirmedTimeSlotIndex !== undefined;
+
     useEffect(() => {
-        if (!isConfirmed) return;
+        if (!chatEvent || !isConfirmed) return;
         const confirmedStartTime = chatEvent.timeSlots[chatEvent.confirmedTimeSlotIndex!].startTime;
         if (now >= confirmedStartTime) return;
 
@@ -42,6 +36,11 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
         return () => clearInterval(interval);
     }, [isConfirmed, chatEvent, now]);
 
+    if (!chatEvent || !votes) return (
+        <div className="min-w-[240px] h-32 rounded-2xl animate-pulse bg-black/10" />
+    );
+
+    const isCreator = currentUserId === chatEvent.creatorId;
     const isClosed = isConfirmed && now >= chatEvent.timeSlots[chatEvent.confirmedTimeSlotIndex!].startTime;
 
     const handleVote = async (slotIndex: number, vote: "yes" | "maybe" | "no") => {
