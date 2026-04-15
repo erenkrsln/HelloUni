@@ -136,7 +136,6 @@ export function ProfileHeader({
         };
         img.src = headerImage;
     }, [headerImage]);
-    const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
     const updateUser = useMutation(api.mutations.updateUser);
     const createConversation = useMutation(api.mutations.createConversation);
 
@@ -170,19 +169,26 @@ export function ProfileHeader({
     const handleCropComplete = async (croppedBlob: Blob) => {
         setIsUploading(true);
         try {
-            // Upload cropped image
-            const uploadUrl = await generateUploadUrl();
-            const result = await fetch(uploadUrl, {
+            const { uploadUrl, publicUrl } = await fetch("/api/upload", {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    filename: "header-image.jpg",
+                    contentType: "image/jpeg",
+                    fileSize: croppedBlob.size,
+                }),
+            }).then(r => r.json());
+
+            await fetch(uploadUrl, {
+                method: "PUT",
                 headers: { "Content-Type": "image/jpeg" },
                 body: croppedBlob,
             });
-            const { storageId } = await result.json();
 
             // Update user with new header image
             await updateUser({
                 userId,
-                headerImage: storageId,
+                headerImage: publicUrl,
             });
 
             // Close modal and reset

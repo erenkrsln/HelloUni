@@ -1,10 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getImageUrl } from "./helpers";
 
-/**
- * Sucht einen Benutzer nach seinem Benutzernamen
- * Wird von NextAuth verwendet, um Anmeldedaten während des Logins zu validieren
- */
 export const getUserByUsername = query({
   args: { username: v.string() },
   handler: async (ctx, args) => {
@@ -68,15 +65,9 @@ export const getUserById = query({
     if (user) {
       const { passwordHash, ...userWithoutPassword } = user;
       
-      // Convert storage ID to URL if it exists
-      let imageUrl = userWithoutPassword.image;
-      if (imageUrl && !imageUrl.startsWith('http')) {
-        imageUrl = (await ctx.storage.getUrl(imageUrl as any)) ?? imageUrl;
-      }
-      
       return {
         ...userWithoutPassword,
-        image: imageUrl,
+        image: await getImageUrl(ctx, userWithoutPassword.image),
       };
     }
     

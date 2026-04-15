@@ -147,7 +147,7 @@ export default function AuthPage() {
 
         {/* Headline - zentriert unter Logo */}
         <h1 className="text-4xl font-semibold text-black text-center -mt-16 w-full" style={{ fontFamily: 'var(--font-poppins), sans-serif' }}>
-          Hello Uni
+          HelloUni
         </h1>
 
         {/* Beige Card - fester Abstand, unabhängig von Logo/Headline-Position */}
@@ -266,7 +266,7 @@ export default function AuthPage() {
                   {isSignUp ? "Wird registriert..." : "Wird angemeldet..."}
                 </span>
               ) : (
-                "Continue"
+                isSignUp ? "Registrieren" : "Anmelden"
               )}
             </button>
           </form>
@@ -278,7 +278,6 @@ export default function AuthPage() {
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError("");
-                // Formular zurücksetzen
                 setLoginData({ username: "", password: "" });
                 setRegisterData({ name: "", username: "", password: "", confirmPassword: "" });
               }}
