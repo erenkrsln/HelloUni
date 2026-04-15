@@ -12,6 +12,7 @@ import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
 import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
+import { handleAi } from "@/actions/chatAiSend";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -35,6 +36,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const EMOJIS = ["👍", "❤️", "😹", "🙀", "😿", "🙏", "🦫"];
 
+    const aiUserId = useQuery(
+        api.queries.getUserByUsername,
+        { username: "chatbot" }
+    ) ?._id;
+        
     useEffect(() => {
         if (conversationId && currentUser) {
             markAsRead({ conversationId, userId: currentUser._id });
@@ -129,6 +135,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 senderId: currentUser._id,
                 content: newMessage.trim(),
             });
+            if (newMessage.startsWith('AI:')) {
+                const msg = await handleAi(newMessage.substring(3).trim(), conversationId);
+                await sendMessage({
+                    conversationId,
+                    senderId: aiUserId ?? currentUser._id,
+                    content: msg,       
+                });
+            }
             setNewMessage("");
         } catch (error) {
             console.error("Failed to send message:", error);
