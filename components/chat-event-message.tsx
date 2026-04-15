@@ -5,6 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { CalendarDays, Check, HelpCircle, X as XIcon } from "lucide-react";
 import { useState, useEffect } from "react";
+import { ChatEventParticipantsModal } from "./chat-event-participants-modal";
 
 interface ChatEventMessageProps {
     chatEventId: Id<"chatEvents">;
@@ -21,6 +22,7 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
 
     const [isVoting, setIsVoting] = useState(false);
     const [now, setNow] = useState(Date.now());
+    const [activeSlotModal, setActiveSlotModal] = useState<number | null>(null);
 
     const isConfirmed = chatEvent?.confirmedTimeSlotIndex !== undefined;
 
@@ -166,19 +168,34 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                 </div>
 
                                 {/* Results */}
-                                <div className="flex justify-between px-1 text-[11px] font-medium text-gray-500">
-                                    <div className="flex gap-2">
-                                        {yesVotes.length > 0 && <span className="text-emerald-600">{yesVotes.length + maybeVotes.length} Teilnehmer ({yesVotes.length} sicher)</span>}
-                                        {yesVotes.length === 0 && maybeVotes.length > 0 && <span className="text-amber-600">{maybeVotes.length} Potentielle Teilnehmer</span>}
-                                        {noVotes.length > 0 && <span className="text-red-600">{noVotes.length} Nein</span>}
-                                        {slotVotes.length === 0 && <span className="opacity-50">Noch keine Stimmen</span>}
-                                    </div>
+                                <div className="flex justify-between px-1 text-[11px] font-medium text-gray-500 mt-2">
+                                    <button 
+                                        onClick={() => setActiveSlotModal(index)}
+                                        className="flex gap-2 text-left hover:underline w-full rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-[#D08945]"
+                                    >
+                                        {slotVotes.length > 0 ? (
+                                            <>
+                                                {yesVotes.length > 0 && <span className="text-emerald-600 font-semibold">{yesVotes.length + maybeVotes.length} Teilnehmer ({yesVotes.length} sicher)</span>}
+                                                {yesVotes.length === 0 && maybeVotes.length > 0 && <span className="text-amber-600 font-semibold">{maybeVotes.length} Potentielle Teilnehmer</span>}
+                                                {noVotes.length > 0 && <span className="text-red-500 font-semibold">{noVotes.length} Nein</span>}
+                                            </>
+                                        ) : (
+                                            <span className="opacity-60 text-gray-500 font-semibold">Noch keine Stimmen · Alle Teilnehmer</span>
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     );
                 })}
             </div>
+
+            <ChatEventParticipantsModal
+                isOpen={activeSlotModal !== null}
+                onClose={() => setActiveSlotModal(null)}
+                chatEventId={chatEventId}
+                slotIndex={activeSlotModal}
+            />
         </div>
     );
 }
