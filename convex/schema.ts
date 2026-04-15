@@ -180,6 +180,7 @@ export default defineSchema({
     createdBy: v.id("users"),
     isPrivate: v.optional(v.boolean()),
     workspaceId: v.optional(v.string()), // Löst die Verbindung zu einem Group/Event Hub
+    conversationId: v.optional(v.id("conversations")), // Fixes the chat mismatch error
   })
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),

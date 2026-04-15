@@ -2,6 +2,42 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // ------------------------------
+// EVENT CHATS
+// ------------------------------
+
+export const getOrCreateEventChat = mutation({
+  args: {
+    eventId: v.id("events"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+
+    if (event.conversationId) {
+      return event.conversationId;
+    }
+
+    // Create a new conversation for this event
+    const conversationId = await ctx.db.insert("conversations", {
+      name: `Event: ${event.title}`,
+      isGroup: true,
+      participants: [args.userId], 
+      creatorId: args.userId,
+      adminIds: [args.userId],
+      updatedAt: Date.now(),
+    });
+
+    // Link it back to the event
+    await ctx.db.patch(args.eventId, {
+      conversationId: conversationId,
+    });
+
+    return conversationId;
+  },
+});
+
+// ------------------------------
 // TASKS
 // ------------------------------
 

@@ -10,18 +10,42 @@ import { WorkspaceTasks } from "@/components/workspace-tasks";
 import { WorkspaceFiles } from "@/components/workspace-files";
 import { WorkspacePolls } from "@/components/workspace-polls";
 import { WorkspaceMembers } from "@/components/workspace-members";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useMutation } from "convex/react";
 import Link from "next/link";
 
 export default function WorkspaceHubPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = use(params);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"chat" | "tasks" | "files" | "polls" | "members">("chat");
+  const { currentUser } = useCurrentUser();
+  const getOrCreateEventChat = useMutation(api.workspace.getOrCreateEventChat);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Determine if it's an event or group based on prefix
   const isEvent = workspaceId.startsWith("event_");
   const isGroup = workspaceId.startsWith("group_");
   
   const entityId = workspaceId.replace("event_", "").replace("group_", "");
+
+  const handleOpenChat = async () => {
+    if (isGroup) {
+      router.push(`/chat/${entityId}`);
+    } else if (isEvent && currentUser) {
+      setIsNavigating(true);
+      try {
+        const conversationId = await getOrCreateEventChat({
+          eventId: entityId as Id<"events">,
+          userId: currentUser._id,
+        });
+        router.push(`/chat/${conversationId}`);
+      } catch (error) {
+        console.error("Failed to open event chat", error);
+        alert("Failed to open chat. Please try again later.");
+        setIsNavigating(false);
+      }
+    }
+  };
 
   // Render proper tab content based on activeTab
   const renderTabContent = () => {
@@ -31,12 +55,13 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
           <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center h-full">
              <MessageSquare size={48} className="text-[#D08945] opacity-50 mb-4" />
              <p className="mb-4 text-sm text-gray-600">The chat for this workspace is directly integrated into your messages.</p>
-             <Link 
-               href={`/chat/${entityId}`}
-               className="bg-[#D08945] text-white px-6 py-3 rounded-full font-medium hover:bg-[#b07335] transition-colors shadow-sm"
+             <button 
+               onClick={handleOpenChat}
+               disabled={isNavigating}
+               className="bg-[#D08945] text-white px-6 py-3 rounded-full font-medium hover:bg-[#b07335] transition-colors shadow-sm disabled:opacity-75"
              >
-               Open Full Chat
-             </Link>
+               {isNavigating ? "Opening..." : "Open Full Chat"}
+             </button>
           </div>
         );
       case "tasks":
