@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { CalendarDays, Check, HelpCircle, X as XIcon, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ChatEventMessageProps {
     chatEventId: Id<"chatEvents">;
@@ -27,6 +27,22 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
 
     const isCreator = currentUserId === chatEvent.creatorId;
     const isConfirmed = chatEvent.confirmedTimeSlotIndex !== undefined;
+
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        if (!isConfirmed) return;
+        const confirmedStartTime = chatEvent.timeSlots[chatEvent.confirmedTimeSlotIndex!].startTime;
+        if (now >= confirmedStartTime) return;
+
+        const interval = setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isConfirmed, chatEvent, now]);
+
+    const isClosed = isConfirmed && now >= chatEvent.timeSlots[chatEvent.confirmedTimeSlotIndex!].startTime;
 
     const handleVote = async (slotIndex: number, vote: "yes" | "maybe" | "no") => {
         if (isVoting) return;
@@ -71,8 +87,8 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                     Terminfindung
                 </span>
                 {isConfirmed && (
-                    <span className="ml-auto text-[9px] uppercase tracking-wider font-semibold text-white bg-gray-600 rounded-full px-1.5 py-0.5 leading-none">
-                        Bestätigt
+                    <span className={`ml-auto text-[9px] uppercase tracking-wider font-semibold text-white ${isClosed ? 'bg-gray-400' : 'bg-gray-600'} rounded-full px-1.5 py-0.5 leading-none`}>
+                        {isClosed ? 'Beendet' : 'Bestätigt'}
                     </span>
                 )}
             </div>
@@ -129,22 +145,22 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                 <div className="flex gap-1">
                                     <button
                                         onClick={() => handleVote(index, "yes")}
-                                        disabled={isVoting}
-                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'yes' ? 'bg-emerald-100 border-emerald-200 text-emerald-800' : 'bg-white border-gray-100 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
+                                        disabled={isVoting || isClosed}
+                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'yes' ? 'bg-emerald-100 border-emerald-200 text-emerald-800' : `bg-white border-gray-100 text-gray-400 ${!(isVoting || isClosed) ? 'hover:bg-emerald-50 hover:text-emerald-600' : ''}`} ${isClosed ? 'opacity-50 cursor-default' : ''}`}
                                     >
                                         <Check size={16} />
                                     </button>
                                     <button
                                         onClick={() => handleVote(index, "maybe")}
-                                        disabled={isVoting || isWinningSlot} // Often you can't vote maybe if confirmed, but we allow changing to Yes/No
-                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'maybe' ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-white border-gray-100 text-gray-400 hover:bg-amber-50 hover:text-amber-600'} ${isWinningSlot ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        disabled={isVoting || isWinningSlot || isClosed} // Often you can't vote maybe if confirmed, but we allow changing to Yes/No
+                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'maybe' ? 'bg-amber-100 border-amber-200 text-amber-800' : `bg-white border-gray-100 text-gray-400 ${!(isVoting || isWinningSlot || isClosed) ? 'hover:bg-amber-50 hover:text-amber-600' : ''}`} ${(isWinningSlot || isClosed) ? 'opacity-50 cursor-default' : ''}`}
                                     >
                                         <HelpCircle size={16} />
                                     </button>
                                     <button
                                         onClick={() => handleVote(index, "no")}
-                                        disabled={isVoting}
-                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'no' ? 'bg-red-100 border-red-200 text-red-800' : 'bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-600'}`}
+                                        disabled={isVoting || isClosed}
+                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'no' ? 'bg-red-100 border-red-200 text-red-800' : `bg-white border-gray-100 text-gray-400 ${!(isVoting || isClosed) ? 'hover:bg-red-50 hover:text-red-600' : ''}`} ${isClosed ? 'opacity-50 cursor-default' : ''}`}
                                     >
                                         <XIcon size={16} />
                                     </button>
