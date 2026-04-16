@@ -6,10 +6,10 @@ import { useState, useEffect } from "react";
 import { LogoSidebar } from "@/components/logo-sidebar";
 import Image from "next/image";
 
-import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { globalLoadedImagesCache } from "@/lib/cache/imageCache";
+import { authClient } from "@/lib/auth-client";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -21,7 +21,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
   const [isProfileHovered, setIsProfileHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const { isPending } = authClient.useSession();
   const pathname = usePathname();
   const { currentUser, isLoading: isUserLoading } = useCurrentUser();
   
@@ -49,7 +49,13 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
   const showProfileIcon = false;
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = "/";
+        },
+      },
+    });
   };
 
 
@@ -152,13 +158,13 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               height: "44px",
               minWidth: "44px",
               minHeight: "44px",
-              opacity: status === "loading" ? 0.5 : 1,
+              opacity: isPending ? 0.5 : 1,
               transition: "opacity 0.2s"
             }}
             onMouseEnter={() => setIsLogoutHovered(true)}
             onMouseLeave={() => setIsLogoutHovered(false)}
             title="Abmelden"
-            disabled={status === "loading"}
+            disabled={isPending}
           >
             <LogOut
               className="transition-colors"
