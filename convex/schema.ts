@@ -5,7 +5,8 @@ export default defineSchema({
   users: defineTable({
     name: v.string(),
     username: v.string(), // Für Authentifizierung
-    passwordHash: v.string(), // Gehashtes Passwort
+    email: v.optional(v.string()),
+    passwordHash: v.optional(v.string()),
     image: v.optional(v.string()),
     headerImage: v.optional(v.string()), // Header/Titelbild
     uni_name: v.optional(v.string()), // Jetzt optional für initiale Registrierung
@@ -14,7 +15,9 @@ export default defineSchema({
     bio: v.optional(v.string()), // Biografie des Benutzers
     interests: v.optional(v.array(v.string())), // Interessen/Tags des Benutzers
     createdAt: v.optional(v.number()), // Erstellungsdatum für "Joined"
-  }).index("by_username", ["username"]), // Index für schnelle Suche nach Benutzername
+  })
+    .index("by_username", ["username"])
+    .index("by_email", ["email"]), // Index für schnelle Suche nach E-Mail
 
   posts: defineTable({
     userId: v.id("users"),
