@@ -43,8 +43,31 @@ function resendFromWithDisplayName(rawFrom: string, displayName: string): string
   return `${displayName} <${trimmed}>`;
 }
 
+/**
+ * Basis-URL für Bilder in E-Mails. Nicht `SITE_URL` aus Dev (localhost) verwenden –
+ * Mail-Clients können localhost nicht erreichen.
+ */
+function publicAssetBaseUrlForEmail(): string {
+  const explicit = (
+    process.env.MAGIC_LINK_PUBLIC_BASE_URL ||
+    process.env.EMAIL_PUBLIC_ASSET_BASE_URL ||
+    ""
+  )
+    .trim()
+    .replace(/\/+$/, "");
+  if (explicit) return explicit;
+
+  const site = (process.env.SITE_URL || "").trim().replace(/\/+$/, "");
+  if (site.startsWith("https://") && !/localhost|127\.0\.0\.1/i.test(site)) {
+    return site;
+  }
+
+  return "https://hello-uni.de";
+}
+
 function magicLinkEmailHtml(url: string, displayName?: string) {
   const safeUrl = escapeHtmlAttr(url);
+  const logoUrl = escapeHtmlAttr(`${publicAssetBaseUrlForEmail()}/logo_background.png`);
   const greeting = displayName
     ? `Hallo ${escapeHtmlText(displayName)},`
     : "Hallo,";
@@ -55,37 +78,49 @@ function magicLinkEmailHtml(url: string, displayName?: string) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
 <title>HelloUni – Anmeldung</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#f7f3ee;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f7f3ee;padding:40px 16px;font-family:'Poppins',Arial,sans-serif;">
   <tr>
     <td align="center">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;background-color:#ffffff;border-radius:20px;overflow:hidden;border:1px solid #e8e8ea;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:500px;background-color:#fffdf9;border-radius:4px;overflow:hidden;box-shadow:0 2px 24px rgba(0,0,0,0.07);border:1px solid #e9e0d4;">
         <tr>
-          <td style="padding:28px 28px 20px;background-color:#dcc6a1;text-align:center;">
-            <p style="margin:0;font-size:20px;font-weight:700;color:#141414;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:-0.02em;">HelloUni</p>
-            <p style="margin:10px 0 0;font-size:14px;line-height:1.45;color:#3d3d3d;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Dein persönlicher Anmelde-Link</p>
+          <td style="background-color:#1a1409;padding:36px 40px 32px;text-align:center;">
+            <div style="height:3px;background:linear-gradient(90deg,#c9a96e,#e8c98a,#c9a96e);border-radius:2px;margin-bottom:28px;"></div>
+            <img src="${logoUrl}" width="72" height="72" alt="HelloUni Logo" style="display:block;margin:0 auto;border-radius:50%;background-color:#fffdf9;padding:4px;" />
+            <p style="margin:10px 0 4px;font-size:22px;font-weight:400;color:#f5ede0;font-family:'Poppins',Arial,sans-serif;letter-spacing:0.12em;text-transform:uppercase;">HelloUni</p>
+            <p style="margin:0;font-size:11px;color:#8a7a63;letter-spacing:0.22em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;">Nürnberg</p>
+            <div style="height:1px;background:linear-gradient(90deg,transparent,#3d3020,transparent);margin-top:24px;"></div>
           </td>
         </tr>
         <tr>
-          <td style="padding:28px 28px 8px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-            <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#374151;">${greeting}</p>
-            <p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#374151;">um dich bei <strong style="color:#111827;">HelloUni</strong> anzumelden, tippe auf den Button oder öffne den Link im Browser. Der Link ist <strong style="color:#111827;">eine Stunde</strong> gültig.</p>
-            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;">
+          <td style="padding:40px 40px 8px;">
+            <p style="margin:0 0 28px;font-size:10px;color:#b8a898;letter-spacing:0.25em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;text-align:center;">Sicherer Anmelde-Link</p>
+            <p style="margin:0 0 6px;font-size:18px;line-height:1.4;color:#1a1409;font-family:'Poppins',Arial,sans-serif;">${greeting}</p>
+            <div style="width:32px;height:2px;background-color:#c9a96e;margin-bottom:20px;"></div>
+            <p style="margin:0 0 32px;font-size:15px;line-height:1.75;color:#4a3f32;font-family:'Poppins',Arial,sans-serif;">
+              Klicke auf den Button unten, um dich bei <strong style="color:#1a1409;">HelloUni</strong> anzumelden. Der Link ist <strong style="color:#1a1409;">eine Stunde</strong> gültig und kann nur einmal verwendet werden.
+            </p>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto 36px;">
               <tr>
-                <td style="border-radius:9999px;background-color:#111827;">
-                  <a href="${safeUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Jetzt anmelden</a>
+                <td style="background-color:#1a1409;border-radius:2px;border:1px solid #c9a96e;">
+                  <a href="${safeUrl}" style="display:inline-block;padding:15px 40px;font-size:13px;font-weight:400;color:#f5ede0;text-decoration:none;font-family:'Poppins',Arial,sans-serif;letter-spacing:0.18em;text-transform:uppercase;">&#8594;&nbsp;&nbsp;Jetzt anmelden</a>
                 </td>
               </tr>
             </table>
-            <p style="margin:0 0 8px;font-size:12px;line-height:1.5;color:#6b7280;">Falls der Button nicht funktioniert, kopiere diese Adresse in den Browser:</p>
-            <p style="margin:0 0 20px;font-size:12px;line-height:1.5;color:#111827;word-break:break-all;">${safeUrl}</p>
-            <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;">Du hast diese E-Mail nicht angefordert? Dann kannst du sie ignorieren – es wird nichts geändert.</p>
+            <div style="border-top:1px solid #ede5d8;margin-bottom:24px;"></div>
+            <p style="margin:0 0 8px;font-size:11px;line-height:1.5;color:#8a7a63;font-family:'Poppins',Arial,sans-serif;letter-spacing:0.04em;">Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:</p>
+            <p style="margin:0 0 24px;font-size:11px;line-height:1.6;color:#c9a96e;word-break:break-all;font-family:'Courier New',Courier,monospace;background-color:#f7f3ee;padding:12px 14px;border-radius:2px;border-left:2px solid #c9a96e;">${safeUrl}</p>
+            <p style="margin:0;font-size:11px;line-height:1.6;color:#b8a898;font-family:'Poppins',Arial,sans-serif;font-style:italic;">Du hast diese E-Mail nicht angefordert? Dann ignoriere sie einfach - es aendert sich nichts an deinem Konto.</p>
           </td>
         </tr>
         <tr>
-          <td style="padding:16px 28px 24px;border-top:1px solid #f3f4f6;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-            <p style="margin:0;font-size:11px;line-height:1.5;color:#9ca3af;text-align:center;">HelloUni · Nürnberg</p>
+          <td style="padding:28px 40px 32px;">
+            <div style="border-top:1px solid #ede5d8;padding-top:24px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:10px;color:#b8a898;letter-spacing:0.22em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;">HelloUni · Nürnberg</p>
+              <p style="margin:0;font-size:10px;color:#d0c4b4;font-family:'Poppins',Arial,sans-serif;">© 2025 HelloUni. Alle Rechte vorbehalten.</p>
+            </div>
           </td>
         </tr>
       </table>
