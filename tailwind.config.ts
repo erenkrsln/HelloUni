@@ -9,6 +9,11 @@ const config: Config = {
 	],
 	theme: {
 		extend: {
+			screens: {
+				'tablet': '740px',
+				'desktop': '1230px',
+				standalone: { raw: "(display-mode: standalone)" }
+			},
 			colors: {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
@@ -55,9 +60,6 @@ const config: Config = {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
-			},
-			screens: {
-				standalone: { raw: "(display-mode: standalone)" },
 			},
 			spacing: {
 				"safe-top": "env(safe-area-inset-top)",
