@@ -26,6 +26,11 @@ export default function ChatPage() {
   const { currentUser } = useCurrentUser();
   const [isFirstVisit, setIsFirstVisit] = useState(true);
 
+  const aiUserId = useQuery(
+      api.queries.getUserByUsername,
+      { username: "chatbot" }
+  ) ?._id;
+
   useEffect(() => {
     const visited = sessionStorage.getItem("chat_visited");
     if (visited) {
@@ -60,7 +65,9 @@ export default function ChatPage() {
 
     // Add current user to participants
     const participants = [currentUser._id, ...selectedUsers];
-
+    if (aiUserId) {
+      participants.push (aiUserId);
+    }
     try {
       const conversationId = await createConversation({
         participants,
