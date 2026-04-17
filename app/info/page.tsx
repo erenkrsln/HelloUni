@@ -4,6 +4,7 @@ import PDFButton from '@/components/PDFButton'
 import FurtherInformationButton from '@/components/FurtherInformationButton'
 import ExternalLinkWithIcon from '@/components/ExternalLinkWithIcon'
 import Accordion, { AccordionItemData } from '@/components/Accordion'
+import AiChatModal from '@/components/AiChatModal'
 import { Header } from "@/components/header"
 import { MobileSidebar } from "@/components/mobile-sidebar"
 import { BottomNavigation } from "@/components/bottom-navigation"
@@ -137,6 +138,7 @@ function InformationPage({ params }: { params: ParamsType }) {
           </div>
         </div>
       </div>
+      <AiChatModal />
       <BottomNavigation />
     </>
   )
