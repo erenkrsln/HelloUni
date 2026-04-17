@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 const ALLOWED_DOMAIN = "@th-nuernberg.de";
 const MAJORS = [
@@ -42,10 +43,14 @@ const MAJORS = [
 ];
 
 export default function AuthPage() {
+  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isDevMode, setIsDevMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [devUsername, setDevUsername] = useState("");
+  const [devPassword, setDevPassword] = useState("");
 
   const [loginEmail, setLoginEmail] = useState("");
   const [registerData, setRegisterData] = useState({
@@ -155,6 +160,75 @@ export default function AuthPage() {
     }
   };
 
+  const handleDevLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    const normalizedUsername = devUsername.trim().toLowerCase();
+    const isAllowedDevUsername = /^dev([1-9]|10)$/.test(normalizedUsername);
+    if (!isAllowedDevUsername) {
+      setError("Erlaubte Dev-Benutzernamen: dev1 bis dev10.");
+      return;
+    }
+
+    if (devPassword !== "HelloUni123") {
+      setError("Ungültiges Dev-Passwort.");
+      return;
+    }
+
+    const devEmail = `${normalizedUsername}${ALLOWED_DOMAIN}`;
+    const devIndex = normalizedUsername.replace("dev", "");
+    const devName = `Dev ${devIndex}`;
+
+    setIsLoading(true);
+    try {
+      const checkResponse = await fetch("/api/auth/check-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: devEmail }),
+      });
+      const checkData = await parseApiJson(checkResponse);
+
+      if (!checkData.exists) {
+        await fetch("/api/auth/register-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: devName,
+            username: normalizedUsername,
+            email: devEmail,
+            major: "Informatik (B.Sc.)",
+          }),
+        });
+      }
+
+      const signUpResult = await authClient.signUp.email({
+        email: devEmail,
+        password: "HelloUni123",
+        name: devName,
+      });
+
+      if (signUpResult.error) {
+        const signInResult = await authClient.signIn.email({
+          email: devEmail,
+          password: "HelloUni123",
+          callbackURL: "/auth/callback",
+        });
+
+        if (signInResult.error) {
+          throw new Error(signInResult.error.message || "Dev-Login fehlgeschlagen.");
+        }
+      }
+
+      router.push("/auth/callback");
+    } catch (err: any) {
+      setError(err.message || "Dev-Login fehlgeschlagen.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fieldClassName =
     "w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-black outline-none transition-colors focus:border-black focus:ring-0 disabled:opacity-50";
 
@@ -173,63 +247,88 @@ export default function AuthPage() {
 
         <div className="rounded-3xl p-8 shadow-lg w-full" style={{ backgroundColor: "rgba(220, 198, 161)", marginTop: "40px" }}>
           <h2 className="text-2xl font-bold text-black mb-2 text-center">
-            {isSignUp ? "Registrieren" : "Anmelden"}
+            {isDevMode ? "Dev Login" : isSignUp ? "Registrieren" : "Anmelden"}
           </h2>
           <p className="text-sm text-gray-700 mb-6 text-center">
-            {isSignUp
+            {isDevMode
+              ? ""
+              : isSignUp
               ? "Name, Benutzername, E-Mail und Studiengang eintragen. Danach erhältst du einen Magic Link."
               : "E-Mail eingeben und Magic Link erhalten."}
           </p>
 
-          <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
-            {isSignUp && (
+          <form onSubmit={isDevMode ? handleDevLogin : isSignUp ? handleSignUp : handleLogin} className="space-y-4">
+            {isDevMode ? (
               <>
                 <input
                   type="text"
-                  placeholder="Name"
-                  value={registerData.name}
-                  onChange={(e) => setRegisterData((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Benutzername"
+                  value={devUsername}
+                  onChange={(e) => setDevUsername(e.target.value)}
                   disabled={isLoading}
                   className={fieldClassName}
                 />
                 <input
-                  type="text"
-                  placeholder="Benutzername"
-                  value={registerData.username}
-                  onChange={(e) => setRegisterData((p) => ({ ...p, username: e.target.value }))}
+                  type="password"
+                  placeholder="Passwort"
+                  value={devPassword}
+                  onChange={(e) => setDevPassword(e.target.value)}
                   disabled={isLoading}
                   className={fieldClassName}
                 />
               </>
-            )}
+            ) : (
+              <>
+                {isSignUp && (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={registerData.name}
+                      onChange={(e) => setRegisterData((p) => ({ ...p, name: e.target.value }))}
+                      disabled={isLoading}
+                      className={fieldClassName}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Benutzername"
+                      value={registerData.username}
+                      onChange={(e) => setRegisterData((p) => ({ ...p, username: e.target.value }))}
+                      disabled={isLoading}
+                      className={fieldClassName}
+                    />
+                  </>
+                )}
 
-            <input
-              type="email"
-              placeholder={`E-Mail (${ALLOWED_DOMAIN})`}
-              value={isSignUp ? registerData.email : loginEmail}
-              onChange={(e) =>
-                isSignUp
-                  ? setRegisterData((p) => ({ ...p, email: e.target.value }))
-                  : setLoginEmail(e.target.value)
-              }
-              disabled={isLoading}
-              className={fieldClassName}
-            />
+                <input
+                  type="email"
+                  placeholder={`E-Mail (${ALLOWED_DOMAIN})`}
+                  value={isSignUp ? registerData.email : loginEmail}
+                  onChange={(e) =>
+                    isSignUp
+                      ? setRegisterData((p) => ({ ...p, email: e.target.value }))
+                      : setLoginEmail(e.target.value)
+                  }
+                  disabled={isLoading}
+                  className={fieldClassName}
+                />
 
-            {isSignUp && (
-              <select
-                value={registerData.major}
-                onChange={(e) => setRegisterData((p) => ({ ...p, major: e.target.value }))}
-                disabled={isLoading}
-                className={majorSelectClassName}
-              >
-                <option value="">Studiengang auswählen</option>
-                {MAJORS.map((major) => (
-                  <option key={major} value={major}>
-                    {major}
-                  </option>
-                ))}
-              </select>
+                {isSignUp && (
+                  <select
+                    value={registerData.major}
+                    onChange={(e) => setRegisterData((p) => ({ ...p, major: e.target.value }))}
+                    disabled={isLoading}
+                    className={majorSelectClassName}
+                  >
+                    <option value="">Studiengang auswählen</option>
+                    {MAJORS.map((major) => (
+                      <option key={major} value={major}>
+                        {major}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </>
             )}
 
             {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-full text-center">{error}</div>}
@@ -240,14 +339,15 @@ export default function AuthPage() {
               disabled={isLoading}
               className="w-full h-12 rounded-full bg-black text-white font-medium text-sm transition-transform duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
-              {isLoading ? "Wird verarbeitet..." : "Magic Link senden"}
+              {isLoading ? "Wird verarbeitet..." : isDevMode ? "Als Dev anmelden" : "Magic Link senden"}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 flex items-center justify-center gap-4">
             <button
               type="button"
               onClick={() => {
+                setIsDevMode(false);
                 setIsSignUp(!isSignUp);
                 setError("");
                 setSuccess("");
@@ -255,6 +355,17 @@ export default function AuthPage() {
               className="text-sm text-gray-700 hover:text-black underline transition-colors"
             >
               {isSignUp ? "Bereits ein Konto? Anmelden" : "Noch kein Konto? Registrieren"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDevMode(true);
+                setError("");
+                setSuccess("");
+              }}
+              className="text-sm text-gray-700 hover:text-black underline transition-colors"
+            >
+              Dev Login
             </button>
           </div>
         </div>

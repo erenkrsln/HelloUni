@@ -77,29 +77,63 @@ function magicLinkEmailHtml(url: string, displayName?: string) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <title>HelloUni – Anmeldung</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style type="text/css">
+  :root { color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) {
+    .email-body { background-color: #0f0d0a !important; }
+    .email-outer { background-color: #0f0d0a !important; }
+    .email-card {
+      background-color: #1a1714 !important;
+      border-color: #3d3428 !important;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.45) !important;
+    }
+    .email-header { background-color: #12100c !important; }
+    .email-header .email-header-sub { color: #b5a892 !important; }
+    .email-logo {
+      background-color: #252019 !important;
+      box-shadow: 0 0 0 1px #3d3428 !important;
+    }
+    .email-kicker { color: #9a8f7e !important; }
+    .email-greeting { color: #f5ede0 !important; }
+    .email-copy { color: #cfc3b2 !important; }
+    .email-copy strong { color: #f5ede0 !important; }
+    .email-divider { border-top-color: #3d3428 !important; }
+    .email-fallback-label { color: #9a8f7e !important; }
+    .email-fallback-url {
+      color: #e8c98a !important;
+      background-color: #12100c !important;
+      border-left-color: #c9a96e !important;
+    }
+    .email-disclaimer { color: #8a8074 !important; }
+    .email-foot-kicker { color: #9a8f7e !important; }
+    .email-foot-copy { color: #6e665c !important; }
+  }
+</style>
 </head>
-<body style="margin:0;padding:0;background-color:#f7f3ee;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f7f3ee;padding:40px 16px;font-family:'Poppins',Arial,sans-serif;">
+<body class="email-body" style="margin:0;padding:0;background-color:#f7f3ee;">
+<table role="presentation" class="email-outer" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f7f3ee;padding:40px 16px;font-family:'Poppins',Arial,sans-serif;">
   <tr>
     <td align="center">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:500px;background-color:#fffdf9;border-radius:4px;overflow:hidden;box-shadow:0 2px 24px rgba(0,0,0,0.07);border:1px solid #e9e0d4;">
+      <table role="presentation" class="email-card" width="100%" cellspacing="0" cellpadding="0" style="max-width:500px;background-color:#fffdf9;border-radius:4px;overflow:hidden;box-shadow:0 2px 24px rgba(0,0,0,0.07);border:1px solid #e9e0d4;">
         <tr>
-          <td style="background-color:#1a1409;padding:36px 40px 32px;text-align:center;">
+          <td class="email-header" style="background-color:#1a1409;padding:36px 40px 32px;text-align:center;">
             <div style="height:3px;background:linear-gradient(90deg,#c9a96e,#e8c98a,#c9a96e);border-radius:2px;margin-bottom:28px;"></div>
-            <img src="${logoUrl}" width="72" height="72" alt="HelloUni Logo" style="display:block;margin:0 auto;border-radius:50%;background-color:#fffdf9;padding:4px;" />
+            <img class="email-logo" src="${logoUrl}" width="72" height="72" alt="HelloUni Logo" style="display:block;margin:0 auto;border-radius:50%;background-color:#fffdf9;padding:4px;" />
             <p style="margin:10px 0 4px;font-size:22px;font-weight:400;color:#f5ede0;font-family:'Poppins',Arial,sans-serif;letter-spacing:0.12em;text-transform:uppercase;">HelloUni</p>
-            <p style="margin:0;font-size:11px;color:#8a7a63;letter-spacing:0.22em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;">Nürnberg</p>
+            <p class="email-header-sub" style="margin:0;font-size:11px;color:#8a7a63;letter-spacing:0.22em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;">Nürnberg</p>
             <div style="height:1px;background:linear-gradient(90deg,transparent,#3d3020,transparent);margin-top:24px;"></div>
           </td>
         </tr>
         <tr>
           <td style="padding:40px 40px 8px;">
-            <p style="margin:0 0 28px;font-size:10px;color:#b8a898;letter-spacing:0.25em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;text-align:center;">Sicherer Anmelde-Link</p>
-            <p style="margin:0 0 6px;font-size:18px;line-height:1.4;color:#1a1409;font-family:'Poppins',Arial,sans-serif;">${greeting}</p>
+            <p class="email-kicker" style="margin:0 0 28px;font-size:10px;color:#b8a898;letter-spacing:0.25em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;text-align:center;">Sicherer Anmelde-Link</p>
+            <p class="email-greeting" style="margin:0 0 6px;font-size:18px;line-height:1.4;color:#1a1409;font-family:'Poppins',Arial,sans-serif;">${greeting}</p>
             <div style="width:32px;height:2px;background-color:#c9a96e;margin-bottom:20px;"></div>
-            <p style="margin:0 0 32px;font-size:15px;line-height:1.75;color:#4a3f32;font-family:'Poppins',Arial,sans-serif;">
+            <p class="email-copy" style="margin:0 0 32px;font-size:15px;line-height:1.75;color:#4a3f32;font-family:'Poppins',Arial,sans-serif;">
               Klicke auf den Button unten, um dich bei <strong style="color:#1a1409;">HelloUni</strong> anzumelden. Der Link ist <strong style="color:#1a1409;">eine Stunde</strong> gültig und kann nur einmal verwendet werden.
             </p>
             <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto 36px;">
@@ -109,17 +143,17 @@ function magicLinkEmailHtml(url: string, displayName?: string) {
                 </td>
               </tr>
             </table>
-            <div style="border-top:1px solid #ede5d8;margin-bottom:24px;"></div>
-            <p style="margin:0 0 8px;font-size:11px;line-height:1.5;color:#8a7a63;font-family:'Poppins',Arial,sans-serif;letter-spacing:0.04em;">Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:</p>
-            <p style="margin:0 0 24px;font-size:11px;line-height:1.6;color:#c9a96e;word-break:break-all;font-family:'Courier New',Courier,monospace;background-color:#f7f3ee;padding:12px 14px;border-radius:2px;border-left:2px solid #c9a96e;">${safeUrl}</p>
-            <p style="margin:0;font-size:11px;line-height:1.6;color:#b8a898;font-family:'Poppins',Arial,sans-serif;font-style:italic;">Du hast diese E-Mail nicht angefordert? Dann ignoriere sie einfach - es aendert sich nichts an deinem Konto.</p>
+            <div class="email-divider" style="border-top:1px solid #ede5d8;margin-bottom:24px;"></div>
+            <p class="email-fallback-label" style="margin:0 0 8px;font-size:11px;line-height:1.5;color:#8a7a63;font-family:'Poppins',Arial,sans-serif;letter-spacing:0.04em;">Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:</p>
+            <p class="email-fallback-url" style="margin:0 0 24px;font-size:11px;line-height:1.6;color:#c9a96e;word-break:break-all;font-family:'Courier New',Courier,monospace;background-color:#f7f3ee;padding:12px 14px;border-radius:2px;border-left:2px solid #c9a96e;">${safeUrl}</p>
+            <p class="email-disclaimer" style="margin:0;font-size:11px;line-height:1.6;color:#b8a898;font-family:'Poppins',Arial,sans-serif;font-style:italic;">Du hast diese E-Mail nicht angefordert? Dann ignoriere sie einfach - es aendert sich nichts an deinem Konto.</p>
           </td>
         </tr>
         <tr>
           <td style="padding:28px 40px 32px;">
-            <div style="border-top:1px solid #ede5d8;padding-top:24px;text-align:center;">
-              <p style="margin:0 0 4px;font-size:10px;color:#b8a898;letter-spacing:0.22em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;">HelloUni · Nürnberg</p>
-              <p style="margin:0;font-size:10px;color:#d0c4b4;font-family:'Poppins',Arial,sans-serif;">© 2025 HelloUni. Alle Rechte vorbehalten.</p>
+            <div class="email-divider" style="border-top:1px solid #ede5d8;padding-top:24px;text-align:center;">
+              <p class="email-foot-kicker" style="margin:0 0 4px;font-size:10px;color:#b8a898;letter-spacing:0.22em;text-transform:uppercase;font-family:'Poppins',Arial,sans-serif;">HelloUni · Nürnberg</p>
+              <p class="email-foot-copy" style="margin:0;font-size:10px;color:#d0c4b4;font-family:'Poppins',Arial,sans-serif;">© 2025 HelloUni. Alle Rechte vorbehalten.</p>
             </div>
           </td>
         </tr>
@@ -162,6 +196,10 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     trustedOrigins: [...new Set([...DEFAULT_TRUSTED_ORIGINS, ...envTrustedOrigins])],
     secret: process.env.BETTER_AUTH_SECRET,
     database: authComponent.adapter(ctx),
+    emailAndPassword: {
+      enabled: true,
+      requireEmailVerification: false,
+    },
     plugins: [
       magicLink({
         /** Gültigkeit des Tokens in Sekunden (Better Auth-Standard: 300). */
