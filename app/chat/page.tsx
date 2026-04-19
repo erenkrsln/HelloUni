@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft, X } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, BarChart2, StickyNote, User, CirclePlay, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -58,7 +58,6 @@ export default function ChatPage() {
     if (!currentUser || selectedUsers.length === 0) return;
     if (selectedUsers.length > 1 && !groupName.trim()) return;
 
-    // Add current user to participants
     const participants = [currentUser._id, ...selectedUsers];
 
     try {
@@ -217,13 +216,38 @@ export default function ChatPage() {
                           {conv.lastMessage ? (
                             (conv.lastMessage as any).type === "image" ? (
                               <>
-                                <Image size={14} className="flex-shrink-0" />
+                                <Image size={14} className="flex-shrink-0 mr-1" />
                                 <span>Foto</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "video" ? (
+                              <>
+                                <CirclePlay size={14} className="flex-shrink-0 mr-1" />
+                                <span>Video</span>
                               </>
                             ) : (conv.lastMessage as any).type === "pdf" ? (
                               <>
-                                <FileIcon size={14} className="flex-shrink-0" />
+                                <FileIcon size={14} className="flex-shrink-0 mr-1" />
                                 <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "post" ? (
+                              <>
+                                <StickyNote size={14} className="flex-shrink-0 mr-1" />
+                                <span>Geteilter Beitrag</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "poll" ? (
+                              <>
+                                <BarChart2 size={14} className="flex-shrink-0 mr-1" />
+                                <span>Umfrage</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "profile" ? (
+                              <>
+                                <User size={14} className="flex-shrink-0 mr-1" />
+                                <span>Geteiltes Profil</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "event_invite" ? (
+                              <>
+                                <CalendarDays size={14} className="flex-shrink-0 mr-1" />
+                                <span>{conv.lastMessage.content || "Termin"}</span>
                               </>
                             ) : (
                               conv.lastMessage.content

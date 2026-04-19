@@ -15,6 +15,7 @@ import { PostActions } from "./post-actions";
 import { PollOptions } from "./poll-options";
 import { EventDetails } from "./event-details";
 import { CommentDrawer } from "./comment-drawer";
+import { SharePostModal } from "./share-post-modal";
 // Importiere den gemeinsamen globalen Bild-Cache
 import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
 
@@ -52,16 +53,10 @@ interface FeedCardProps {
   showDivider?: boolean; // Zeigt Trennlinie nach den Buttons an
   isFirst?: boolean; // Wenn true, erhält das Beitragsbild priority (wichtig für LCP)
   autoOpenCommentId?: string; // Auto-open drawer and highlight this comment
+  hideActions?: boolean;
 }
 
-// Helper to remove degree titles
-const cleanMajor = (major?: string) => {
-  if (!major) return undefined;
-  // Removes B.Eng, B.Sc, B.A, M.Sc, M.A, M.Eng, LL.B, LL.M (case insensitive, with or without dots/parentheses)
-  return major.replace(/\s*\(?\b(B\.?Eng|B\.?Sc|B\.?A|M\.?Sc|M\.?A|M\.?Eng|LL\.?B|LL\.?M)\.?\)?\s*/gi, "").trim();
-};
-
-export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId, hideActions = false }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const isOwnPost = currentUserId && post.userId === currentUserId;
   const joinEvent = useMutation(api.mutations.joinEvent);
@@ -69,6 +64,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
   const votePoll = useMutation(api.mutations.votePoll);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Auto-open drawer if commentId is provided
   useEffect(() => {
@@ -659,7 +655,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
           {/* Major & Semester */}
           {(post.user.major || post.user.semester) && (
             <div className="text-[13px] text-gray-500 -mt-2 mb-3 truncate">
-              {cleanMajor(post.user.major)}
+              {post.user.major}
               {post.user.major && post.user.semester && " · "}
               {post.user.semester && `${post.user.semester}. Semester`}
             </div>
@@ -820,17 +816,30 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
             </div>
           )}
 
-          <PostActions
-            likesCount={post.likesCount}
-            commentsCount={post.commentsCount}
-            isLiked={displayIsLiked}
-            onLike={handleLike}
-            isLiking={isLiking}
-            currentUserId={currentUserId}
-            onCommentClick={() => setIsDrawerOpen(true)}
-          />
+          {!hideActions && (
+            <PostActions
+              likesCount={post.likesCount}
+              commentsCount={post.commentsCount}
+              isLiked={displayIsLiked}
+              onLike={handleLike}
+              isLiking={isLiking}
+              currentUserId={currentUserId}
+              onCommentClick={() => setIsDrawerOpen(true)}
+              onShareClick={() => setIsShareModalOpen(true)}
+            />
+          )}
         </div>
       </div>
+
+      {/* Share Post Modal */}
+      {currentUserId && (
+        <SharePostModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          postId={post._id}
+          currentUserId={currentUserId}
+        />
+      )}
 
       {/* Comment Drawer */}
       <CommentDrawer

@@ -5,13 +5,17 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2 } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
 import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
+import { SharedPostMessage } from "@/components/shared-post-message";
+import { SharedProfileMessage } from "@/components/shared-profile-message";
+import { ChatEventModal } from "@/components/chat-event-modal";
+import { ChatEventMessage } from "@/components/chat-event-message";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -53,15 +57,38 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+    const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+    const resetFileInput = () => {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
 
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf";
+        const isVideo = file.type === "video/mp4" || file.type === "video/quicktime";
+
+        if (!isImage && !isPdf && !isVideo) {
+            alert(`Nicht unterstützter Dateityp: ${file.type || "unbekannt"}.\n\nErlaubte Typen: Bilder, Videos (MP4/MOV) und PDF.`);
+            resetFileInput();
+            return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`Datei ist zu groß (${(file.size / (1024 * 1024)).toFixed(1)} MB).\n\nMaximale Größe: ${MAX_FILE_SIZE / (1024 * 1024)} MB.`);
+            resetFileInput();
+            return;
+        }
+
         try {
-            const { uploadUrl, publicUrl } = await fetch("/api/upload", {
+            const apiRes = await fetch("/api/upload", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -69,7 +96,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     contentType: file.type,
                     fileSize: file.size,
                 }),
-            }).then(r => r.json());
+            });
+
+            if (!apiRes.ok) {
+                const errData = await apiRes.json().catch(() => ({}));
+                console.error("Backend rejecting upload:", errData);
+                throw new Error(errData.error || "Upload-URL konnte nicht erstellt werden");
+            }
+
+            const { uploadUrl, publicUrl } = await apiRes.json();
+
+            if (!uploadUrl) {
+                throw new Error("Backend did not return an uploadUrl");
+            }
 
             await fetch(uploadUrl, {
                 method: "PUT",
@@ -81,16 +120,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 conversationId,
                 senderId: currentUser._id,
                 content: file.name,
-                type: file.type.startsWith("image/") ? "image" : "pdf",
+                type: isImage ? "image" : isVideo ? "video" : "pdf",
                 storageId: publicUrl,
                 fileName: file.name,
                 contentType: file.type,
             });
         } catch (error) {
             console.error("Failed to upload file:", error);
-            alert("Fehler beim Hochladen der Datei.");
+            alert("Fehler beim Hochladen der Datei. Bitte versuche es erneut.");
         } finally {
-            if (fileInputRef.current) fileInputRef.current.value = "";
+            resetFileInput();
         }
     };
 
@@ -161,7 +200,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     };
 
     const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
 
 
     if (!currentUser) return null;
@@ -446,7 +485,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         <div className={`flex flex-col relative group max-w-full ${isMe ? 'items-end' : 'items-start'}`}>
                                             <div
                                                 className={`
-                                                ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
+                                                ${(msg.type === "image" || msg.type === "post") ? 'p-1' : 'px-4 py-2'} text-sm
                                                 ${isMe
                                                         ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
                                                         : 'text-black rounded-2xl bg-white shadow-sm'
@@ -470,7 +509,24 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                 src={(msg as any).url}
                                                                 alt="Bild"
                                                                 className="w-full h-full object-cover cursor-pointer"
-                                                                onClick={() => setSelectedImage((msg as any).url)}
+                                                                onClick={() => setSelectedMedia({ url: (msg as any).url, type: 'image' })}
+                                                            />
+                                                        </div>
+                                                    ) : msg.type === "video" && (msg as any).url ? (
+                                                        <div
+                                                            className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px] cursor-pointer relative group"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedMedia({ url: (msg as any).url, type: 'video' });
+                                                            }}
+                                                        >
+                                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10 group-hover:bg-black/30 transition-colors">
+                                                                <CirclePlay size={48} className="text-white/90 drop-shadow-lg" strokeWidth={1.5} />
+                                                            </div>
+                                                            <video
+                                                                src={(msg as any).url}
+                                                                className="w-full max-h-[320px] object-cover pointer-events-none"
+                                                                preload="metadata"
                                                             />
                                                         </div>
                                                     ) : msg.type === "pdf" ? (
@@ -489,6 +545,24 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     ) : msg.type === "poll" && (msg as any).chatPollId ? (
                                                         <ChatPollMessage
                                                             chatPollId={(msg as any).chatPollId as Id<"chatPolls">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "post" && (msg as any).sharedPostId ? (
+                                                        <SharedPostMessage
+                                                            postId={(msg as any).sharedPostId as Id<"posts">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "profile" && (msg as any).sharedProfileId ? (
+                                                        <SharedProfileMessage
+                                                            profileId={(msg as any).sharedProfileId as Id<"users">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "event_invite" && (msg as any).chatEventId ? (
+                                                        <ChatEventMessage
+                                                            chatEventId={(msg as any).chatEventId as Id<"chatEvents">}
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
                                                         />
@@ -584,6 +658,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 />
             )}
 
+            {/* Chat Event Modal */}
+            {currentUser && (
+                <ChatEventModal
+                    isOpen={isEventModalOpen}
+                    onClose={() => setIsEventModalOpen(false)}
+                    conversationId={conversationId}
+                    senderId={currentUser._id}
+                />
+            )}
+
             {/* Input */}
             {!isLeft ? (
                 <div
@@ -625,6 +709,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     </div>
                                     <span className="text-[11px] text-gray-600 font-medium">Umfrage</span>
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        setIsEventModalOpen(true);
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <CalendarDays size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Termin</span>
+                                </button>
                             </div>
                         </>
                     )}
@@ -634,11 +731,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             onSubmit={handleSend}
                             className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                         >
-                        <input
-                            type="file"
-                            accept="image/*,video/*,application/pdf"
-                            className="hidden"
-                            ref={fileInputRef}
+                            <input
+                                type="file"
+                                accept="image/*,application/pdf,video/mp4,video/quicktime"
+                                className="hidden"
+                                ref={fileInputRef}
                                 onChange={handleFileSelect}
                             />
 
@@ -693,23 +790,34 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
             )}
 
-            {/* Image Preview Overlay */}
-            {selectedImage && (
+            {/* Media Preview Overlay */}
+            {selectedMedia && (
                 <div
                     className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2"
-                    onClick={() => setSelectedImage(null)}
+                    onClick={() => setSelectedMedia(null)}
                 >
                     <button
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
-                        onClick={() => setSelectedImage(null)}
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[110]"
+                        onClick={() => setSelectedMedia(null)}
                     >
                         <X size={32} />
                     </button>
-                    <img
-                        src={selectedImage}
-                        alt="Vorschau"
-                        className="max-w-full max-h-[90vh] object-contain"
-                    />
+                    {selectedMedia.type === 'video' ? (
+                        <video
+                            src={selectedMedia.url}
+                            controls
+                            autoPlay
+                            playsInline
+                            className="max-w-[100vw] max-h-[100vh] w-full h-full object-contain"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <img
+                            src={selectedMedia.url}
+                            alt="Vorschau"
+                            className="max-w-full max-h-[90vh] object-contain"
+                        />
+                    )}
                 </div>
             )}
         </main>

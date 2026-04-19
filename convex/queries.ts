@@ -1172,7 +1172,7 @@ export const getConversationFiles = query({
     const files: any[] = [];
 
     for (const m of visibleMessages) {
-      if (m.type === "image" || m.type === "pdf") {
+      if (m.type === "image" || m.type === "pdf" || m.type === "video") {
         const url = await getImageUrl(ctx, m.storageId);
         files.push({
           ...m,

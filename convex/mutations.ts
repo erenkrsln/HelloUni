@@ -799,11 +799,14 @@ export const sendMessage = mutation({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"), v.literal("poll"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
     chatPollId: v.optional(v.id("chatPolls")),
+    chatEventId: v.optional(v.id("chatEvents")),
+    sharedPostId: v.optional(v.id("posts")),
+    sharedProfileId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
     // Validate membership
@@ -824,6 +827,9 @@ export const sendMessage = mutation({
       fileName: args.fileName,
       contentType: args.contentType,
       chatPollId: args.chatPollId,
+      chatEventId: args.chatEventId,
+      sharedPostId: args.sharedPostId,
+      sharedProfileId: args.sharedProfileId,
       createdAt: Date.now(),
     });
 

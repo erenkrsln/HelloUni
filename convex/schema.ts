@@ -132,11 +132,14 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"), v.literal("poll"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
     chatPollId: v.optional(v.id("chatPolls")),
+    chatEventId: v.optional(v.id("chatEvents")),
+    sharedPostId: v.optional(v.id("posts")),
+    sharedProfileId: v.optional(v.id("users")),
     visibleTo: v.optional(v.array(v.id("users"))),
     reactions: v.optional(v.array(v.object({
       emoji: v.string(),
@@ -166,6 +169,30 @@ export default defineSchema({
   })
     .index("by_poll", ["chatPollId"])
     .index("by_poll_user", ["chatPollId", "userId"]),
+
+  chatEvents: defineTable({
+    conversationId: v.id("conversations"),
+    creatorId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    timeSlots: v.array(v.object({
+      startTime: v.number(),
+      endTime: v.number()
+    })),
+    confirmedTimeSlotIndex: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_conversation", ["conversationId"]),
+
+  chatEventVotes: defineTable({
+    chatEventId: v.id("chatEvents"),
+    userId: v.id("users"),
+    slotIndex: v.number(),
+    vote: v.union(v.literal("yes"), v.literal("maybe"), v.literal("no")),
+    eventId: v.optional(v.id("events")),
+    votedAt: v.number(),
+  })
+    .index("by_event", ["chatEventId"])
+    .index("by_event_user", ["chatEventId", "userId"]),
 
   last_reads: defineTable({
     userId: v.id("users"),

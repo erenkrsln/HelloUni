@@ -73,13 +73,7 @@ export default function UserProfilePage() {
         : [];
 
     return (
-        <main
-            className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden"
-            style={{
-                overscrollBehaviorY: 'none',
-                minHeight: '100dvh',
-            }}
-        >
+        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             {isLoading ? (
