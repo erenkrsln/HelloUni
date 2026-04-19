@@ -4,8 +4,8 @@ import { Inter, Gloock, Poppins } from "next/font/google";
 import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
-import { NextAuthSessionProvider } from "@/components/session-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
+import { getToken } from "@/lib/auth-server";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -45,11 +45,13 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const token = await getToken();
+
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
@@ -61,11 +63,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
       </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`} suppressHydrationWarning>
-        <NextAuthSessionProvider>
-          <ConvexClientProvider>
-            <PostsCacheWrapper>{children}</PostsCacheWrapper>
-          </ConvexClientProvider>
-        </NextAuthSessionProvider>
+        <ConvexClientProvider initialToken={token}>
+          <PostsCacheWrapper>{children}</PostsCacheWrapper>
+        </ConvexClientProvider>
       </body>
     </html>
   );

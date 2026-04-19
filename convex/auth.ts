@@ -2,76 +2,66 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getImageUrl } from "./helpers";
 
-export const getUserByUsername = query({
-  args: { username: v.string() },
+const ALLOWED_DOMAIN = "@th-nuernberg.de";
+
+export const getUserByEmail = query({
+  args: { email: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query("users")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
       .first();
-    
-    return user;
+
+    if (!user) return null;
+
+    return {
+      ...user,
+      image: await getImageUrl(ctx, user.image),
+    };
   },
 });
 
-/**
- * Registriert einen neuen Benutzer in der Datenbank
- * Validiert, dass der Benutzername eindeutig ist, bevor der Benutzer erstellt wird
- * 
- * @param name - Vollständiger Name des Benutzers
- * @param username - Eindeutiger Benutzername für Login
- * @param passwordHash - Bereits gehashtes Passwort (Hashing erfolgt im Client/API)
- */
-export const registerUser = mutation({
+export const registerMagicLinkUser = mutation({
   args: {
     name: v.string(),
     username: v.string(),
-    passwordHash: v.string(),
+    email: v.string(),
+    major: v.string(),
   },
   handler: async (ctx, args) => {
-    // Prüfen, ob der Benutzername bereits existiert
-    const existingUser = await ctx.db
+    const normalizedEmail = args.email.trim().toLowerCase();
+    const normalizedUsername = args.username.trim();
+    const normalizedName = args.name.trim();
+    const normalizedMajor = args.major.trim();
+
+    if (!normalizedEmail.endsWith(ALLOWED_DOMAIN)) {
+      throw new Error(`Nur E-Mails mit ${ALLOWED_DOMAIN} sind erlaubt.`);
+    }
+
+    const existingEmail = await ctx.db
       .query("users")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .first();
-
-    if (existingUser) {
-      throw new Error("Der Benutzername wird bereits verwendet");
+    if (existingEmail) {
+      throw new Error("Diese E-Mail wird bereits verwendet.");
     }
 
-    // Neuen Benutzer erstellen
-    const userId = await ctx.db.insert("users", {
-      name: args.name,
-      username: args.username,
-      passwordHash: args.passwordHash,
-      createdAt: Date.now(), // Erstellungsdatum setzen
-      // Optionale Felder können später im Profil hinzugefügt werden
+    const existingUsername = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", normalizedUsername))
+      .first();
+    if (existingUsername) {
+      throw new Error("Der Benutzername wird bereits verwendet.");
+    }
+
+    return await ctx.db.insert("users", {
+      name: normalizedName,
+      username: normalizedUsername,
+      email: normalizedEmail,
+      major: normalizedMajor,
+      uni_name: "TH Nürnberg",
+      createdAt: Date.now(),
     });
-
-    return userId;
-  },
-});
-
-/**
- * Ruft einen Benutzer nach seiner ID ab
- * Wird nach dem Login verwendet, um Benutzerinformationen zu erhalten
- */
-export const getUserById = query({
-  args: { userId: v.id("users") },
-  handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    
-    // passwordHash aus Sicherheitsgründen nicht zurückgeben
-    if (user) {
-      const { passwordHash, ...userWithoutPassword } = user;
-      
-      return {
-        ...userWithoutPassword,
-        image: await getImageUrl(ctx, userWithoutPassword.image),
-      };
-    }
-    
-    return null;
   },
 });
 
