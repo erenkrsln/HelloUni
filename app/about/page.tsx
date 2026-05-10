@@ -79,7 +79,7 @@ export default function AboutPage() {
                     <div>
                         <div className="p-6 space-y-6">
                             <div className="text-center">
-                                <h3 className="text-2xl font-semibold mb-6 text-black text-center">Das sind wir</h3>
+                                <h3 className="text-2xl font-semibold mb-6 text-[#8C531E] text-center">Das sind wir</h3>
                             </div>
 
                             <div className="grid grid-cols-2 gap-y-6 gap-x-4">
