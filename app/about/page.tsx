@@ -82,88 +82,76 @@ export default function AboutPage() {
                                 <h3 className="text-2xl font-semibold mb-6 text-black text-center">Das sind wir</h3>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(60%)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/lexi.png"
-                                                alt="Lexi"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Alexia</p>
+                            <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/lexi.png"
+                                            alt="Lexi"
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Alexia</p>
                                 </div>
 
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(60%)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/eren.png"
-                                                alt="Eren"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Eren</p>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/eren.png"
+                                            alt="Eren"
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Eren</p>
                                 </div>
 
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(60%)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/jannis.png"
-                                                alt="Jannis"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Jannis</p>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/jannis.png"
+                                            alt="Jannis"
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Jannis</p>
                                 </div>
 
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(60%)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/lana.png"
-                                                alt="Lana"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Lana</p>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/lana.png"
+                                            alt="Lana"
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Lana</p>
                                 </div>
 
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(60%)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/lia.png"
-                                                alt="Lia"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Lia</p>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/lia.png"
+                                            alt="Lia"
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Lia</p>
                                 </div>
 
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(60%)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/saly.png"
-                                                alt="Saly"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Saly</p>
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/saly.png"
+                                            alt="Saly"
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Saly</p>
                                 </div>
 
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(60%)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945]    mb-3">
+                                <div className="col-span-2 flex justify-center">
+                                    <div className="flex flex-col items-center w-[calc(50%-0.5rem)]">
+                                        <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                             <img
                                                 src="/about/tanja.png"
                                                 alt="Tanja"
