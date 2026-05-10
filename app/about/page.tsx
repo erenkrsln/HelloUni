@@ -48,7 +48,6 @@ export default function AboutPage() {
                 </div>
             </header>
 
-            {/* Content with padding for header */}
             <div className="pt-[110px] px-5 pb-10">
                 <section className="mb-8 bg-white rounded-3xl shadow-sm p-6 border border-[#F4CFAB]/20 input-card">
                     <h2 className="text-2xl font-semibold mb-4 text-black text-center">Unsere Idee</h2>
@@ -70,74 +69,33 @@ export default function AboutPage() {
                         <p className="text-gray-700 leading-relaxed text-center">
                             Da wir ein relativ kleines Team aus Media Engineering-Studierenden der <a href="https://www.th-nuernberg.de" target="_blank" rel="noopener noreferrer" className="underline">
                                 TH Nürnberg
-                            </a> sind, gibt es bei uns keine starren Zuständigkeiten. Wir helfen mit, wo es gerade nötig ist und bringen unsere Stärken ein.
+                            </a> sind, gibt es bei uns keine starren Zuständigkeiten. Wir helfen mit, wo es gerade nötig ist und bringen unsere Stärken ein. <br />
+                            Auf unserem Instagram Account <a href="https://www.instagram.com/hellouni_de/" target="_blank" rel="noopener noreferrer">
+                                @hellouni_de
+                            </a> geben wir Einblicke in unsere Arbeit und halten euch über Neuigkeiten zu unserer App auf dem Laufenden.
                         </p>
                     </div>
 
                     <div>
-                        {/* Branding und Design – 3 Bilder */}
                         <div className="p-6 space-y-6">
                             <div className="text-center">
-                                <h3 className="text-xl font-medium text-[#8C531E]">Branding und Design</h3>
-                                <p className="text-gray-600 mt-2 text-md">
-                                    Im ersten der beiden Semester gab es viel im gestalterischen Bereich zu tun.
-                                    Wir mussten uns viel mit der Gestaltung unserer Marke, sowie mit dem Layout unserer Webapp auseinander setzen.
-                                </p>
+                                <h3 className="text-2xl font-semibold mb-6 text-[#8C531E] text-center">Das sind wir</h3>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-5">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/jannis.png"
-                                                alt="Jannis"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Jannis</p>
-                                    </div>
-
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/lia.png"
-                                                alt="Lia"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Lia</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-center">
-                                    <div className="flex flex-col items-center w-[calc(50%_-_10px)]">
-                                        <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
-                                            <img
-                                                src="/about/saly.png"
-                                                alt="Saly"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <p className="text-md font-medium text-[#8C531E] text-center">Saly</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Entwicklung – 2 Bilder */}
-                        <div className="p-6 space-y-6">
-                            <div className="text-center">
-                                <h3 className="text-xl font-medium text-[#8C531E]">Entwicklung</h3>
-                                <p className="text-gray-600 mt-2 text-md">
-                                    Die Grundlagen der Entwicklung mussten ebenfalls geschaffen werden.
-                                    Wir haben uns mit verschiedenen Technologien beschäftigt und uns für unsere jetzige Lösung entschieden.
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                                 <div className="flex flex-col items-center">
-                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/lexi.png"
+                                            alt="Lexi"
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Alexia</p>
+                                </div>
+
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                         <img
                                             src="/about/eren.png"
                                             alt="Eren"
@@ -148,32 +106,18 @@ export default function AboutPage() {
                                 </div>
 
                                 <div className="flex flex-col items-center">
-                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945]    mb-3">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                         <img
-                                            src="/about/tanja.png"
-                                            alt="Tanja"
+                                            src="/about/jannis.png"
+                                            alt="Jannis"
                                             className="w-full h-full object-contain"
                                         />
                                     </div>
-                                    <p className="text-md font-medium text-[#8C531E] text-center">Tanja</p>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Jannis</p>
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Social Media – 1 Bild */}
-                        <div className="p-6 space-y-6">
-                            <div className="text-center">
-                                <h3 className="text-xl font-medium text-[#8C531E]">Social Media</h3>
-                                <p className="text-gray-600 mt-2 text-md">
-                                    Auch unser Instagram Profil <a href="https://www.instagram.com/hellouni_de/" target="_blank" rel="noopener noreferrer">
-                                        @hellouni_de
-                                    </a> musste erstellt und verwaltet werden.
-                                </p>
-                            </div>
-
-                            <div className="flex justify-center">
-                                <div className="flex flex-col items-center w-[calc(50%_-_10px)] max-w-[220px]">
-                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                         <img
                                             src="/about/lana.png"
                                             alt="Lana"
@@ -182,28 +126,40 @@ export default function AboutPage() {
                                     </div>
                                     <p className="text-md font-medium text-[#8C531E] text-center">Lana</p>
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Organisation – 1 Bild */}
-                        <div className="p-6 space-y-6">
-                            <div className="text-center">
-                                <h3 className="text-xl font-medium text-[#8C531E]">Organisation</h3>
-                                <p className="text-gray-600 mt-2 text-md">
-                                    Damit wir zusammenarbeiten konnten, brauchte es eine gute Organisation.
-                                </p>
-                            </div>
-
-                            <div className="flex justify-center">
-                                <div className="flex flex-col items-center w-[calc(50%_-_10px)] max-w-[220px]">
-                                    <div className="w-full aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
                                         <img
-                                            src="/about/lexi.png"
-                                            alt="Lexi"
+                                            src="/about/lia.png"
+                                            alt="Lia"
                                             className="w-full h-full object-contain"
                                         />
                                     </div>
-                                    <p className="text-md font-medium text-[#8C531E] text-center">Lexi</p>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Lia</p>
+                                </div>
+
+                                <div className="flex flex-col items-center">
+                                    <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                        <img
+                                            src="/about/saly.png"
+                                            alt="Saly"
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <p className="text-md font-medium text-[#8C531E] text-center">Saly</p>
+                                </div>
+
+                                <div className="col-span-2 flex justify-center">
+                                    <div className="flex flex-col items-center w-[calc(50%-0.5rem)]">
+                                        <div className="w-[90%] aspect-square overflow-hidden rounded-full bg-[#d08945] mb-3">
+                                            <img
+                                                src="/about/tanja.png"
+                                                alt="Tanja"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <p className="text-md font-medium text-[#8C531E] text-center">Tanja</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
