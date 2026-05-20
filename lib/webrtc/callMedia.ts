@@ -153,7 +153,7 @@ export function findVideoSender(
   if (withTrack) return withTrack;
 
   for (const tr of pc.getTransceivers()) {
-    if (tr.stopped) continue;
+    if (tr.currentDirection === "stopped") continue;
     if (tr.sender.track?.kind === "video") return tr.sender;
     if (
       tr.receiver.track?.kind === "video" &&
@@ -166,7 +166,10 @@ export function findVideoSender(
 
   return pc
     .getTransceivers()
-    .find((t) => !t.stopped && t.receiver.track?.kind === "video")?.sender;
+    .find(
+      (t) =>
+        t.currentDirection !== "stopped" && t.receiver.track?.kind === "video",
+    )?.sender;
 }
 
 /** Remote-Stream aus aktiven Receivern (nach Renegotiation). */
