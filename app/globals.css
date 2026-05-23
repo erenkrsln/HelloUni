@@ -269,8 +269,6 @@ select option:disabled {
 }
 
 .driver-popover-title {
-  font-weight: 600;
-  font-size: 1.125rem;
   color: #000000;
   text-align: center;
   margin-bottom: 8px !important;
