@@ -85,7 +85,7 @@ export function startAppTour() {
       },
       {
         popover: {
-          title: "App installieren",
+          title: "HelloUni installieren",
           description: "Installiere HelloUni auf deinem Gerät, um das beste Erlebnis zu haben. <br/> Eine Anleitung dazu findest du in der rechten Seitenleiste."
         }
       }
