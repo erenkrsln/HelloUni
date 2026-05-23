@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Share, PlusSquare, MoreVertical, Download, Monitor, Smartphone, ChevronDown, X } from "lucide-react";
+import { ArrowLeft, Share, PlusSquare, MoreVertical, Monitor, Smartphone, ChevronDown, X, MoreHorizontal, Check, Menu, CirclePlus, MonitorDown, FileDown, Grid2x2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type Platform = "desktop_chrome" | "desktop_safari" | "desktop_edge" | "desktop_other" | "mobile_chrome" | "mobile_safari" | "mobile_samsung" | "mobile_other" | "unknown";
 
 const PLATFORM_LABELS: Record<string, string> = {
-  mobile_safari: "Safari (mobil)",
+  mobile_safari: "Safari (iOS)",
   mobile_chrome: "Chrome (mobil)",
   mobile_samsung: "Samsung Internet",
   mobile_other: "Andere Browser (mobil)",
@@ -66,7 +66,7 @@ export default function InstallInstructionsPage() {
     setSelectedPlatform(detected);
   }, []);
 
-  if (!isMounted) return null; // Prevent hydration mismatch
+  if (!isMounted) return null;
 
   const activePlatform = selectedPlatform || platform;
 
@@ -80,18 +80,23 @@ export default function InstallInstructionsPage() {
         >
           <ArrowLeft className="w-6 h-6 text-black" />
         </button>
-        <h1 className="text-lg font-bold">App installieren</h1>
-        <div className="w-10" /> {/* Placeholder for balance */}
+        <h1 className="text-lg font-bold">Installationsguide</h1>
+        <div className="w-10" />
       </header>
 
       <main className="flex-1 px-6 py-8 overflow-y-auto">
         <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-gray-200">
+          <div className="w-20 h-20   flex items-center justify-center mb-4">
             <img src="/logo2.svg" alt="HelloUni Logo" className="w-12 h-12" />
           </div>
           <h2 className="text-2xl font-bold mb-2">HelloUni als App</h2>
-          <p className="text-gray-600 text-sm">
-            Installiere HelloUni auf deinem Startbildschirm für das beste Erlebnis, schnellere Ladezeiten und einfachen Zugriff.
+          <p className="text-gray-600 text-m">
+            HelloUni ist eine Progressive Web App (PWA). Du kannst die Webseite direkt aus deinem Browser installieren, ohne einen App Store zu besuchen.
+
+            Nach der Installation funktioniert HelloUni wie eine ganz normale App.
+          </p>
+          <p className="text-gray-600 text-m mt-3">
+            Unten findest du eine Anleitung wie du HelloUni auf deinem Gerät installierst.
           </p>
         </div>
 
@@ -138,11 +143,10 @@ export default function InstallInstructionsPage() {
             <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Share className="w-5 h-5 text-blue-500" />
+                  <Share className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">1. Teilen tippen</p>
-                  <p className="text-sm text-gray-600">Tippe auf das Teilen-Symbol in der unteren Menüleiste deines Browsers.</p>
+                  <p className="text-sm text-gray-600">Tippe auf das Teilen-Symbol in der Menüleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -150,72 +154,137 @@ export default function InstallInstructionsPage() {
                   <PlusSquare className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">2. Zum Home-Bildschirm</p>
-                  <p className="text-sm text-gray-600">Scrolle nach unten und wähle "Zum Home-Bildschirm" (Add to Home Screen).</p>
+                  <p className="text-sm text-gray-600">Scrolle nach unten und wähle "Zum Home-Bildschirm"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <span className="font-bold text-blue-500 w-5 h-5 flex items-center justify-center text-sm">H</span>
+                  <Check className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">3. Hinzufügen</p>
-                  <p className="text-sm text-gray-600">Tippe oben rechts auf "Hinzufügen", um die Installation abzuschließen.</p>
+                  <p className="text-sm text-gray-600">Vergib einen Namen, stelle sicher, dass "Als Web-App öffnen" aktiviert ist und tippe dann auf "Hinzufügen"</p>
                 </div>
               </div>
             </div>
           )}
 
-          {(activePlatform === "mobile_chrome" || activePlatform === "mobile_samsung") && (
+          {activePlatform === "mobile_chrome" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
                   <MoreVertical className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">1. Menü öffnen</p>
-                  <p className="text-sm text-gray-600">Tippe auf das Menü-Symbol (drei Punkte / Striche) in der Browserleiste.</p>
+                  <p className="text-sm text-gray-600">Tippe auf das Menü-Symbol (drei Punkte) in der Browserleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Download className="w-5 h-5 text-gray-700" />
+                  <MonitorDown className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">2. App installieren</p>
-                  <p className="text-sm text-gray-600">Wähle "App installieren", "Seite hinzufügen zu" oder "Zum Startbildschirm hinzufügen".</p>
+                  <p className="text-sm text-gray-600">Wähle "Zum Startbildschirm hinzufügen" und tippe auf "Installieren"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Smartphone className="w-5 h-5 text-gray-700" />
+                  <Check className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">3. Bestätigen</p>
-                  <p className="text-sm text-gray-600">Bestätige im Popup-Fenster mit "Installieren" oder "Hinzufügen".</p>
+                  <p className="text-sm text-gray-600">Bestätige die Installation im Popup-Fenster mit Tippen auf "Installieren"</p>
                 </div>
               </div>
             </div>
           )}
 
-          {(activePlatform === "desktop_chrome" || activePlatform === "desktop_edge") && (
+          {activePlatform === "mobile_samsung" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Monitor className="w-5 h-5 text-gray-700" />
+                  <Menu className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">1. Installieren-Symbol suchen</p>
-                  <p className="text-sm text-gray-600">Klicke in der Adressleiste deines Browsers ganz rechts auf das Installieren-Symbol (Monitor mit Pfeil nach unten oder App-Icon).</p>
+
+                  <p className="text-sm text-gray-600">Tippe auf das Menü-Symbol (drei Striche) in der Browserleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Download className="w-5 h-5 text-gray-700" />
+                  <CirclePlus className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">2. App installieren</p>
-                  <p className="text-sm text-gray-600">Klicke im Dialogfenster auf "Installieren", um HelloUni als Desktop-App hinzuzufügen.</p>
+
+                  <p className="text-sm text-gray-600">Wähle "Hinzufügen zu" und tippe auf "Startbildschirm"</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <Check className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Bestätige im Pop-up-Fenster mit Tippen auf "Hinzufügen"</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activePlatform === "desktop_chrome" && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <MoreVertical className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+
+                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte / Striche) ganz rechts neben der Adressleiste</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <FileDown className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+
+                  <p className="text-sm text-gray-600">Navigiere zum Punkt "Streamen, speichern und teilen" und wähle "Seite als App installieren"</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <Check className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vergib einen Namen und bestätige mit "Installieren". Die App erscheint nun auf deinem Desktop</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activePlatform === "desktop_edge" && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <MoreHorizontal className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+
+                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte / Striche) ganz rechts neben der Adressleiste</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <Grid2x2 className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+
+                  <p className="text-sm text-gray-600">Navigiere zum Punkt "Weitere Tools", wähle "Apps" und klicke "Diese Site als eine App öffnen"</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <Check className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vergib einen Namen und bestätige mit "Installieren". Die App erscheint nun auf deinem Desktop</p>
                 </div>
               </div>
             </div>
@@ -225,11 +294,11 @@ export default function InstallInstructionsPage() {
             <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Share className="w-5 h-5 text-blue-500" />
+                  <Share className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">1. Teilen tippen</p>
-                  <p className="text-sm text-gray-600">Klicke oben rechts auf das Teilen-Symbol (Viereck mit Pfeil) oder auf "Ablage" in der Menüleiste.</p>
+
+                  <p className="text-sm text-gray-600">Klicke oben rechts auf das Teilen-Symbol (Viereck mit Pfeil)</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -237,8 +306,15 @@ export default function InstallInstructionsPage() {
                   <Monitor className="w-5 h-5 text-gray-700" />
                 </div>
                 <div>
-                  <p className="font-medium">2. Zum Dock hinzufügen</p>
-                  <p className="text-sm text-gray-600">Wähle "Zum Dock hinzufügen" um HelloUni als App auf deinem Mac zu installieren.</p>
+                  <p className="text-sm text-gray-600">Wähle "Zum Dock hinzufügen"</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
+                  <Check className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vergib einen Namen und bestätige mit "Hinzufügen"</p>
                 </div>
               </div>
             </div>
@@ -248,9 +324,10 @@ export default function InstallInstructionsPage() {
             <div className="text-center py-4">
               <Smartphone className="w-12 h-12 text-gray-400 mx-auto mb-3" />
               <p className="font-medium mb-2">Browser nicht optimal</p>
-              <p className="text-sm text-gray-600">
-                Für die beste Erfahrung und um die App auf deinem Startbildschirm zu installieren,
-                öffne HelloUni bitte in <strong>Safari</strong> (iOS) oder <strong>Google Chrome</strong> (Android).
+              <p className="text-sm text-gray-600 mb-2">
+                Für die beste Erfahrung mit HelloUni
+                nutze bitte <strong>Google Chrome</strong> oder <strong>Safari</strong> (iOS). </p><p className="text-sm text-gray-600">
+                Falls du bei deinem momentan genutzten Browser bleiben möchtest, suche nach <strong>"PWA Installation + deinem verwendeten Browser"</strong>, um zu prüfen, ob und wie dieser die Installation von Progressive Web Apps unterstützt.
               </p>
             </div>
           )}
@@ -258,10 +335,11 @@ export default function InstallInstructionsPage() {
           {activePlatform === "desktop_other" && (
             <div className="text-center py-4">
               <Monitor className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="font-medium mb-2">Browser unterstützt keine Installation</p>
-              <p className="text-sm text-gray-600">
-                Dein aktueller Browser unterstützt die Installation von Web-Apps möglicherweise nicht direkt.
-                Bitte nutze <strong>Google Chrome</strong> oder <strong>Microsoft Edge</strong> für die Desktop-Installation.
+              <p className="font-medium mb-2">Browser nicht optimal</p>
+              <p className="text-sm text-gray-600 mb-2">
+                Für die beste Erfahrung mit HelloUni
+                nutze bitte <strong>Google Chrome</strong> oder <strong>Safari</strong>. </p><p className="text-sm text-gray-600">
+                Falls du bei deinem momentan genutzten Browser bleiben möchtest, suche nach <strong>"PWA Installation + deinem verwendeten Browser"</strong>, um zu prüfen, ob und wie dieser die Installation von Progressive Web Apps unterstützt.
               </p>
             </div>
           )}
