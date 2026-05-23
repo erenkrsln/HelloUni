@@ -68,6 +68,7 @@ export function BottomNavigation() {
       >
         {/* Home - ganz links */}
         <Link
+          id="tour-nav-home"
           href="/home"
           prefetch={true}
           onClick={handleHomeClick}
@@ -83,6 +84,7 @@ export function BottomNavigation() {
 
         {/* Search */}
         <Link
+          id="tour-nav-search"
           href="/search"
           prefetch={true}
           className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
@@ -97,6 +99,7 @@ export function BottomNavigation() {
 
         {/* Create */}
         <Link
+          id="tour-nav-create"
           href="/create"
           prefetch={true}
           onClick={handleCreateClick}
@@ -125,6 +128,7 @@ export function BottomNavigation() {
 
         {/* Notifications */}
         <Link
+          id="tour-nav-notifications"
           href="/notifications"
           prefetch={true}
           className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"
@@ -148,6 +152,7 @@ export function BottomNavigation() {
 
         {/* Chat */}
         <Link
+          id="tour-nav-chat"
           href="/chat"
           prefetch={true}
           className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"

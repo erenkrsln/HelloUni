@@ -9,6 +9,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useEffect, useRef, useState, useMemo } from "react";
+import { startAppTour } from "@/lib/tour";
 
 // Funktion zur Erkennung mobiler Geräte
 const isMobileDevice = (): boolean => {
@@ -158,6 +159,18 @@ export default function Home() {
         sessionStorage.setItem("home_visited", "true");
         setIsFirstVisit(false);
       }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Auto-start App Tour
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("hello_uni_tour_seen");
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        startAppTour();
+        localStorage.setItem("hello_uni_tour_seen", "true");
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, []);

@@ -85,6 +85,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
 
         {/* Logo button - visual element (gleiche Größe wie Profilbild: 44x44px) */}
         <button
+          id="tour-logo-menu"
           onClick={() => setIsLogoSidebarOpen(true)}
           className="absolute flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
           style={{
@@ -221,6 +222,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
         {/* Mobile Menu Button - Profilbild oben rechts */}
         {onMenuClick && (
           <button
+            id="tour-profile-menu"
             onClick={onMenuClick}
             className="absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
             style={{
