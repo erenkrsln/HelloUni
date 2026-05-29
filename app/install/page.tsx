@@ -9,7 +9,7 @@ type Platform = "desktop_chrome" | "desktop_safari" | "desktop_edge" | "desktop_
 const PLATFORM_LABELS: Record<string, string> = {
   mobile_safari: "Safari (iOS)",
   mobile_chrome: "Chrome (mobil)",
-  mobile_samsung: "Samsung Internet",
+  mobile_samsung: "Samsung Internet (mobil)",
   mobile_other: "Andere Browser (mobil)",
   desktop_chrome: "Chrome (Desktop)",
   desktop_safari: "Safari (Desktop)",
