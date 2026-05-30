@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
@@ -16,6 +16,8 @@ import { SharedPostMessage } from "@/components/shared-post-message";
 import { SharedProfileMessage } from "@/components/shared-profile-message";
 import { ChatEventModal } from "@/components/chat-event-modal";
 import { ChatEventMessage } from "@/components/chat-event-message";
+import { ChatLocationModal } from "@/components/chat-location-modal";
+import { ChatLocationMessage } from "@/components/chat-location-message";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -58,8 +60,52 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [isPollModalOpen, setIsPollModalOpen] = useState(false);
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const updateLiveLocationCoordinates = useMutation(api.mutations.updateLiveLocationCoordinates);
+
+    // Find if the current user has any active live location shared in this conversation
+    const myActiveLiveLocationMessage = messages?.find(
+        (msg) =>
+            msg.type === "live_location" &&
+            msg.senderId === currentUser?._id &&
+            msg.isLiveActive &&
+            (!msg.liveExpiresAt || msg.liveExpiresAt > Date.now())
+    );
+
+    useEffect(() => {
+        if (!currentUser || !myActiveLiveLocationMessage) return;
+
+        let watchId: number | null = null;
+
+        if (typeof window !== "undefined" && navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    updateLiveLocationCoordinates({
+                        messageId: myActiveLiveLocationMessage._id,
+                        userId: currentUser._id,
+                        latitude,
+                        longitude,
+                    }).catch((err) => {
+                        console.error("Error updating live location coordinates:", err);
+                    });
+                },
+                (err) => {
+                    console.warn("Failed to watch user position for live sharing:", err);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        return () => {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+        };
+    }, [currentUser, myActiveLiveLocationMessage, updateLiveLocationCoordinates]);
 
     const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
@@ -566,6 +612,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
                                                         />
+                                                    ) : (msg.type === "location" || msg.type === "live_location") ? (
+                                                        <ChatLocationMessage
+                                                            messageId={msg._id}
+                                                            senderName={sender?.name || "Benutzer"}
+                                                            isMe={isMe}
+                                                            currentUserId={currentUser._id}
+                                                        />
                                                     ) : (
                                                         <div>
                                                             {linkifyText(msg.content)}
@@ -668,6 +721,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 />
             )}
 
+            {/* Chat Location Modal */}
+            {currentUser && (
+                <ChatLocationModal
+                    isOpen={isLocationModalOpen}
+                    onClose={() => setIsLocationModalOpen(false)}
+                    conversationId={conversationId}
+                    senderId={currentUser._id}
+                />
+            )}
+
             {/* Input */}
             {!isLeft ? (
                 <div
@@ -721,6 +784,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         <CalendarDays size={20} className="text-[#D08945]" />
                                     </div>
                                     <span className="text-[11px] text-gray-600 font-medium">Termin</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        setIsLocationModalOpen(true);
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <MapPin size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Standort</span>
                                 </button>
                             </div>
                         </>
