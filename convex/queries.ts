@@ -1007,6 +1007,22 @@ export const getUnreadCounts = query({
   },
 });
 
+/** Name + Bild einer Conversation (für Gruppenanruf-UI). */
+export const getConversationDisplay = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) return null;
+
+    if (!conv.isGroup) return null;
+
+    return {
+      displayName: conv.name || "Gruppenchat",
+      displayImage: await getImageUrl(ctx, conv.image),
+    };
+  },
+});
+
 export const getConversationMembers = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {

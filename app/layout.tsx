@@ -5,6 +5,9 @@ import "./globals.css";
 import "./design-tokens.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
+import { CallProvider } from "@/components/call/CallProvider";
+import { CallOverlay } from "@/components/call/CallOverlay";
+import { IncomingCallModal } from "@/components/call/IncomingCallModal";
 import { getToken } from "@/lib/auth-server";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -64,7 +67,11 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`} suppressHydrationWarning>
         <ConvexClientProvider initialToken={token}>
-          <PostsCacheWrapper>{children}</PostsCacheWrapper>
+          <CallProvider>
+            <PostsCacheWrapper>{children}</PostsCacheWrapper>
+            <CallOverlay />
+            <IncomingCallModal />
+          </CallProvider>
         </ConvexClientProvider>
       </body>
     </html>

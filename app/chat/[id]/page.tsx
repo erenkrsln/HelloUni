@@ -6,6 +6,8 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin } from "lucide-react";
+import { ChatHeaderCallButtons } from "@/components/call/ChatHeaderCallButtons";
+import { ActiveCallBanner } from "@/components/call/ActiveCallBanner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
@@ -320,15 +322,26 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
                 {/* Right side */}
                 {conversation && (
-                    <button
-                        className="p-2 text-[#D08945]"
-                        onClick={() => setIsFilesModalOpen(true)}
-                        title="Geteilte Dateien"
-                    >
-                        <Folder size={20} />
-                    </button>
+                    <div className="flex items-center gap-0.5">
+                        {/* Call-Buttons: Voice & Video */}
+                        {!isLeft && (
+                            <ChatHeaderCallButtons conversationId={conversationId} />
+                        )}
+                        <button
+                            className="p-2 text-[#D08945]"
+                            onClick={() => setIsFilesModalOpen(true)}
+                            title="Geteilte Dateien"
+                        >
+                            <Folder size={20} />
+                        </button>
+                    </div>
                 )}
             </div>
+
+            {/* Aktiver Gruppenanruf Banner */}
+            {conversation?.isGroup && !isLeft && (
+                <ActiveCallBanner conversationId={conversationId} />
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]">

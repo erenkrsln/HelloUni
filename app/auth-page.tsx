@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const ALLOWED_DOMAIN = "@th-nuernberg.de";
 const MAJORS = [
@@ -253,8 +254,8 @@ export default function AuthPage() {
             {isDevMode
               ? ""
               : isSignUp
-              ? "Name, Benutzername, E-Mail und Studiengang eintragen. Danach erhältst du einen Magic Link."
-              : "E-Mail eingeben und Magic Link erhalten."}
+                ? "Name, Benutzername, E-Mail und Studiengang eintragen. Danach erhältst du einen Magic Link."
+                : "E-Mail eingeben und Magic Link erhalten."}
           </p>
 
           <form onSubmit={isDevMode ? handleDevLogin : isSignUp ? handleSignUp : handleLogin} className="space-y-4">
@@ -368,6 +369,18 @@ export default function AuthPage() {
               Dev Login
             </button>
           </div>
+        </div>
+
+        <div className="mt-8 flex items-center justify-center gap-6 text-s">
+          <Link href="/about" className="text-gray-500 hover:text-gray-800 underline transition-colors">
+            Über Uns
+          </Link>
+          <Link href="/imprint" className="text-gray-500 hover:text-gray-800 underline transition-colors">
+            Impressum
+          </Link>
+          <Link href="/privacy" className="text-gray-500 hover:text-gray-800 underline transition-colors">
+            Datenschutz
+          </Link>
         </div>
       </div>
     </div>
