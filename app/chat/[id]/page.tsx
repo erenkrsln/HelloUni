@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2 } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
@@ -13,6 +13,24 @@ import { ChatFilesModal } from "@/components/chat-files-modal";
 import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
 import { handleAi } from "@/actions/chatAiSend";
+
+type ParsedAiContent = {
+    summary: string;
+    details?: string;
+};
+
+function parseAiStructuredContent(text: string): ParsedAiContent | null {
+    const summaryMatch = text.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/i);
+    if (!summaryMatch) return null;
+
+    const summary = summaryMatch[1].trim();
+    if (!summary) return null;
+
+    const detailsMatch = text.match(/\[DETAILS\]([\s\S]*?)\[\/DETAILS\]/i);
+    const details = detailsMatch?.[1]?.trim();
+
+    return details ? { summary, details } : { summary };
+}
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -60,6 +78,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [isPollModalOpen, setIsPollModalOpen] = useState(false);
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+    const [expandedAiMessages, setExpandedAiMessages] = useState<Record<string, boolean>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +193,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         });
     };
 
+    const toggleAiDetails = (messageId: string) => {
+        setExpandedAiMessages((prev) => ({
+            ...prev,
+            [messageId]: !prev[messageId],
+        }));
+    };
+
     const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -271,6 +297,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     messages.map((msg, index) => {
                         const isMe = msg.senderId === currentUser._id;
                         const sender = getMember(msg.senderId);
+                        const isAiMessage = !!aiUserId && msg.senderId === aiUserId;
 
                         const nextMsg = messages[index + 1];
                         const isNextSameSender = nextMsg && nextMsg.senderId === msg.senderId && nextMsg.type !== "system";
@@ -289,6 +316,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             return acc;
                         }, {} as Record<string, { count: number, hasReacted: boolean }>) || {};
                         const hasReactions = Object.keys(reactionCounts).length > 0;
+                        const parsedAiContent = (msg.type === "text" || !msg.type) && isAiMessage
+                            ? parseAiStructuredContent(msg.content)
+                            : null;
+                        const isAiDetailsExpanded = !!expandedAiMessages[msg._id];
 
                         let dateDivider = null;
                         if (isNewDay) {
@@ -506,6 +537,34 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
                                                         />
+                                                    ) : parsedAiContent ? (
+                                                        <div className="flex flex-col gap-2">
+                                                            <div>{linkifyText(parsedAiContent.summary)}</div>
+                                                            {parsedAiContent.details && (
+                                                                <>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="inline-flex items-center gap-1.5 text-xs text-[#8C531E] hover:text-[#6E3E16] transition-colors self-start"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            toggleAiDetails(msg._id);
+                                                                        }}
+                                                                    >
+                                                                        <span>{isAiDetailsExpanded ? "Weniger Details" : "Mehr Details"}</span>
+                                                                        <ChevronDown
+                                                                            size={14}
+                                                                            className={`transition-transform duration-200 ${isAiDetailsExpanded ? "rotate-180" : ""}`}
+                                                                        />
+                                                                    </button>
+                                                                    {isAiDetailsExpanded && (
+                                                                        <div className="pt-2 border-t border-[#E8D6BC]">
+                                                                            {linkifyText(parsedAiContent.details)}
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     ) : (
                                                         <div>
                                                             {linkifyText(msg.content)}
