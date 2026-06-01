@@ -103,9 +103,10 @@ function SmallAvatar({ user }: { user: Doc<"users"> | null }) {
   );
 }
 
-// ─── Haupt-Remote-Video (Fullscreen, object-contain) ─────────────────────────
+// ─── Haupt-Video (Fullscreen) ────────────────────────────────────────────────
 function RemoteVideoMain({
-  stream, user, statusLabel, isConnected, duration, participantCount, videoEnabled = true,
+  stream, user, statusLabel, isConnected, duration, participantCount,   videoEnabled = true,
+  mirrored = false, fillCover = false, muted = false,
 }: {
   stream: MediaStream | null;
   user: Doc<"users"> | null;
@@ -114,6 +115,12 @@ function RemoteVideoMain({
   duration: string;
   participantCount: number;
   videoEnabled?: boolean;
+  /** Eigenes Bild als Vollbild (Frontkamera) → spiegeln. */
+  mirrored?: boolean;
+  /** FaceTime-Stil auf Mobil: randlos füllen (cover) statt schwarze Ränder. */
+  fillCover?: boolean;
+  /** Eigener Stream als Vollbild → Audio stummschalten (sonst Echo durch eigenes Mikro). */
+  muted?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const displayStream = useMemo(
@@ -159,15 +166,24 @@ function RemoteVideoMain({
   const hasVideo =
     hasActiveVideoTrack(displayStream, videoEnabled) || hasScreenVideo;
 
+  // Bildschirminhalte nie beschneiden; Kamerabild auf Mobil randlos füllen (FaceTime).
+  const objectFit: "cover" | "contain" =
+    !hasScreenVideo && fillCover ? "cover" : "contain";
+
   return (
     <div className="absolute inset-0 bg-[#0e0906] flex items-center justify-center">
-      {/* Video mit schwarzen Rändern wenn Seitenverhältnis nicht passt */}
       {displayStream && (
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          muted={muted}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit,
+            transform: mirrored ? "scaleX(-1)" : undefined,
+          }}
           className={`${hasVideo ? "opacity-100" : "opacity-0 absolute inset-0"}`}
         />
       )}
@@ -580,9 +596,22 @@ export function CallOverlay() {
   const pipCamera     = localSharing ? true : cameraEnabled;
   const pipMirrored   = !localSharing && cameraFacingMode === "user";
   const pipObjectFit  = localSharing ? "contain" as const : "cover" as const;
+  /** FaceTime (Mobil, 1:1): Nur ich habe die Kamera an → eigenes Bild als Vollbild,
+   *  kein schwebendes PiP. Schaltet das Gegenüber die Kamera an, greift wieder das
+   *  normale Layout (Gegenüber groß, ich im PiP). */
+  const localIsMain =
+    isPrivateInstagramVideo &&
+    narrowViewport &&
+    !localSharing &&
+    !remoteSharing &&
+    !remoteHasCamera &&
+    cameraEnabled &&
+    Boolean(localStream);
   /** PiP unten rechts: bei fremder Bildschirmübertragung nur mit eigener Kamera.
    *  In der Gruppen-Galerie nie (eigenes Bild ist dort eine Raster-Kachel). */
-  const showLocalPreviewPip = isGroupGallery
+  const showLocalPreviewPip = localIsMain
+    ? false
+    : isGroupGallery
     ? false
     : remoteSharing
       ? cameraEnabled && Boolean(localStream)
@@ -624,8 +653,20 @@ export function CallOverlay() {
             {/* ── Hauptfläche: 1:1 Remote-Video oder Gruppen-Raster ───────── */}
             {isPrivateInstagramVideo || groupScreenShareViewerMode ? (
               <RemoteVideoMain
-                stream={groupScreenShareViewerMode ? groupSharerStream : mainStream}
-                user={groupScreenShareViewerMode ? groupSharerUser : mainUser}
+                stream={
+                  groupScreenShareViewerMode
+                    ? groupSharerStream
+                    : localIsMain
+                      ? localStream
+                      : mainStream
+                }
+                user={
+                  groupScreenShareViewerMode
+                    ? groupSharerUser
+                    : localIsMain
+                      ? (currentUser ?? null)
+                      : mainUser
+                }
                 statusLabel={statusLabel}
                 isConnected={isConnected}
                 duration={duration}
@@ -633,8 +674,13 @@ export function CallOverlay() {
                 videoEnabled={
                   remoteSharing || groupScreenShareViewerMode
                     ? true
-                    : (remoteParticipant?.cameraEnabled ?? true)
+                    : localIsMain
+                      ? cameraEnabled
+                      : (remoteParticipant?.cameraEnabled ?? true)
                 }
+                mirrored={localIsMain && cameraFacingMode === "user"}
+                muted={localIsMain}
+                fillCover={localIsMain || narrowViewport}
               />
             ) : (
               currentUser && (
@@ -654,11 +700,28 @@ export function CallOverlay() {
                     localCameraEnabled={cameraEnabled}
                     localScreenSharing={screenSharingActive}
                     localMirrored={cameraFacingMode === "user"}
+                    localCameraFacing={cameraFacingMode}
+                    onSwitchCamera={switchCameraFacing}
+                    canSwitchCamera={narrowViewport}
                     screenSharingUserId={screenSharingUserId}
                     embedMode
                   />
                 </div>
               )
+            )}
+
+            {/* ── Kamera drehen, wenn eigenes Bild Vollbild ist (FaceTime, Mobil) ── */}
+            {localIsMain && (
+              <button
+                type="button"
+                onClick={() => void switchCameraFacing()}
+                aria-label={cameraFacingMode === "user" ? "Rückkamera" : "Frontkamera"}
+                title="Kamera drehen"
+                className="pointer-events-auto absolute right-4 z-[40] flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-black/45 text-white shadow-md backdrop-blur-sm outline-none transition-colors hover:bg-black/65 focus-visible:ring-2 focus-visible:ring-white/45 active:scale-90"
+                style={{ bottom: "calc(7.5rem + env(safe-area-inset-bottom, 0px))" }}
+              >
+                <SwitchCamera className="h-5 w-5" strokeWidth={2.25} />
+              </button>
             )}
 
             {/* ── Gradient oben */}

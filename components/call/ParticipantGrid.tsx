@@ -1,10 +1,35 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { SwitchCamera } from "lucide-react";
 import { VideoTile } from "./VideoTile";
 import type { ParticipantWithUser } from "./CallProvider";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { getStreamForScreenShare } from "@/lib/webrtc/callMedia";
+
+/** Mobil: Front-/Rückkamera der eigenen Kachel umschalten. */
+function GridSwitchCameraButton({
+  facing,
+  onSwitch,
+}: {
+  facing: "user" | "environment";
+  onSwitch: () => void | Promise<void>;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        void onSwitch();
+      }}
+      aria-label={facing === "user" ? "Rückkamera" : "Frontkamera"}
+      title="Kamera drehen"
+      className="pointer-events-auto absolute bottom-1.5 right-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/40 bg-black/55 text-white shadow-sm backdrop-blur-sm outline-none focus-visible:ring-1 focus-visible:ring-white/45 active:scale-90"
+    >
+      <SwitchCamera className="h-3.5 w-3.5" strokeWidth={2.25} />
+    </button>
+  );
+}
 
 interface ParticipantGridProps {
   localStream: MediaStream | null;
@@ -17,6 +42,12 @@ interface ParticipantGridProps {
   localScreenSharing: boolean;
   /** Eigenes Kamerabild spiegeln (nur Frontkamera). Rückkamera = nicht gespiegelt. */
   localMirrored?: boolean;
+  /** Aktuelle Ausrichtung der eigenen Kamera (für „Kamera drehen"-Button). */
+  localCameraFacing?: "user" | "environment";
+  /** Eigene Kamera umschalten (nur Mobil sinnvoll). */
+  onSwitchCamera?: () => void | Promise<void>;
+  /** Nur wenn true (z. B. schmaler Viewport/Mobil) wird der Umschalt-Button gezeigt. */
+  canSwitchCamera?: boolean;
   screenSharingUserId?: string | null;
   /** Kein eigener „teilt Bildschirm"-Titel — Overlay zeigt ihn bereits (Instagram-Chrome) */
   embedMode?: boolean;
@@ -57,6 +88,9 @@ export function ParticipantGrid({
   localCameraEnabled,
   localScreenSharing,
   localMirrored = true,
+  localCameraFacing = "user",
+  onSwitchCamera,
+  canSwitchCamera = false,
   screenSharingUserId,
   embedMode = false,
 }: ParticipantGridProps) {
@@ -159,7 +193,7 @@ export function ParticipantGrid({
           return (
             <div
               key={p._id}
-              className="overflow-hidden rounded-2xl"
+              className="relative overflow-hidden rounded-2xl"
               style={{
                 width: tileWidth > 0 ? `${tileWidth}px` : "min(100%, 320px)",
                 aspectRatio: aspectCss,
@@ -178,6 +212,16 @@ export function ParticipantGrid({
                 noRound
                 className="h-full w-full"
               />
+              {isLocal &&
+                canSwitchCamera &&
+                localCameraEnabled &&
+                !localScreenSharing &&
+                onSwitchCamera && (
+                  <GridSwitchCameraButton
+                    facing={localCameraFacing}
+                    onSwitch={onSwitchCamera}
+                  />
+                )}
             </div>
           );
         })}
