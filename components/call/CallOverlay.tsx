@@ -680,7 +680,7 @@ export function CallOverlay() {
                 }
                 mirrored={localIsMain && cameraFacingMode === "user"}
                 muted={localIsMain}
-                fillCover={localIsMain || narrowViewport}
+                fillCover={localIsMain ? false : narrowViewport}
               />
             ) : (
               currentUser && (
