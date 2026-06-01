@@ -166,7 +166,7 @@ function RemoteVideoMain({
   const hasVideo =
     hasActiveVideoTrack(displayStream, videoEnabled) || hasScreenVideo;
 
-  // Bildschirminhalte nie beschneiden; Kamerabild auf Mobil randlos füllen (FaceTime).
+  // Bildschirminhalte nie beschneiden; Kamerabild vollständig zeigen (contain).
   const objectFit: "cover" | "contain" =
     !hasScreenVideo && fillCover ? "cover" : "contain";
 
@@ -680,7 +680,7 @@ export function CallOverlay() {
                 }
                 mirrored={localIsMain && cameraFacingMode === "user"}
                 muted={localIsMain}
-                fillCover={localIsMain ? false : narrowViewport}
+                fillCover={false}
               />
             ) : (
               currentUser && (
