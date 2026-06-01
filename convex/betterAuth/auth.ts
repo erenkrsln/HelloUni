@@ -217,13 +217,26 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
 
           const greetingName = displayNameFromMetadata(metadata);
           const resend = new Resend(resendApiKey);
-          await resend.emails.send({
+          const { data, error } = await resend.emails.send({
             from: resendFromWithDisplayName(resendFrom, "HelloUni"),
             to: email,
             subject: "Dein HelloUni Magic Link",
             html: magicLinkEmailHtml(url, greetingName),
             text: magicLinkEmailText(url, greetingName),
           });
+          if (error) {
+            const errObj = error as unknown as { message?: string; error?: string };
+            const detail =
+              typeof errObj.message === "string"
+                ? errObj.message
+                : typeof errObj.error === "string"
+                  ? errObj.error
+                  : "Unbekannter Resend-Fehler";
+            throw new Error(`E-Mail konnte nicht versendet werden: ${detail}`);
+          }
+          if (!data?.id) {
+            throw new Error("E-Mail konnte nicht versendet werden: keine Resend-Antwort.");
+          }
         },
       }),
       convex({ authConfig }),

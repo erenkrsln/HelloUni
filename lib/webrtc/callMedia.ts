@@ -152,24 +152,24 @@ export function findVideoSender(
   const withTrack = pc.getSenders().find((s) => s.track?.kind === "video");
   if (withTrack) return withTrack;
 
+  // Bestehenden Video-Transceiver wiederverwenden, dessen Track via
+  // replaceTrack(null) entfernt wurde (Kamera war aus). Wichtig: nur SENDENDE
+  // Transceiver (sendrecv/sendonly). Ein recvonly-Transceiver empfängt
+  // Remote-Video und hat ebenfalls einen Sender mit null-Track – würde er hier
+  // zurückgegeben, flippt replaceVideoTrackInConnection ihn auf sendonly und die
+  // Gegenseite wird nicht mehr empfangen (Remote-Kamera verschwindet).
   for (const tr of pc.getTransceivers()) {
     if (tr.currentDirection === "stopped") continue;
     if (tr.sender.track?.kind === "video") return tr.sender;
     if (
       tr.receiver.track?.kind === "video" &&
-      tr.direction !== "recvonly" &&
-      tr.direction !== "inactive"
+      (tr.direction === "sendrecv" || tr.direction === "sendonly")
     ) {
       return tr.sender;
     }
   }
 
-  return pc
-    .getTransceivers()
-    .find(
-      (t) =>
-        t.currentDirection !== "stopped" && t.receiver.track?.kind === "video",
-    )?.sender;
+  return undefined;
 }
 
 /** Remote-Stream aus aktiven Receivern (nach Renegotiation). */
@@ -179,7 +179,14 @@ export function buildStreamFromReceivers(
   const audio: MediaStreamTrack[] = [];
   let video: MediaStreamTrack | null = null;
 
-  for (const { track } of pc.getReceivers()) {
+  // Über Transceiver iterieren, nicht über getReceivers(): sendonly/inactive-
+  // Transceiver haben einen leeren Receiver-Track (enabled, aber ohne Daten).
+  // Dieser würde sonst als "eingefrorenes" Remote-Video ausgewählt werden –
+  // z. B. wenn beide Seiten in einem Sprachanruf nacheinander die Kamera anschalten.
+  for (const transceiver of pc.getTransceivers()) {
+    const dir = transceiver.currentDirection ?? transceiver.direction;
+    if (dir !== "sendrecv" && dir !== "recvonly") continue;
+    const track = transceiver.receiver.track;
     if (!track || track.readyState === "ended") continue;
     if (track.kind === "audio") {
       if (!audio.some((t) => t.id === track.id)) audio.push(track);

@@ -554,13 +554,12 @@ export function CallOverlay() {
   const groupSharerName = groupSharerParticipant?.user?.name ?? "Teilnehmer";
   const groupSharerUser = groupSharerParticipant?.user ?? null;
 
-  // Instagram-Video-Chrome: 1:1 wie bisher, Gruppen-Video dieselbe Hülle + Raster
-  const isPrivateInstagramVideo =
-    !isGroup &&
-    !isEnding &&
-    (!isVoiceOnly || remoteSharing || remoteHasCamera);
+  // Instagram-Video-Chrome: 1:1 und Gruppe – auch bei Sprachanruf (kein Video → Avatar-Fallback)
+  const isPrivateInstagramVideo = !isGroup && !isEnding;
 
-  const isGroupInstagramVideo = isGroup && !isVoiceOnly && !isEnding;
+  const isGroupInstagramVideo = isGroup && !isEnding;
+  /** Gruppen-Galerie (Teams-Raster): eigenes Bild ist eine Kachel → kein schwebendes PiP. */
+  const isGroupGallery = isGroupInstagramVideo && !groupScreenShareActive;
 
   const showInstagramVideoChrome =
     isPrivateInstagramVideo ||
@@ -579,18 +578,21 @@ export function CallOverlay() {
   const pipUser       = currentUser ?? null;
   const pipMic        = micEnabled;
   const pipCamera     = localSharing ? true : cameraEnabled;
-  const pipMirrored   = !localSharing;
+  const pipMirrored   = !localSharing && cameraFacingMode === "user";
   const pipObjectFit  = localSharing ? "contain" as const : "cover" as const;
-  /** PiP unten rechts: bei fremder Bildschirmübertragung nur mit eigener Kamera. */
-  const showLocalPreviewPip = remoteSharing
-    ? cameraEnabled && Boolean(localStream)
-    : localSharing ||
-      (Boolean(pipStream) && (cameraEnabled || !narrowViewport)) ||
-      (narrowViewport &&
-        !localSharing &&
-        !cameraEnabled &&
-        !!currentUser &&
-        showInstagramVideoChrome);
+  /** PiP unten rechts: bei fremder Bildschirmübertragung nur mit eigener Kamera.
+   *  In der Gruppen-Galerie nie (eigenes Bild ist dort eine Raster-Kachel). */
+  const showLocalPreviewPip = isGroupGallery
+    ? false
+    : remoteSharing
+      ? cameraEnabled && Boolean(localStream)
+      : localSharing ||
+        (Boolean(pipStream) && (cameraEnabled || !narrowViewport)) ||
+        (narrowViewport &&
+          !localSharing &&
+          !cameraEnabled &&
+          !!currentUser &&
+          showInstagramVideoChrome);
   const pipAllowCollapse = !narrowViewport;
   /** Mobil: Kamera aus → quadratisches PiP nur mit Profilbild */
   const mobilePipSquareProfile =
@@ -651,15 +653,9 @@ export function CallOverlay() {
                     localMicEnabled={micEnabled}
                     localCameraEnabled={cameraEnabled}
                     localScreenSharing={screenSharingActive}
+                    localMirrored={cameraFacingMode === "user"}
                     screenSharingUserId={screenSharingUserId}
                     embedMode
-                    onLocalPreviewClick={
-                      isGroupInstagramVideo
-                        ? narrowViewport
-                          ? () => {}
-                          : () => setPipCollapsed(true)
-                        : undefined
-                    }
                   />
                 </div>
               )
@@ -854,7 +850,7 @@ export function CallOverlay() {
                           user={currentUser ?? null}
                           micEnabled={micEnabled}
                           cameraEnabled={cameraEnabled}
-                          mirrored={true}
+                          mirrored={cameraFacingMode === "user"}
                           objectFit="cover"
                         />
                         <PipSwitchCameraOverlay
@@ -1164,7 +1160,7 @@ export function CallOverlay() {
                           user={currentUser ?? null}
                           micEnabled={micEnabled}
                           cameraEnabled={cameraEnabled}
-                          mirrored={true}
+                          mirrored={cameraFacingMode === "user"}
                           objectFit="cover"
                         />
                         <PipSwitchCameraOverlay
