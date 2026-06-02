@@ -1,23 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Search, MapPin, GraduationCap, X, ChevronDown, Filter, FileText, Calendar, Link as LinkIcon, BarChart2, Bell } from "lucide-react";
+import { Search, MapPin, GraduationCap, X, ChevronDown, Filter, FileText, Calendar, Link as LinkIcon, BarChart2, Bell, Users, UserPlus, MessageSquare } from "lucide-react";
 import { FeedCard } from "@/components/feed-card";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SearchPage() {
+    const router = useRouter();
     const [isFirstVisit, setIsFirstVisit] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const [filterType, setFilterType] = useState<"all" | "people" | "posts">("all");
+    const [filterType, setFilterType] = useState<"groups" | "people" | "posts">("groups");
     const [sortBy, setSortBy] = useState<"recent" | "alphabetical">("alphabetical");
 
     // Advanced Filters State
@@ -114,10 +116,20 @@ export default function SearchPage() {
     }, [searchQuery]);
 
     const { currentUser, currentUserId } = useCurrentUser();
+    const joinGroup = useMutation(api.mutations.joinPublicGroup);
 
     // Queries - conditionally skip based on filter
-    const shouldSearchUsers = filterType === "all" || filterType === "people";
-    const shouldSearchPosts = filterType === "all" || filterType === "posts";
+    const shouldSearchGroups = filterType === "groups";
+    const shouldSearchUsers = filterType === "people";
+    const shouldSearchPosts = filterType === "posts";
+
+    const groupResults = useQuery(
+        api.queries.searchPublicGroups,
+        shouldSearchGroups ? {
+            searchTerm: debouncedQuery,
+            sortBy,
+        } : "skip"
+    );
 
     const userResults = useQuery(
         api.queries.searchProfiles,
@@ -171,13 +183,13 @@ export default function SearchPage() {
                     {/* Filters */}
                     <div className="flex items-center justify-center gap-2 mb-6">
                         <button
-                            onClick={() => setFilterType("all")}
-                            className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
+                            onClick={() => setFilterType("groups")}
+                            className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "groups"
                                 ? "bg-[#d08945] text-white"
                                 : "bg-gray-100 text-gray-700"
                                 }`}
                         >
-                            Alle
+                            Gruppen
                         </button>
                         <button
                             onClick={() => setFilterType("people")}
@@ -242,7 +254,7 @@ export default function SearchPage() {
 
                             <button
                                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                                className={`p-2 rounded-full transition-colors flex-shrink-0 ${filterType === "all" ? "invisible pointer-events-none" : ""
+                                className={`p-2 rounded-full transition-colors flex-shrink-0 ${filterType === "groups" ? "invisible pointer-events-none" : ""
                                     } ${showAdvancedFilters || userMajor || userInterests || postType || postAuthorMajor
                                         ? "bg-[#d08945] text-white"
                                         : "bg-gray-100 text-gray-500"
@@ -253,7 +265,7 @@ export default function SearchPage() {
                         </div>
 
                         {/* Advanced Filters Panel */}
-                        {showAdvancedFilters && filterType !== "all" && (
+                        {showAdvancedFilters && filterType !== "groups" && (
                             <div className="bg-gray-50 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-gray-100 shadow-sm">
                                 {filterType === "people" && (
                                     <>
@@ -416,7 +428,7 @@ export default function SearchPage() {
                             const hasQuery = !!debouncedQuery;
                             const hasUserFilters = filterType === "people" && (!!userMajor || !!userInterests);
                             const hasPostFilters = filterType === "posts" && (!!postType || !!postAuthorMajor);
-                            const shouldShowResults = hasQuery || hasUserFilters || hasPostFilters;
+                            const shouldShowResults = filterType === "groups" || hasQuery || hasUserFilters || hasPostFilters;
 
                             if (!shouldShowResults) {
                                 return (
@@ -427,7 +439,7 @@ export default function SearchPage() {
                                                 ? "Suche nach Personen"
                                                 : filterType === "posts"
                                                     ? "Suche nach Posts"
-                                                    : "Suche nach Personen oder Posts"}
+                                                    : "Suche nach Gruppen"}
                                         </p>
                                     </div>
                                 );
@@ -435,6 +447,75 @@ export default function SearchPage() {
 
                             return (
                                 <div className="space-y-8">
+                                    {/* Gruppen Section */}
+                                    {shouldSearchGroups && (
+                                        <div>
+                                            <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
+                                            {groupResults === undefined || !currentUserId ? (
+                                                <div className="py-4 text-center text-sm text-gray-400 font-normal">Laden...</div>
+                                            ) : groupResults.length === 0 ? (
+                                                <div className="py-2 px-1 text-sm text-gray-500 font-normal">Keine öffentlichen Gruppen gefunden.</div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {groupResults.map((group) => {
+                                                        const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
+                                                        return (
+                                                            <div key={group._id} className="flex items-center p-3 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-colors shadow-sm">
+                                                                <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                    {group.displayImage ? (
+                                                                        <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center font-bold text-[#D08945] bg-[#D08945]/10">
+                                                                            {group.displayName?.charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0 mr-2">
+                                                                    <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
+                                                                    <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                                                                        {group.participants.length} Mitglieder
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    {isMember ? (
+                                                                        <Link 
+                                                                            href={`/chat/${group._id}`}
+                                                                            className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
+                                                                        >
+                                                                            <MessageSquare size={13} />
+                                                                            Öffnen
+                                                                        </Link>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={async () => {
+                                                                                if (!currentUserId) return;
+                                                                                try {
+                                                                                    await joinGroup({
+                                                                                        conversationId: group._id,
+                                                                                        userId: currentUserId,
+                                                                                    });
+                                                                                    // Redirect to chat screen on join
+                                                                                    router.push(`/chat/${group._id}`);
+                                                                                } catch (err) {
+                                                                                    console.error("Failed to join group:", err);
+                                                                                    alert("Fehler beim Beitritt der Gruppe.");
+                                                                                }
+                                                                            }}
+                                                                            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"
+                                                                        >
+                                                                            <UserPlus size={13} />
+                                                                            Beitreten
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {/* Personen Section */}
                                     {shouldSearchUsers && (
                                         <div>

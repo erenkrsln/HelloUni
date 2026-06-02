@@ -50,6 +50,7 @@ export function GroupInfoModal({
     // New mutations
     const updateGroupName = useMutation(api.mutations.updateGroupName);
     const updateGroupImage = useMutation(api.mutations.updateGroupImage);
+    const toggleGroupPublic = useMutation(api.mutations.toggleGroupPublic);
 
     const myself = members?.find(m => m._id === currentUserId);
     const iAmCreator = myself?.role === "creator";
@@ -355,6 +356,43 @@ export function GroupInfoModal({
                                 <p className="text-sm text-gray-500 mt-4">
                                     {members.filter(m => m.role !== 'left').length} Mitglieder
                                 </p>
+                            </div>
+
+                            {/* Group Settings / Visibility */}
+                            <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-semibold text-gray-900">Öffentliche Gruppe</span>
+                                    <span className="text-xs text-gray-500 font-normal">Jeder kann dieser Gruppe über die Suche beitreten</span>
+                                </div>
+                                {iAmAdmin ? (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await toggleGroupPublic({
+                                                    conversationId,
+                                                    isPublic: !conversation.isPublic,
+                                                    userId: currentUserId,
+                                                });
+                                            } catch (error) {
+                                                console.error("Failed to toggle group publicity:", error);
+                                                alert("Fehler beim Ändern der Sichtbarkeit.");
+                                            }
+                                        }}
+                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${conversation.isPublic ? "bg-[#D08945]" : "bg-gray-200"
+                                            }`}
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${conversation.isPublic ? "translate-x-5" : "translate-x-0"
+                                                }`}
+                                        />
+                                    </button>
+                                ) : (
+                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${conversation.isPublic ? "bg-[#D08945] text-white" : "bg-gray-100 text-gray-800"
+                                        }`}>
+                                        {conversation.isPublic ? "Öffentlich" : "Privat"}
+                                    </span>
+                                )}
                             </div>
 
                             {!hasAdmins && (

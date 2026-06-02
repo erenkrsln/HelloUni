@@ -1559,3 +1559,101 @@ export const claimGroupOwnership = mutation({
     return { success: true };
   },
 });
+
+export const toggleGroupPublic = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    isPublic: v.boolean(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.isGroup) throw new Error("Can only toggle public state for group chats");
+
+    // Check admin permissions
+    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+    if (!isAdmin) throw new Error("Only admins can change group visibility");
+
+    await ctx.db.patch(args.conversationId, {
+      isPublic: args.isPublic,
+    });
+
+    // Create system message
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: args.isPublic
+          ? `${user.name} hat die Gruppe öffentlich gemacht`
+          : `${user.name} hat die Gruppe privat gemacht`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+    return { success: true };
+  },
+});
+
+export const joinPublicGroup = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.isGroup) throw new Error("Not a group chat");
+    if (!conversation.isPublic) throw new Error("Group is not public");
+
+    if (conversation.participants.includes(args.userId)) {
+      throw new Error("Already a member of this group");
+    }
+
+    const leftParticipants = conversation.leftParticipants || [];
+    const newLeftParticipants = leftParticipants.filter(id => id !== args.userId);
+
+    // Add participant to the conversation
+    await ctx.db.patch(args.conversationId, {
+      participants: [...conversation.participants, args.userId],
+      leftParticipants: newLeftParticipants,
+      leftMetadata: (conversation.leftMetadata || []).filter(m => m.userId !== args.userId),
+      updatedAt: Date.now(),
+    });
+
+    // Create system message: "... ist der gruppe beigetreten"
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: `${user.name} ist der Gruppe beigetreten`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+
+    // Upsert/Insert last_reads for the user
+    const existingLastRead = await ctx.db
+      .query("last_reads")
+      .withIndex("by_user_conversation", (q) =>
+        q.eq("userId", args.userId).eq("conversationId", args.conversationId)
+      )
+      .first();
+
+    if (existingLastRead) {
+      await ctx.db.patch(existingLastRead._id, {
+        lastReadAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("last_reads", {
+        userId: args.userId,
+        conversationId: args.conversationId,
+        lastReadAt: Date.now(),
+      });
+    }
+
+    return args.conversationId;
+  },
+});

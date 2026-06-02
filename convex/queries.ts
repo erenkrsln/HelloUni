@@ -1576,3 +1576,46 @@ export const getChatPollVote = query({
     return vote ? vote.optionIndices : [];
   },
 });
+
+export const searchPublicGroups = query({
+  args: {
+    searchTerm: v.string(),
+    sortBy: v.union(v.literal("recent"), v.literal("alphabetical")),
+  },
+  handler: async (ctx, args) => {
+    const conversations = await ctx.db.query("conversations").collect();
+
+    let publicGroups = conversations.filter(
+      (c) => c.isGroup === true && c.isPublic === true
+    );
+
+    // Filter by search term
+    if (args.searchTerm.trim() !== "") {
+      const term = args.searchTerm.toLowerCase();
+      publicGroups = publicGroups.filter(
+        (c) => c.name && c.name.toLowerCase().includes(term)
+      );
+    }
+
+    // Enrich public groups with images
+    const enrichedGroups = await Promise.all(
+      publicGroups.map(async (group) => {
+        const displayImage = await getImageUrl(ctx, group.image);
+        return {
+          ...group,
+          displayName: group.name || "Öffentliche Gruppe",
+          displayImage,
+        };
+      })
+    );
+
+    // Sort groups
+    if (args.sortBy === "alphabetical") {
+      enrichedGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    } else {
+      enrichedGroups.sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+
+    return enrichedGroups;
+  },
+});
