@@ -387,6 +387,15 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         return content;
                                                     }
 
+                                                    const joinMatch = content.match(/(.*) ist der Gruppe beigetreten/);
+                                                    if (joinMatch) {
+                                                        const [_, userName] = joinMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du bist der Gruppe beigetreten";
+                                                        }
+                                                        return content;
+                                                    }
+
                                                     const addedMatch = content.match(/(.*) hat (.*) hinzugefügt/);
                                                     if (addedMatch) {
                                                         const [_, adminName, addedName] = addedMatch;

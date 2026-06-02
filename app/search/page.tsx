@@ -8,7 +8,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Search, MapPin, GraduationCap, X, ChevronDown, Filter, FileText, Calendar, Link as LinkIcon, BarChart2, Bell, Users, UserPlus, MessageSquare } from "lucide-react";
+import { Search, MapPin, X, ChevronDown, Filter, Link as LinkIcon, UserPlus, MessageCircle } from "lucide-react";
 import { FeedCard } from "@/components/feed-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -460,12 +460,12 @@ export default function SearchPage() {
                                                     {groupResults.map((group) => {
                                                         const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
                                                         return (
-                                                            <div key={group._id} className="flex items-center p-3 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition-colors shadow-sm">
+                                                            <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50">
                                                                 <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
                                                                     {group.displayImage ? (
                                                                         <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
                                                                     ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center font-bold text-[#D08945] bg-[#D08945]/10">
+                                                                        <div className="w-full h-full flex items-center justify-center font-bold ">
                                                                             {group.displayName?.charAt(0).toUpperCase()}
                                                                         </div>
                                                                     )}
@@ -478,11 +478,11 @@ export default function SearchPage() {
                                                                 </div>
                                                                 <div>
                                                                     {isMember ? (
-                                                                        <Link 
+                                                                        <Link
                                                                             href={`/chat/${group._id}`}
                                                                             className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
                                                                         >
-                                                                            <MessageSquare size={13} />
+                                                                            <MessageCircle size={13} />
                                                                             Öffnen
                                                                         </Link>
                                                                     ) : (
