@@ -117,6 +117,7 @@ export default function SearchPage() {
 
     const { currentUser, currentUserId } = useCurrentUser();
     const joinGroup = useMutation(api.mutations.joinPublicGroup);
+    const requestToJoin = useMutation(api.mutations.requestToJoinPublicGroup);
 
     // Queries - conditionally skip based on filter
     const shouldSearchGroups = filterType === "groups";
@@ -128,6 +129,7 @@ export default function SearchPage() {
         shouldSearchGroups ? {
             searchTerm: debouncedQuery,
             sortBy,
+            userId: currentUserId || undefined,
         } : "skip"
     );
 
@@ -485,20 +487,35 @@ export default function SearchPage() {
                                                                             <MessageCircle size={13} />
                                                                             Öffnen
                                                                         </Link>
+                                                                    ) : group.joinRequestStatus === "pending" ? (
+                                                                        <button
+                                                                            disabled
+                                                                            className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
+                                                                        >
+                                                                            Angefragt
+                                                                        </button>
                                                                     ) : (
                                                                         <button
                                                                             onClick={async () => {
                                                                                 if (!currentUserId) return;
                                                                                 try {
-                                                                                    await joinGroup({
-                                                                                        conversationId: group._id,
-                                                                                        userId: currentUserId,
-                                                                                    });
-                                                                                    // Redirect to chat screen on join
-                                                                                    router.push(`/chat/${group._id}`);
+                                                                                    if (group.needsRequestToJoin) {
+                                                                                        await requestToJoin({
+                                                                                            conversationId: group._id,
+                                                                                            userId: currentUserId,
+                                                                                        });
+                                                                                        alert("Beitrittsanfrage wurde gesendet!");
+                                                                                    } else {
+                                                                                        await joinGroup({
+                                                                                            conversationId: group._id,
+                                                                                            userId: currentUserId,
+                                                                                        });
+                                                                                        // Redirect to chat screen on join
+                                                                                        router.push(`/chat/${group._id}`);
+                                                                                    }
                                                                                 } catch (err) {
-                                                                                    console.error("Failed to join group:", err);
-                                                                                    alert("Fehler beim Beitritt der Gruppe.");
+                                                                                    console.error("Failed to perform join/request action:", err);
+                                                                                    alert("Aktion fehlgeschlagen.");
                                                                                 }
                                                                             }}
                                                                             className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"

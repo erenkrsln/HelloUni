@@ -465,6 +465,42 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         }
                                                         return content;
                                                     }
+
+                                                    const publicMatch = content.match(/(.*) hat die Gruppe öffentlich gemacht/);
+                                                    if (publicMatch) {
+                                                        const [_, userName] = publicMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast die Gruppe öffentlich gemacht";
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const privateMatch = content.match(/(.*) hat die Gruppe privat gemacht/);
+                                                    if (privateMatch) {
+                                                        const [_, userName] = privateMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast die Gruppe privat gemacht";
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const requestActiveMatch = content.match(/(.*) hat Beitrittsanfragen für diese Gruppe aktiviert/);
+                                                    if (requestActiveMatch) {
+                                                        const [_, userName] = requestActiveMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast Beitrittsanfragen für diese Gruppe aktiviert";
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const requestInactiveMatch = content.match(/(.*) hat den direkten Beitritt für diese Gruppe aktiviert/);
+                                                    if (requestInactiveMatch) {
+                                                        const [_, userName] = requestInactiveMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast den direkten Beitritt für diese Gruppe aktiviert";
+                                                        }
+                                                        return content;
+                                                    }
                                                 }
                                                 return content;
                                             })()}

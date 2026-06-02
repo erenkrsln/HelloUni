@@ -146,7 +146,7 @@ export function BottomNavigation() {
             }}
           />
           {unreadNotificationCount > 0 && (
-            <div className="absolute top-2 right-2 w-3 h-3 bg-[#FF3B30] rounded-full border border-[#FF3B30]" />
+            <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
           )}
         </Link>
 

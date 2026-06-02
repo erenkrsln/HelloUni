@@ -44,7 +44,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                         minWidth: "20px",
                         height: "20px",
                         padding: "0 5px",
-                        backgroundColor: "#FF3B30",
+                        backgroundColor: "#f78d57",
                         borderRadius: "10px",
                         fontSize: "11px",
                         fontWeight: "600",

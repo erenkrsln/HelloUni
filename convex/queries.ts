@@ -1581,6 +1581,7 @@ export const searchPublicGroups = query({
   args: {
     searchTerm: v.string(),
     sortBy: v.union(v.literal("recent"), v.literal("alphabetical")),
+    userId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
     const conversations = await ctx.db.query("conversations").collect();
@@ -1597,6 +1598,18 @@ export const searchPublicGroups = query({
       );
     }
 
+    // Map user's join requests
+    const userRequestsMap: Record<string, string> = {};
+    if (args.userId) {
+      const requests = await ctx.db
+        .query("joinRequests")
+        .withIndex("by_user", (q) => q.eq("userId", args.userId!))
+        .collect();
+      requests.forEach((r) => {
+        userRequestsMap[r.conversationId as string] = r.status;
+      });
+    }
+
     // Enrich public groups with images
     const enrichedGroups = await Promise.all(
       publicGroups.map(async (group) => {
@@ -1605,6 +1618,8 @@ export const searchPublicGroups = query({
           ...group,
           displayName: group.name || "Öffentliche Gruppe",
           displayImage,
+          needsRequestToJoin: group.needsRequestToJoin ?? true, // Default to true!
+          joinRequestStatus: userRequestsMap[group._id as string] || null,
         };
       })
     );

@@ -13,7 +13,7 @@ import { profileCache } from "@/lib/cache/profileCache";
 interface NotificationItemProps {
     notification: {
         _id: Id<"notifications">;
-        type: "follow" | "post_like" | "comment" | "comment_like" | "event_join";
+        type: "follow" | "post_like" | "comment" | "comment_like" | "event_join" | "group_join_request" | "group_join_accept" | "group_join_reject";
         isRead: boolean;
         createdAt: number;
         issuer: {
@@ -27,10 +27,15 @@ interface NotificationItemProps {
             type: string;
             postId?: Id<"posts">;
             commentId?: Id<"comments">;
+            requestId?: Id<"joinRequests">;
+            conversationId?: Id<"conversations">;
+            groupName?: string;
+            status?: "pending" | "approved" | "rejected";
             thumbnail?: string | null;
             snippet?: string;
             eventType?: "spontaneous_meeting" | "recurring_meeting";
             title?: string;
+            approved?: boolean;
         } | null;
         eventMetadata?: {
             eventType: "spontaneous_meeting" | "recurring_meeting";
@@ -43,6 +48,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
     const markAsRead = useMutation(api.notifications.markAsRead);
     const followUser = useMutation(api.mutations.followUser);
     const unfollowUser = useMutation(api.mutations.unfollowUser);
+    const handleJoinRequest = useMutation(api.mutations.handleJoinRequest);
 
     const [isFollowing, setIsFollowing] = useState(notification.issuer.isFollowing);
     const [isLoading, setIsLoading] = useState(false);
@@ -146,6 +152,24 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
                         <span className="font-semibold">{issuerName}</span> nimmt an deinem Event teil.
                     </>
                 );
+            case "group_join_request":
+                return (
+                    <>
+                        <span className="font-semibold">@{issuerName}</span> möchte der Gruppe <span className="font-semibold">{notification.target?.groupName}</span> beitreten.
+                    </>
+                );
+            case "group_join_accept":
+                return (
+                    <>
+                        Deine Anfrage für die Gruppe <span className="font-semibold">{notification.target?.groupName}</span> wurde von <span className="font-semibold">@{issuerName}</span> angenommen.
+                    </>
+                );
+            case "group_join_reject":
+                return (
+                    <>
+                        Deine Anfrage für die Gruppe <span className="font-semibold">{notification.target?.groupName}</span> wurde von <span className="font-semibold">@{issuerName}</span> abgelehnt.
+                    </>
+                );
             default:
                 return <span className="font-semibold">{issuerName}</span>;
         }
@@ -154,6 +178,12 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
     // Generate link based on notification type
     const getLink = () => {
         const baseUrl = (() => {
+            if (notification.type === "group_join_request" || notification.type === "group_join_reject") {
+                return "/notifications";
+            }
+            if (notification.type === "group_join_accept" && notification.target?.conversationId) {
+                return `/chat/${notification.target.conversationId}`;
+            }
             if (notification.type === "follow") {
                 return `/profile/${notification.issuer.username}`;
             }
@@ -223,7 +253,68 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
 
             {/* Right: Thumbnail, Follow Button or Unread Indicator */}
             <div className="flex items-center gap-3 flex-shrink-0 ml-1">
-                {notification.type === "follow" ? (
+                {notification.type === "group_join_request" ? (
+                    <div className="flex items-center gap-2">
+                        {notification.target?.status === "pending" ? (
+                            <>
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (isLoading) return;
+                                        setIsLoading(true);
+                                        try {
+                                            await handleJoinRequest({
+                                                requestId: notification.target!.requestId!,
+                                                adminId: currentUserId,
+                                                approve: false,
+                                            });
+                                        } catch (err) {
+                                            console.error("Failed to reject join request:", err);
+                                        } finally {
+                                            setIsLoading(false);
+                                        }
+                                    }}
+                                    disabled={isLoading}
+                                    className="text-xs font-semibold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors"
+                                >
+                                    Ablehnen
+                                </button>
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (isLoading) return;
+                                        setIsLoading(true);
+                                        try {
+                                            await handleJoinRequest({
+                                                requestId: notification.target!.requestId!,
+                                                adminId: currentUserId,
+                                                approve: true,
+                                            });
+                                        } catch (err) {
+                                            console.error("Failed to approve join request:", err);
+                                        } finally {
+                                            setIsLoading(false);
+                                        }
+                                    }}
+                                    disabled={isLoading}
+                                    className="text-xs font-semibold px-3 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white rounded-full transition-colors"
+                                >
+                                    Akzeptieren
+                                </button>
+                            </>
+                        ) : (
+                            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+                                notification.target?.status === "approved"
+                                    ? "bg-green-50 text-green-700 border border-green-100"
+                                    : "bg-gray-100 text-gray-500"
+                            }`}>
+                                {notification.target?.status === "approved" ? "Genehmigt" : "Abgelehnt"}
+                            </span>
+                        )}
+                    </div>
+                ) : notification.type === "follow" ? (
                     <button
                         onClick={handleFollowToggle}
                         disabled={isLoading}
