@@ -103,9 +103,10 @@ function SmallAvatar({ user }: { user: Doc<"users"> | null }) {
   );
 }
 
-// ─── Haupt-Remote-Video (Fullscreen, object-contain) ─────────────────────────
+// ─── Haupt-Video (Fullscreen) ────────────────────────────────────────────────
 function RemoteVideoMain({
-  stream, user, statusLabel, isConnected, duration, participantCount, videoEnabled = true,
+  stream, user, statusLabel, isConnected, duration, participantCount,   videoEnabled = true,
+  mirrored = false, fillCover = false, muted = false,
 }: {
   stream: MediaStream | null;
   user: Doc<"users"> | null;
@@ -114,8 +115,13 @@ function RemoteVideoMain({
   duration: string;
   participantCount: number;
   videoEnabled?: boolean;
+  /** Eigenes Bild als Vollbild (Frontkamera) → spiegeln. */
+  mirrored?: boolean;
+  /** FaceTime-Stil auf Mobil: randlos füllen (cover) statt schwarze Ränder. */
+  fillCover?: boolean;
+  /** Eigener Stream als Vollbild → Audio stummschalten (sonst Echo durch eigenes Mikro). */
+  muted?: boolean;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const displayStream = useMemo(
     () => getStreamForScreenShare(stream) ?? stream,
     [
@@ -132,25 +138,6 @@ function RemoteVideoMain({
       .find((t) => t.readyState !== "ended")
       ?.id ?? "";
 
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el || !displayStream) return;
-
-    const videoTrack = displayStream
-      .getVideoTracks()
-      .find((t) => t.readyState !== "ended");
-    if (!videoTrack) return;
-
-    const current = el.srcObject as MediaStream | null;
-    if (current?.getVideoTracks()[0]?.id === videoTrack.id) {
-      void el.play().catch(() => {});
-      return;
-    }
-
-    el.srcObject = displayStream;
-    void el.play().catch(() => {});
-  }, [displayStream, videoTrackId]);
-
   const hasScreenVideo =
     !!displayStream &&
     displayStream
@@ -159,20 +146,54 @@ function RemoteVideoMain({
   const hasVideo =
     hasActiveVideoTrack(displayStream, videoEnabled) || hasScreenVideo;
 
+  // Callback ref anstelle von useRef + useEffect
+  const videoRef = useCallback(
+    (el: HTMLVideoElement | null) => {
+      if (!el || !displayStream) return;
+
+      const videoTrack = displayStream
+        .getVideoTracks()
+        .find((t) => t.readyState !== "ended");
+      if (!videoTrack) return;
+
+      const current = el.srcObject as MediaStream | null;
+      if (current?.getVideoTracks()[0]?.id === videoTrack.id) {
+        void el.play().catch(() => {});
+        return;
+      }
+
+      el.srcObject = displayStream;
+      void el.play().catch(() => {});
+    },
+    [displayStream],
+  );
+
+  // Das alte useEffect wird gelöscht, da der Callback Ref das zuverlässiger erledigt.
+
+  const objectFit: "cover" | "contain" =
+    !hasScreenVideo && fillCover ? "cover" : "contain";
+
   return (
     <div className="absolute inset-0 bg-[#0e0906] flex items-center justify-center">
-      {/* Video mit schwarzen Rändern wenn Seitenverhältnis nicht passt */}
-      {displayStream && (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
-          className={`${hasVideo ? "opacity-100" : "opacity-0 absolute inset-0"}`}
-        />
-      )}
-      {/* Kein Video → Avatar zentriert */}
-      {!hasVideo && (
+      {hasVideo ? (
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          {displayStream && (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted={muted}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit,
+                transform: mirrored ? "scaleX(-1)" : undefined,
+              }}
+              className="opacity-100"
+            />
+          )}
+        </div>
+      ) : (
         <div className="flex flex-col items-center justify-center gap-5 px-8 select-none z-10">
           <BigAvatar user={user} size="lg" />
           <div className="text-center space-y-1.5">
@@ -554,13 +575,12 @@ export function CallOverlay() {
   const groupSharerName = groupSharerParticipant?.user?.name ?? "Teilnehmer";
   const groupSharerUser = groupSharerParticipant?.user ?? null;
 
-  // Instagram-Video-Chrome: 1:1 wie bisher, Gruppen-Video dieselbe Hülle + Raster
-  const isPrivateInstagramVideo =
-    !isGroup &&
-    !isEnding &&
-    (!isVoiceOnly || remoteSharing || remoteHasCamera);
+  // Instagram-Video-Chrome: 1:1 und Gruppe – auch bei Sprachanruf (kein Video → Avatar-Fallback)
+  const isPrivateInstagramVideo = !isGroup && !isEnding;
 
-  const isGroupInstagramVideo = isGroup && !isVoiceOnly && !isEnding;
+  const isGroupInstagramVideo = isGroup && !isEnding;
+  /** Gruppen-Galerie (Teams-Raster): eigenes Bild ist eine Kachel → kein schwebendes PiP. */
+  const isGroupGallery = isGroupInstagramVideo && !groupScreenShareActive;
 
   const showInstagramVideoChrome =
     isPrivateInstagramVideo ||
@@ -579,18 +599,21 @@ export function CallOverlay() {
   const pipUser       = currentUser ?? null;
   const pipMic        = micEnabled;
   const pipCamera     = localSharing ? true : cameraEnabled;
-  const pipMirrored   = !localSharing;
+  const pipMirrored   = !localSharing && cameraFacingMode === "user";
   const pipObjectFit  = localSharing ? "contain" as const : "cover" as const;
-  /** PiP unten rechts: bei fremder Bildschirmübertragung nur mit eigener Kamera. */
-  const showLocalPreviewPip = remoteSharing
-    ? cameraEnabled && Boolean(localStream)
-    : localSharing ||
-      (Boolean(pipStream) && (cameraEnabled || !narrowViewport)) ||
-      (narrowViewport &&
-        !localSharing &&
-        !cameraEnabled &&
-        !!currentUser &&
-        showInstagramVideoChrome);
+  /** FaceTime-Modus deaktiviert: Eigenes Bild bleibt IMMER im PiP,
+   *  auch wenn das Gegenüber die Kamera aus hat (WhatsApp-Stil). */
+  const localIsMain = false;
+  /** PiP unten rechts: bei fremder Bildschirmübertragung nur mit eigener Kamera.
+   *  In der Gruppen-Galerie nie (eigenes Bild ist dort eine Raster-Kachel). */
+  const showLocalPreviewPip = localIsMain
+    ? false
+    : isGroupGallery
+    ? false
+    : remoteSharing
+      ? cameraEnabled && Boolean(localStream)
+      : localSharing ||
+        (Boolean(pipStream) && (cameraEnabled || !narrowViewport));
   const pipAllowCollapse = !narrowViewport;
   /** Mobil: Kamera aus → quadratisches PiP nur mit Profilbild */
   const mobilePipSquareProfile =
@@ -622,8 +645,20 @@ export function CallOverlay() {
             {/* ── Hauptfläche: 1:1 Remote-Video oder Gruppen-Raster ───────── */}
             {isPrivateInstagramVideo || groupScreenShareViewerMode ? (
               <RemoteVideoMain
-                stream={groupScreenShareViewerMode ? groupSharerStream : mainStream}
-                user={groupScreenShareViewerMode ? groupSharerUser : mainUser}
+                stream={
+                  groupScreenShareViewerMode
+                    ? groupSharerStream
+                    : localIsMain
+                      ? localStream
+                      : mainStream
+                }
+                user={
+                  groupScreenShareViewerMode
+                    ? groupSharerUser
+                    : localIsMain
+                      ? (currentUser ?? null)
+                      : mainUser
+                }
                 statusLabel={statusLabel}
                 isConnected={isConnected}
                 duration={duration}
@@ -631,8 +666,13 @@ export function CallOverlay() {
                 videoEnabled={
                   remoteSharing || groupScreenShareViewerMode
                     ? true
-                    : (remoteParticipant?.cameraEnabled ?? true)
+                    : localIsMain
+                      ? cameraEnabled
+                      : (remoteParticipant?.cameraEnabled ?? true)
                 }
+                mirrored={localIsMain && cameraFacingMode === "user"}
+                muted={localIsMain}
+                fillCover={true}
               />
             ) : (
               currentUser && (
@@ -651,18 +691,29 @@ export function CallOverlay() {
                     localMicEnabled={micEnabled}
                     localCameraEnabled={cameraEnabled}
                     localScreenSharing={screenSharingActive}
+                    localMirrored={cameraFacingMode === "user"}
+                    localCameraFacing={cameraFacingMode}
+                    onSwitchCamera={switchCameraFacing}
+                    canSwitchCamera={narrowViewport}
                     screenSharingUserId={screenSharingUserId}
                     embedMode
-                    onLocalPreviewClick={
-                      isGroupInstagramVideo
-                        ? narrowViewport
-                          ? () => {}
-                          : () => setPipCollapsed(true)
-                        : undefined
-                    }
                   />
                 </div>
               )
+            )}
+
+            {/* ── Kamera drehen, wenn eigenes Bild Vollbild ist (FaceTime, Mobil) ── */}
+            {localIsMain && (
+              <button
+                type="button"
+                onClick={() => void switchCameraFacing()}
+                aria-label={cameraFacingMode === "user" ? "Rückkamera" : "Frontkamera"}
+                title="Kamera drehen"
+                className="pointer-events-auto absolute right-4 z-[40] flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-black/45 text-white shadow-md backdrop-blur-sm outline-none transition-colors hover:bg-black/65 focus-visible:ring-2 focus-visible:ring-white/45 active:scale-90"
+                style={{ bottom: "calc(7.5rem + env(safe-area-inset-bottom, 0px))" }}
+              >
+                <SwitchCamera className="h-5 w-5" strokeWidth={2.25} />
+              </button>
             )}
 
             {/* ── Gradient oben */}
@@ -788,7 +839,11 @@ export function CallOverlay() {
                 )}
 
                 {/* Ausgeklappt: PiP mit transparentem > Tab auf der linken Kante (Mobil: oben rechts) */}
-                <div
+                <motion.div
+                  drag
+                  dragConstraints={overlayRef}
+                  dragElastic={0.1}
+                  dragMomentum={false}
                   className={`absolute overflow-hidden ${narrowViewport ? "z-[45]" : "z-[35]"}${pipCollapsed ? " pointer-events-none" : ""}`}
                   style={
                     narrowViewport
@@ -854,7 +909,7 @@ export function CallOverlay() {
                           user={currentUser ?? null}
                           micEnabled={micEnabled}
                           cameraEnabled={cameraEnabled}
-                          mirrored={true}
+                          mirrored={cameraFacingMode === "user"}
                           objectFit="cover"
                         />
                         <PipSwitchCameraOverlay
@@ -907,7 +962,7 @@ export function CallOverlay() {
                       />
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </>
             )}
 
@@ -1094,7 +1149,11 @@ export function CallOverlay() {
                 )}
 
                 {/* Ausgeklappt: PiP mit transparentem > Tab (Mobil: oben rechts) */}
-                <div
+                <motion.div
+                  drag
+                  dragConstraints={overlayRef}
+                  dragElastic={0.1}
+                  dragMomentum={false}
                   className={`absolute z-[30] overflow-hidden${pipCollapsed ? " pointer-events-none" : ""}`}
                   style={
                     narrowViewport
@@ -1164,7 +1223,7 @@ export function CallOverlay() {
                           user={currentUser ?? null}
                           micEnabled={micEnabled}
                           cameraEnabled={cameraEnabled}
-                          mirrored={true}
+                          mirrored={cameraFacingMode === "user"}
                           objectFit="cover"
                         />
                         <PipSwitchCameraOverlay
@@ -1176,7 +1235,7 @@ export function CallOverlay() {
                     )}
 
                   </motion.div>
-                </div>
+                </motion.div>
               </>
             )}
           </div>

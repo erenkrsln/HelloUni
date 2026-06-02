@@ -998,7 +998,6 @@ export function CommentDrawer({
                   placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
                   className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-y-auto scrollbar-hide"
                   rows={1}
-                  {...({ virtualkeyboardpolicy: "manual" } as any)}
                   style={{
                     maxHeight: "100px",
                     minHeight: "36px",
