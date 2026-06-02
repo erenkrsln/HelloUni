@@ -236,7 +236,7 @@ export default function InstallInstructionsPage() {
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte / Striche) ganz rechts neben der Adressleiste</p>
+                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte) ganz rechts neben der Adressleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -267,7 +267,7 @@ export default function InstallInstructionsPage() {
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte / Striche) ganz rechts neben der Adressleiste</p>
+                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte) ganz rechts neben der Adressleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
