@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Gloock, Poppins } from "next/font/google";
 import "./globals.css";
 import "./design-tokens.css";
+import "driver.js/dist/driver.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
 import { CallProvider } from "@/components/call/CallProvider";
