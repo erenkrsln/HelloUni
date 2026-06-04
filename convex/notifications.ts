@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { getImageUrl } from "./helpers";
+import { getImageUrl, getUserImageUrl } from "./helpers";
 
 export const get = query({
     args: {
@@ -22,7 +22,7 @@ export const get = query({
                 const issuer = await ctx.db.get(notification.issuerId);
                 if (!issuer) return null;
 
-                const issuerAvatarUrl = await getImageUrl(ctx, issuer.image);
+                const issuerAvatarUrl = await getUserImageUrl(ctx, issuer.image);
 
                 // Get target data based on notification type
                 let targetData = null;
