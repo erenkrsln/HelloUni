@@ -333,7 +333,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
                 ) : (
                     <>
                         {!notification.isRead && (
-                            <div className="w-2 h-2 bg-[#0095F6] rounded-full" />
+                            <div className="w-2 h-2 bg-[#f78d57] rounded-full" />
                         )}
                         {notification.target?.thumbnail && (
                             <img
