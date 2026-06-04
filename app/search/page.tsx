@@ -521,7 +521,7 @@ export default function SearchPage() {
                                                                             className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"
                                                                         >
                                                                             <UserPlus size={13} />
-                                                                            Beitreten
+                                                                            {group.needsRequestToJoin ? "Anfragen" : "Beitreten"}
                                                                         </button>
                                                                     )}
                                                                 </div>
