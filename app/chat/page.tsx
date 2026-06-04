@@ -14,6 +14,28 @@ import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
 import { LoadingScreen } from "@/components/ui/spinner";
 
+function formatLastMessageTime(timestamp?: number) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const now = new Date();
+
+  const isSameDay =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isSameDay) {
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  } else {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
+}
+
 export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
@@ -212,6 +234,11 @@ export default function ChatPage() {
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
                           <div className="flex flex-col items-end flex-shrink-0">
+                            {conv.lastMessage && (
+                              <span className="text-[11px] text-gray-400 font-medium mb-1">
+                                {formatLastMessageTime((conv.lastMessage as any).createdAt)}
+                              </span>
+                            )}
                             {conv.unreadCount > 0 && (
                               <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
                                 {conv.unreadCount}
