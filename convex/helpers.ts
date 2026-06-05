@@ -7,6 +7,16 @@ export async function getImageUrl(ctx: any, imageValue: string | null | undefine
   }
 }
 
+export async function getUserImageUrl(ctx: any, imageValue: string | null | undefined): Promise<string> {
+  const url = await getImageUrl(ctx, imageValue);
+  return url || "/profile/user.svg";
+}
+
+export async function getGroupImageUrl(ctx: any, imageValue: string | null | undefined): Promise<string> {
+  const url = await getImageUrl(ctx, imageValue);
+  return url || "/profile/group.svg";
+}
+
 export function shouldDeleteR2File(oldUrl: string | null | undefined, newUrl: string | null | undefined): oldUrl is string {
   return !!(oldUrl && oldUrl.startsWith("http") && oldUrl !== newUrl);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
@@ -8,11 +8,30 @@ import { NotificationFeed } from "@/components/notification-feed";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 export default function NotificationsPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { currentUser } = useCurrentUser();
     const router = useRouter();
+    const cleanUpNotifications = useMutation(api.notifications.cleanUpGroupJoinNotifications);
+
+    useEffect(() => {
+        let isRealMount = false;
+        const timer = setTimeout(() => {
+            isRealMount = true;
+        }, 150);
+
+        return () => {
+            clearTimeout(timer);
+            if (isRealMount && currentUser) {
+                cleanUpNotifications({ userId: currentUser._id }).catch((err) => {
+                    console.error("Failed to clean up group join notifications:", err);
+                });
+            }
+        };
+    }, [currentUser, cleanUpNotifications]);
 
     if (!currentUser) {
         return null;

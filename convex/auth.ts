@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getImageUrl } from "./helpers";
+import { getUserImageUrl } from "./helpers";
 
 const ALLOWED_DOMAIN = "@th-nuernberg.de";
 
@@ -16,7 +16,7 @@ export const getUserByEmail = query({
 
     return {
       ...user,
-      image: await getImageUrl(ctx, user.image),
+      image: await getUserImageUrl(ctx, user.image),
     };
   },
 });

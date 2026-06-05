@@ -1,7 +1,7 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { getImageUrl } from "./helpers";
+import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
 
 // Helper function to calculate actual comments count for a post
 async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
@@ -47,7 +47,7 @@ export const getFeed = query({
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -94,7 +94,7 @@ export const getPost = query({
     // Convert storage ID to URL if it exists
     let imageUrl = post.imageUrl;
     imageUrl = await getImageUrl(ctx, imageUrl);
-    const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+    const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
     // Calculate actual participants count for events
     let actualParticipantsCount = post.participantsCount || 0;
@@ -216,7 +216,7 @@ export const getUser = query({
       return null;
     }
 
-    const imageUrl = await getImageUrl(ctx, user.image);
+    const imageUrl = await getUserImageUrl(ctx, user.image);
     const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
@@ -274,7 +274,7 @@ export const getUserPosts = query({
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -327,7 +327,7 @@ export const getUserById = query({
       return null;
     }
 
-    const imageUrl = await getImageUrl(ctx, user.image);
+    const imageUrl = await getUserImageUrl(ctx, user.image);
     const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
@@ -377,7 +377,7 @@ export const searchUsers = query({
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       matchingUsers.map(async (user) => {
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           _id: user._id,
           name: user.name,
@@ -404,7 +404,7 @@ export const getUserByUsername = query({
       return null;
     }
 
-    const imageUrl = await getImageUrl(ctx, user.image);
+    const imageUrl = await getUserImageUrl(ctx, user.image);
     const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
@@ -484,7 +484,7 @@ export const getFollowingFeed = query({
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -667,7 +667,7 @@ export const getParticipants = query({
         if (!user) return null;
 
         // Convert storage ID to URL if it exists
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
 
         return {
           _id: user._id,
@@ -760,7 +760,7 @@ export const getFilteredFeed = query({
 
         let imageUrl = post.imageUrl;
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -827,7 +827,7 @@ export const getAllUsers = query({
     // Fix image URLs for all users
     const usersWithImages = await Promise.all(
       users.map(async (user) => {
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           ...user,
           image: imageUrl
@@ -905,14 +905,14 @@ export const getConversations = query({
 
         if (conv.isGroup) {
           displayName = conv.name || "Gruppenchat";
-          displayImage = await getImageUrl(ctx, conv.image);
+          displayImage = await getGroupImageUrl(ctx, conv.image);
         } else {
           // 1:1 Chat: Partner Info anzeigen
           const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId;
           const partner = await ctx.db.get(partnerId);
           if (partner) {
             displayName = partner.name;
-            displayImage = await getImageUrl(ctx, partner.image);
+            displayImage = await getUserImageUrl(ctx, partner.image);
           }
         }
 
@@ -1018,7 +1018,7 @@ export const getConversationDisplay = query({
 
     return {
       displayName: conv.name || "Gruppenchat",
-      displayImage: await getImageUrl(ctx, conv.image),
+      displayImage: await getGroupImageUrl(ctx, conv.image),
     };
   },
 });
@@ -1041,7 +1041,7 @@ export const getConversationMembers = query({
         const user = await ctx.db.get(userId);
         if (!user) return null;
 
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
 
         const userIdString = userId.toString();
         const creatorIdString = conversation.creatorId?.toString();
@@ -1110,7 +1110,7 @@ export const getComments = query({
         const user = await ctx.db.get(comment.userId);
         if (!user) return null;
 
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
 
         const commentImageUrl = await getImageUrl(ctx, comment.imageUrl);
 
@@ -1299,7 +1299,7 @@ export const searchGlobal = query({
         .slice(0, 20)
         .map(async (user) => ({
           ...user,
-          image: await getImageUrl(ctx, user.image),
+          image: await getUserImageUrl(ctx, user.image),
         }))
     );
 
@@ -1322,7 +1322,7 @@ export const searchGlobal = query({
           const user = await ctx.db.get(post.userId);
 
           const imageUrl = await getImageUrl(ctx, post.imageUrl);
-          const userImageUrl = await getImageUrl(ctx, user?.image);
+          const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
           // Calculate actual comments count
           const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
@@ -1403,7 +1403,7 @@ export const searchProfiles = query({
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       limitedUsers.map(async (user) => {
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           ...user,
           image: imageUrl,
@@ -1498,7 +1498,7 @@ export const searchPosts = query({
         }
 
         const imageUrl = await getImageUrl(ctx, post.imageUrl);
-        const userImageUrl = await getImageUrl(ctx, user?.image);
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         let actualParticipantsCount = post.participantsCount || 0;
         if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
@@ -1574,5 +1574,63 @@ export const getChatPollVote = query({
       .first();
 
     return vote ? vote.optionIndices : [];
+  },
+});
+
+export const searchPublicGroups = query({
+  args: {
+    searchTerm: v.string(),
+    sortBy: v.union(v.literal("recent"), v.literal("alphabetical")),
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const conversations = await ctx.db.query("conversations").collect();
+
+    let publicGroups = conversations.filter(
+      (c) => c.isGroup === true && c.isPublic === true
+    );
+
+    // Filter by search term
+    if (args.searchTerm.trim() !== "") {
+      const term = args.searchTerm.toLowerCase();
+      publicGroups = publicGroups.filter(
+        (c) => c.name && c.name.toLowerCase().includes(term)
+      );
+    }
+
+    // Map user's join requests
+    const userRequestsMap: Record<string, string> = {};
+    if (args.userId) {
+      const requests = await ctx.db
+        .query("joinRequests")
+        .withIndex("by_user", (q) => q.eq("userId", args.userId!))
+        .collect();
+      requests.forEach((r) => {
+        userRequestsMap[r.conversationId as string] = r.status;
+      });
+    }
+
+    // Enrich public groups with images
+    const enrichedGroups = await Promise.all(
+      publicGroups.map(async (group) => {
+        const displayImage = await getGroupImageUrl(ctx, group.image);
+        return {
+          ...group,
+          displayName: group.name || "Öffentliche Gruppe",
+          displayImage,
+          needsRequestToJoin: group.needsRequestToJoin ?? true, // Default to true!
+          joinRequestStatus: userRequestsMap[group._id as string] || null,
+        };
+      })
+    );
+
+    // Sort groups
+    if (args.sortBy === "alphabetical") {
+      enrichedGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    } else {
+      enrichedGroups.sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+
+    return enrichedGroups;
   },
 });

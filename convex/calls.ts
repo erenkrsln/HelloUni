@@ -2,12 +2,12 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { getImageUrl } from "./helpers";
+import { getUserImageUrl } from "./helpers";
 
 /** Hilfsfunktion: User mit aufgelöstem Profilbild zurückgeben */
 async function withResolvedImage(ctx: any, user: any) {
   if (!user) return null;
-  const image = await getImageUrl(ctx, user.image);
+  const image = await getUserImageUrl(ctx, user.image);
   return { ...user, image };
 }
 

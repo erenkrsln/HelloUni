@@ -1559,3 +1559,325 @@ export const claimGroupOwnership = mutation({
     return { success: true };
   },
 });
+
+export const toggleGroupPublic = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    isPublic: v.boolean(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.isGroup) throw new Error("Can only toggle public state for group chats");
+
+    // Check admin permissions
+    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+    if (!isAdmin) throw new Error("Only admins can change group visibility");
+
+    // Default needsRequestToJoin to true when group is made public
+    await ctx.db.patch(args.conversationId, {
+      isPublic: args.isPublic,
+      needsRequestToJoin: args.isPublic ? true : undefined,
+    });
+
+    // Create system message
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: args.isPublic
+          ? `${user.name} hat die Gruppe öffentlich gemacht`
+          : `${user.name} hat die Gruppe privat gemacht`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+    return { success: true };
+  },
+});
+
+export const toggleGroupJoinRequestRequired = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    needsRequestToJoin: v.boolean(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.isGroup) throw new Error("Can only toggle join request setting for groups");
+
+    // Check admin permissions
+    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+    if (!isAdmin) throw new Error("Only admins can change group join request settings");
+
+    await ctx.db.patch(args.conversationId, {
+      needsRequestToJoin: args.needsRequestToJoin,
+    });
+
+    // Create system message
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: args.needsRequestToJoin
+          ? `${user.name} hat Beitrittsanfragen für diese Gruppe aktiviert`
+          : `${user.name} hat den direkten Beitritt für diese Gruppe aktiviert`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+    return { success: true };
+  },
+});
+
+export const joinPublicGroup = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.isGroup) throw new Error("Not a group chat");
+    if (!conversation.isPublic) throw new Error("Group is not public");
+    if (conversation.needsRequestToJoin) throw new Error("Approval is required to join this group");
+
+    if (conversation.participants.includes(args.userId)) {
+      throw new Error("Already a member of this group");
+    }
+
+    const leftParticipants = conversation.leftParticipants || [];
+    const newLeftParticipants = leftParticipants.filter(id => id !== args.userId);
+
+    // Add participant to the conversation
+    await ctx.db.patch(args.conversationId, {
+      participants: [...conversation.participants, args.userId],
+      leftParticipants: newLeftParticipants,
+      leftMetadata: (conversation.leftMetadata || []).filter(m => m.userId !== args.userId),
+      updatedAt: Date.now(),
+    });
+
+    // Create system message: "... ist der gruppe beigetreten"
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: `${user.name} ist der Gruppe beigetreten`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+
+    // Upsert/Insert last_reads for the user
+    const existingLastRead = await ctx.db
+      .query("last_reads")
+      .withIndex("by_user_conversation", (q) =>
+        q.eq("userId", args.userId).eq("conversationId", args.conversationId)
+      )
+      .first();
+
+    if (existingLastRead) {
+      await ctx.db.patch(existingLastRead._id, {
+        lastReadAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("last_reads", {
+        userId: args.userId,
+        conversationId: args.conversationId,
+        lastReadAt: Date.now(),
+      });
+    }
+
+    return args.conversationId;
+  },
+});
+
+export const requestToJoinPublicGroup = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Group not found");
+    if (!conversation.isGroup) throw new Error("Not a group");
+    if (!conversation.isPublic) throw new Error("Group is not public");
+    if (!conversation.needsRequestToJoin) throw new Error("Group does not require approval to join");
+
+    if (conversation.participants.includes(args.userId)) {
+      throw new Error("Already a member of this group");
+    }
+
+    // Check for existing pending request
+    const existingRequest = await ctx.db
+      .query("joinRequests")
+      .withIndex("by_conversation_user", (q) =>
+        q.eq("conversationId", args.conversationId).eq("userId", args.userId)
+      )
+      .first();
+
+    if (existingRequest && existingRequest.status === "pending") {
+      return { success: true, requestId: existingRequest._id, alreadyRequested: true };
+    }
+
+    // Create or update request to pending
+    let requestId;
+    if (existingRequest) {
+      await ctx.db.patch(existingRequest._id, {
+        status: "pending",
+        createdAt: Date.now(),
+      });
+      requestId = existingRequest._id;
+    } else {
+      requestId = await ctx.db.insert("joinRequests", {
+        conversationId: args.conversationId,
+        userId: args.userId,
+        status: "pending",
+        createdAt: Date.now(),
+      });
+    }
+
+    // Find admins/creators to notify
+    const adminIds = [
+      ...(conversation.creatorId ? [conversation.creatorId] : []),
+      ...(conversation.adminIds || []),
+    ];
+    
+    // Deduplicate keeping original Id objects
+    const seen = new Set<string>();
+    const uniqueAdminIds = adminIds.filter((id) => {
+      const idStr = id.toString();
+      if (seen.has(idStr)) return false;
+      seen.add(idStr);
+      return true;
+    });
+
+    const resolvedAdmins = await Promise.all(
+      uniqueAdminIds.map((id) => ctx.db.get(id))
+    );
+
+    for (const admin of resolvedAdmins) {
+      if (admin && admin._id !== args.userId) {
+        // Create notification
+        await ctx.db.insert("notifications", {
+          userId: admin._id,
+          issuerId: args.userId,
+          type: "group_join_request",
+          targetId: requestId,
+          isRead: false,
+          createdAt: Date.now(),
+        });
+      }
+    }
+
+    return { success: true, requestId };
+  },
+});
+
+export const handleJoinRequest = mutation({
+  args: {
+    requestId: v.id("joinRequests"),
+    adminId: v.id("users"),
+    approve: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const request = await ctx.db.get(args.requestId);
+    if (!request) throw new Error("Request not found");
+    if (request.status !== "pending") throw new Error("Request is already handled");
+
+    const conversation = await ctx.db.get(request.conversationId);
+    if (!conversation) throw new Error("Group not found");
+
+    // Check if adminId is admin or creator
+    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    if (!isAdmin) throw new Error("Only admins can handle join requests");
+
+    if (args.approve) {
+      // Update request
+      await ctx.db.patch(args.requestId, { status: "approved" });
+
+      // Create notification for the requesting user
+      await ctx.db.insert("notifications", {
+        userId: request.userId,
+        issuerId: args.adminId,
+        type: "group_join_accept",
+        targetId: request.conversationId,
+        isRead: false,
+        createdAt: Date.now(),
+      });
+
+      // Add user to conversation if not already added
+      if (!conversation.participants.includes(request.userId)) {
+        const leftParticipants = conversation.leftParticipants || [];
+        const newLeftParticipants = leftParticipants.filter(id => id !== request.userId);
+
+        await ctx.db.patch(request.conversationId, {
+          participants: [...conversation.participants, request.userId],
+          leftParticipants: newLeftParticipants,
+          leftMetadata: (conversation.leftMetadata || []).filter(m => m.userId !== request.userId),
+          updatedAt: Date.now(),
+        });
+
+        // Create system message
+        const user = await ctx.db.get(request.userId);
+        if (user) {
+          await ctx.db.insert("messages", {
+            conversationId: request.conversationId,
+            senderId: request.userId,
+            content: `${user.name} ist der Gruppe beigetreten`,
+            type: "system",
+            createdAt: Date.now(),
+          });
+        }
+
+        // last_reads
+        const existingLastRead = await ctx.db
+          .query("last_reads")
+          .withIndex("by_user_conversation", (q) =>
+             q.eq("userId", request.userId).eq("conversationId", request.conversationId)
+          )
+          .first();
+
+        if (existingLastRead) {
+          await ctx.db.patch(existingLastRead._id, { lastReadAt: Date.now() });
+        } else {
+          await ctx.db.insert("last_reads", {
+            userId: request.userId,
+            conversationId: request.conversationId,
+            lastReadAt: Date.now(),
+          });
+        }
+      }
+    } else {
+      // Update request to rejected
+      await ctx.db.patch(args.requestId, { status: "rejected" });
+
+      // Create notification for the requesting user
+      await ctx.db.insert("notifications", {
+        userId: request.userId,
+        issuerId: args.adminId,
+        type: "group_join_reject",
+        targetId: request.conversationId,
+        isRead: false,
+        createdAt: Date.now(),
+      });
+    }
+
+    // Delete all group_join_request notifications for this requestId (clean up from DB)
+    const notifications = await ctx.db.query("notifications").collect();
+    const relevantNotis = notifications.filter(
+      (n) => n.type === "group_join_request" && n.targetId === args.requestId
+    );
+
+    for (const noti of relevantNotis) {
+      await ctx.db.delete(noti._id);
+    }
+
+    return { success: true };
+  },
+});

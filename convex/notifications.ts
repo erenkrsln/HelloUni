@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { getImageUrl } from "./helpers";
+import { getImageUrl, getUserImageUrl } from "./helpers";
 
 export const get = query({
     args: {
@@ -22,7 +22,7 @@ export const get = query({
                 const issuer = await ctx.db.get(notification.issuerId);
                 if (!issuer) return null;
 
-                const issuerAvatarUrl = await getImageUrl(ctx, issuer.image);
+                const issuerAvatarUrl = await getUserImageUrl(ctx, issuer.image);
 
                 // Get target data based on notification type
                 let targetData = null;
@@ -70,6 +70,28 @@ export const get = query({
                                 eventType: notification.eventMetadata?.eventType,
                                 title: post.title,
                                 thumbnail: await getImageUrl(ctx, post.imageUrl),
+                            };
+                        }
+                    } else if (notification.type === "group_join_request") {
+                        const request = await ctx.db.get(notification.targetId as Id<"joinRequests">);
+                        if (request) {
+                            const group = await ctx.db.get(request.conversationId);
+                            targetData = {
+                                type: "group_join_request",
+                                requestId: request._id,
+                                conversationId: request.conversationId,
+                                groupName: group?.name || "Öffentliche Gruppe",
+                                status: request.status,
+                            };
+                        }
+                    } else if (notification.type === "group_join_accept" || notification.type === "group_join_reject") {
+                        const group = await ctx.db.get(notification.targetId as Id<"conversations">);
+                        if (group) {
+                            targetData = {
+                                type: "group_join_status",
+                                conversationId: group._id,
+                                groupName: group.name || "Öffentliche Gruppe",
+                                approved: notification.type === "group_join_accept",
                             };
                         }
                     }
@@ -156,7 +178,10 @@ export const create = mutation({
             v.literal("post_like"),
             v.literal("comment"),
             v.literal("comment_like"),
-            v.literal("event_join")
+            v.literal("event_join"),
+            v.literal("group_join_request"),
+            v.literal("group_join_accept"),
+            v.literal("group_join_reject")
         ),
         targetId: v.optional(v.string()),
         eventMetadata: v.optional(v.object({
@@ -204,5 +229,30 @@ export const create = mutation({
         });
 
         return { success: true, notificationId };
+    },
+});
+
+/**
+ * Delete all group join accept or reject notifications for a user after they visited the notifications feed
+ */
+export const cleanUpGroupJoinNotifications = mutation({
+    args: {
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const notifications = await ctx.db
+            .query("notifications")
+            .withIndex("by_user_created", (q) => q.eq("userId", args.userId))
+            .collect();
+
+        const toDelete = notifications.filter(
+            (n) => n.type === "group_join_accept" || n.type === "group_join_reject"
+        );
+
+        for (const noti of toDelete) {
+            await ctx.db.delete(noti._id);
+        }
+
+        return { success: true };
     },
 });

@@ -122,6 +122,8 @@ export default defineSchema({
     name: v.optional(v.string()), // Optionaler Gruppenname
     image: v.optional(v.string()), // Storage ID für Gruppenbild
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
+    isPublic: v.optional(v.boolean()), // Flag für öffentliche Gruppen
+    needsRequestToJoin: v.optional(v.boolean()), // Flag, ob ein Beitritt erst genehmigt werden muss
     adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
     creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
@@ -211,9 +213,12 @@ export default defineSchema({
       v.literal("post_like"),
       v.literal("comment"),
       v.literal("comment_like"),
-      v.literal("event_join")
+      v.literal("event_join"),
+      v.literal("group_join_request"),
+      v.literal("group_join_accept"),
+      v.literal("group_join_reject")
     ),
-    targetId: v.optional(v.string()), // ID of post, comment, or event
+    targetId: v.optional(v.string()), // ID of post, comment, event, or joinRequest
     eventMetadata: v.optional(v.object({
       eventType: v.union(
         v.literal("spontaneous_meeting"),
@@ -225,6 +230,16 @@ export default defineSchema({
   })
     .index("by_user_created", ["userId", "createdAt"])
     .index("by_user_read", ["userId", "isRead"]),
+
+  joinRequests: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_user", ["userId"])
+    .index("by_conversation_user", ["conversationId", "userId"]),
 
   events: defineTable({
     title: v.string(),
