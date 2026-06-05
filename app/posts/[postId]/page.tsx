@@ -39,7 +39,7 @@ function PostPageContent({ params }: { params: Promise<{ postId: string }> }) {
     });
 
     return (
-        <main className="min-h-screen w-full max-w-2xl mx-auto pb-24 overflow-x-hidden bg-white">
+        <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
             {/* Minimal Header with Back Button */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 h-14 flex items-center justify-center relative">
                 <button
@@ -83,7 +83,7 @@ function PostPageContent({ params }: { params: Promise<{ postId: string }> }) {
 export default function PostPage({ params }: { params: Promise<{ postId: string }> }) {
     return (
         <Suspense fallback={
-            <main className="min-h-screen w-full max-w-2xl mx-auto pb-24 overflow-x-hidden bg-white">
+            <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
                 <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 h-14 flex items-center justify-center relative">
                     <div className="absolute left-4 p-1 text-black opacity-30">
                         <ArrowLeft className="w-6 h-6" />

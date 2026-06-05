@@ -71,7 +71,7 @@ export default function InstallInstructionsPage() {
   const activePlatform = selectedPlatform || platform;
 
   return (
-    <div className="min-h-screen bg-white max-w-[428px] md:max-w-2xl mx-auto flex flex-col pb-safe">
+    <div className="min-h-screen bg-white max-w-[428px] md:max-w-none mx-auto flex flex-col pb-safe">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 h-16 flex items-center justify-between pt-safe-top">
         <button

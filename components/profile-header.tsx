@@ -288,7 +288,7 @@ export function ProfileHeader({
                             src={headerImage}
                             alt="Header"
                             fill
-                            sizes="(max-width: 639px) 100vw, 428px"
+                            sizes="(max-width: 768px) 100vw, 768px"
                             priority
                             className="object-cover transition-opacity duration-300"
                             style={{

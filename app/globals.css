@@ -188,7 +188,7 @@ select option:disabled {
   }
 }
 
-/* Responsive Header Image - Full width on mobile, limited on desktop */
+/* Responsive Header Image - Full width on mobile, scales with layout on desktop */
 .header-image-responsive {
   width: 100vw;
   position: relative;
@@ -201,7 +201,7 @@ select option:disabled {
 @media (min-width: 640px) {
   .header-image-responsive {
     width: 100%;
-    max-width: 428px;
+    max-width: 100%;
     left: auto;
     right: auto;
     margin-left: auto;

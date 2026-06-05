@@ -380,13 +380,13 @@ export default function CreatePage() {
     }, [showMentionDropdown]);
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] md:max-w-2xl mx-auto pb-24 overflow-x-hidden">
+        <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
             <div
-                className="fixed left-0 right-0 z-40 bg-white  max-w-[428px] md:max-w-2xl mx-auto"
+                className="fixed left-0 right-0 z-40 bg-white  max-w-[428px] md:max-w-3xl mx-auto"
                 style={{
                     top: "env(safe-area-inset-top, 0px)",
                 }}

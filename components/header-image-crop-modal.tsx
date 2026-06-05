@@ -96,31 +96,31 @@ export function HeaderImageCropModal({
                 // Find overlay and content elements by various selectors
                 const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [class*="Overlay"]');
                 const contents = document.querySelectorAll('[data-radix-dialog-content], [class*="Content"]');
-                
+
                 overlays.forEach((overlay) => {
                     const el = overlay as HTMLElement;
                     el.style.zIndex = '70';
                     el.style.setProperty('z-index', '70', 'important');
                 });
-                
+
                 contents.forEach((content) => {
                     const el = content as HTMLElement;
                     el.style.zIndex = '70';
                     el.style.setProperty('z-index', '70', 'important');
                 });
             };
-            
+
             // Set immediately and also after delays to catch portal rendering
             setZIndex();
             const timeout1 = setTimeout(setZIndex, 50);
             const timeout2 = setTimeout(setZIndex, 200);
-            
+
             // Also use MutationObserver to catch when elements are added
             const observer = new MutationObserver(() => {
                 setZIndex();
             });
             observer.observe(document.body, { childList: true, subtree: true });
-            
+
             return () => {
                 clearTimeout(timeout1);
                 clearTimeout(timeout2);
@@ -131,8 +131,8 @@ export function HeaderImageCropModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={handleCancel}>
-            <DialogContent 
-                className={`max-w-2xl w-[90vw] p-0 overflow-hidden ${className ? "!z-[70]" : ""}`}
+            <DialogContent
+                className={`max-w-3xl w-[90vw] p-0 overflow-hidden ${className ? "!z-[70]" : ""}`}
                 style={className ? { zIndex: 70 } : undefined}
             >
                 <DialogHeader className="p-3 pb-2 border-b">
