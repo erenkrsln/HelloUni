@@ -134,7 +134,7 @@ export default function ChatPage() {
   });
 
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-white header-spacing">
+    <main className="min-h-screen w-full max-w-[428px] md:max-w-2xl mx-auto pb-24 overflow-x-hidden bg-white header-spacing">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -142,7 +142,7 @@ export default function ChatPage() {
         <LoadingScreen text="Chats werden geladen..." />
       ) : (
         <div className="px-4 py-6">
-          <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center justify-center mb-6 md:hidden">
             <button
               onClick={() => setIsNewChatOpen(true)}
               className="w-10 h-10 rounded-full bg-[#d08945] text-white font-medium flex items-center justify-center active:scale-95 transition-transform"
@@ -339,6 +339,14 @@ export default function ChatPage() {
               })
             )}
           </div>
+
+          <button
+            onClick={() => setIsNewChatOpen(true)}
+            className="hidden md:flex fixed md:bottom-12 md:right-12 w-14 h-14 rounded-full bg-[#d08945] text-white shadow-lg items-center justify-center hover:bg-[#b07335] active:scale-95 transition-all z-40"
+            title="Neuer Chat"
+          >
+            <Plus size={28} />
+          </button>
         </div>
       )}
 

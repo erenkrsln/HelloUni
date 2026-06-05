@@ -218,17 +218,17 @@ export default function Home() {
 
   // Konsistentes Layout immer beibehalten
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden">
+    <main className="min-h-screen w-full max-w-[428px] md:max-w-2xl mx-auto pb-24 header-spacing overflow-x-hidden">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       {/* Mobile Sidebar */}
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
-      <div className="px-4 mb-4">
+      <div className="px-4 md:px-0 mb-4">
         {/* Feed Filter Links */}
-        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto">
+        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto no-scrollbar md:w-full">
           <button
             onClick={() => setFeedType("all")}
-            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${
               feedType === "all"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
@@ -239,7 +239,7 @@ export default function Home() {
           <button
             onClick={() => setFeedType("major")}
             disabled={isMajorDisabled}
-            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
+            className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${
               feedType === "major"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
@@ -249,7 +249,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => setFeedType("following")}
-            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${
               feedType === "following"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
@@ -260,7 +260,7 @@ export default function Home() {
           <button
             onClick={() => setFeedType("interests")}
             disabled={isInterestsDisabled}
-            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
+            className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${
               feedType === "interests"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"

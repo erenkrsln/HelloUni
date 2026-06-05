@@ -18,14 +18,14 @@ export default function ImprintPage() {
 
     if (isLoading) {
         return (
-            <main className="min-h-screen w-full max-w-[428px] mx-auto bg-white flex items-center justify-center">
+            <main className="min-h-screen w-full max-w-[428px] md:max-w-2xl mx-auto bg-white flex items-center justify-center">
                 <LoadingScreen text="" />
             </main>
         );
     }
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto bg-[#FAFAFA]">
+        <main className="min-h-screen w-full max-w-[428px] md:max-w-2xl mx-auto bg-[#FAFAFA]">
             <header
                 className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top border-b border-gray-100"
                 style={{

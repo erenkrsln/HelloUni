@@ -74,6 +74,7 @@
     /* Overscroll-Prävention - verhindert Rubber-Banding auf iOS/Android */
     overscroll-behavior-y: none;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
   }
 
   button,
@@ -311,4 +312,21 @@ select option:disabled {
 
 .driver-popover-close-btn:hover {
   color: #000000 !important;
+}
+
+/* Feed Card styling as card bubbles on desktop */
+@media (min-width: 768px) {
+  .desktop-feed-card {
+    background-color: #ffffff !important;
+    border: 2px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 24px !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 1.25rem !important;
+    padding: 1.5rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .desktop-feed-card:hover {
+    border-color: rgba(0, 0, 0, 0.08) !important;
+  }
 }

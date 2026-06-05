@@ -495,13 +495,14 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
   if (!post.user) return null;
 
   return (
-    <article
-      className="relative px-4 py-3"
-      style={{
-        marginBottom: "0",
-        borderBottom: showDivider ? "1px solid rgba(0, 0, 0, 0.1)" : "none"
-      }}
-    >
+    <>
+      <article
+        className="relative px-4 py-3 desktop-feed-card"
+        style={{
+          marginBottom: "0",
+          borderBottom: showDivider ? "1px solid rgba(0, 0, 0, 0.1)" : "none"
+        }}
+      >
       <div className="flex items-start gap-3">
         {post.user?.username ? (
           <Link
@@ -830,27 +831,28 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
           )}
         </div>
       </div>
+    </article>
 
-      {/* Share Post Modal */}
-      {currentUserId && (
-        <SharePostModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          postId={post._id}
-          currentUserId={currentUserId}
-        />
-      )}
-
-      {/* Comment Drawer */}
-      <CommentDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+    {/* Share Post Modal */}
+    {currentUserId && (
+      <SharePostModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
         postId={post._id}
         currentUserId={currentUserId}
-        commentsCount={post.commentsCount}
-        highlightCommentId={autoOpenCommentId}
       />
-    </article>
+    )}
+
+    {/* Comment Drawer */}
+    <CommentDrawer
+      isOpen={isDrawerOpen}
+      onClose={() => setIsDrawerOpen(false)}
+      postId={post._id}
+      currentUserId={currentUserId}
+      commentsCount={post.commentsCount}
+      highlightCommentId={autoOpenCommentId}
+    />
+  </>
   );
 }
 
