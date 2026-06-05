@@ -49,15 +49,11 @@ export function BottomNavigation() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4"
+      className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4 md:bottom-auto md:top-1/2 md:transform md:-translate-y-1/2 md:left-12 md:right-auto md:mb-0 md:pb-0 md:px-0 md:h-auto md:w-auto"
     >
       <div
-        className="flex items-center justify-between px-5 py-4"
+        className="flex items-center justify-between px-5 py-4 w-full max-w-[373px] h-[66px] rounded-[79px] md:flex-col md:px-4 md:py-5 md:w-[66px] md:h-[373px] md:max-w-none"
         style={{
-          width: "100%",
-          maxWidth: "373px",
-          height: "66px",
-          borderRadius: "79px",
           backgroundColor: "#dcc6a1",
           opacity: 1,
           willChange: "transform",
