@@ -503,356 +503,356 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
           borderBottom: showDivider ? "1px solid rgba(0, 0, 0, 0.1)" : "none"
         }}
       >
-      <div className="flex items-start gap-3">
-        {post.user?.username ? (
-          <Link
-            href={`/profile/${post.user.username}`}
-            prefetch={true}
-            className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
-            style={{
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
-            }}
-          >
-            <div className="relative w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-              {post.user.image ? (
-                <>
-                  {/* Avatar Shimmer */}
-                  {!avatarLoaded && (
-                    <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
-                  )}
-                  <Image
-                    src={post.user.image}
-                    alt={post.user.name}
-                    width={48}
-                    height={48}
-                    quality={90}
-                    className="object-cover rounded-full transition-opacity duration-300"
+        <div className="flex items-start gap-3">
+          {post.user?.username ? (
+            <Link
+              href={`/profile/${post.user.username}`}
+              prefetch={true}
+              className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+              style={{
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden"
+              }}
+            >
+              <div className="relative w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+                {post.user.image ? (
+                  <>
+                    {/* Avatar Shimmer */}
+                    {!avatarLoaded && (
+                      <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
+                    )}
+                    <Image
+                      src={post.user.image}
+                      alt={post.user.name}
+                      width={48}
+                      height={48}
+                      quality={90}
+                      className="object-cover rounded-full transition-opacity duration-300"
+                      style={{
+                        opacity: avatarLoaded ? 1 : 0,
+                        willChange: "transform",
+                        transform: "translateZ(0)",
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                        position: 'relative',
+                        zIndex: avatarLoaded ? 20 : 0,
+                      }}
+                      onLoad={() => {
+                        if (post.user?.image) {
+                          globalLoadedImagesCache.add(post.user.image);
+                        }
+                        setAvatarLoaded(true);
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center font-semibold text-black"
                     style={{
-                      opacity: avatarLoaded ? 1 : 0,
+                      backgroundColor: "rgba(0, 0, 0, 0.2)",
                       willChange: "transform",
                       transform: "translateZ(0)",
                       backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      position: 'relative',
-                      zIndex: avatarLoaded ? 20 : 0,
+                      WebkitBackfaceVisibility: "hidden"
                     }}
-                    onLoad={() => {
-                      if (post.user?.image) {
-                        globalLoadedImagesCache.add(post.user.image);
-                      }
-                      setAvatarLoaded(true);
-                    }}
-                  />
-                </>
-              ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center font-semibold text-black"
-                  style={{
-                    backgroundColor: "rgba(0, 0, 0, 0.2)",
-                    willChange: "transform",
-                    transform: "translateZ(0)",
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden"
-                  }}
-                >
-                  {post.user.name?.[0]?.toUpperCase() || "U"}
-                </div>
-              )}
-            </div>
-          </Link>
-        ) : (
-          <div className="flex-shrink-0" style={{
-            willChange: "transform",
-            transform: "translateZ(0)",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden"
-          }}>
-            <div className="relative w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-              {post.user?.image ? (
-                <>
-                  {/* Avatar Shimmer */}
-                  {!avatarLoaded && (
-                    <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
-                  )}
-                  <Image
-                    src={post.user.image}
-                    alt={post.user?.name || "User"}
-                    width={48}
-                    height={48}
-                    quality={90}
-                    className="object-cover rounded-full transition-opacity duration-300"
-                    style={{
-                      opacity: avatarLoaded ? 1 : 0,
-                      willChange: "transform",
-                      transform: "translateZ(0)",
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      position: 'relative',
-                      zIndex: avatarLoaded ? 20 : 0,
-                    }}
-                    onLoad={() => {
-                      if (post.user?.image) {
-                        globalLoadedImagesCache.add(post.user.image);
-                      }
-                      setAvatarLoaded(true);
-                    }}
-                  />
-                </>
-              ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center font-semibold text-black"
-                  style={{
-                    backgroundColor: "rgba(0, 0, 0, 0.2)",
-                    willChange: "transform",
-                    transform: "translateZ(0)",
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden"
-                  }}
-                >
-                  {post.user?.name?.[0]?.toUpperCase() || "U"}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1 mb-1 min-w-0 -mt-1">
-            {post.user?.username ? (
-              <>
-                <Link
-                  href={`/profile/${post.user.username}`}
-                  prefetch={true}
-                  className="cursor-pointer hover:opacity-80 transition-opacity flex items-center flex-shrink-0"
-                >
-                  <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
-                    {post.user.name}
-                  </h3>
-                </Link>
-                <span className="text-[15px] text-gray-500 font-normal whitespace-nowrap flex-shrink-0">
-                  @{post.user.username}
-                </span>
-              </>
-            ) : (
-              <div className="flex items-center flex-shrink-0">
-                <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
-                  {post.user?.name}
-                </h3>
+                  >
+                    {post.user.name?.[0]?.toUpperCase() || "U"}
+                  </div>
+                )}
               </div>
-            )}
-            <span className="text-gray-500 mx-0.5 text-[15px] flex-shrink-0">·</span>
-            <time className="whitespace-nowrap text-[15px] text-gray-500 font-normal flex-shrink-0">
-              {timeAgo}
-            </time>
-            <div className="ml-auto mr-2 w-8 h-8 flex items-center justify-center flex-shrink-0">
-              {isOwnPost && (
-                <PostMenu postId={post._id} userId={currentUserId} />
-              )}
-            </div>
-          </div>
-
-          {/* Major & Semester */}
-          {(post.user.major || post.user.semester) && (
-            <div className="text-[13px] text-gray-500 -mt-2 mb-3 truncate">
-              {post.user.major}
-              {post.user.major && post.user.semester && " · "}
-              {post.user.semester && `${post.user.semester}. Semester`}
-            </div>
-          )}
-
-          {/* Post Type Badge */}
-          {post.postType && getPostTypeLabel(post.postType) && (
-            <div className="mb-2 -ml-1">
-              <span className="inline-block pl-1 pr-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                {getPostTypeLabel(post.postType)}
-              </span>
-            </div>
-          )}
-
-          {/* Title */}
-          {post.title && (
-            <h4 className="font-semibold text-[16px] text-gray-900 mb-2">
-              {post.title}
-            </h4>
-          )}
-
-          {/* Content - immer nach Title */}
-          {post.content && post.content.trim() && (
-            <p className="text-[15px] text-gray-900 leading-normal whitespace-pre-wrap mb-3">
-              {renderContentWithMentions(post.content)}
-            </p>
-          )}
-
-          {/* Event Details */}
-          {(post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") && (
-            <EventDetails
-              postId={post._id}
-              eventDate={post.eventDate}
-              eventTime={post.eventTime}
-              participantLimit={post.participantLimit}
-              participantsCount={post.participantsCount}
-              recurrencePattern={post.recurrencePattern}
-            />
-          )}
-
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {post.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700"
-                >
-                  <Tag className="w-3 h-3" />
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Poll Options */}
-          {post.postType === "poll" && post.pollOptions && (
-            <PollOptions
-              postId={post._id}
-              pollOptions={post.pollOptions}
-              pollResults={pollResults || []}
-              pollVote={pollVote}
-              onVote={handleVotePoll}
-              isVoting={isVoting}
-            />
-          )}
-          {post.imageUrl && (
-            <div className="mt-3 w-full rounded-2xl overflow-hidden relative bg-muted">
-              {/* Shimmer-Effekt während des Ladens - mit originaler Bildgröße */}
-              {!imageLoaded && (
-                <div
-                  className="absolute inset-0 w-full rounded-2xl z-10"
-                  style={{
-                    aspectRatio: imageDimensions
-                      ? `${imageDimensions.width} / ${imageDimensions.height}`
-                      : '16 / 9', // Fallback auf 16:9 wenn Dimensionen noch nicht geladen
-                    maxHeight: '80vh',
-                    background: 'linear-gradient(90deg, hsl(var(--muted)) 0%, hsl(var(--muted)) 40%, rgba(255,255,255,0.1) 50%, hsl(var(--muted)) 60%, hsl(var(--muted)) 100%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 1.5s infinite',
-                  }}
-                />
-              )}
-              {/* Bild mit sanftem Fade-In (500ms Transition) - originale Größe */}
-              {/* WICHTIG: Bild muss immer im DOM sein (nicht hidden), damit es geladen wird */}
-              <div className="relative w-full">
-                <Image
-                  key={post.imageUrl}
-                  src={post.imageUrl}
-                  alt="Post image"
-                  width={1200}
-                  height={1200}
-                  sizes="(max-width: 768px) 100vw, 600px"
-                  className="w-full h-auto object-contain rounded-2xl transition-opacity duration-500"
-                  style={{
-                    opacity: imageLoaded ? 1 : 0,
-                    maxHeight: '80vh', // Verhindert, dass sehr hohe Bilder den Feed sprengen
-                    position: 'relative',
-                    zIndex: imageLoaded ? 20 : 0,
-                  }}
-                  loading={isFirst ? "eager" : "lazy"}
-                  priority={isFirst}
-                  onLoad={() => {
-                    // Markiere Bild als geladen im globalen Cache
-                    if (post.imageUrl) {
-                      globalLoadedImagesCache.add(post.imageUrl);
-                    }
-                    setImageLoaded(true);
-                  }}
-                  onError={() => {
-                    // Auch bei Fehler markieren, um erneutes Laden zu vermeiden
-                    if (post.imageUrl) {
-                      globalLoadedImagesCache.add(post.imageUrl);
-                    }
-                    setImageLoaded(true);
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Join Event Button */}
-          {(post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") && currentUserId && (
-            <div className="mt-3" style={{
+            </Link>
+          ) : (
+            <div className="flex-shrink-0" style={{
               willChange: "transform",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden"
             }}>
-              <button
-                onClick={handleJoinEvent}
-                disabled={isJoining || (post.participantLimit !== undefined && (post.participantsCount || 0) >= post.participantLimit && !isParticipating)}
-                className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${isParticipating
-                  ? "bg-red-500 text-white hover:bg-red-600 hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none shadow-md"
-                  : "bg-green-500 text-white hover:bg-green-600 hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none shadow-md"
-                  }`}
-                style={{
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}
-              >
-                <span style={{
-                  display: "inline-block",
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden"
-                }}>
-                  {isJoining
-                    ? "Wird verarbeitet..."
-                    : isParticipating
-                      ? "Teilnahme zurückziehen"
-                      : "Teilnehmen"}
-                </span>
-              </button>
+              <div className="relative w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+                {post.user?.image ? (
+                  <>
+                    {/* Avatar Shimmer */}
+                    {!avatarLoaded && (
+                      <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
+                    )}
+                    <Image
+                      src={post.user.image}
+                      alt={post.user?.name || "User"}
+                      width={48}
+                      height={48}
+                      quality={90}
+                      className="object-cover rounded-full transition-opacity duration-300"
+                      style={{
+                        opacity: avatarLoaded ? 1 : 0,
+                        willChange: "transform",
+                        transform: "translateZ(0)",
+                        backfaceVisibility: "hidden",
+                        WebkitBackfaceVisibility: "hidden",
+                        position: 'relative',
+                        zIndex: avatarLoaded ? 20 : 0,
+                      }}
+                      onLoad={() => {
+                        if (post.user?.image) {
+                          globalLoadedImagesCache.add(post.user.image);
+                        }
+                        setAvatarLoaded(true);
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center font-semibold text-black"
+                    style={{
+                      backgroundColor: "rgba(0, 0, 0, 0.2)",
+                      willChange: "transform",
+                      transform: "translateZ(0)",
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden"
+                    }}
+                  >
+                    {post.user?.name?.[0]?.toUpperCase() || "U"}
+                  </div>
+                )}
+              </div>
             </div>
           )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1 mb-1 min-w-0 -mt-1">
+              {post.user?.username ? (
+                <>
+                  <Link
+                    href={`/profile/${post.user.username}`}
+                    prefetch={true}
+                    className="cursor-pointer hover:opacity-80 transition-opacity flex items-center flex-shrink-0"
+                  >
+                    <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
+                      {post.user.name}
+                    </h3>
+                  </Link>
+                  <span className="text-[15px] text-gray-500 font-normal whitespace-nowrap flex-shrink-0">
+                    @{post.user.username}
+                  </span>
+                </>
+              ) : (
+                <div className="flex items-center flex-shrink-0">
+                  <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
+                    {post.user?.name}
+                  </h3>
+                </div>
+              )}
+              <span className="text-gray-500 mx-0.5 text-[15px] flex-shrink-0">·</span>
+              <time className="whitespace-nowrap text-[15px] text-gray-500 font-normal flex-shrink-0">
+                {timeAgo}
+              </time>
+              <div className="ml-auto mr-2 w-8 h-8 flex items-center justify-center flex-shrink-0">
+                {isOwnPost && (
+                  <PostMenu postId={post._id} userId={currentUserId} />
+                )}
+              </div>
+            </div>
 
-          {!hideActions && (
-            <PostActions
-              likesCount={post.likesCount}
-              commentsCount={post.commentsCount}
-              isLiked={displayIsLiked}
-              onLike={handleLike}
-              isLiking={isLiking}
-              currentUserId={currentUserId}
-              onCommentClick={() => setIsDrawerOpen(true)}
-              onShareClick={() => setIsShareModalOpen(true)}
-            />
-          )}
+            {/* Major & Semester */}
+            {(post.user.major || post.user.semester) && (
+              <div className="text-[13px] text-gray-500 -mt-2 mb-3 truncate">
+                {post.user.major}
+                {post.user.major && post.user.semester && " · "}
+                {post.user.semester && `${post.user.semester}. Semester`}
+              </div>
+            )}
+
+            {/* Post Type Badge */}
+            {post.postType && getPostTypeLabel(post.postType) && (
+              <div className="mb-2 -ml-1">
+                <span className="inline-block pl-1 pr-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                  {getPostTypeLabel(post.postType)}
+                </span>
+              </div>
+            )}
+
+            {/* Title */}
+            {post.title && (
+              <h4 className="font-semibold text-[16px] text-gray-900 mb-2">
+                {post.title}
+              </h4>
+            )}
+
+            {/* Content - immer nach Title */}
+            {post.content && post.content.trim() && (
+              <p className="text-[15px] text-gray-900 leading-normal whitespace-pre-wrap mb-3">
+                {renderContentWithMentions(post.content)}
+              </p>
+            )}
+
+            {/* Event Details */}
+            {(post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") && (
+              <EventDetails
+                postId={post._id}
+                eventDate={post.eventDate}
+                eventTime={post.eventTime}
+                participantLimit={post.participantLimit}
+                participantsCount={post.participantsCount}
+                recurrencePattern={post.recurrencePattern}
+              />
+            )}
+
+            {/* Tags */}
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {post.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700"
+                  >
+                    <Tag className="w-3 h-3" />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Poll Options */}
+            {post.postType === "poll" && post.pollOptions && (
+              <PollOptions
+                postId={post._id}
+                pollOptions={post.pollOptions}
+                pollResults={pollResults || []}
+                pollVote={pollVote}
+                onVote={handleVotePoll}
+                isVoting={isVoting}
+              />
+            )}
+            {post.imageUrl && (
+              <div className="mt-3 w-full rounded-2xl overflow-hidden relative bg-muted">
+                {/* Shimmer-Effekt während des Ladens - mit originaler Bildgröße */}
+                {!imageLoaded && (
+                  <div
+                    className="absolute inset-0 w-full rounded-2xl z-10"
+                    style={{
+                      aspectRatio: imageDimensions
+                        ? `${imageDimensions.width} / ${imageDimensions.height}`
+                        : '16 / 9', // Fallback auf 16:9 wenn Dimensionen noch nicht geladen
+                      maxHeight: '80vh',
+                      background: 'linear-gradient(90deg, hsl(var(--muted)) 0%, hsl(var(--muted)) 40%, rgba(255,255,255,0.1) 50%, hsl(var(--muted)) 60%, hsl(var(--muted)) 100%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 1.5s infinite',
+                    }}
+                  />
+                )}
+                {/* Bild mit sanftem Fade-In (500ms Transition) - originale Größe */}
+                {/* WICHTIG: Bild muss immer im DOM sein (nicht hidden), damit es geladen wird */}
+                <div className="relative w-full">
+                  <Image
+                    key={post.imageUrl}
+                    src={post.imageUrl}
+                    alt="Post image"
+                    width={1200}
+                    height={1200}
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    className="w-full h-auto object-contain rounded-2xl transition-opacity duration-500"
+                    style={{
+                      opacity: imageLoaded ? 1 : 0,
+                      maxHeight: '80vh', // Verhindert, dass sehr hohe Bilder den Feed sprengen
+                      position: 'relative',
+                      zIndex: imageLoaded ? 20 : 0,
+                    }}
+                    loading={isFirst ? "eager" : "lazy"}
+                    priority={isFirst}
+                    onLoad={() => {
+                      // Markiere Bild als geladen im globalen Cache
+                      if (post.imageUrl) {
+                        globalLoadedImagesCache.add(post.imageUrl);
+                      }
+                      setImageLoaded(true);
+                    }}
+                    onError={() => {
+                      // Auch bei Fehler markieren, um erneutes Laden zu vermeiden
+                      if (post.imageUrl) {
+                        globalLoadedImagesCache.add(post.imageUrl);
+                      }
+                      setImageLoaded(true);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Join Event Button */}
+            {(post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") && currentUserId && (
+              <div className="mt-3" style={{
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden"
+              }}>
+                <button
+                  onClick={handleJoinEvent}
+                  disabled={isJoining || (post.participantLimit !== undefined && (post.participantsCount || 0) >= post.participantLimit && !isParticipating)}
+                  className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${isParticipating
+                    ? "bg-red-500 text-white hover:bg-red-600 hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none shadow-md"
+                    : "bg-green-500 text-white hover:bg-green-600 hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none shadow-md"
+                    }`}
+                  style={{
+                    willChange: "transform",
+                    transform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden"
+                  }}
+                >
+                  <span style={{
+                    display: "inline-block",
+                    willChange: "transform",
+                    transform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden"
+                  }}>
+                    {isJoining
+                      ? "Wird verarbeitet..."
+                      : isParticipating
+                        ? "Teilnahme zurückziehen"
+                        : "Teilnehmen"}
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {!hideActions && (
+              <PostActions
+                likesCount={post.likesCount}
+                commentsCount={post.commentsCount}
+                isLiked={displayIsLiked}
+                onLike={handleLike}
+                isLiking={isLiking}
+                currentUserId={currentUserId}
+                onCommentClick={() => setIsDrawerOpen(true)}
+                onShareClick={() => setIsShareModalOpen(true)}
+              />
+            )}
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
 
-    {/* Share Post Modal */}
-    {currentUserId && (
-      <SharePostModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
+      {/* Share Post Modal */}
+      {currentUserId && (
+        <SharePostModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          postId={post._id}
+          currentUserId={currentUserId}
+        />
+      )}
+
+      {/* Comment Drawer */}
+      <CommentDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
         postId={post._id}
         currentUserId={currentUserId}
+        commentsCount={post.commentsCount}
+        highlightCommentId={autoOpenCommentId}
       />
-    )}
-
-    {/* Comment Drawer */}
-    <CommentDrawer
-      isOpen={isDrawerOpen}
-      onClose={() => setIsDrawerOpen(false)}
-      postId={post._id}
-      currentUserId={currentUserId}
-      commentsCount={post.commentsCount}
-      highlightCommentId={autoOpenCommentId}
-    />
-  </>
+    </>
   );
 }
 
