@@ -73,7 +73,7 @@ export default function UserProfilePage() {
         : [];
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] md:max-w-none mx-auto pb-24 overflow-x-hidden">
+        <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             {isLoading ? (

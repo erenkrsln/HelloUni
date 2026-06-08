@@ -49,10 +49,10 @@ export function BottomNavigation() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4 md:bottom-auto md:top-1/2 md:transform md:-translate-y-1/2 md:left-12 md:right-auto md:mb-0 md:pb-0 md:px-0 md:h-auto md:w-auto"
+      className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 lg:left-12 lg:right-auto lg:mb-0 lg:pb-0 lg:px-0 lg:h-auto lg:w-auto"
     >
       <div
-        className="flex items-center justify-between px-5 py-4 w-full max-w-[373px] h-[66px] rounded-[79px] md:flex-col md:px-4 md:py-5 md:w-[66px] md:h-[373px] md:max-w-none"
+        className="flex items-center justify-between px-5 py-4 w-full max-w-[373px] h-[66px] rounded-[79px] lg:flex-col lg:px-4 lg:py-5 lg:w-[66px] lg:h-[373px] lg:max-w-none"
         style={{
           backgroundColor: "#dcc6a1",
           opacity: 1,
