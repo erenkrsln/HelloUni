@@ -253,11 +253,10 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
                     width={44}
                     height={44}
                     quality={90}
-                    className="object-cover rounded-full transition-opacity duration-300"
+                    className="object-cover rounded-full"
                     style={{
-                      opacity: imageLoaded ? 1 : 0,
                       position: 'relative',
-                      zIndex: imageLoaded ? 20 : 0,
+                      zIndex: 20,
                     }}
                     onLoad={() => {
                       if (currentUser.image) {

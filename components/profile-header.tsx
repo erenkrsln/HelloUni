@@ -67,11 +67,6 @@ export function ProfileHeader({
         // Das Fade-In ist nur für Bilder nützlich, die bereits im Cache sind
         return image ? true : false;
     });
-    // State für sanftes Fade-In des Header-Bildes - zeige Bild sofort an wenn URL vorhanden
-    const [isHeaderImageLoaded, setIsHeaderImageLoaded] = useState(() => {
-        // Zeige Bild sofort an, wenn URL vorhanden ist
-        return headerImage ? true : false;
-    });
     // Extrahiere dominante Farbe aus dem Bild für Hintergrund
     const [extractedColor, setExtractedColor] = useState<string | null>(null);
     const headerImageInputRef = useRef<HTMLInputElement>(null);
@@ -82,10 +77,8 @@ export function ProfileHeader({
         setIsAvatarLoaded(image ? true : false);
     }, [image]);
 
-    // Reset loaded state wenn headerImage sich ändert
+    // Reset extrahierte Farbe wenn headerImage sich ändert
     useEffect(() => {
-        // Zeige Bild sofort an, wenn neue URL vorhanden ist
-        setIsHeaderImageLoaded(headerImage ? true : false);
         setExtractedColor(null);
     }, [headerImage]);
 
@@ -290,13 +283,9 @@ export function ProfileHeader({
                             fill
                             sizes="(max-width: 639px) 100vw, 428px"
                             priority
-                            className="object-cover transition-opacity duration-300"
-                            style={{
-                                opacity: isHeaderImageLoaded ? 1 : 0,
-                            }}
+                            className="object-cover"
                             onLoad={() => {
                                 markImageAsLoaded(headerImage);
-                                setIsHeaderImageLoaded(true);
                             }}
                         />
                     </>

@@ -528,15 +528,14 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                     width={48}
                     height={48}
                     quality={90}
-                    className="object-cover rounded-full transition-opacity duration-300"
+                    className="object-cover rounded-full"
                     style={{
-                      opacity: avatarLoaded ? 1 : 0,
                       willChange: "transform",
                       transform: "translateZ(0)",
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
                       position: 'relative',
-                      zIndex: avatarLoaded ? 20 : 0,
+                      zIndex: 20,
                     }}
                     onLoad={() => {
                       if (post.user?.image) {
@@ -582,15 +581,14 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                     width={48}
                     height={48}
                     quality={90}
-                    className="object-cover rounded-full transition-opacity duration-300"
+                    className="object-cover rounded-full"
                     style={{
-                      opacity: avatarLoaded ? 1 : 0,
                       willChange: "transform",
                       transform: "translateZ(0)",
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
                       position: 'relative',
-                      zIndex: avatarLoaded ? 20 : 0,
+                      zIndex: 20,
                     }}
                     onLoad={() => {
                       if (post.user?.image) {
@@ -749,12 +747,11 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                   width={1200}
                   height={1200}
                   sizes="(max-width: 768px) 100vw, 600px"
-                  className="w-full h-auto object-contain rounded-2xl transition-opacity duration-500"
+                  className="w-full h-auto object-contain rounded-2xl"
                   style={{
-                    opacity: imageLoaded ? 1 : 0,
                     maxHeight: '80vh', // Verhindert, dass sehr hohe Bilder den Feed sprengen
                     position: 'relative',
-                    zIndex: imageLoaded ? 20 : 0,
+                    zIndex: 20,
                   }}
                   loading={isFirst ? "eager" : "lazy"}
                   priority={isFirst}
