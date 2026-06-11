@@ -5,6 +5,7 @@ import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { NotificationFeed } from "@/components/notification-feed";
+import { PushNotificationToggle } from "@/components/push-notification-toggle";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -49,6 +50,9 @@ export default function NotificationsPage() {
                 </button>
                 <h1 className="text-lg font-bold text-black tracking-tight">Benachrichtigungen</h1>
             </header>
+
+            {/* Push notification opt-in */}
+            <PushNotificationToggle userId={currentUser._id} />
 
             {/* Notification Feed */}
             <NotificationFeed userId={currentUser._id} />

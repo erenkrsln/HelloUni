@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { getImageUrl, getUserImageUrl } from "./helpers";
+import { getImageUrl, getUserImageUrl, createNotification } from "./helpers";
 
 export const get = query({
     args: {
@@ -217,8 +217,8 @@ export const create = mutation({
             return { success: false, reason: "Duplicate notification" };
         }
 
-        // Create the notification
-        const notificationId = await ctx.db.insert("notifications", {
+        // Create the notification (also schedules a Web Push delivery)
+        const notificationId = await createNotification(ctx, {
             userId: args.userId,
             issuerId: args.issuerId,
             type: args.type,

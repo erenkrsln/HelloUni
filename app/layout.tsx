@@ -10,6 +10,7 @@ import { CallProvider } from "@/components/call/CallProvider";
 import { CallOverlay } from "@/components/call/CallOverlay";
 import { IncomingCallModal } from "@/components/call/IncomingCallModal";
 import { getToken } from "@/lib/auth-server";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/logo2.svg",
-    apple: "/logo2.svg",
+    apple: "/icon-192.png",
   },
 };
 
@@ -61,12 +62,13 @@ export default async function RootLayout({
       <head>
         {/* PWA Meta Tags für bessere Installation */}
         <link rel="manifest" href="/site.webmanifest" />
-        <link rel="apple-touch-icon" href="/hellouni.svg" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
       </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`} suppressHydrationWarning>
+        <ServiceWorkerRegister />
         <ConvexClientProvider initialToken={token}>
           <CallProvider>
             <PostsCacheWrapper>{children}</PostsCacheWrapper>

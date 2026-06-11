@@ -1,7 +1,7 @@
 import { mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
-import { shouldDeleteR2File } from "./helpers";
+import { api, internal } from "./_generated/api";
+import { shouldDeleteR2File, createNotification } from "./helpers";
 
 // Updated mutation with all new post fields
 export const createPost = mutation({
@@ -120,7 +120,7 @@ export const likePost = mutation({
             );
 
             if (!duplicate) {
-              await ctx.db.insert("notifications", {
+              await createNotification(ctx, {
                 userId: post.userId,
                 issuerId: args.userId,
                 type: "post_like",
@@ -230,7 +230,7 @@ export const createComment = mutation({
       );
 
       if (!duplicate) {
-        await ctx.db.insert("notifications", {
+        await createNotification(ctx, {
           userId: post.userId,
           issuerId: args.userId,
           type: "comment",
@@ -398,7 +398,7 @@ export const likeComment = mutation({
         );
 
         if (!duplicate) {
-          await ctx.db.insert("notifications", {
+          await createNotification(ctx, {
             userId: comment.userId,
             issuerId: args.userId,
             type: "comment_like",
@@ -511,7 +511,7 @@ export const followUser = mutation({
     );
 
     if (!duplicate) {
-      await ctx.db.insert("notifications", {
+      await createNotification(ctx, {
         userId: args.followingId,
         issuerId: args.followerId,
         type: "follow",
@@ -664,7 +664,7 @@ export const joinEvent = mutation({
       );
 
       if (!duplicate) {
-        await ctx.db.insert("notifications", {
+        await createNotification(ctx, {
           userId: post.userId,
           issuerId: args.userId,
           type: "event_join",
@@ -838,6 +838,45 @@ export const sendMessage = mutation({
       lastMessageId: messageId,
       updatedAt: Date.now(),
     });
+
+    // Push notification to the other participants (best-effort, never blocks send)
+    const messageType = args.type || "text";
+    if (messageType !== "system") {
+      try {
+        const sender = await ctx.db.get(args.senderId);
+        const senderName = sender?.name || "Neue Nachricht";
+        const left = conversation.leftParticipants || [];
+        const recipients = conversation.participants.filter(
+          (id) => id !== args.senderId && !left.includes(id)
+        );
+
+        if (recipients.length > 0) {
+          let preview: string;
+          switch (messageType) {
+            case "image": preview = "📷 Bild"; break;
+            case "video": preview = "🎥 Video"; break;
+            case "pdf": preview = args.fileName ? `📄 ${args.fileName}` : "📄 Datei"; break;
+            case "poll": preview = `📊 Umfrage: ${args.content}`; break;
+            case "post": preview = "🔗 Beitrag geteilt"; break;
+            case "profile": preview = "👤 Profil geteilt"; break;
+            case "event_invite": preview = "📅 Termin"; break;
+            default: preview = args.content.length > 120 ? `${args.content.slice(0, 117)}…` : args.content;
+          }
+
+          const isGroup = conversation.isGroup === true;
+          await ctx.scheduler.runAfter(0, internal.pushActions.sendPush, {
+            userIds: recipients,
+            payload: {
+              title: isGroup ? (conversation.name || "Gruppe") : senderName,
+              body: isGroup ? `${senderName}: ${preview}` : preview,
+              url: `/chat/${args.conversationId}`,
+            },
+          });
+        }
+      } catch (err) {
+        console.error("[push] failed to schedule chat push", err);
+      }
+    }
 
     return messageId;
   },
@@ -1764,7 +1803,7 @@ export const requestToJoinPublicGroup = mutation({
     for (const admin of resolvedAdmins) {
       if (admin && admin._id !== args.userId) {
         // Create notification
-        await ctx.db.insert("notifications", {
+        await createNotification(ctx, {
           userId: admin._id,
           issuerId: args.userId,
           type: "group_join_request",
@@ -1802,7 +1841,7 @@ export const handleJoinRequest = mutation({
       await ctx.db.patch(args.requestId, { status: "approved" });
 
       // Create notification for the requesting user
-      await ctx.db.insert("notifications", {
+      await createNotification(ctx, {
         userId: request.userId,
         issuerId: args.adminId,
         type: "group_join_accept",
@@ -1858,7 +1897,7 @@ export const handleJoinRequest = mutation({
       await ctx.db.patch(args.requestId, { status: "rejected" });
 
       // Create notification for the requesting user
-      await ctx.db.insert("notifications", {
+      await createNotification(ctx, {
         userId: request.userId,
         issuerId: args.adminId,
         type: "group_join_reject",
