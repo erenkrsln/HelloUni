@@ -67,6 +67,33 @@ export function usePushNotifications(userId: Id<"users"> | undefined) {
     };
   }, []);
 
+  // Self-heal: if the browser already has a subscription but the backend doesn't
+  // (e.g. a previous save failed), re-upsert it once the user id is known.
+  // saveSubscription is an idempotent upsert by endpoint, so this is safe to repeat.
+  useEffect(() => {
+    if (!userId || typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+    let cancelled = false;
+    navigator.serviceWorker.ready
+      .then((registration) => registration.pushManager.getSubscription())
+      .then((sub) => {
+        if (cancelled || !sub) return;
+        const json = sub.toJSON();
+        if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return;
+        return saveSubscription({
+          userId,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth: json.keys.auth,
+        });
+      })
+      .catch((err) => console.error("[push] subscription resync failed", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, saveSubscription]);
+
   const subscribe = useCallback(async () => {
     if (!isSupported || !userId) return false;
     if (!VAPID_PUBLIC_KEY) {
@@ -95,14 +122,21 @@ export function usePushNotifications(userId: Id<"users"> | undefined) {
         throw new Error("Incomplete push subscription");
       }
 
-      await saveSubscription({
-        userId,
-        endpoint: json.endpoint,
-        p256dh: json.keys.p256dh,
-        auth: json.keys.auth,
-      });
-
+      // The browser subscription exists -> reflect that in the UI right away.
+      // A failing backend save must not undo the toggle or hang the spinner;
+      // the resync effect will retry the upsert on the next app open.
       setIsSubscribed(true);
+      try {
+        await saveSubscription({
+          userId,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth: json.keys.auth,
+        });
+      } catch (saveErr) {
+        console.error("[push] saveSubscription failed", saveErr);
+      }
+
       return true;
     } catch (err) {
       console.error("[push] subscribe failed", err);
