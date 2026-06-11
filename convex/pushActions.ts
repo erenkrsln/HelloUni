@@ -16,7 +16,7 @@ export const sendPush = internalAction({
     userIds: v.array(v.id("users")),
     payload: v.object({
       title: v.string(),
-      body: v.string(),
+      body: v.optional(v.string()),
       url: v.optional(v.string()),
     }),
   },
@@ -41,7 +41,7 @@ export const sendPush = internalAction({
 
     const notificationPayload = JSON.stringify({
       title: args.payload.title,
-      body: args.payload.body,
+      body: args.payload.body || "",
       data: { url: args.payload.url || "/notifications" },
     });
 

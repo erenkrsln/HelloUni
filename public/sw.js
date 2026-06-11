@@ -21,7 +21,7 @@ self.addEventListener('push', function (event) {
 
     const title = data.title || 'HelloUni';
     const options = {
-        body: data.body || 'Neue Benachrichtigung',
+        body: data.body || '',
         icon: '/logo_background.png',
         badge: '/logo_background.png',
         data: data.data || {}, // Contains url to open

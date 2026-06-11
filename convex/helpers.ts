@@ -69,47 +69,49 @@ export async function createNotification(ctx: any, fields: NotificationFields) {
     const issuer = await ctx.db.get(fields.issuerId);
     const issuerName = issuer?.name || "Jemand";
 
-    let body = "Du hast eine neue Benachrichtigung";
+    // The message itself becomes the notification title, so the phone shows
+    // the app name ("HelloUni") only once instead of repeating it.
+    let title = "Neue Benachrichtigung";
     let url = "/notifications";
 
     switch (fields.type) {
       case "follow":
-        body = `${issuerName} folgt dir jetzt`;
+        title = `${issuerName} folgt dir jetzt`;
         url = issuer?.username ? `/profile/${issuer.username}` : "/notifications";
         break;
       case "post_like":
-        body = `${issuerName} gefällt dein Beitrag`;
+        title = `${issuerName} gefällt dein Beitrag`;
         url = fields.targetId ? `/posts/${fields.targetId}` : "/notifications";
         break;
       case "comment":
-        body = `${issuerName} hat deinen Beitrag kommentiert`;
+        title = `${issuerName} hat deinen Beitrag kommentiert`;
         url = await resolveCommentUrl(ctx, fields.targetId);
         break;
       case "comment_like":
-        body = `${issuerName} gefällt dein Kommentar`;
+        title = `${issuerName} gefällt dein Kommentar`;
         url = await resolveCommentUrl(ctx, fields.targetId);
         break;
       case "event_join":
-        body = `${issuerName} nimmt an deinem Treffen teil`;
+        title = `${issuerName} nimmt an deinem Treffen teil`;
         url = fields.targetId ? `/posts/${fields.targetId}` : "/notifications";
         break;
       case "group_join_request":
-        body = `${issuerName} möchte deiner Gruppe beitreten`;
+        title = `${issuerName} möchte deiner Gruppe beitreten`;
         url = "/notifications";
         break;
       case "group_join_accept":
-        body = "Deine Beitrittsanfrage wurde angenommen";
+        title = "Deine Beitrittsanfrage wurde angenommen";
         url = fields.targetId ? `/chat/${fields.targetId}` : "/notifications";
         break;
       case "group_join_reject":
-        body = "Deine Beitrittsanfrage wurde abgelehnt";
+        title = "Deine Beitrittsanfrage wurde abgelehnt";
         url = "/notifications";
         break;
     }
 
     await ctx.scheduler.runAfter(0, internal.pushActions.sendPush, {
       userIds: [fields.userId],
-      payload: { title: "HelloUni", body, url },
+      payload: { title, url },
     });
   } catch (err) {
     console.error("[push] failed to schedule notification push", err);
