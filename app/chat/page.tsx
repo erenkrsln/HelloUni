@@ -1,18 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, ArrowLeft, X } from "lucide-react";
+import { useCall } from "@/lib/hooks/useCall";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, BarChart2, StickyNote, User, CirclePlay, CalendarDays, Phone, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
 import { LoadingScreen } from "@/components/ui/spinner";
-import { formatChatTimestamp } from "@/lib/utils";
+
+function formatLastMessageTime(timestamp?: number) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const now = new Date();
+
+  const isSameDay =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isSameDay) {
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  } else {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
+}
 
 export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -42,6 +64,27 @@ export default function ChatPage() {
   const conversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
   const allUsers = useQuery(api.queries.getAllUsers);
 
+  const { activeCallId, startCall } = useCall();
+
+  const activeGroupCalls = useQuery(
+    api.calls.getActiveGroupCallsForUser,
+    currentUser ? { userId: currentUser._id } : "skip",
+  );
+
+  const activeGroupCallByConversationId = useMemo(() => {
+    const m = new Map<
+      string,
+      { callId: Id<"calls">; type: "voice" | "video" }
+    >();
+    activeGroupCalls?.forEach((row) => {
+      m.set(row.conversationId as string, {
+        callId: row.callId as Id<"calls">,
+        type: row.type,
+      });
+    });
+    return m;
+  }, [activeGroupCalls]);
+
   const isLoading = isFirstVisit && (currentUser === undefined || conversations === undefined);
   const createConversation = useMutation(api.mutations.createConversation);
   const deleteConversationFromList = useMutation(api.mutations.deleteConversationFromList);
@@ -58,7 +101,6 @@ export default function ChatPage() {
     if (!currentUser || selectedUsers.length === 0) return;
     if (selectedUsers.length > 1 && !groupName.trim()) return;
 
-    // Add current user to participants
     const participants = [currentUser._id, ...selectedUsers];
 
     try {
@@ -165,11 +207,18 @@ export default function ChatPage() {
                 const membership = (conv as any).membership;
                 const isLeft = membership === "left";
 
+                const liveCall =
+                  conv.isGroup && !isLeft
+                    ? activeGroupCallByConversationId.get(conv._id as string)
+                    : undefined;
+                const inThisCall =
+                  !!liveCall && activeCallId === liveCall.callId;
+
                 return (
-                  <div key={conv._id} className="relative group">
+                  <div key={conv._id} className="relative group flex items-center gap-1.5 pb-6">
                     <Link
                       href={`/chat/${conv._id}`}
-                      className={`flex items-center pb-6 ${isLeft ? "opacity-50" : ""}`}
+                      className={`flex items-center flex-1 min-w-0 ${isLeft ? "opacity-50" : ""}`}
                     >
 
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
@@ -182,12 +231,14 @@ export default function ChatPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
-                              {formatChatTimestamp(conv.updatedAt)}
-                            </span>
+                          <div className="flex flex-col items-end flex-shrink-0">
+                            {conv.lastMessage && (
+                              <span className="text-[11px] text-gray-400 font-medium mb-1">
+                                {formatLastMessageTime((conv.lastMessage as any).createdAt)}
+                              </span>
+                            )}
                             {conv.unreadCount > 0 && (
                               <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
                                 {conv.unreadCount}
@@ -214,16 +265,54 @@ export default function ChatPage() {
                           </div>
                         </div>
                         <p className="text-sm text-gray-500 truncate flex items-center pl-0.5">
-                          {conv.lastMessage ? (
+                          {liveCall ? (
+                            <span className="flex items-center gap-1.5 text-[#D08945] font-medium">
+                              {liveCall.type === "video" ? (
+                                <Video size={14} className="flex-shrink-0" />
+                              ) : (
+                                <Phone size={14} className="flex-shrink-0" />
+                              )}
+                              {inThisCall
+                                ? "Du bist im Anruf"
+                                : liveCall.type === "video"
+                                  ? "Gruppen-Videoanruf läuft"
+                                  : "Gruppenanruf läuft"}
+                            </span>
+                          ) : conv.lastMessage ? (
                             (conv.lastMessage as any).type === "image" ? (
                               <>
-                                <Image size={14} className="flex-shrink-0" />
+                                <Image size={14} className="flex-shrink-0 mr-1" />
                                 <span>Foto</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "video" ? (
+                              <>
+                                <CirclePlay size={14} className="flex-shrink-0 mr-1" />
+                                <span>Video</span>
                               </>
                             ) : (conv.lastMessage as any).type === "pdf" ? (
                               <>
-                                <FileIcon size={14} className="flex-shrink-0" />
+                                <FileIcon size={14} className="flex-shrink-0 mr-1" />
                                 <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "post" ? (
+                              <>
+                                <StickyNote size={14} className="flex-shrink-0 mr-1" />
+                                <span>Geteilter Beitrag</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "poll" ? (
+                              <>
+                                <BarChart2 size={14} className="flex-shrink-0 mr-1" />
+                                <span>Umfrage</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "profile" ? (
+                              <>
+                                <User size={14} className="flex-shrink-0 mr-1" />
+                                <span>Geteiltes Profil</span>
+                              </>
+                            ) : (conv.lastMessage as any).type === "event_invite" ? (
+                              <>
+                                <CalendarDays size={14} className="flex-shrink-0 mr-1" />
+                                <span>{conv.lastMessage.content || "Termin"}</span>
                               </>
                             ) : (
                               conv.lastMessage.content
@@ -234,7 +323,17 @@ export default function ChatPage() {
                         </p>
                       </div>
                     </Link>
-
+                    {liveCall && !inThisCall && !isLeft && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void startCall(conv._id, liveCall.type);
+                        }}
+                        className="flex-shrink-0 self-center px-3 py-1.5 rounded-full text-xs font-semibold text-white bg-[#D08945] active:scale-95 transition-transform"
+                      >
+                        Beitreten
+                      </button>
+                    )}
                   </div>
                 );
               })

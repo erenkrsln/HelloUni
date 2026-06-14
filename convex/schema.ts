@@ -5,7 +5,8 @@ export default defineSchema({
   users: defineTable({
     name: v.string(),
     username: v.string(), // Für Authentifizierung
-    passwordHash: v.string(), // Gehashtes Passwort
+    email: v.optional(v.string()),
+    passwordHash: v.optional(v.string()),
     image: v.optional(v.string()),
     headerImage: v.optional(v.string()), // Header/Titelbild
     uni_name: v.optional(v.string()), // Jetzt optional für initiale Registrierung
@@ -14,7 +15,9 @@ export default defineSchema({
     bio: v.optional(v.string()), // Biografie des Benutzers
     interests: v.optional(v.array(v.string())), // Interessen/Tags des Benutzers
     createdAt: v.optional(v.number()), // Erstellungsdatum für "Joined"
-  }).index("by_username", ["username"]), // Index für schnelle Suche nach Benutzername
+  })
+    .index("by_username", ["username"])
+    .index("by_email", ["email"]), // Index für schnelle Suche nach E-Mail
 
   posts: defineTable({
     userId: v.id("users"),
@@ -119,6 +122,8 @@ export default defineSchema({
     name: v.optional(v.string()), // Optionaler Gruppenname
     image: v.optional(v.string()), // Storage ID für Gruppenbild
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
+    isPublic: v.optional(v.boolean()), // Flag für öffentliche Gruppen
+    needsRequestToJoin: v.optional(v.boolean()), // Flag, ob ein Beitritt erst genehmigt werden muss
     adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
     creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
@@ -129,11 +134,14 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"), v.literal("poll"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
     chatPollId: v.optional(v.id("chatPolls")),
+    chatEventId: v.optional(v.id("chatEvents")),
+    sharedPostId: v.optional(v.id("posts")),
+    sharedProfileId: v.optional(v.id("users")),
     visibleTo: v.optional(v.array(v.id("users"))),
     reactions: v.optional(v.array(v.object({
       emoji: v.string(),
@@ -164,6 +172,30 @@ export default defineSchema({
     .index("by_poll", ["chatPollId"])
     .index("by_poll_user", ["chatPollId", "userId"]),
 
+  chatEvents: defineTable({
+    conversationId: v.id("conversations"),
+    creatorId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    timeSlots: v.array(v.object({
+      startTime: v.number(),
+      endTime: v.number()
+    })),
+    confirmedTimeSlotIndex: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_conversation", ["conversationId"]),
+
+  chatEventVotes: defineTable({
+    chatEventId: v.id("chatEvents"),
+    userId: v.id("users"),
+    slotIndex: v.number(),
+    vote: v.union(v.literal("yes"), v.literal("maybe"), v.literal("no")),
+    eventId: v.optional(v.id("events")),
+    votedAt: v.number(),
+  })
+    .index("by_event", ["chatEventId"])
+    .index("by_event_user", ["chatEventId", "userId"]),
+
   last_reads: defineTable({
     userId: v.id("users"),
     conversationId: v.id("conversations"),
@@ -181,9 +213,12 @@ export default defineSchema({
       v.literal("post_like"),
       v.literal("comment"),
       v.literal("comment_like"),
-      v.literal("event_join")
+      v.literal("event_join"),
+      v.literal("group_join_request"),
+      v.literal("group_join_accept"),
+      v.literal("group_join_reject")
     ),
-    targetId: v.optional(v.string()), // ID of post, comment, or event
+    targetId: v.optional(v.string()), // ID of post, comment, event, or joinRequest
     eventMetadata: v.optional(v.object({
       eventType: v.union(
         v.literal("spontaneous_meeting"),
@@ -195,6 +230,27 @@ export default defineSchema({
   })
     .index("by_user_created", ["userId", "createdAt"])
     .index("by_user_read", ["userId", "isRead"]),
+
+  // Web Push subscriptions (PWA notifications). One row per browser/device endpoint.
+  pushSubscriptions: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    p256dh: v.string(), // public key from the browser subscription
+    auth: v.string(), // auth secret from the browser subscription
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_endpoint", ["endpoint"]),
+
+  joinRequests: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_user", ["userId"])
+    .index("by_conversation_user", ["conversationId", "userId"]),
 
   events: defineTable({
     title: v.string(),
@@ -209,46 +265,6 @@ export default defineSchema({
   })
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),
-
-  workspace_tasks: defineTable({
-    workspaceId: v.string(), // z.B. "group:xyz" oder "event:xyz"
-    title: v.string(),
-    deadline: v.optional(v.string()), // z.B. "Today", "Tomorrow" oder ISO string
-    assigneeId: v.optional(v.id("users")),
-    createdBy: v.id("users"),
-    isCompleted: v.boolean(),
-    createdAt: v.number(),
-  })
-    .index("by_workspace", ["workspaceId"])
-    .index("by_assignee", ["assigneeId"]),
-
-  workspace_files: defineTable({
-    workspaceId: v.string(),
-    storageId: v.id("_storage"),
-    fileName: v.string(),
-    fileType: v.string(),
-    uploaderId: v.id("users"),
-    createdAt: v.number(),
-  })
-    .index("by_workspace", ["workspaceId"]),
-
-  workspace_polls: defineTable({
-    workspaceId: v.string(),
-    question: v.string(),
-    options: v.array(v.string()),
-    createdBy: v.id("users"),
-    createdAt: v.number(),
-  })
-    .index("by_workspace", ["workspaceId"]),
-
-  workspace_poll_votes: defineTable({
-    pollId: v.id("workspace_polls"),
-    userId: v.id("users"),
-    optionIndex: v.number(),
-    createdAt: v.number(),
-  })
-    .index("by_poll", ["pollId"])
-    .index("by_poll_user", ["pollId", "userId"]),
 });
 
 
