@@ -263,7 +263,6 @@ export default function SearchPage() {
                             placeholder="Suchen..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            autoFocus
                         />
                     </div>
 
