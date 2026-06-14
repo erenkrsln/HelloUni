@@ -225,7 +225,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     if (!currentUser) return null;
 
     return (
-        <main className="flex flex-col h-screen w-full max-w-[428px] md:max-w-none mx-auto bg-white relative">
+        <main className="flex flex-col h-full w-full max-w-[428px] md:max-w-none mx-auto bg-white relative">
 
             {/* Header */}
             <div

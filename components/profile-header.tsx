@@ -5,7 +5,7 @@ import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, Send } from "lucide-react";
+import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, Send, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
@@ -265,6 +265,17 @@ export function ProfileHeader({
                     transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
                 }}
             >
+                {/* Back Button */}
+                <button
+                    onClick={() => router.back()}
+                    className="absolute left-4 z-20 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 active:scale-95 transition-all shadow-md"
+                    style={{
+                        top: `calc(1rem + env(safe-area-inset-top, 0px))`,
+                    }}
+                    aria-label="Zurück"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                </button>
 
                 {headerImage ? (
                     <>
