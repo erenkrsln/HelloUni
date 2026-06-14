@@ -231,6 +231,17 @@ export default defineSchema({
     .index("by_user_created", ["userId", "createdAt"])
     .index("by_user_read", ["userId", "isRead"]),
 
+  // Web Push subscriptions (PWA notifications). One row per browser/device endpoint.
+  pushSubscriptions: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    p256dh: v.string(), // public key from the browser subscription
+    auth: v.string(), // auth secret from the browser subscription
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_endpoint", ["endpoint"]),
+
   joinRequests: defineTable({
     conversationId: v.id("conversations"),
     userId: v.id("users"),

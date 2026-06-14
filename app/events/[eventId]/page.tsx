@@ -41,14 +41,16 @@ function EventPageContent({ params }: { params: Promise<{ eventId: string }> }) 
     return (
         <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
             {/* Minimal Header with Back Button */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 h-14 flex items-center justify-center relative">
-                <button
-                    onClick={() => router.back()}
-                    className="absolute left-4 p-1 text-black hover:opacity-70 transition-opacity"
-                >
-                    <ArrowLeft className="w-6 h-6" />
-                </button>
-                <h1 className="text-lg font-bold text-black tracking-tight">Beitrag</h1>
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
+                <div className="relative px-4 h-14 flex items-center justify-center">
+                    <button
+                        onClick={() => router.back()}
+                        className="absolute left-4 p-1 text-black hover:opacity-70 transition-opacity"
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                    </button>
+                    <h1 className="text-lg font-bold text-black tracking-tight">Beitrag</h1>
+                </div>
             </header>
 
             <div className="flex-1">
@@ -84,11 +86,13 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
     return (
         <Suspense fallback={
             <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
-                <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 h-14 flex items-center justify-center relative">
-                    <div className="absolute left-4 p-1 text-black opacity-30">
-                        <ArrowLeft className="w-6 h-6" />
+                <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
+                    <div className="relative px-4 h-14 flex items-center justify-center">
+                        <div className="absolute left-4 p-1 text-black opacity-30">
+                            <ArrowLeft className="w-6 h-6" />
+                        </div>
+                        <h1 className="text-lg font-bold text-black tracking-tight">Beitrag</h1>
                     </div>
-                    <h1 className="text-lg font-bold text-black tracking-tight">Beitrag</h1>
                 </header>
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
