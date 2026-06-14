@@ -26,6 +26,9 @@ export function BottomNavigation() {
     if (path === "/home" || path === "/") {
       return pathname === "/home" || pathname === "/";
     }
+    if (path === "/chat") {
+      return pathname === "/chat" || pathname.startsWith("/chat/");
+    }
     return pathname === path;
   };
 

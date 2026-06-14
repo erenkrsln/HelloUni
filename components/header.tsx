@@ -138,7 +138,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               {title ? title :
                 pathname === "/home" ? "Posts" :
                   pathname === "/search" ? "Suche" :
-                    pathname === "/chat" ? "Chats" :
+                    (pathname === "/chat" || pathname.startsWith("/chat/")) ? "Chats" :
                       "HelloUni"}
             </h1>
           )}
