@@ -298,7 +298,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {/* Left side */}
                 <div className="flex items-center flex-1">
                     <button
-                        onClick={() => router.back()}
+                        onClick={() => router.push("/chat")}
                         className="mr-3 p-2 -ml-2 rounded-full md:hidden"
                     >
                         <ArrowLeft size={24} />
