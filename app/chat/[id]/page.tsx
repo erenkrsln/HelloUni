@@ -29,6 +29,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isInitialLoad = useRef(true);
+    const hasLoadedMessages = useRef(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const messagesInnerRef = useRef<HTMLDivElement>(null);
 
     const messages = useQuery(api.queries.getMessages, {
         conversationId,
@@ -146,19 +149,75 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     );
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-        messagesEndRef.current?.scrollIntoView({ behavior });
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior
+            });
+        }
     };
 
+    // Reset initial load state when conversation changes
+    useEffect(() => {
+        isInitialLoad.current = true;
+        hasLoadedMessages.current = false;
+    }, [conversationId]);
+
+    // Handle messages changes & initial scroll
     useEffect(() => {
         if (messages) {
             if (isInitialLoad.current) {
                 scrollToBottom("auto");
-                isInitialLoad.current = false;
+                
+                if (!hasLoadedMessages.current) {
+                    hasLoadedMessages.current = true;
+                    // Keep isInitialLoad.current = true for a bit longer to allow all images/assets to load and trigger ResizeObserver
+                    const timer = setTimeout(() => {
+                        isInitialLoad.current = false;
+                    }, 1500);
+                    return () => clearTimeout(timer);
+                }
             } else {
                 scrollToBottom("smooth");
             }
         }
     }, [messages]);
+
+    // Observe size changes of the inner content container (e.g. image loads, window resize, layout shifts)
+    useEffect(() => {
+        const innerEl = messagesInnerRef.current;
+        const containerEl = scrollContainerRef.current;
+        if (!innerEl || !containerEl) return;
+
+        const observer = new ResizeObserver(() => {
+            const threshold = 250;
+            const isNearBottom =
+                containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < threshold;
+
+            if (isNearBottom || isInitialLoad.current) {
+                scrollToBottom(isInitialLoad.current ? "auto" : "smooth");
+            }
+        });
+
+        observer.observe(innerEl);
+        observer.observe(containerEl);
+
+        // Also attach scroll event listener to detect manual scroll up
+        const handleScroll = () => {
+            const threshold = 250;
+            const isNearBottom = 
+                containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < threshold;
+            if (!isNearBottom && isInitialLoad.current) {
+                isInitialLoad.current = false;
+            }
+        };
+        containerEl.addEventListener("scroll", handleScroll, { passive: true });
+
+        return () => {
+            observer.disconnect();
+            containerEl.removeEventListener("scroll", handleScroll);
+        };
+    }, [conversationId]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -171,6 +230,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 content: newMessage.trim(),
             });
             setNewMessage("");
+            setTimeout(() => scrollToBottom("smooth"), 50);
         } catch (error) {
             console.error("Failed to send message:", error);
         }
@@ -298,9 +358,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]">
-                {!messages ? (
-                    <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
+            <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]"
+            >
+                <div ref={messagesInnerRef}>
+                    {!messages ? (
+                        <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
                 ) : messages.length === 0 ? (
                     <div className="text-center text-[#D08945] mt-10 text-sm">
                         Noch keine Nachrichten im Chat. <br /> Schreibe deine erste Nachricht!
@@ -684,6 +748,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     })
                 )}
                 <div ref={messagesEndRef} />
+                </div>
             </div>
 
             {/* Group Info Modal */}
@@ -801,6 +866,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 ref={textareaRef}
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
+                                onFocus={() => {
+                                    setTimeout(() => scrollToBottom("smooth"), 100);
+                                    setTimeout(() => scrollToBottom("smooth"), 300);
+                                }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
                                         const isMobile = window.matchMedia("(pointer: coarse)").matches;
