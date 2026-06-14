@@ -697,7 +697,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <button className="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
-                                                                    <SmilePlus size={12} className="text-black" />
+                                                                    <SmilePlus className="text-black w-3 h-3 md:w-4 md:h-4" />
                                                                 </button>
                                                             </PopoverTrigger>
                                                             <PopoverContent side="top" align={isMe ? 'end' : 'start'} className="w-auto p-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_10px_20px_-2px_rgba(0,0,0,0.04)] rounded-full bg-white border border-gray-100 z-[60]">
@@ -709,7 +709,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                                 e.preventDefault();
                                                                                 toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                                             }}
-                                                                            className="hover:scale-125 transition-transform text-lg flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100"
+                                                                            className="hover:scale-125 transition-transform text-lg md:text-xl flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full hover:bg-gray-100"
                                                                         >
                                                                             {emoji}
                                                                         </button>
@@ -734,10 +734,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         e.preventDefault();
                                                         toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                     }}
-                                                    className={`flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
+                                                    className={`flex items-center gap-1 md:gap-1.5 text-[11px] md:text-[13px] px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
                                                 >
                                                     <span>{emoji}</span>
-                                                    <span className="font-medium text-[10px]">{data.count}</span>
+                                                    <span className="font-medium text-[10px] md:text-[11px]">{data.count}</span>
                                                 </button>
                                             ))}
                                         </div>
