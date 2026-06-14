@@ -245,6 +245,17 @@ export const createComment = mutation({
   },
 });
 
+// Provide an upload URL for client file uploads (alias for workspace usage)
+export const generateUploadUrl = mutation({
+  handler: async (ctx) => {
+    const result: any = await ctx.storage.generateUploadUrl();
+    if (typeof result === "string") return result;
+    if (result?.url) return result.url;
+    if (result?.uploadUrl) return result.uploadUrl;
+    return JSON.stringify(result);
+  },
+});
+
 export const deleteComment = mutation({
   args: {
     commentId: v.id("comments"),

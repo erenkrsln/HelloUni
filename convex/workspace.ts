@@ -179,6 +179,23 @@ export const createPoll = mutation({
   },
 });
 
+// Generate an upload URL for Convex storage (used by workspace file uploads)
+export const generateUploadUrl = mutation({
+  handler: async (ctx) => {
+    // ctx.storage.createUploadUrl typically returns a URL string or an object
+    // with a `url` property depending on Convex SDK version. Normalize to string.
+    // Return a direct URL the client can POST the file to and receive a storageId.
+    // If the SDK returns an object, prefer `.url` or `.uploadUrl`.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    const result: any = await ctx.storage.generateUploadUrl();
+    if (typeof result === "string") return result;
+    if (result?.url) return result.url;
+    if (result?.uploadUrl) return result.uploadUrl;
+    // Fallback: return the whole object as JSON string (unlikely)
+    return JSON.stringify(result);
+  },
+});
+
 export const votePoll = mutation({
   args: {
     pollId: v.id("workspace_polls"),

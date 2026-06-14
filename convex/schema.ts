@@ -265,6 +265,98 @@ export default defineSchema({
   })
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),
+
+  // Workspace: tasks, files, polls
+  workspace_tasks: defineTable({
+    workspaceId: v.string(),
+    title: v.string(),
+    deadline: v.optional(v.string()),
+    assigneeId: v.optional(v.id("users")),
+    createdBy: v.id("users"),
+    isCompleted: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_assignee", ["assigneeId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_files: defineTable({
+    workspaceId: v.string(),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    fileType: v.string(),
+    uploaderId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_polls: defineTable({
+    workspaceId: v.string(),
+    question: v.string(),
+    options: v.array(v.string()),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_poll_votes: defineTable({
+    pollId: v.id("workspace_polls"),
+    userId: v.id("users"),
+    optionIndex: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_poll", ["pollId"]) 
+    .index("by_poll_user", ["pollId", "userId"]),
+
+  // Calls / WebRTC
+  calls: defineTable({
+    conversationId: v.id("conversations"),
+    type: v.union(v.literal("voice"), v.literal("video")),
+    scope: v.union(v.literal("private"), v.literal("group")),
+    status: v.union(
+      v.literal("ringing"),
+      v.literal("active"),
+      v.literal("ended"),
+      v.literal("rejected"),
+      v.literal("failed"),
+    ),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    endedAt: v.optional(v.number()),
+    screenSharingUserId: v.optional(v.id("users")),
+  })
+    .index("by_conversation", ["conversationId"]) 
+    .index("by_conversation_created", ["conversationId", "createdAt"]),
+
+  callParticipants: defineTable({
+    callId: v.id("calls"),
+    userId: v.id("users"),
+    joinedAt: v.optional(v.number()),
+    leftAt: v.optional(v.number()),
+    status: v.union(
+      v.literal("invited"),
+      v.literal("ringing"),
+      v.literal("joined"),
+      v.literal("left"),
+      v.literal("rejected"),
+    ),
+    micEnabled: v.boolean(),
+    cameraEnabled: v.boolean(),
+    screenSharing: v.optional(v.boolean()),
+  })
+    .index("by_call", ["callId"]) 
+    .index("by_user", ["userId"]) 
+    .index("by_call_user", ["callId", "userId"]),
+
+  callSignals: defineTable({
+    callId: v.id("calls"),
+    fromUserId: v.id("users"),
+    toUserId: v.optional(v.id("users")),
+    type: v.union(v.literal("offer"), v.literal("answer"), v.literal("ice-candidate")),
+    payload: v.string(),
+    createdAt: v.number(),
+    consumed: v.boolean(),
+  })
+    .index("by_call", ["callId"]),
 });
 
 
