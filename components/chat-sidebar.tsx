@@ -40,6 +40,7 @@ export function ChatSidebar() {
   const [groupName, setGroupName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "direct" | "group">("all");
+  const [groupFilterType, setGroupFilterType] = useState<"all" | "public" | "private">("all");
   const router = useRouter();
   const pathname = usePathname();
 
@@ -124,9 +125,25 @@ export function ChatSidebar() {
 
     const matchesSearch = conv.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
     const matchesFilter =
-      filterType === "all" ? true :
-        filterType === "direct" ? !conv.isGroup :
-          filterType === "group" ? conv.isGroup : true;
+      filterType === "all" ? (
+        groupFilterType === "all" ? true :
+          groupFilterType === "public" ? (conv.isGroup && conv.isPublic) :
+            (!conv.isPublic)
+      ) :
+        filterType === "direct" ? (
+          !conv.isGroup && (
+            groupFilterType === "all" ? true :
+              groupFilterType === "public" ? false :
+                true
+          )
+        ) :
+          filterType === "group" ? (
+            conv.isGroup && (
+              groupFilterType === "all" ? true :
+                groupFilterType === "public" ? conv.isPublic :
+                  !conv.isPublic
+            )
+          ) : true;
     return matchesSearch && matchesFilter;
   });
 
@@ -145,7 +162,10 @@ export function ChatSidebar() {
           {/* Filter Tabs */}
           <div className="flex items-center justify-center gap-2 mb-4">
             <button
-              onClick={() => setFilterType("all")}
+              onClick={() => {
+                setFilterType("all");
+                setGroupFilterType("all");
+              }}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
                 ? "bg-[#d08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -154,7 +174,10 @@ export function ChatSidebar() {
               Alle
             </button>
             <button
-              onClick={() => setFilterType("direct")}
+              onClick={() => {
+                setFilterType("direct");
+                setGroupFilterType("all");
+              }}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
                 ? "bg-[#d08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -163,7 +186,10 @@ export function ChatSidebar() {
               Direkt
             </button>
             <button
-              onClick={() => setFilterType("group")}
+              onClick={() => {
+                setFilterType("group");
+                setGroupFilterType("all");
+              }}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
                 ? "bg-[#d08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -172,6 +198,39 @@ export function ChatSidebar() {
               Gruppen
             </button>
           </div>
+
+          {/* Group Sub-filters */}
+          {filterType === "group" && (
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setGroupFilterType("all")}
+                className={`px-3 py-1.5 rounded-full text-xs  transition-all ${groupFilterType === "all"
+                  ? "bg-gray-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+              >
+                Alle
+              </button>
+              <button
+                onClick={() => setGroupFilterType("public")}
+                className={`px-3 py-1.5 rounded-full text-xs  transition-all ${groupFilterType === "public"
+                  ? "bg-gray-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+              >
+                Öffentlich
+              </button>
+              <button
+                onClick={() => setGroupFilterType("private")}
+                className={`px-3 py-1.5 rounded-full text-xs  transition-all ${groupFilterType === "private"
+                  ? "bg-gray-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+              >
+                Privat
+              </button>
+            </div>
+          )}
 
           {/* Search Bar */}
           <div className="relative mb-2">
