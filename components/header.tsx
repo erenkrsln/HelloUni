@@ -24,12 +24,12 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
   const { isPending } = authClient.useSession();
   const pathname = usePathname();
   const { currentUser, isLoading: isUserLoading } = useCurrentUser();
-  
+
   // Drei Zustände:
   // 1. currentUser === undefined → User lädt noch (zeige grauen pulsierenden Kreis)
   // 2. currentUser geladen aber kein image → zeige Fallback-Icon
   // 3. currentUser.image vorhanden → zeige Bild
-  
+
   // Avatar Image Loading State (nur relevant wenn User geladen UND Bild vorhanden)
   const [imageLoaded, setImageLoaded] = useState(() => {
     return currentUser?.image ? globalLoadedImagesCache.has(currentUser.image) : false;
@@ -83,44 +83,40 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
           aria-label="Open menu"
         />
 
-        {/* Logo button - visual element (gleiche Größe wie Profilbild: 44x44px) */}
         <button
           id="tour-logo-menu"
           onClick={() => setIsLogoSidebarOpen(true)}
-          className="absolute flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+          className="absolute flex items-center justify-center md:justify-start cursor-pointer active:scale-95 transition-transform left-5 top-[18px] w-11 h-11 md:w-auto md:left-12"
           style={{
-            left: "20px",
-            top: "18px",
-            width: "44px",
-            height: "44px",
             willChange: "transform",
             transform: "translateZ(0)",
             backfaceVisibility: "hidden",
             zIndex: 2,
           }}
         >
-          <img
-            src="/logo2.svg"
-            alt="Logo"
-            width={44}
-            height={44}
-            style={{
-              width: "44px",
-              height: "44px",
-              objectFit: "contain",
-              display: "block",
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden"
-            }}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              if (target.parentElement) {
-                target.parentElement.innerHTML = '<span class="text-xl font-bold" style="color: #000000">H</span>';
-              }
-            }}
-          />
+          <picture>
+            <source media="(min-width: 768px)" srcSet="/logo_font.svg" />
+            <img
+              src="/logo2.svg"
+              alt="Logo"
+              style={{
+                height: "80px",
+                width: "auto",
+                objectFit: "contain",
+                display: "block",
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden"
+              }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                const fallback = document.createElement("span");
+                fallback.className = "text-xl font-bold text-black";
+                fallback.innerText = "HelloUni";
+                target.replaceWith(fallback);
+              }}
+            />
+          </picture>
         </button>
         {pathname !== "/profile" &&
           !pathname.startsWith("/profile/") &&
@@ -142,7 +138,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               {title ? title :
                 pathname === "/home" ? "Posts" :
                   pathname === "/search" ? "Suche" :
-                    pathname === "/chat" ? "Chats" :
+                    (pathname === "/chat" || pathname.startsWith("/chat/")) ? "Chats" :
                       "HelloUni"}
             </h1>
           )}
@@ -224,10 +220,8 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
           <button
             id="tour-profile-menu"
             onClick={onMenuClick}
-            className="absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+            className="absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95 right-5 top-[18px] md:right-12"
             style={{
-              right: "20px",
-              top: "18px",
               willChange: "transform",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden",

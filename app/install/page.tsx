@@ -71,26 +71,33 @@ export default function InstallInstructionsPage() {
   const activePlatform = selectedPlatform || platform;
 
   return (
-    <div className="min-h-screen bg-white max-w-[428px] mx-auto flex flex-col pb-safe">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 h-16 flex items-center justify-between pt-safe-top">
-        <button
-          onClick={() => router.back()}
-          className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6 text-black" />
-        </button>
-        <h1 className="text-lg font-bold">Installationsguide</h1>
-        <div className="w-10" />
+    <div className="min-h-screen bg-white max-w-[428px] md:max-w-none mx-auto flex flex-col pb-safe">
+      <header
+        className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top border-b border-gray-100"
+        style={{
+          height: `calc(80px + env(safe-area-inset-top, 0px))`,
+          minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
+        }}
+      >
+        <div className="relative flex h-full w-full items-center px-4">
+          <button
+            onClick={() => router.back()}
+            className="absolute left-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Zurück"
+          >
+            <ArrowLeft className="w-6 h-6 text-black" />
+          </button>
+
+          <h1 className="flex-1 text-center text-3xl font-bold text-black">
+            Installationsguide
+          </h1>
+        </div>
       </header>
 
-      <main className="flex-1 px-6 py-8 overflow-y-auto">
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-20 h-20   flex items-center justify-center mb-4">
-            <img src="/logo2.svg" alt="HelloUni Logo" className="w-12 h-12" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">HelloUni als App</h2>
-          <p className="text-gray-600 text-m">
+      <main className="flex-1 px-6 py-20 overflow-y-auto md:max-w-3xl md:m-auto">
+        <div className="flex flex-col items-center md:items-start mb-8 text-center md:text-left">
+
+          <p className="text-gray-600 text-m mt-10">
             HelloUni ist eine Progressive Web App (PWA). Du kannst die Webseite direkt aus deinem Browser installieren, ohne einen App Store zu besuchen.
 
             Nach der Installation funktioniert HelloUni wie eine ganz normale App.
@@ -321,8 +328,8 @@ export default function InstallInstructionsPage() {
           )}
 
           {activePlatform === "mobile_other" && (
-            <div className="text-center py-4">
-              <Smartphone className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <div className="text-center md:text-left py-4">
+              <Smartphone className="w-12 h-12 text-gray-400 mx-auto md:mx-0 mb-3" />
               <p className="font-medium mb-2">Browser nicht optimal</p>
               <p className="text-sm text-gray-600 mb-2">
                 Für die beste Erfahrung mit HelloUni
@@ -333,8 +340,8 @@ export default function InstallInstructionsPage() {
           )}
 
           {activePlatform === "desktop_other" && (
-            <div className="text-center py-4">
-              <Monitor className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <div className="text-center md:text-left py-4">
+              <Monitor className="w-12 h-12 text-gray-400 mx-auto md:mx-0 mb-3" />
               <p className="font-medium mb-2">Browser nicht optimal</p>
               <p className="text-sm text-gray-600 mb-2">
                 Für die beste Erfahrung mit HelloUni
@@ -345,7 +352,7 @@ export default function InstallInstructionsPage() {
           )}
 
           {activePlatform === "unknown" && (
-            <div className="text-center py-4">
+            <div className="text-center md:text-left py-4">
               <p className="text-sm text-gray-600">
                 Bitte wähle oben dein Gerät aus, um die passende Installationsanleitung zu sehen.
               </p>

@@ -39,7 +39,7 @@ function EventPageContent({ params }: { params: Promise<{ eventId: string }> }) 
     });
 
     return (
-        <main className="min-h-screen w-full max-w-2xl mx-auto pb-24 overflow-x-hidden bg-white">
+        <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
             {/* Minimal Header with Back Button */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
                 <div className="relative px-4 h-14 flex items-center justify-center">
@@ -85,7 +85,7 @@ function EventPageContent({ params }: { params: Promise<{ eventId: string }> }) 
 export default function EventPage({ params }: { params: Promise<{ eventId: string }> }) {
     return (
         <Suspense fallback={
-            <main className="min-h-screen w-full max-w-2xl mx-auto pb-24 overflow-x-hidden bg-white">
+            <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
                 <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
                     <div className="relative px-4 h-14 flex items-center justify-center">
                         <div className="absolute left-4 p-1 text-black opacity-30">

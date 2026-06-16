@@ -39,7 +39,7 @@ export default function NotificationsPage() {
     }
 
     return (
-        <main className="min-h-screen w-full max-w-2xl mx-auto pb-24 overflow-x-hidden bg-white">
+        <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
                 <div className="relative px-4 h-14 flex items-center justify-center">
