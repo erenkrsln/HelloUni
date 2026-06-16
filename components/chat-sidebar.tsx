@@ -231,7 +231,14 @@ export function ChatSidebar() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="font-semibold text-sm truncate pr-2 text-black">{conv.displayName}</h3>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <h3 className="font-semibold text-sm truncate text-black">{conv.displayName}</h3>
+                            {conv.isGroup && conv.isPublic && (
+                              <span className="bg-[#d08945]/10 text-[#d08945] text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                öffentlich
+                              </span>
+                            )}
+                          </div>
                           <div className="flex flex-col items-end flex-shrink-0">
                             {conv.lastMessage && (
                               <span className="text-[10px] text-gray-400 font-medium mb-1">
