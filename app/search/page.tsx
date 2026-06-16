@@ -258,9 +258,11 @@ export default function SearchPage() {
     const joinGroup = useMutation(api.mutations.joinPublicGroup);
     const requestToJoin = useMutation(api.mutations.requestToJoinPublicGroup);
 
+    const isRecommendationMode = filterType === "people" && !debouncedQuery && !userMajor && !userInterests;
+
     // Queries - conditionally skip based on filter
     const shouldSearchGroups = filterType === "groups" || (filterType === "all" && !!debouncedQuery);
-    const shouldSearchUsers = filterType === "people" || (filterType === "all" && !!debouncedQuery);
+    const shouldSearchUsers = (filterType === "people" && !isRecommendationMode) || (filterType === "all" && !!debouncedQuery);
     const shouldSearchPosts = filterType === "posts" || (filterType === "all" && !!debouncedQuery);
 
     const pageResults = searchStaticPages(debouncedQuery);
@@ -282,6 +284,13 @@ export default function SearchPage() {
             // Only apply user filters if specifically in "people" tab
             major: filterType === "people" ? (userMajor || undefined) : undefined,
             interests: filterType === "people" && userInterests ? userInterests.split(",").map(i => i.trim()).filter(Boolean) : undefined
+        } : "skip"
+    );
+
+    const compatibleUsers = useQuery(
+        api.queries.getCompatibleUsers,
+        isRecommendationMode ? {
+            userId: currentUserId || undefined
         } : "skip"
     );
 
@@ -630,14 +639,14 @@ export default function SearchPage() {
                             const hasQuery = !!debouncedQuery;
                             const hasUserFilters = filterType === "people" && (!!userMajor || !!userInterests);
                             const hasPostFilters = filterType === "posts" && (!!postType || !!postAuthorMajor);
-                            const shouldShowResults = filterType === "groups" || hasQuery || hasUserFilters || hasPostFilters;
+                            const shouldShowResults = filterType === "groups" || hasQuery || hasUserFilters || hasPostFilters || filterType === "people";
 
                             if (!shouldShowResults) {
                                 return (
                                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                                         <Search className="w-12 h-12 mb-4 opacity-20" />
                                         <p className="text-center px-4">
-                                            {filterType === "people"
+                                            {(filterType as string) === "people"
                                                 ? "Suche nach Personen"
                                                 : filterType === "posts"
                                                     ? "Suche nach Posts"
@@ -734,51 +743,97 @@ export default function SearchPage() {
                                             )}
                                         </div>
                                     )}
-
                                     {/* Personen Section */}
                                     {filterType === "people" && (
                                         <div>
-                                            <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
-                                            {userResults === undefined ? (
-                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
-                                            ) : userResults.length === 0 ? (
-                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Personen gefunden.</div>
+                                            {isRecommendationMode ? (
+                                                <>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">Vorschläge für dich</h2>
+                                                    {compatibleUsers === undefined ? (
+                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                    ) : compatibleUsers.length === 0 ? (
+                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Vorschläge gefunden.</div>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {compatibleUsers.map((user) => (
+                                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                                                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                        {user.image ? (
+                                                                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                {user.name?.charAt(0).toUpperCase()}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                                                                        <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                        {(user.uni_name || user.major) && (
+                                                                            <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                                {user.uni_name && (
+                                                                                    <span className="flex items-center truncate">
+                                                                                        <MapPin size={10} className="mr-1" />
+                                                                                        {user.uni_name}
+                                                                                    </span>
+                                                                                )}
+                                                                                {user.major && (
+                                                                                    <span className="flex items-center truncate">
+                                                                                        {user.major}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </Link>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </>
                                             ) : (
-                                                <div className="space-y-3">
-                                                    {userResults.map((user) => (
-                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
-                                                                {user.image ? (
-                                                                    <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                                                                ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
-                                                                        {user.name?.charAt(0).toUpperCase()}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                <p className="text-sm text-gray-500 truncate">@{user.username}</p>
-                                                                {(user.uni_name || user.major) && (
-                                                                    <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
-                                                                        {user.uni_name && (
-                                                                            <span className="flex items-center truncate">
-                                                                                <MapPin size={10} className="mr-1" />
-                                                                                {user.uni_name}
-                                                                            </span>
-                                                                        )}
-                                                                        {user.major && (
-                                                                            <span className="flex items-center truncate">
-
-                                                                                {user.major}
-                                                                            </span>
+                                                <>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
+                                                    {userResults === undefined ? (
+                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                    ) : userResults.length === 0 ? (
+                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Personen gefunden.</div>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {userResults.map((user) => (
+                                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                                                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                        {user.image ? (
+                                                                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                {user.name?.charAt(0).toUpperCase()}
+                                                                            </div>
                                                                         )}
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        </Link>
-                                                    ))}
-                                                </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                                                                        <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                        {(user.uni_name || user.major) && (
+                                                                            <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                                {user.uni_name && (
+                                                                                    <span className="flex items-center truncate">
+                                                                                        <MapPin size={10} className="mr-1" />
+                                                                                        {user.uni_name}
+                                                                                    </span>
+                                                                                )}
+                                                                                {user.major && (
+                                                                                    <span className="flex items-center truncate">
+                                                                                        {user.major}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </Link>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     )}

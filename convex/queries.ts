@@ -1415,6 +1415,130 @@ export const searchProfiles = query({
   },
 });
 
+// Get recommended compatible users for the current user
+export const getCompatibleUsers = query({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    // If no user is logged in, return the 10 most recently joined people
+    if (!args.userId) {
+      const allUsers = await ctx.db
+        .query("users")
+        .collect();
+      
+      const sorted = allUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
+      const top10 = sorted.slice(0, 10);
+      
+      return await Promise.all(
+        top10.map(async (user) => {
+          const image = await getUserImageUrl(ctx, user.image);
+          return { ...user, image };
+        })
+      );
+    }
+
+    const currentUser = await ctx.db.get(args.userId);
+    if (!currentUser) {
+      return [];
+    }
+
+    // Get the list of users the current user is already following
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId!))
+      .collect();
+    const followedUserIds = new Set(follows.map((f) => f.followingId));
+
+    // Get all users
+    const allUsers = await ctx.db
+      .query("users")
+      .collect();
+
+    // Filter out current user and already followed users
+    const potentialUsers = allUsers.filter(
+      (u) => u._id !== args.userId && !followedUserIds.has(u._id)
+    );
+
+    // Score users based on compatibility matching
+    const scoredUsers = potentialUsers.map((user) => {
+      let score = 0;
+
+      // 1. Major match (case-insensitive)
+      if (
+        user.major &&
+        currentUser.major &&
+        user.major.toLowerCase().trim() === currentUser.major.toLowerCase().trim()
+      ) {
+        score += 1;
+      }
+
+      // 2. Semester match
+      if (
+        user.semester !== undefined &&
+        currentUser.semester !== undefined &&
+        user.semester === currentUser.semester
+      ) {
+        score += 1;
+      }
+
+      // 3. Interests match (share at least one interest)
+      if (
+        user.interests &&
+        currentUser.interests &&
+        Array.isArray(user.interests) &&
+        Array.isArray(currentUser.interests)
+      ) {
+        const currentUserInterestsLower = currentUser.interests.map(i => i.toLowerCase().trim());
+        const userInterestsLower = user.interests.map(i => i.toLowerCase().trim());
+        const hasCommonInterest = currentUserInterestsLower.some(i => userInterestsLower.includes(i));
+        if (hasCommonInterest) {
+          score += 1;
+        }
+      }
+
+      return { user, score };
+    });
+
+    // Only keep users that match in at least one category (score >= 1)
+    const matchedUsers = scoredUsers.filter((item) => item.score >= 1);
+
+    // Prioritize more matches higher, then more recently joined (creation time desc)
+    matchedUsers.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return (b.user._creationTime || 0) - (a.user._creationTime || 0);
+    });
+
+    let selectedUsers = matchedUsers.slice(0, 10).map((item) => item.user);
+
+    // If there are less than 10 compatible users, fill the rest with the most recently joined people
+    if (selectedUsers.length < 10) {
+      const selectedUserIds = new Set(selectedUsers.map((u) => u._id));
+      const otherUsers = potentialUsers.filter((u) => !selectedUserIds.has(u._id));
+      
+      // Sort other users by recency (creation time desc)
+      const sortedRecentOthers = otherUsers.sort(
+        (a, b) => (b._creationTime || 0) - (a._creationTime || 0)
+      );
+      
+      const neededCount = 10 - selectedUsers.length;
+      const paddingUsers = sortedRecentOthers.slice(0, neededCount);
+      selectedUsers = [...selectedUsers, ...paddingUsers];
+    }
+
+    // Resolve storage IDs to URLs
+    return await Promise.all(
+      selectedUsers.map(async (user) => {
+        const image = await getUserImageUrl(ctx, user.image);
+        return { ...user, image };
+      })
+    );
+  },
+});
+
+
 // Search all posts by title or content
 // Search all posts by title or content
 export const searchPosts = query({
