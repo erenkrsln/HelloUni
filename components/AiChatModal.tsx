@@ -140,11 +140,11 @@ const AiChatModal = () => {
   return (
     <>
       <div
-        className={`cursor-pointer fixed inset-0 bg-white bg-opacity-20 backdrop-blur-[4px] ${isClicked ? '' : 'opacity-0 pointer-events-none'} transition-opacity duration-300 ease-smooth ease-[cubic-bezier(0.44,0,0.56,1)]`}
+        className={`cursor-pointer fixed inset-0 bg-white bg-opacity-20 backdrop-blur-[4px] ${isClicked ? '' : 'opacity-0 pointer-events-none'} z-[9997] transition-opacity duration-300 ease-smooth ease-[cubic-bezier(0.44,0,0.56,1)]`}
         onClick={handleClick}
       />
       <div
-        className={`fixed bottom-[20px] right-[20px] flex flex-col border-[2px] border-black ${isClicked ? 'w-[420px] h-[560px] rounded-[17px] bg-black bg-opacity-[0.11] border-opacity-20' : 'w-[66px] h-[66px] rounded-[66px] bg-[#F78D57] bg-opacity-[0.65] tablet:hover:bg-opacity-100 border-opacity-0 cursor-pointer'} shrink-0 items-center justify-start z-[9998] group transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] overflow-hidden`}
+        className={`fixed bottom-4 right-4 tablet:bottom-[20px] tablet:right-[20px] flex flex-col border-[2px] border-black ${isClicked ? 'w-[calc(100vw-32px)] tablet:w-[420px] h-[560px] max-h-[calc(100dvh-32px)] rounded-[17px] bg-black bg-opacity-[0.11] border-opacity-20' : 'w-[66px] h-[66px] rounded-[66px] bg-[#F78D57] bg-opacity-[0.65] tablet:hover:bg-opacity-100 border-opacity-0 cursor-pointer'} shrink-0 items-center justify-start z-[9998] group transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] overflow-hidden`}
         onClick={!isClicked ? handleClick : undefined}
       >
         <div className='absolute inset-0 backdrop-blur-[57px] -z-[1]' />

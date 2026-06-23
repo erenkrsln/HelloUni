@@ -58,7 +58,7 @@ function InfoPageContent() {
       ) : (
         <div className='w-full flex flex-col items-center justify-between pb-[104px] desktop:pb-[124px]'>
           <div className='w-full flex items-center justify-center px-[22px] tablet:px-[42px] desktop:px-[65px]'>
-            <div className='w-full max-w-[1230px] flex flex-col items-center justify-center gap-[56px] tablet:gap-[82px] desktop:gap-[114px]'>
+            <div className='w-full tablet:max-w-[768px] flex flex-col items-center justify-center gap-[56px] tablet:gap-[82px] desktop:gap-[114px]'>
               <div className='w-full flex flex-col items-center justify-center gap-[56px]'>
                 <div className='w-full flex flex-col items-center justify-center pt-[104px] desktop:pt-[124px]'>
                   <div className='flex w-full flex-col items-center justify-center bg-[#F78D57] rounded-[8px]'>
