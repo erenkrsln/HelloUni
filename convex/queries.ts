@@ -1593,6 +1593,9 @@ export const getMensaCache = query({
   args: {},
   handler: async (ctx) => {
     return ctx.db.query("mensaCache").first();
+  },
+});
+
 export const searchPublicGroups = query({
   args: {
     searchTerm: v.string(),

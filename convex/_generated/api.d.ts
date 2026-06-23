@@ -10,9 +10,9 @@
 
 import type * as actions from "../actions.js";
 import type * as auth from "../auth.js";
-import type * as crons from "../crons.js";
 import type * as calls from "../calls.js";
 import type * as chatEvents from "../chatEvents.js";
+import type * as crons from "../crons.js";
 import type * as events from "../events.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
@@ -33,9 +33,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   auth: typeof auth;
-  crons: typeof crons;
   calls: typeof calls;
   chatEvents: typeof chatEvents;
+  crons: typeof crons;
   events: typeof events;
   helpers: typeof helpers;
   http: typeof http;
