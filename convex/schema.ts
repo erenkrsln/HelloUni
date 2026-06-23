@@ -122,6 +122,8 @@ export default defineSchema({
     name: v.optional(v.string()), // Optionaler Gruppenname
     image: v.optional(v.string()), // Storage ID für Gruppenbild
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
+    isPublic: v.optional(v.boolean()), // Öffentliche Gruppe (sichtbar/beitrittbar)
+    needsRequestToJoin: v.optional(v.boolean()), // Beitrittsanfrage erforderlich
     adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
     creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
@@ -132,11 +134,21 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("pdf"), v.literal("poll"))),
+    type: v.optional(v.union(
+      v.literal("text"),
+      v.literal("system"),
+      v.literal("image"),
+      v.literal("pdf"),
+      v.literal("poll"),
+      v.literal("profile"),
+      v.literal("event_invite"),
+    )),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
     chatPollId: v.optional(v.id("chatPolls")),
+    chatEventId: v.optional(v.string()),
+    sharedProfileId: v.optional(v.id("users")),
     visibleTo: v.optional(v.array(v.id("users"))),
     reactions: v.optional(v.array(v.object({
       emoji: v.string(),
@@ -210,6 +222,23 @@ export default defineSchema({
   })
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),
+
+  studiengangCache: defineTable({
+    major: v.string(),
+    fullContent: v.string(),
+    pdfLinks: v.array(v.object({ text: v.string(), href: v.string() })),
+    pdfContents: v.optional(v.array(v.object({
+      text: v.string(),
+      href: v.string(),
+      content: v.string(),
+    }))),
+    scrapedAt: v.number(),
+  }).index("by_major", ["major"]),
+
+  mensaCache: defineTable({
+    meals: v.array(v.object({ name: v.string(), price: v.string() })),
+    scrapedAt: v.number(),
+  }),
 });
 
 

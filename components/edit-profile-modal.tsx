@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Camera, ChevronDown, X } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
+import { getAllStudiengaenge } from "@/lib/studiengang-utils";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -58,43 +59,8 @@ const AVAILABLE_INTERESTS = [
   "DIY",
 ];
 
-// Liste der Studiengänge (alphabetisch sortiert)
-const STUDY_PROGRAMS = [
-  "Angewandte Chemie (B.Sc.)",
-  "Angewandte Materialwissenschaften (B.Eng.)",
-  "Angewandte Mathematik und Physik (B.Sc.)",
-  "Architektur (B.A.)",
-  "Bauingenieurwesen (B.Eng.)",
-  "Betriebswirtschaft (B.A.)",
-  "Betriebswirtschaft berufsbegleitend (B.A.)",
-  "Computational Materials Engineering mit KI (B.Eng.)",
-  "Design (B.A.)",
-  "Digitales Gesundheitsmanagement (B.Sc.)",
-  "Elektrotechnik und Informationstechnik (B.Eng.)",
-  "Energie- und Gebäudetechnik (B.Eng.)",
-  "Energie- und regenerative Technik (B.Eng.)",
-  "Energie- und Wasserstofftechnik (B.Eng.)",
-  "Fahrzeugtechnik (B.Eng.)",
-  "Hebammenwissenschaft (B.Sc.)",
-  "Informatik (B.Sc.)",
-  "Ingenieurpädagogik (B.Sc.)",
-  "International Business (B.A.)",
-  "International Business and Technology (B.Eng.)",
-  "Maschinenbau (B.Eng.)",
-  "Management in der Ökobranche (B.A.)",
-  "Mechanical Engineering (B.Eng.)",
-  "Media Engineering (B.Eng.)",
-  "Medieninformatik (B.Sc.)",
-  "Medizintechnik (B.Eng.)",
-  "Mechatronik / Feinwerktechnik (B.Eng.)",
-  "Prozessingenieurwesen (B.Eng.)",
-  "Public Management (B.A.)",
-  "Social Data Science & Communication (B.Sc.)",
-  "Soziale Arbeit (B.A.)",
-  "Soziale Arbeit: Erziehung und Bildung im Lebenslauf (B.A.)",
-  "Technikjournalismus / Technik-PR (B.A.)",
-  "Wirtschaftsinformatik (B.Sc.)",
-];
+// Liste der Studiengänge - dynamisch von TH-Website
+const STUDY_PROGRAMS = getAllStudiengaenge();
 
 export function EditProfileModal({
   isOpen,

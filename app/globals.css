@@ -4,6 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
+::selection {
+  @apply bg-[#F78D57];
+}
+
+svg {
+  overflow: visible
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -257,4 +265,29 @@ select option:disabled {
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite ease-in-out;
+}
+
+@keyframes info-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes info-spinner-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(0.94);
+  }
+}
+
+.info-spinner-ring {
+  animation: info-spinner-rotate 1.1s cubic-bezier(0.44, 0, 0.56, 1) infinite;
+}
+
+.info-spinner-icon {
+  animation: info-spinner-pulse 1.8s cubic-bezier(0.44, 0, 0.56, 1) infinite;
 }

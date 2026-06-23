@@ -2,44 +2,10 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { getAllStudiengaenge } from "@/lib/studiengang-utils";
 
 const ALLOWED_DOMAIN = "@th-nuernberg.de";
-const MAJORS = [
-  "Angewandte Chemie (B.Sc.)",
-  "Angewandte Materialwissenschaften (B.Eng.)",
-  "Angewandte Mathematik und Physik (B.Sc.)",
-  "Architektur (B.A.)",
-  "Bauingenieurwesen (B.Eng.)",
-  "Betriebswirtschaft (B.A.)",
-  "Betriebswirtschaft berufsbegleitend (B.A.)",
-  "Computational Materials Engineering mit KI (B.Eng.)",
-  "Design (B.A.)",
-  "Digitales Gesundheitsmanagement (B.Sc.)",
-  "Elektrotechnik und Informationstechnik (B.Eng.)",
-  "Energie- und Gebäudetechnik (B.Eng.)",
-  "Energie- und regenerative Technik (B.Eng.)",
-  "Energie- und Wasserstofftechnik (B.Eng.)",
-  "Fahrzeugtechnik (B.Eng.)",
-  "Hebammenwissenschaft (B.Sc.)",
-  "Informatik (B.Sc.)",
-  "Ingenieurpädagogik (B.Sc.)",
-  "International Business (B.A.)",
-  "International Business and Technology (B.Eng.)",
-  "Maschinenbau (B.Eng.)",
-  "Management in der Ökobranche (B.A.)",
-  "Mechanical Engineering (B.Eng.)",
-  "Media Engineering (B.Eng.)",
-  "Medieninformatik (B.Sc.)",
-  "Medizintechnik (B.Eng.)",
-  "Mechatronik / Feinwerktechnik (B.Eng.)",
-  "Prozessingenieurwesen (B.Eng.)",
-  "Public Management (B.A.)",
-  "Social Data Science & Communication (B.Sc.)",
-  "Soziale Arbeit (B.A.)",
-  "Soziale Arbeit: Erziehung und Bildung im Lebenslauf (B.A.)",
-  "Technikjournalismus / Technik-PR (B.A.)",
-  "Wirtschaftsinformatik (B.Sc.)",
-];
+const MAJORS = getAllStudiengaenge();
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -53,6 +19,7 @@ export default function AuthPage() {
     username: "",
     email: "",
     major: "",
+    semester: "",
   });
 
   const isAllowedDomain = (email: string) =>
@@ -124,7 +91,7 @@ export default function AuthPage() {
     setError("");
     setSuccess("");
 
-    if (!registerData.name || !registerData.username || !registerData.email || !registerData.major) {
+    if (!registerData.name || !registerData.username || !registerData.email || !registerData.major || !registerData.semester) {
       setError("Bitte alle Felder ausfüllen.");
       return;
     }
@@ -217,19 +184,34 @@ export default function AuthPage() {
             />
 
             {isSignUp && (
-              <select
-                value={registerData.major}
-                onChange={(e) => setRegisterData((p) => ({ ...p, major: e.target.value }))}
-                disabled={isLoading}
-                className={majorSelectClassName}
-              >
-                <option value="">Studiengang auswählen</option>
-                {MAJORS.map((major) => (
-                  <option key={major} value={major}>
-                    {major}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={registerData.major}
+                  onChange={(e) => setRegisterData((p) => ({ ...p, major: e.target.value }))}
+                  disabled={isLoading}
+                  className={majorSelectClassName}
+                >
+                  <option value="">Studiengang auswählen</option>
+                  {MAJORS.map((major) => (
+                    <option key={major} value={major}>
+                      {major}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={registerData.semester}
+                  onChange={(e) => setRegisterData((p) => ({ ...p, semester: e.target.value }))}
+                  disabled={isLoading}
+                  className={majorSelectClassName}
+                >
+                  <option value="">Semester auswählen</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((sem) => (
+                    <option key={sem} value={sem}>
+                      {sem}. Semester
+                    </option>
+                  ))}
+                </select>
+              </>
             )}
 
             {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-full text-center">{error}</div>}
