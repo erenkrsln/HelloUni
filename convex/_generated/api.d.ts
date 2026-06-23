@@ -10,6 +10,7 @@
 
 import type * as actions from "../actions.js";
 import type * as auth from "../auth.js";
+import type * as crons from "../crons.js";
 import type * as calls from "../calls.js";
 import type * as chatEvents from "../chatEvents.js";
 import type * as events from "../events.js";
@@ -20,6 +21,8 @@ import type * as notifications from "../notifications.js";
 import type * as push from "../push.js";
 import type * as pushActions from "../pushActions.js";
 import type * as queries from "../queries.js";
+import type * as scraping from "../scraping.js";
+import type * as scrapingMutations from "../scrapingMutations.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +33,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   auth: typeof auth;
+  crons: typeof crons;
   calls: typeof calls;
   chatEvents: typeof chatEvents;
   events: typeof events;
@@ -40,6 +44,8 @@ declare const fullApi: ApiFromModules<{
   push: typeof push;
   pushActions: typeof pushActions;
   queries: typeof queries;
+  scraping: typeof scraping;
+  scrapingMutations: typeof scrapingMutations;
 }>;
 
 /**

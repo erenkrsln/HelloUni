@@ -1577,6 +1577,22 @@ export const getChatPollVote = query({
   },
 });
 
+// ─── Cache-Queries ────────────────────────────────────────────────────────────
+
+export const getStudiengangCache = query({
+  args: { major: v.string() },
+  handler: async (ctx, { major }) => {
+    return ctx.db
+      .query("studiengangCache")
+      .withIndex("by_major", (q) => q.eq("major", major))
+      .first();
+  },
+});
+
+export const getMensaCache = query({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db.query("mensaCache").first();
 export const searchPublicGroups = query({
   args: {
     searchTerm: v.string(),

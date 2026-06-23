@@ -264,6 +264,22 @@ export default defineSchema({
     .index("by_start_time", ["startTime"])
     .index("by_user", ["createdBy"]),
 
+  studiengangCache: defineTable({
+    major: v.string(),
+    fullContent: v.string(),
+    pdfLinks: v.array(v.object({ text: v.string(), href: v.string() })),
+    pdfContents: v.optional(v.array(v.object({
+      text: v.string(),
+      href: v.string(),
+      content: v.string(),
+    }))),
+    scrapedAt: v.number(),
+  }).index("by_major", ["major"]),
+
+  mensaCache: defineTable({
+    meals: v.array(v.object({ name: v.string(), price: v.string() })),
+    scrapedAt: v.number(),
+  }),
   // ─── Voice & Video Calls ───────────────────────────────────────────────────
   calls: defineTable({
     conversationId: v.id("conversations"),

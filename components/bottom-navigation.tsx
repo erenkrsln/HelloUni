@@ -3,6 +3,8 @@
 import { Plus, Bell, MessageCircle } from "lucide-react";
 import { HomeIcon } from "@/components/home-icon";
 import { SearchIcon } from "@/components/search-icon";
+import InfoIcon from '@/public/icons/Info_Icon_in_Circle_fill.svg'
+import InfoIcon2 from '@/public/icons/Info_Icon_in_Circle2_fill.svg'
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -171,6 +173,20 @@ export function BottomNavigation() {
           {unreadChatCount > 0 && (
             <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
           )}
+        </Link>
+        <Link
+          href="/info"
+          prefetch={true}
+          className="flex items-center justify-center transition-transform active:scale-95 touch-manipulation"
+        >
+          <div className='relative w-[28px] h-[28px] shrink-0'>
+            <InfoIcon
+              className={`absolute inset-0 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${!isActive("/info") ? '' : 'opacity-0'}`}
+            />
+            <InfoIcon2
+              className={`absolute inset-0 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isActive("/info") ? '' : 'opacity-0'}`}
+            />
+          </div>
         </Link>
       </div>
     </nav>
