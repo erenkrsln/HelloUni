@@ -268,60 +268,62 @@ export default function AuthPage() {
                   </>
                 )}
 
-            <input
-              type="email"
-              placeholder={`E-Mail (${ALLOWED_DOMAIN})`}
-              value={isSignUp ? registerData.email : loginEmail}
-              onChange={(e) =>
-                isSignUp
-                  ? setRegisterData((p) => ({ ...p, email: e.target.value }))
-                  : setLoginEmail(e.target.value)
-              }
-              disabled={isLoading}
-              className={fieldClassName}
-            />
+                <input
+                  type="email"
+                  placeholder={`E-Mail (${ALLOWED_DOMAIN})`}
+                  value={isSignUp ? registerData.email : loginEmail}
+                  onChange={(e) =>
+                    isSignUp
+                      ? setRegisterData((p) => ({ ...p, email: e.target.value }))
+                      : setLoginEmail(e.target.value)
+                  }
+                  disabled={isLoading}
+                  className={fieldClassName}
+                />
 
-            {isSignUp && (
-              <>
-                <select
-                  value={registerData.major}
-                  onChange={(e) => setRegisterData((p) => ({ ...p, major: e.target.value }))}
+                {isSignUp && (
+                  <>
+                    <select
+                      value={registerData.major}
+                      onChange={(e) => setRegisterData((p) => ({ ...p, major: e.target.value }))}
+                      disabled={isLoading}
+                      className={majorSelectClassName}
+                    >
+                      <option value="">Studiengang auswählen</option>
+                      {MAJORS.map((major) => (
+                        <option key={major} value={major}>
+                          {major}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={registerData.semester}
+                      onChange={(e) => setRegisterData((p) => ({ ...p, semester: e.target.value }))}
+                      disabled={isLoading}
+                      className={majorSelectClassName}
+                    >
+                      <option value="">Semester auswählen</option>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((sem) => (
+                        <option key={sem} value={sem}>
+                          {sem}. Semester
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+
+                {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-full text-center">{error}</div>}
+                {success && <div className="text-sm text-green-700 bg-green-50 p-3 rounded-full text-center">{success}</div>}
+
+                <button
+                  type="submit"
                   disabled={isLoading}
-                  className={majorSelectClassName}
+                  className="w-full h-12 rounded-full bg-black text-white font-medium text-sm transition-transform duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
                 >
-                  <option value="">Studiengang auswählen</option>
-                  {MAJORS.map((major) => (
-                    <option key={major} value={major}>
-                      {major}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={registerData.semester}
-                  onChange={(e) => setRegisterData((p) => ({ ...p, semester: e.target.value }))}
-                  disabled={isLoading}
-                  className={majorSelectClassName}
-                >
-                  <option value="">Semester auswählen</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((sem) => (
-                    <option key={sem} value={sem}>
-                      {sem}. Semester
-                    </option>
-                  ))}
-                </select>
+                  {isLoading ? "Wird verarbeitet..." : isDevMode ? "Als Dev anmelden" : "Magic Link senden"}
+                </button>
               </>
             )}
-
-            {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-full text-center">{error}</div>}
-            {success && <div className="text-sm text-green-700 bg-green-50 p-3 rounded-full text-center">{success}</div>}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 rounded-full bg-black text-white font-medium text-sm transition-transform duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
-            >
-              {isLoading ? "Wird verarbeitet..." : isDevMode ? "Als Dev anmelden" : "Magic Link senden"}
-            </button>
           </form>
 
           <div className="mt-6 flex items-center justify-center gap-4">
