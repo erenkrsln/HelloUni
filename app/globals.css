@@ -4,10 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-::selection {
-  @apply bg-[#F78D57];
-}
-
 svg {
   overflow: visible
 }

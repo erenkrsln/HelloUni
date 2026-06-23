@@ -311,19 +311,19 @@ export default function AuthPage() {
                     </select>
                   </>
                 )}
-
-                {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-full text-center">{error}</div>}
-                {success && <div className="text-sm text-green-700 bg-green-50 p-3 rounded-full text-center">{success}</div>}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-12 rounded-full bg-black text-white font-medium text-sm transition-transform duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
-                >
-                  {isLoading ? "Wird verarbeitet..." : isDevMode ? "Als Dev anmelden" : "Magic Link senden"}
-                </button>
               </>
             )}
+
+            {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-full text-center">{error}</div>}
+            {success && <div className="text-sm text-green-700 bg-green-50 p-3 rounded-full text-center">{success}</div>}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 rounded-full bg-black text-white font-medium text-sm transition-transform duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+            >
+              {isLoading ? "Wird verarbeitet..." : isDevMode ? "Als Dev anmelden" : "Magic Link senden"}
+            </button>
           </form>
 
           <div className="mt-6 flex items-center justify-center gap-4">
