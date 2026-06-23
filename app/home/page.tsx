@@ -9,6 +9,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useEffect, useRef, useState, useMemo } from "react";
+import { startAppTour } from "@/lib/tour";
 
 // Funktion zur Erkennung mobiler Geräte
 const isMobileDevice = (): boolean => {
@@ -35,29 +36,29 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Markiere das Profilbild des aktuellen Users im Cache, sobald es geladen ist
   useEffect(() => {
     if (currentUser?.image) {
       markImageAsLoaded(currentUser.image);
     }
   }, [currentUser?.image]);
-  
+
   // Prüfe, ob es ein mobiles Gerät ist
   useEffect(() => {
     setIsMobile(isMobileDevice());
-    
+
     const handleResize = () => {
       setIsMobile(isMobileDevice());
     };
-    
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
+
   // Globaler Posts Cache - bleibt über Unmounts erhalten
   const { setPosts: cachePosts, getPosts: getCachedPosts } = usePostsCache();
-  
+
   // Cache Key für diesen Feed-Typ
   const cacheKey = useMemo(() => {
     return `posts_${feedType}_${currentUserId || "anonymous"}`;
@@ -67,7 +68,7 @@ export default function Home() {
   // Nur als disabled markieren, wenn currentUser geladen ist und tatsächlich keine Daten hat
   const currentUserMajor = currentUser ? (currentUser as any)?.major : undefined;
   const currentUserInterests = currentUser ? ((currentUser as any)?.interests || []) : undefined;
-  
+
   // Buttons nur disable wenn User geladen ist und tatsächlich keine Daten hat
   const isMajorDisabled = currentUser !== undefined && !currentUserMajor;
   const isInterestsDisabled = currentUser !== undefined && (!currentUserInterests || currentUserInterests.length === 0);
@@ -97,26 +98,26 @@ export default function Home() {
   );
 
   // Verwende den entsprechenden Feed basierend auf feedType
-  const postsFromQuery = feedType === "all" 
-    ? allPosts 
+  const postsFromQuery = feedType === "all"
+    ? allPosts
     : feedType === "major"
-    ? filteredPostsByMajor
-    : feedType === "interests"
-    ? filteredPostsByInterests
-    : followingPosts;
-  
+      ? filteredPostsByMajor
+      : feedType === "interests"
+        ? filteredPostsByInterests
+        : followingPosts;
+
   // Aktualisiere Cache, wenn neue Posts geladen sind
   useEffect(() => {
     if (postsFromQuery !== undefined && Array.isArray(postsFromQuery) && postsFromQuery.length > 0) {
       cachePosts(cacheKey, postsFromQuery);
     }
   }, [postsFromQuery, cacheKey, cachePosts]);
-  
+
   // Verwende gecachte Posts sofort, aktualisiere mit neuen Daten wenn verfügbar
   // Twitter-ähnliches Verhalten: Zeige alte Daten sofort, lade neue im Hintergrund
   // NUR AUF MOBILE - auf Desktop normales Verhalten
   const cachedPostsForCurrentKey = getCachedPosts(cacheKey);
-  
+
   const posts = useMemo(() => {
     // Wenn neue Daten verfügbar sind, verwende diese
     if (postsFromQuery !== undefined) {
@@ -133,7 +134,7 @@ export default function Home() {
     }
     return [];
   }, [postsFromQuery, cachedPostsForCurrentKey, isMobile]);
-  
+
   // Initial Load: 
   // - Auf Mobile: Nur wenn keine gecachten Posts vorhanden sind
   // - Auf Desktop: Immer wenn keine neuen Daten verfügbar sind
@@ -158,6 +159,18 @@ export default function Home() {
         sessionStorage.setItem("home_visited", "true");
         setIsFirstVisit(false);
       }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Auto-start App Tour
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("hello_uni_tour_seen");
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        startAppTour();
+        localStorage.setItem("hello_uni_tour_seen", "true");
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -205,53 +218,49 @@ export default function Home() {
 
   // Konsistentes Layout immer beibehalten
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden">
+    <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 header-spacing overflow-x-hidden">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       {/* Mobile Sidebar */}
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      
-      <div className="px-4 mb-4">
+
+      <div className="px-4 md:px-0 mb-4">
         {/* Feed Filter Links */}
-        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto">
+        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto no-scrollbar md:w-full">
           <button
             onClick={() => setFeedType("all")}
-            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
-              feedType === "all"
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "all"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
-            }`}
+              }`}
           >
             Alle
           </button>
           <button
             onClick={() => setFeedType("major")}
             disabled={isMajorDisabled}
-            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
-              feedType === "major"
+            className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "major"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
-            } ${isMajorDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              } ${isMajorDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             Studiengang
           </button>
           <button
             onClick={() => setFeedType("following")}
-            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
-              feedType === "following"
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "following"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
-            }`}
+              }`}
           >
             Folge Ich
           </button>
           <button
             onClick={() => setFeedType("interests")}
             disabled={isInterestsDisabled}
-            className={`text-sm font-medium transition-all px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0 ${
-              feedType === "interests"
+            className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "interests"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
-            } ${isInterestsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              } ${isInterestsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             Interesse
           </button>

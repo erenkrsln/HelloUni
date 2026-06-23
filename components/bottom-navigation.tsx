@@ -28,6 +28,9 @@ export function BottomNavigation() {
     if (path === "/home" || path === "/") {
       return pathname === "/home" || pathname === "/";
     }
+    if (path === "/chat") {
+      return pathname === "/chat" || pathname.startsWith("/chat/");
+    }
     return pathname === path;
   };
 
@@ -51,15 +54,11 @@ export function BottomNavigation() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4"
+      className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 lg:left-12 lg:right-auto lg:mb-0 lg:pb-0 lg:px-0 lg:h-auto lg:w-auto"
     >
       <div
-        className="flex items-center justify-between px-5 py-4"
+        className="flex items-center justify-between px-5 py-4 w-full max-w-[373px] h-[66px] rounded-[79px] lg:flex-col lg:px-4 lg:py-5 lg:w-[66px] lg:h-[373px] lg:max-w-none"
         style={{
-          width: "100%",
-          maxWidth: "373px",
-          height: "66px",
-          borderRadius: "79px",
           backgroundColor: "#dcc6a1",
           opacity: 1,
           willChange: "transform",
@@ -70,6 +69,7 @@ export function BottomNavigation() {
       >
         {/* Home - ganz links */}
         <Link
+          id="tour-nav-home"
           href="/home"
           prefetch={true}
           onClick={handleHomeClick}
@@ -85,6 +85,7 @@ export function BottomNavigation() {
 
         {/* Search */}
         <Link
+          id="tour-nav-search"
           href="/search"
           prefetch={true}
           className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
@@ -99,6 +100,7 @@ export function BottomNavigation() {
 
         {/* Create */}
         <Link
+          id="tour-nav-create"
           href="/create"
           prefetch={true}
           onClick={handleCreateClick}
@@ -127,6 +129,7 @@ export function BottomNavigation() {
 
         {/* Notifications */}
         <Link
+          id="tour-nav-notifications"
           href="/notifications"
           prefetch={true}
           className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"
@@ -144,12 +147,13 @@ export function BottomNavigation() {
             }}
           />
           {unreadNotificationCount > 0 && (
-            <div className="absolute top-2 right-2 w-3 h-3 bg-[#FF3B30] rounded-full border border-[#FF3B30]" />
+            <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
           )}
         </Link>
 
         {/* Chat */}
         <Link
+          id="tour-nav-chat"
           href="/chat"
           prefetch={true}
           className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"

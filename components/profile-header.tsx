@@ -5,7 +5,7 @@ import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, ArrowLeft } from "lucide-react";
+import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, Send, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
@@ -13,6 +13,7 @@ import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
+import { ShareProfileModal } from "./share-profile-modal";
 
 // Importiere den gemeinsamen globalen Bild-Cache
 import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
@@ -66,11 +67,6 @@ export function ProfileHeader({
         // Das Fade-In ist nur für Bilder nützlich, die bereits im Cache sind
         return image ? true : false;
     });
-    // State für sanftes Fade-In des Header-Bildes - zeige Bild sofort an wenn URL vorhanden
-    const [isHeaderImageLoaded, setIsHeaderImageLoaded] = useState(() => {
-        // Zeige Bild sofort an, wenn URL vorhanden ist
-        return headerImage ? true : false;
-    });
     // Extrahiere dominante Farbe aus dem Bild für Hintergrund
     const [extractedColor, setExtractedColor] = useState<string | null>(null);
     const headerImageInputRef = useRef<HTMLInputElement>(null);
@@ -81,10 +77,8 @@ export function ProfileHeader({
         setIsAvatarLoaded(image ? true : false);
     }, [image]);
 
-    // Reset loaded state wenn headerImage sich ändert
+    // Reset extrahierte Farbe wenn headerImage sich ändert
     useEffect(() => {
-        // Zeige Bild sofort an, wenn neue URL vorhanden ist
-        setIsHeaderImageLoaded(headerImage ? true : false);
         setExtractedColor(null);
     }, [headerImage]);
 
@@ -147,6 +141,7 @@ export function ProfileHeader({
 
     // State for crop modal
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [selectedImageSrc, setSelectedImageSrc] = useState<string>("");
     const [isUploading, setIsUploading] = useState(false);
 
@@ -259,12 +254,7 @@ export function ProfileHeader({
 
 
     return (
-        <div
-            className="relative w-full sticky top-0 z-40 profile-header-sticky bg-white"
-            style={{
-                overscrollBehavior: 'none',
-            }}
-        >
+        <div className="relative w-full bg-white">
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
             <div
                 className={`relative overflow-hidden group header-image-responsive aspect-[3/1] ${!headerColor && !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
@@ -275,13 +265,16 @@ export function ProfileHeader({
                     transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
                 }}
             >
-                {/* Back Arrow Button - bottom left on mobile, top left on desktop with iOS safe area */}
+                {/* Back Button */}
                 <button
                     onClick={() => router.back()}
-                    className="absolute bottom-12 left-3 sm:bottom-auto sm:left-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                    className="absolute left-4 z-20 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 active:scale-95 transition-all shadow-md"
+                    style={{
+                        top: `calc(1rem + env(safe-area-inset-top, 0px))`,
+                    }}
                     aria-label="Zurück"
                 >
-                    <ArrowLeft className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white" />
+                    <ArrowLeft className="w-5 h-5" />
                 </button>
 
                 {headerImage ? (
@@ -291,15 +284,11 @@ export function ProfileHeader({
                             src={headerImage}
                             alt="Header"
                             fill
-                            sizes="(max-width: 639px) 100vw, 428px"
+                            sizes="(max-width: 768px) 100vw, 768px"
                             priority
-                            className="object-cover transition-opacity duration-300"
-                            style={{
-                                opacity: isHeaderImageLoaded ? 1 : 0,
-                            }}
+                            className="object-cover"
                             onLoad={() => {
                                 markImageAsLoaded(headerImage);
-                                setIsHeaderImageLoaded(true);
                             }}
                         />
                     </>
@@ -356,13 +345,7 @@ export function ProfileHeader({
                     {/* Action Buttons - right side, aligned with profile picture */}
                     {!isOwnProfile && (
                         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 -mb-2 sm:mb-0 -ml-2 sm:-ml-6" style={{ marginLeft: "-2px" }}>
-                            <button
-                                className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
-                                style={{ flexShrink: 0 }}
-                                aria-label="Mehr Optionen"
-                            >
-                                <MoreHorizontal className="w-5 h-5 text-gray-700" />
-                            </button>
+
                             <button
                                 onClick={async () => {
                                     if (!currentUserId || !userId) return;
@@ -396,6 +379,14 @@ export function ProfileHeader({
                                 aria-label="Nachricht senden"
                             >
                                 <MessageCircle className="w-5 h-5 text-gray-700" />
+                            </button>
+                            <button
+                                onClick={() => setIsShareModalOpen(true)}
+                                className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
+                                style={{ flexShrink: 0 }}
+                                aria-label="Profil teilen"
+                            >
+                                <Send className="w-4 h-4 text-gray-700 ml-[-2px] mt-[2px]" />
                             </button>
                             <div style={{ flexShrink: 0 }}>
                                 <FollowButton
@@ -500,6 +491,16 @@ export function ProfileHeader({
                     imageSrc={selectedImageSrc}
                     onCropComplete={handleCropComplete}
                     isUploading={isUploading}
+                />
+            )}
+
+            {/* Share Profile Modal */}
+            {currentUserId && (
+                <ShareProfileModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    profileId={userId}
+                    currentUserId={currentUserId}
                 />
             )}
         </div>

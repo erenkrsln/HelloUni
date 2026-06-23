@@ -122,8 +122,8 @@ export default defineSchema({
     name: v.optional(v.string()), // Optionaler Gruppenname
     image: v.optional(v.string()), // Storage ID für Gruppenbild
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
-    isPublic: v.optional(v.boolean()), // Öffentliche Gruppe (sichtbar/beitrittbar)
-    needsRequestToJoin: v.optional(v.boolean()), // Beitrittsanfrage erforderlich
+    isPublic: v.optional(v.boolean()), // Flag für öffentliche Gruppen
+    needsRequestToJoin: v.optional(v.boolean()), // Flag, ob ein Beitritt erst genehmigt werden muss
     adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
     creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
@@ -134,20 +134,13 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(
-      v.literal("text"),
-      v.literal("system"),
-      v.literal("image"),
-      v.literal("pdf"),
-      v.literal("poll"),
-      v.literal("profile"),
-      v.literal("event_invite"),
-    )),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
     chatPollId: v.optional(v.id("chatPolls")),
-    chatEventId: v.optional(v.string()),
+    chatEventId: v.optional(v.id("chatEvents")),
+    sharedPostId: v.optional(v.id("posts")),
     sharedProfileId: v.optional(v.id("users")),
     visibleTo: v.optional(v.array(v.id("users"))),
     reactions: v.optional(v.array(v.object({
@@ -179,6 +172,30 @@ export default defineSchema({
     .index("by_poll", ["chatPollId"])
     .index("by_poll_user", ["chatPollId", "userId"]),
 
+  chatEvents: defineTable({
+    conversationId: v.id("conversations"),
+    creatorId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    timeSlots: v.array(v.object({
+      startTime: v.number(),
+      endTime: v.number()
+    })),
+    confirmedTimeSlotIndex: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_conversation", ["conversationId"]),
+
+  chatEventVotes: defineTable({
+    chatEventId: v.id("chatEvents"),
+    userId: v.id("users"),
+    slotIndex: v.number(),
+    vote: v.union(v.literal("yes"), v.literal("maybe"), v.literal("no")),
+    eventId: v.optional(v.id("events")),
+    votedAt: v.number(),
+  })
+    .index("by_event", ["chatEventId"])
+    .index("by_event_user", ["chatEventId", "userId"]),
+
   last_reads: defineTable({
     userId: v.id("users"),
     conversationId: v.id("conversations"),
@@ -196,9 +213,12 @@ export default defineSchema({
       v.literal("post_like"),
       v.literal("comment"),
       v.literal("comment_like"),
-      v.literal("event_join")
+      v.literal("event_join"),
+      v.literal("group_join_request"),
+      v.literal("group_join_accept"),
+      v.literal("group_join_reject")
     ),
-    targetId: v.optional(v.string()), // ID of post, comment, or event
+    targetId: v.optional(v.string()), // ID of post, comment, event, or joinRequest
     eventMetadata: v.optional(v.object({
       eventType: v.union(
         v.literal("spontaneous_meeting"),
@@ -210,6 +230,27 @@ export default defineSchema({
   })
     .index("by_user_created", ["userId", "createdAt"])
     .index("by_user_read", ["userId", "isRead"]),
+
+  // Web Push subscriptions (PWA notifications). One row per browser/device endpoint.
+  pushSubscriptions: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    p256dh: v.string(), // public key from the browser subscription
+    auth: v.string(), // auth secret from the browser subscription
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_endpoint", ["endpoint"]),
+
+  joinRequests: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_user", ["userId"])
+    .index("by_conversation_user", ["conversationId", "userId"]),
 
   events: defineTable({
     title: v.string(),
@@ -239,6 +280,62 @@ export default defineSchema({
     meals: v.array(v.object({ name: v.string(), price: v.string() })),
     scrapedAt: v.number(),
   }),
+  // ─── Voice & Video Calls ───────────────────────────────────────────────────
+  calls: defineTable({
+    conversationId: v.id("conversations"),
+    type: v.union(v.literal("voice"), v.literal("video")),
+    scope: v.union(v.literal("private"), v.literal("group")),
+    status: v.union(
+      v.literal("ringing"),
+      v.literal("active"),
+      v.literal("ended"),
+      v.literal("rejected"),
+      v.literal("failed"),
+    ),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    endedAt: v.optional(v.number()),
+    screenSharingUserId: v.optional(v.id("users")),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_conversation_status", ["conversationId", "status"]),
+
+  callParticipants: defineTable({
+    callId: v.id("calls"),
+    userId: v.id("users"),
+    joinedAt: v.optional(v.number()),
+    leftAt: v.optional(v.number()),
+    status: v.union(
+      v.literal("invited"),
+      v.literal("ringing"),
+      v.literal("joined"),
+      v.literal("left"),
+      v.literal("rejected"),
+    ),
+    micEnabled: v.boolean(),
+    cameraEnabled: v.boolean(),
+    screenSharing: v.boolean(),
+    connectionStatus: v.optional(v.string()),
+  })
+    .index("by_call", ["callId"])
+    .index("by_user", ["userId"])
+    .index("by_call_user", ["callId", "userId"]),
+
+  callSignals: defineTable({
+    callId: v.id("calls"),
+    fromUserId: v.id("users"),
+    toUserId: v.optional(v.id("users")),
+    type: v.union(
+      v.literal("offer"),
+      v.literal("answer"),
+      v.literal("ice-candidate"),
+    ),
+    payload: v.string(),
+    createdAt: v.number(),
+    consumed: v.optional(v.boolean()),
+  })
+    .index("by_call", ["callId"])
+    .index("by_created", ["createdAt"]),
 });
 
 
