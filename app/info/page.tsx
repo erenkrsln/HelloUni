@@ -53,14 +53,13 @@ function InfoPageContent() {
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      {isLoading ? (
-        <InfoLoadingPage />
-      ) : (
-        <div className='w-full flex flex-col items-center justify-between pb-[104px] desktop:pb-[124px]'>
+      {isLoading && <InfoLoadingPage />}
+      <div className='w-full flex flex-col items-center justify-between pt-[calc(104px+env(safe-area-inset-top,0px))] desktop:pt-[calc(124px+env(safe-area-inset-top,0px))] pb-[104px] desktop:pb-[124px]'>
+        {!isLoading && (
           <div className='w-full flex items-center justify-center px-[22px] tablet:px-[42px] desktop:px-[65px]'>
             <div className='w-full tablet:max-w-[768px] flex flex-col items-center justify-center gap-[56px] tablet:gap-[82px] desktop:gap-[114px]'>
               <div className='w-full flex flex-col items-center justify-center gap-[56px]'>
-                <div className='w-full flex flex-col items-center justify-center pt-[calc(104px+env(safe-area-inset-top,0px))] desktop:pt-[calc(124px+env(safe-area-inset-top,0px))]'>
+                <div className='w-full flex flex-col items-center justify-center'>
                   <div className='flex w-full flex-col items-center justify-center bg-[#F78D57] rounded-[8px]'>
                     <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-black desktop:text-center'>
                       Dein Studiengang: {userMajor || 'Kein Studiengang ausgewählt'}
@@ -134,8 +133,8 @@ function InfoPageContent() {
 
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
       {!isLoading && <AiChatModal />}
       <BottomNavigation />
     </>

@@ -439,10 +439,10 @@ export function ChatSidebar() {
       {/* Floating New Chat Button */}
       <button
         onClick={() => setIsNewChatOpen(true)}
-        className="absolute bottom-24 md:bottom-6 right-6 w-14 h-14 rounded-full bg-[#d08945] text-white shadow-lg flex items-center justify-center hover:bg-[#b07335] active:scale-95 transition-all z-40"
+        className="absolute bottom-[calc(94px+env(safe-area-inset-bottom,0px))] md:bottom-6 right-4 md:right-6 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#d08945] text-white shadow-lg flex items-center justify-center hover:bg-[#b07335] active:scale-95 transition-all z-40"
         title="Neuer Chat"
       >
-        <Plus size={28} />
+        <Plus className="w-[26px] h-[26px] md:w-7 md:h-7" />
       </button>
     </div>
   );
