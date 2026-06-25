@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
+import { LogoSidebar } from "@/components/logo-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { ImagePlus, X, ChevronDown } from "lucide-react";
@@ -15,6 +16,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 export default function CreatePage() {
     const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
     const { currentUser, currentUserId } = useCurrentUser();
     const [isFirstVisit, setIsFirstVisit] = useState(true);
 
@@ -383,6 +385,20 @@ export default function CreatePage() {
         <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+            {/* Desktop: HelloUni Logo oben links */}
+            <button
+                onClick={() => setIsLogoSidebarOpen(true)}
+                className="hidden md:flex fixed top-0 left-12 z-[70] h-20 items-center cursor-pointer active:scale-95 transition-transform"
+                aria-label="Menü öffnen"
+            >
+                <img
+                    src="/logo_font.svg"
+                    alt="HelloUni"
+                    style={{ height: "80px", width: "auto", objectFit: "contain", display: "block" }}
+                />
+            </button>
+            <LogoSidebar isOpen={isLogoSidebarOpen} onClose={() => setIsLogoSidebarOpen(false)} />
 
             {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
             <div

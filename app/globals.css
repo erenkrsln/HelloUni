@@ -99,6 +99,15 @@ svg {
   }
 }
 
+/* Desktop: Scrollbar immer sichtbar (native Farbe) */
+@media (min-width: 1024px) {
+  html {
+    overflow-y: scroll;
+    scrollbar-width: auto;
+    scrollbar-gutter: stable;
+  }
+}
+
 /* Auth-Registrierung: eigenes Select-Chevron (kein Tailwind bg-[url(...)] — sonst Turbopack/Resolve-Fehler) */
 @layer components {
   .auth-major-select {

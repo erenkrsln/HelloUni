@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Camera, ChevronDown, X } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
-import { HeaderImageCropModal } from "@/components/header-image-crop-modal";
+import { HeaderImageCropModal, ImageCropModal } from "@/components/image-crop-modal";
 import { getAllStudiengaenge } from "@/lib/studiengang-utils";
 
 interface EditProfileModalProps {
@@ -95,6 +95,9 @@ export function EditProfileModal({
   const [isHeaderCropModalOpen, setIsHeaderCropModalOpen] = useState(false);
   const [selectedHeaderImageSrc, setSelectedHeaderImageSrc] = useState<string>("");
   const [isHeaderUploading, setIsHeaderUploading] = useState(false);
+  const [isAvatarCropModalOpen, setIsAvatarCropModalOpen] = useState(false);
+  const [selectedAvatarImageSrc, setSelectedAvatarImageSrc] = useState<string>("");
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [isMajorOpen, setIsMajorOpen] = useState(false);
   const [isSemesterOpen, setIsSemesterOpen] = useState(false);
   const [isInterestsOpen, setIsInterestsOpen] = useState(false);
@@ -145,14 +148,55 @@ export function EditProfileModal({
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      setIsImageRemoved(false);
+    if (!file) return;
+
+    // Vorschau-URL für das Crop-Modal erzeugen
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedAvatarImageSrc(reader.result as string);
+      setIsAvatarCropModalOpen(true);
+    };
+    reader.onerror = () => {
+      alert("Fehler beim Lesen der Datei");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarCropComplete = async (croppedBlob: Blob) => {
+    setIsAvatarUploading(true);
+    try {
+      // Vorschau aus dem zugeschnittenen Blob erzeugen
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(croppedBlob);
+
+      // Blob für späteren Upload speichern
+      const file = new File([croppedBlob], "avatar-image.jpg", { type: "image/jpeg" });
+      setSelectedImage(file);
+      setIsImageRemoved(false);
+
+      // Modal schließen
+      setIsAvatarCropModalOpen(false);
+      setSelectedAvatarImageSrc("");
+    } catch (error) {
+      console.error("Fehler beim Verarbeiten des Profilbilds:", error);
+      alert("Fehler beim Verarbeiten des Profilbilds");
+    } finally {
+      setIsAvatarUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleAvatarCropCancel = () => {
+    if (isAvatarUploading) return; // Schließen während des Verarbeitens verhindern
+    setIsAvatarCropModalOpen(false);
+    setSelectedAvatarImageSrc("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -732,7 +776,21 @@ export function EditProfileModal({
           imageSrc={selectedHeaderImageSrc}
           onCropComplete={handleHeaderCropComplete}
           isUploading={isHeaderUploading}
-          className="drawer-crop-modal"
+        />
+      )}
+
+      {/* Avatar Image Crop Modal */}
+      {isAvatarCropModalOpen && selectedAvatarImageSrc && (
+        <ImageCropModal
+          isOpen={isAvatarCropModalOpen}
+          onClose={handleAvatarCropCancel}
+          imageSrc={selectedAvatarImageSrc}
+          onCropComplete={handleAvatarCropComplete}
+          isUploading={isAvatarUploading}
+          aspect={1}
+          cropShape="rect"
+          title="Medien bearbeiten"
+          variant="twitter"
         />
       )}
     </>

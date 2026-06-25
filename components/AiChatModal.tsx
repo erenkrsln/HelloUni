@@ -144,7 +144,7 @@ const AiChatModal = () => {
         onClick={handleClick}
       />
       <div
-        className={`fixed bottom-4 right-4 tablet:bottom-[20px] tablet:right-[20px] flex flex-col border-[2px] border-black ${isClicked ? 'w-[calc(100vw-32px)] tablet:w-[420px] h-[560px] max-h-[calc(100dvh-32px)] rounded-[17px] bg-black bg-opacity-[0.11] border-opacity-20' : 'w-[66px] h-[66px] rounded-[66px] bg-[#F78D57] bg-opacity-[0.65] tablet:hover:bg-opacity-100 border-opacity-0 cursor-pointer'} shrink-0 items-center justify-start z-[9998] group transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] overflow-hidden`}
+        className={`fixed right-4 tablet:right-[20px] flex flex-col border-[2px] border-black ${isClicked ? 'bottom-4 tablet:bottom-[20px] w-[calc(100vw-32px)] tablet:w-[420px] h-[560px] max-h-[calc(100dvh-32px)] rounded-[17px] bg-black bg-opacity-[0.11] border-opacity-20' : 'bottom-[calc(98px+env(safe-area-inset-bottom,0px))] lg:bottom-[20px] w-[56px] h-[56px] rounded-[56px] tablet:w-[66px] tablet:h-[66px] tablet:rounded-[66px] bg-[#F78D57] bg-opacity-[0.65] tablet:hover:bg-opacity-100 border-opacity-0 cursor-pointer'} shrink-0 items-center justify-start z-[9998] group transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] overflow-hidden`}
         onClick={!isClicked ? handleClick : undefined}
       >
         <div className='absolute inset-0 backdrop-blur-[57px] -z-[1]' />
@@ -192,13 +192,13 @@ const AiChatModal = () => {
         >
           <div className='flex justify-center items-center gap-[14px]'>
             <div
-              className={`flex justify-center items-center shrink-0 ${isClicked ? 'h-[33px]' : 'w-[64px] h-[64px]'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}
+              className={`flex justify-center items-center shrink-0 ${isClicked ? 'h-[33px]' : 'w-[54px] h-[54px] tablet:w-[64px] tablet:h-[64px]'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}
               style={isClicked ? { width: iconWidth } : undefined}
             >
               <div
                 ref={iconRef}
                 className='flex justify-center items-center'>
-                <KIIcon className={`fill-current transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? 'h-[33px] text-black' : 'h-[38px] text-white'}`} />
+                <KIIcon className={`fill-current transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? 'h-[33px] text-black' : 'h-[32px] tablet:h-[38px] text-white'}`} />
               </div>
             </div>
             <span className={`text-[17px] font-bold leading-normal text-black text-left whitespace-nowrap transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? '' : 'opacity-0'}`}>
