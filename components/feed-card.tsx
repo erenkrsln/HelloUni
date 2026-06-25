@@ -714,11 +714,11 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
             )}
 
             {/* Location */}
-            {post.locationName && (
+            {(post as any).locationName && (
               <LocationDisplay
-                locationName={post.locationName}
-                latitude={post.latitude}
-                longitude={post.longitude}
+                locationName={(post as any).locationName}
+                latitude={(post as any).latitude}
+                longitude={(post as any).longitude}
               />
             )}
 
