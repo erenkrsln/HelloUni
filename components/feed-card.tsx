@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tag } from "lucide-react";
+import { Tag, MapPin, X as XIcon } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { renderContentWithMentions } from "@/lib/mentions";
 import { useMutation, useQuery } from "convex/react";
@@ -13,6 +13,7 @@ import Image from "next/image";
 import { PostMenu } from "./post-menu";
 import { PostActions } from "./post-actions";
 import { PollOptions } from "./poll-options";
+import { LocationDisplay } from "./location-display";
 import { EventDetails } from "./event-details";
 import { CommentDrawer } from "./comment-drawer";
 import { SharePostModal } from "./share-post-modal";
@@ -710,6 +711,15 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                   </span>
                 ))}
               </div>
+            )}
+
+            {/* Location */}
+            {post.locationName && (
+              <LocationDisplay
+                locationName={post.locationName}
+                latitude={post.latitude}
+                longitude={post.longitude}
+              />
             )}
 
             {/* Poll Options */}

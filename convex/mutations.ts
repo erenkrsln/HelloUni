@@ -24,6 +24,9 @@ export const createPost = mutation({
     pollOptions: v.optional(v.array(v.string())),
     tags: v.optional(v.array(v.string())),
     mentions: v.optional(v.array(v.string())), // Array von Usernames
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
+    locationName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const postId = await ctx.db.insert("posts", {
@@ -39,6 +42,9 @@ export const createPost = mutation({
       pollOptions: args.pollOptions,
       tags: args.tags,
       mentions: args.mentions,
+      latitude: args.latitude,
+      longitude: args.longitude,
+      locationName: args.locationName,
       likesCount: 0,
       commentsCount: 0,
       participantsCount: 0, // Always set to 0 for new posts
@@ -799,7 +805,7 @@ export const sendMessage = mutation({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"), v.literal("location"), v.literal("live_location"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
@@ -807,6 +813,12 @@ export const sendMessage = mutation({
     chatEventId: v.optional(v.id("chatEvents")),
     sharedPostId: v.optional(v.id("posts")),
     sharedProfileId: v.optional(v.id("users")),
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
+    address: v.optional(v.string()),
+    liveDuration: v.optional(v.number()),
+    liveExpiresAt: v.optional(v.number()),
+    isLiveActive: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Validate membership
@@ -830,8 +842,25 @@ export const sendMessage = mutation({
       chatEventId: args.chatEventId,
       sharedPostId: args.sharedPostId,
       sharedProfileId: args.sharedProfileId,
+      latitude: args.latitude,
+      longitude: args.longitude,
+      address: args.address,
+      liveDuration: args.liveDuration,
+      liveExpiresAt: args.liveExpiresAt,
+      isLiveActive: args.isLiveActive,
       createdAt: Date.now(),
     });
+
+    // If it's a live location, register initial coordinates
+    if (args.type === "live_location" && args.latitude !== undefined && args.longitude !== undefined) {
+      await ctx.db.insert("liveLocations", {
+        messageId,
+        userId: args.senderId,
+        latitude: args.latitude,
+        longitude: args.longitude,
+        updatedAt: Date.now(),
+      });
+    }
 
     // Update conversation: lastMessageId und updatedAt
     await ctx.db.patch(args.conversationId, {
@@ -1599,6 +1628,36 @@ export const claimGroupOwnership = mutation({
   },
 });
 
+export const stopLiveLocation = mutation({
+  args: {
+    messageId: v.id("messages"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+    if (message.senderId !== args.userId) {
+      throw new Error("Only the sender can stop sharing their location");
+    }
+
+    await ctx.db.patch(args.messageId, {
+      isLiveActive: false,
+    });
+
+    // Delete active live locations entry for this message to keep table clean
+    const activeLoc = await ctx.db
+      .query("liveLocations")
+      .withIndex("by_message_user", (q) =>
+        q.eq("messageId", args.messageId).eq("userId", args.userId)
+      )
+      .first();
+    if (activeLoc) {
+      await ctx.db.delete(activeLoc._id);
+    }
+    return { success: true };
+  },
+});
+
 export const toggleGroupPublic = mutation({
   args: {
     conversationId: v.id("conversations"),
@@ -1633,6 +1692,71 @@ export const toggleGroupPublic = mutation({
         createdAt: Date.now(),
       });
     }
+    return { success: true };
+  },
+});
+
+export const updateLiveLocationCoordinates = mutation({
+  args: {
+    messageId: v.id("messages"),
+    userId: v.id("users"),
+    latitude: v.number(),
+    longitude: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+    if (message.senderId !== args.userId) {
+      throw new Error("Unauthorized coordinate update");
+    }
+
+    // Check if the live sharing is still active and not expired
+    if (!message.isLiveActive) {
+      return { success: false, reason: "Inactive" };
+    }
+    if (message.liveExpiresAt && Date.now() > message.liveExpiresAt) {
+      await ctx.db.patch(args.messageId, { isLiveActive: false });
+      // Delete active loc
+      const activeLoc = await ctx.db
+        .query("liveLocations")
+        .withIndex("by_message_user", (q) =>
+          q.eq("messageId", args.messageId).eq("userId", args.userId)
+        )
+        .first();
+      if (activeLoc) await ctx.db.delete(activeLoc._id);
+      return { success: false, reason: "Expired" };
+    }
+
+    // Update message coordinate
+    await ctx.db.patch(args.messageId, {
+      latitude: args.latitude,
+      longitude: args.longitude,
+    });
+
+    // Update or insert liveLocations table
+    const activeLoc = await ctx.db
+      .query("liveLocations")
+      .withIndex("by_message_user", (q) =>
+        q.eq("messageId", args.messageId).eq("userId", args.userId)
+      )
+      .first();
+
+    if (activeLoc) {
+      await ctx.db.patch(activeLoc._id, {
+        latitude: args.latitude,
+        longitude: args.longitude,
+        updatedAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("liveLocations", {
+        messageId: args.messageId,
+        userId: args.userId,
+        latitude: args.latitude,
+        longitude: args.longitude,
+        updatedAt: Date.now(),
+      });
+    }
+
     return { success: true };
   },
 });
