@@ -1,0 +1,25 @@
+import { cronJobs } from "convex/server";
+import { api } from "./_generated/api";
+
+const crons = cronJobs();
+
+/**
+ * Monatlich am 1. um 03:00 UTC: alle Studiengänge scrapen und cachen.
+ * Pro Studiengang wird eine eigene Action per Scheduler gestartet (robuster als ein großer Job).
+ */
+crons.monthly(
+  "scrape all studiengaenge",
+  { day: 1, hourUTC: 3, minuteUTC: 0 },
+  api.scraping.scrapeAllStudiengaenge
+);
+
+/**
+ * Täglich um 06:00 UTC = 08:00 CEST: Mensaspeiseplan für heute cachen.
+ */
+crons.daily(
+  "scrape mensa",
+  { hourUTC: 6, minuteUTC: 0 },
+  api.scraping.scrapeMensa
+);
+
+export default crons;

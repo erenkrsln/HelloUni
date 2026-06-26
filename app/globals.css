@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+svg {
+  overflow: visible
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -92,6 +96,15 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Desktop: Scrollbar immer sichtbar (native Farbe) */
+@media (min-width: 1024px) {
+  html {
+    overflow-y: scroll;
+    scrollbar-width: auto;
+    scrollbar-gutter: stable;
   }
 }
 

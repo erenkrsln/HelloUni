@@ -1,12 +1,14 @@
 "use client";
 
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Bell } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { LogoSidebar } from "@/components/logo-sidebar";
 import Image from "next/image";
 
 import { usePathname } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { globalLoadedImagesCache } from "@/lib/cache/imageCache";
 import { authClient } from "@/lib/auth-client";
@@ -24,6 +26,13 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
   const { isPending } = authClient.useSession();
   const pathname = usePathname();
   const { currentUser, isLoading: isUserLoading } = useCurrentUser();
+
+  // Ungelesene Benachrichtigungen (für das Glocken-Icon im Header)
+  const notificationData = useQuery(
+    api.notifications.get,
+    currentUser ? { userId: currentUser._id } : "skip"
+  );
+  const unreadNotificationCount = notificationData?.unreadCount || 0;
 
   // Drei Zustände:
   // 1. currentUser === undefined → User lädt noch (zeige grauen pulsierenden Kreis)
@@ -214,6 +223,34 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
         )}
 
 
+
+        {/* Benachrichtigungs-Icon - links neben dem Avatar (Desktop & Mobile) */}
+        {onMenuClick && (
+          <Link
+            href="/notifications"
+            prefetch={true}
+            aria-label="Benachrichtigungen"
+            className="absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95 right-[76px] top-[18px] w-11 h-11 md:right-[104px]"
+            style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+            }}
+          >
+            <Bell
+              style={{
+                width: "28px",
+                height: "28px",
+                color: "#000000",
+                fill: pathname === "/notifications" ? "#000000" : "none",
+              }}
+            />
+            {unreadNotificationCount > 0 && (
+              <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-white" />
+            )}
+          </Link>
+        )}
 
         {/* Mobile Menu Button - Profilbild oben rechts */}
         {onMenuClick && (

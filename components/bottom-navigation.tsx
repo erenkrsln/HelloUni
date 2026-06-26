@@ -1,8 +1,10 @@
 "use client";
 
-import { Plus, Bell, MessageCircle } from "lucide-react";
+import { Plus, MessageCircle } from "lucide-react";
 import { HomeIcon } from "@/components/home-icon";
 import { SearchIcon } from "@/components/search-icon";
+import InfoIcon from '@/public/icons/Info_Icon_in_Circle_fill.svg'
+import InfoIcon2 from '@/public/icons/Info_Icon_in_Circle2_fill.svg'
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -17,9 +19,6 @@ export function BottomNavigation() {
 
   const unreadData = useQuery(api.queries.getUnreadCounts, currentUser ? { userId: currentUser._id } : "skip");
   const unreadChatCount = unreadData?.totalUnread || 0;
-
-  const notificationData = useQuery(api.notifications.get, currentUser ? { userId: currentUser._id } : "skip");
-  const unreadNotificationCount = notificationData?.unreadCount || 0;
 
   const isActive = (path: string) => {
     // Sowohl "/" als auch "/home" als Startseite betrachten
@@ -51,6 +50,40 @@ export function BottomNavigation() {
   };
 
   return (
+    <>
+    {/* Floating Create Button - unten rechts, nur auf /home und nur Mobile */}
+    {isActive("/home") && (
+    <Link
+      id="tour-nav-create"
+      href="/create"
+      prefetch={true}
+      onClick={handleCreateClick}
+      aria-label="Beitrag erstellen"
+      className="fixed right-4 z-50 flex lg:hidden items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 cursor-pointer touch-manipulation bottom-[calc(94px+env(safe-area-inset-bottom,0px))]"
+      style={{
+        width: "48px",
+        height: "48px",
+        backgroundColor: "#D08945",
+        willChange: "transform",
+        transform: "translateZ(0)",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden"
+      }}
+    >
+      <Plus
+        style={{
+          width: "26px",
+          height: "26px",
+          color: "#FFFFFF",
+          transform: isActive("/create") ? "rotate(45deg) translateZ(0)" : "rotate(0deg) translateZ(0)",
+          transition: "transform 0.2s ease",
+          willChange: "transform",
+          backfaceVisibility: "hidden"
+        }}
+      />
+    </Link>
+    )}
+
     <nav
       className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 lg:left-12 lg:right-auto lg:mb-0 lg:pb-0 lg:px-0 lg:h-auto lg:w-auto"
     >
@@ -96,59 +129,6 @@ export function BottomNavigation() {
           />
         </Link>
 
-        {/* Create */}
-        <Link
-          id="tour-nav-create"
-          href="/create"
-          prefetch={true}
-          onClick={handleCreateClick}
-          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
-          style={{
-            width: "44px",
-            height: "44px",
-            minWidth: "44px",
-            minHeight: "44px",
-            opacity: 1
-          }}
-        >
-          <Plus
-            style={{
-              width: "32px",
-              height: "32px",
-              color: "#000000",
-              fill: isActive("/create") ? "#000000" : "none",
-              transform: isActive("/create") ? "rotate(45deg) translateZ(0)" : "rotate(0deg) translateZ(0)",
-              transition: "transform 0.2s ease",
-              willChange: "transform",
-              backfaceVisibility: "hidden"
-            }}
-          />
-        </Link>
-
-        {/* Notifications */}
-        <Link
-          id="tour-nav-notifications"
-          href="/notifications"
-          prefetch={true}
-          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"
-          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
-        >
-          <Bell
-            style={{
-              width: "28px",
-              height: "28px",
-              color: "#000000",
-              fill: isActive("/notifications") ? "#000000" : "none",
-              willChange: "transform",
-              transform: "translateZ(0)",
-              backfaceVisibility: "hidden"
-            }}
-          />
-          {unreadNotificationCount > 0 && (
-            <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
-          )}
-        </Link>
-
         {/* Chat */}
         <Link
           id="tour-nav-chat"
@@ -172,7 +152,22 @@ export function BottomNavigation() {
             <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
           )}
         </Link>
+        <Link
+          href="/info"
+          prefetch={true}
+          className="flex items-center justify-center transition-transform active:scale-95 touch-manipulation"
+        >
+          <div className='relative w-[28px] h-[28px] shrink-0'>
+            <InfoIcon
+              className={`absolute inset-0 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${!isActive("/info") ? '' : 'opacity-0'}`}
+            />
+            <InfoIcon2
+              className={`absolute inset-0 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isActive("/info") ? '' : 'opacity-0'}`}
+            />
+          </div>
+        </Link>
       </div>
     </nav>
+    </>
   );
 }

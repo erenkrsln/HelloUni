@@ -5,16 +5,19 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
+import { LogoSidebar } from "@/components/logo-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
-import { ImagePlus, X, ChevronDown } from "lucide-react";
+import { ImagePlus, X, ChevronDown, MapPin } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
+import { LocationDisplay } from "@/components/location-display";
 
 export default function CreatePage() {
     const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
     const { currentUser, currentUserId } = useCurrentUser();
     const [isFirstVisit, setIsFirstVisit] = useState(true);
 
@@ -94,6 +97,67 @@ export default function CreatePage() {
 
     // Poll fields
     const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+
+    // Location fields
+    const [locationName, setLocationName] = useState<string | null>(null);
+    const [latitude, setLatitude] = useState<number | null>(null);
+    const [longitude, setLongitude] = useState<number | null>(null);
+    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
+    const handlePickLocation = async () => {
+        if (isLoadingLocation) return;
+        setIsLoadingLocation(true);
+        try {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                })
+            );
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            setLatitude(lat);
+            setLongitude(lng);
+
+            // Reverse geocoding via Nominatim
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+                    { headers: { "Accept-Language": "de" } }
+                );
+                const data = await res.json();
+                const address = data.address || {};
+                const city = address.city || address.town || address.village || address.municipality || address.county || "";
+                const state = address.state || address.region || "";
+                
+                let formatted = "";
+                if (city && state) {
+                    formatted = `${city}, ${state}`;
+                } else if (city) {
+                    formatted = city;
+                } else if (state) {
+                    formatted = state;
+                } else {
+                    formatted = data.display_name?.split(",").slice(0, 2).join(",") || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                }
+                
+                setLocationName(formatted);
+            } catch {
+                setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+            }
+        } catch (err) {
+            console.error("Standort konnte nicht ermittelt werden:", err);
+            alert("Standort konnte nicht ermittelt werden. Bitte Standort-Berechtigung prüfen.");
+        } finally {
+            setIsLoadingLocation(false);
+        }
+    };
+
+    const removeLocation = () => {
+        setLocationName(null);
+        setLatitude(null);
+        setLongitude(null);
+    };
 
     // Mutations werden sofort initialisiert, blockieren nicht
     const createPost = useMutation(api.mutations.createPost);
@@ -217,6 +281,9 @@ export default function CreatePage() {
                     pollOptions: validPollOptions,
                     tags: validTags,
                     mentions: validMentions,
+                    latitude: latitude ?? undefined,
+                    longitude: longitude ?? undefined,
+                    locationName: locationName ?? undefined,
                 });
 
                 if (selectedImage) {
@@ -383,6 +450,20 @@ export default function CreatePage() {
         <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden">
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+            {/* Desktop: HelloUni Logo oben links */}
+            <button
+                onClick={() => setIsLogoSidebarOpen(true)}
+                className="hidden md:flex fixed top-0 left-12 z-[70] h-20 items-center cursor-pointer active:scale-95 transition-transform"
+                aria-label="Menü öffnen"
+            >
+                <img
+                    src="/logo_font.svg"
+                    alt="HelloUni"
+                    style={{ height: "80px", width: "auto", objectFit: "contain", display: "block" }}
+                />
+            </button>
+            <LogoSidebar isOpen={isLogoSidebarOpen} onClose={() => setIsLogoSidebarOpen(false)} />
 
             {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
             <div
@@ -862,16 +943,50 @@ export default function CreatePage() {
                                     </div>
                                 )}
 
+                                {/* Location Display */}
+                                {locationName && (
+                                    <div className="mt-4 flex items-center justify-between gap-2 px-3 py-2 bg-orange-50 rounded-lg border border-orange-200">
+                                        <div className="flex-1 min-w-0 [&_button]:mb-0">
+                                            <LocationDisplay
+                                                locationName={locationName}
+                                                latitude={latitude ?? undefined}
+                                                longitude={longitude ?? undefined}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={removeLocation}
+                                            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-orange-100 transition-colors"
+                                        >
+                                            <X className="w-4 h-4 text-gray-500" />
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        title="Bild hinzufügen"
-                                        aria-label="Bild hinzufügen"
-                                        className="flex items-center justify-center w-10 h-10 text-gray-600 rounded-lg focus:outline-none active:outline-none"
-                                    >
-                                        <ImagePlus className="w-6 h-6" />
-                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            title="Bild hinzufügen"
+                                            aria-label="Bild hinzufügen"
+                                            className="flex items-center justify-center w-10 h-10 text-gray-600 rounded-lg focus:outline-none active:outline-none"
+                                        >
+                                            <ImagePlus className="w-6 h-6" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handlePickLocation}
+                                            title="Standort hinzufügen"
+                                            aria-label="Standort hinzufügen"
+                                            disabled={isLoadingLocation}
+                                            className={`flex items-center justify-center w-10 h-10 rounded-lg focus:outline-none active:outline-none transition-colors ${
+                                                locationName ? 'text-[#D08945]' : 'text-gray-600'
+                                            } ${isLoadingLocation ? 'animate-pulse' : ''}`}
+                                        >
+                                            <MapPin className="w-6 h-6" />
+                                        </button>
+                                    </div>
                                     <div className="text-xs text-gray-500">
                                         {content.length}/500
                                     </div>

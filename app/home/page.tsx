@@ -10,6 +10,7 @@ import { LoadingScreen } from "@/components/ui/spinner";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { startAppTour } from "@/lib/tour";
+import { User } from "lucide-react";
 
 // Funktion zur Erkennung mobiler Geräte
 const isMobileDevice = (): boolean => {
@@ -265,6 +266,49 @@ export default function Home() {
             Interesse
           </button>
         </div>
+
+        {/* Desktop Compose Box - Facebook/Twitter Style ("Was gibts neues?") */}
+        {/* Lädt gemeinsam mit dem Feed: zeigt beim Laden/Refresh ein Skeleton wie die FeedCards */}
+        {postsFromQuery === undefined ? (
+          <div className="hidden md:flex items-center gap-3 px-5 py-4 bg-white rounded-3xl border-2 border-black/5">
+            <div className="w-12 h-12 rounded-full bg-muted animate-pulse flex-shrink-0" />
+            <div className="flex-1 h-5 bg-muted animate-pulse rounded" />
+            <div className="w-24 h-10 bg-muted animate-pulse rounded-full flex-shrink-0" />
+          </div>
+        ) : (
+          <div
+            onClick={() => router.push("/create")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                router.push("/create");
+              }
+            }}
+            className="hidden md:flex items-center gap-3 px-5 py-4 bg-white rounded-3xl border-2 border-black/5 cursor-pointer transition-colors hover:border-black/10"
+          >
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gray-100 flex-shrink-0">
+              {currentUser?.image ? (
+                <img
+                  src={currentUser.image}
+                  alt={currentUser.name || "Profil"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-6 h-6 text-gray-400" />
+              )}
+            </div>
+            <div className="flex-1 text-left text-gray-400 text-lg">
+              {currentUser?.name
+                ? `Was machst du gerade, ${currentUser.name.split(" ")[0]}?`
+                : "Was machst du gerade?"}
+            </div>
+            <div className="flex items-center justify-center px-5 py-2 bg-[#D08945] text-white rounded-full font-medium">
+              Posten
+            </div>
+          </div>
+        )}
       </div>
       <div>
         {/* Upload Progress Bar - oberhalb der Posts, nur wenn Upload aktiv */}
