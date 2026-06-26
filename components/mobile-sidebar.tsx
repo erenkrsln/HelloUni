@@ -1,6 +1,6 @@
 "use client";
 
-import { X, LogOut, User, Map, Download } from "lucide-react";
+import { X, LogOut, User, Map, Download, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -124,6 +124,16 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             >
               <User className="w-5 h-5 text-black flex-shrink-0" />
               <span>Profil</span>
+            </button>
+            <button
+              onClick={() => {
+                router.push("/info");
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+            >
+              <Info className="w-5 h-5 text-black flex-shrink-0" />
+              <span>Info</span>
             </button>
             <button
               onClick={() => {
