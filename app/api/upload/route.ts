@@ -30,7 +30,7 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
     try {
-        console.log("/api/upload invoked - headers:", Object.fromEntries(request.headers.entries()).slice ? Object.fromEntries(request.headers.entries()).slice(0,5) : Object.fromEntries(request.headers.entries()));
+        console.log("/api/upload invoked - headers:", Object.fromEntries(Array.from(request.headers.entries()).slice(0, 5)));
         let body: any;
         try {
             body = await request.json();
@@ -54,6 +54,10 @@ export async function POST(request: NextRequest) {
             const uploadUrl = `/api/mock-storage?key=${encodeURIComponent(key)}`;
             const publicUrl = `/mock/${encodeURIComponent(key)}`;
             return NextResponse.json({ uploadUrl, publicUrl, key, mock: true });
+        }
+
+        if (!r2Client) {
+            return NextResponse.json({ error: "Cloudflare R2 is not configured" }, { status: 503 });
         }
 
         const uploadUrl = await getSignedUrl(
