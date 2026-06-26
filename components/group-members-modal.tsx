@@ -29,10 +29,10 @@ export function GroupMembersModal({
     const members = useQuery(api.queries.getConversationMembers, { conversationId });
     const allUsers = useQuery(api.queries.getAllUsers);
 
-    const addMember = useMutation(api.mutations.addConversationMember);
-    const removeMember = useMutation(api.mutations.removeConversationMember);
-    const promoteToAdmin = useMutation(api.mutations.promoteToAdmin);
-    const demoteAdmin = useMutation(api.mutations.demoteAdmin);
+    const addMember = useMutation(api.workspace.addMember);
+    const removeMember = useMutation(api.workspace.removeMember);
+    const promoteToAdmin = useMutation(api.workspace.promoteToAdmin);
+    const demoteAdmin = useMutation(api.workspace.demoteAdmin);
     const claimGroup = useMutation(api.mutations.claimGroupOwnership);
     const transferCreator = useMutation(api.mutations.transferCreator);
     const deleteConversation = useMutation(api.mutations.deleteConversation);
@@ -49,11 +49,7 @@ export function GroupMembersModal({
 
     const handleAddMember = async (userId: Id<"users">) => {
         try {
-            await addMember({
-                conversationId,
-                adminId: currentUserId,
-                newMemberId: userId,
-            });
+            await addMember({ conversationId, userId, actorId: currentUserId });
             setView("list");
         } catch (error) {
             console.error("Failed to add member:", error);
@@ -63,11 +59,7 @@ export function GroupMembersModal({
     const handleRemoveMember = async (userId: Id<"users">) => {
         if (!confirm("Möchtest du dieses Mitglied wirklich entfernen?")) return;
         try {
-            await removeMember({
-                conversationId,
-                adminId: currentUserId,
-                memberIdToRemove: userId,
-            });
+            await removeMember({ conversationId, userId, actorId: currentUserId });
         } catch (error) {
             console.error("Failed to remove member:", error);
         }
@@ -75,11 +67,7 @@ export function GroupMembersModal({
 
     const handlePromote = async (userId: Id<"users">) => {
         try {
-            await promoteToAdmin({
-                conversationId,
-                adminId: currentUserId,
-                memberIdToPromote: userId,
-            });
+            await promoteToAdmin({ conversationId, userId, actorId: currentUserId });
         } catch (error) {
             console.error("Failed to promote member:", error);
         }
@@ -87,11 +75,7 @@ export function GroupMembersModal({
 
     const handleDemote = async (userId: Id<"users">) => {
         try {
-            await demoteAdmin({
-                conversationId,
-                adminId: currentUserId,
-                memberIdToDemote: userId,
-            });
+            await demoteAdmin({ conversationId, userId, actorId: currentUserId });
         } catch (error) {
             console.error("Failed to demote member:", error);
         }

@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Plus, FileText, Image as ImageIcon, Download, FileIcon } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useToast } from "@/components/toast";
 
 export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
   const { currentUser } = useCurrentUser();
@@ -12,8 +13,14 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
   const [isUploading, setIsUploading] = useState(false);
 
   const files = useQuery(api.workspace.listFilesByWorkspace, { workspaceId });
-  const generateUploadUrl = useMutation(api.mutations.generateUploadUrl);
+  const generateUploadUrl = useMutation(api.workspace.generateUploadUrl);
   const saveFileMetadata = useMutation(api.workspace.saveFileMetadata);
+  const toast = useToast();
+
+  const [localFiles, setLocalFiles] = useState<any[] | null>(null);
+
+  // merge query files into localFiles when available
+  if (files && !localFiles) setLocalFiles(files.slice());
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -21,9 +28,20 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
 
     try {
       setIsUploading(true);
-      const postUrl = await generateUploadUrl();
+      // Use mock upload when explicitly enabled via NEXT_PUBLIC_USE_MOCK_UPLOAD (set in .env.local)
+      const useMock = typeof process !== "undefined" && (process.env.NEXT_PUBLIC_USE_MOCK_UPLOAD === "true");
+      let postUrl: string;
+      if (useMock) {
+        const key = `uploads/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        postUrl = `/api/mock-storage?key=${encodeURIComponent(key)}`;
+      } else {
+        // If this is a group workspace, extract conversation id and pass as conversationId
+        const isGroup = workspaceId.startsWith("group_");
+        const conversationId = isGroup ? (workspaceId.replace("group_", "") as any) : undefined;
+        postUrl = await generateUploadUrl({ conversationId, actorId: currentUser._id });
+      }
 
-      // POST to Convex storage URL
+      // POST file bytes to the received upload URL
       const result = await fetch(postUrl, {
         method: "POST",
         headers: { "Content-Type": file.type },
@@ -31,18 +49,42 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
       });
       const { storageId } = await result.json();
 
-      // Save metadata
-      await saveFileMetadata({
-        workspaceId,
-        storageId,
-        fileName: file.name,
-        fileType: file.type,
-        uploaderId: currentUser._id,
-      });
+      // Optimistically show the file locally (use object URL for preview)
+      const tempId = `tmp_file_${Date.now()}`;
+      const tempFile = { _id: tempId, fileName: file.name, fileType: file.type, url: URL.createObjectURL(file), uploaderId: currentUser._id, createdAt: Date.now(), storageId };
+      setLocalFiles((prev) => prev ? [tempFile, ...prev] : [tempFile]);
+
+      // Delay saving metadata to allow undo
+      const DURATION = 5000;
+      let completed = false;
+
+      const doSave = async () => {
+        try {
+          await saveFileMetadata({ workspaceId, storageId, fileName: file.name, fileType: file.type, uploaderId: currentUser._id });
+          completed = true;
+          toast.success("File uploaded");
+        } catch (err) {
+          console.error("Failed to save file metadata:", err);
+          setLocalFiles((prev) => prev ? prev.filter((f) => f._id !== tempId) : prev);
+          toast.error("Failed to register file. Reverted.");
+        }
+      };
+
+      const undo = () => {
+        clearTimeout(timer);
+        if (!completed) setLocalFiles((prev) => prev ? prev.filter((f) => f._id !== tempId) : prev);
+        toast.remove(toastId);
+      };
+
+      const toastId = toast.push({ message: `Upload ${file.name}`, type: "info", action: { label: "Undo", onClick: undo }, duration: DURATION });
+      const timer = setTimeout(async () => {
+        await doSave();
+        try { toast.remove(toastId); } catch {}
+      }, DURATION);
 
     } catch (error) {
       console.error("Failed to upload file:", error);
-      alert("Fehler beim Hochladen der Datei.");
+      toast.error("Fehler beim Hochladen der Datei.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -83,10 +125,10 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
             <p>No files uploaded yet.</p>
           </div>
         ) : (
-          files.map(file => (
+          (localFiles || files).map(file => (
             <a 
               key={file._id} 
-              href={file.url || "#"} 
+              href={file.url || file.url || "#"} 
               target="_blank" 
               rel="noopener noreferrer"
               className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow"

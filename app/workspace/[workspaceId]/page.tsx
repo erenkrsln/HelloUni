@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MessageSquare, ListTodo, Folder, Users, BarChart2 } from "lucide-react";
+import { ArrowLeft, MessageSquare, ListTodo, Folder, Users, BarChart2, Calendar } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -10,6 +10,7 @@ import { WorkspaceTasks } from "@/components/workspace-tasks";
 import { WorkspaceFiles } from "@/components/workspace-files";
 import { WorkspacePolls } from "@/components/workspace-polls";
 import { WorkspaceMembers } from "@/components/workspace-members";
+import { WorkspaceEvents } from "@/components/workspace-events";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useMutation } from "convex/react";
 import Link from "next/link";
@@ -17,9 +18,11 @@ import Link from "next/link";
 export default function WorkspaceHubPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = use(params);
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"chat" | "tasks" | "files" | "polls" | "members">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "tasks" | "files" | "polls" | "members" | "events">("chat");
   const { currentUser } = useCurrentUser();
   const getOrCreateEventChat = useMutation(api.workspace.getOrCreateEventChat);
+  const groupDisplay = useQuery(api.queries.getConversationDisplay, workspaceId.startsWith("group_") ? { conversationId: workspaceId.replace("group_", "") as Id<"conversations"> } : "skip");
+  const groupMembers = useQuery(api.queries.getConversationMembers, workspaceId.startsWith("group_") ? { conversationId: workspaceId.replace("group_", "") as Id<"conversations"> } : "skip");
   const [isNavigating, setIsNavigating] = useState(false);
 
   // Determine if it's an event or group based on prefix
@@ -72,6 +75,8 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
         return <WorkspacePolls workspaceId={workspaceId} />;
       case "members":
         return <WorkspaceMembers workspaceId={workspaceId} />;
+      case "events":
+        return isGroup ? <WorkspaceEvents workspaceId={workspaceId} /> : null;
       default:
         return null;
     }
@@ -81,49 +86,64 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
     <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
       {/* Header */}
       <div 
-        className="flex items-center px-4 py-3 bg-white border-b border-gray-100 z-10 sticky top-0"
+        className="flex flex-col gap-1 px-4 py-3 bg-white border-b border-gray-100 z-10 sticky top-0"
         style={{ paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))` }}
       >
-        <button onClick={() => router.back()} className="mr-3 p-2 -ml-2 rounded-full hover:bg-gray-100">
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="font-bold text-lg truncate">
-          {isEvent ? "Collaboration Event" : "Collaboration Group"}
-        </h1>
+        <div className="flex items-center">
+          <button onClick={() => router.back()} className="mr-3 p-2 -ml-2 rounded-full hover:bg-gray-100">
+            <ArrowLeft size={24} />
+          </button>
+          <div className="min-w-0">
+            <h1 className="font-bold text-lg truncate">
+              {isGroup ? groupDisplay?.displayName || "Collaboration Group" : isEvent ? "Collaboration Event" : "Workspace"}
+            </h1>
+            <p className="text-sm text-gray-500 truncate">
+              {isGroup ? `${groupMembers?.length ?? 0} members · Group workspace` : isEvent ? "Event workspace" : "Workspace hub"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto hide-scrollbar border-b border-gray-100 px-2 py-1 sticky" style={{ top: `calc(3.5rem + env(safe-area-inset-top, 0px))` }}>
+      <div className="flex flex-wrap gap-2 border-b border-gray-100 px-3 py-2 sticky top-[calc(4.5rem+env(safe-area-inset-top,0px))] bg-white z-10">
         <button 
           onClick={() => setActiveTab("chat")}
-          className={`flex-shrink-0 px-4 py-2 mx-1 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "chat" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
+          className={`min-w-[86px] px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center justify-center gap-2 ${activeTab === "chat" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <MessageSquare size={16} /> Chat
         </button>
         <button 
           onClick={() => setActiveTab("tasks")}
-          className={`flex-shrink-0 px-4 py-2 mx-1 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "tasks" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
+          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "tasks" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <ListTodo size={16} /> Tasks
         </button>
         <button 
           onClick={() => setActiveTab("files")}
-          className={`flex-shrink-0 px-4 py-2 mx-1 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "files" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
+          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "files" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <Folder size={16} /> Files
         </button>
         <button 
           onClick={() => setActiveTab("polls")}
-          className={`flex-shrink-0 px-4 py-2 mx-1 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "polls" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
+          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "polls" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <BarChart2 size={16} /> Polls
         </button>
         <button 
           onClick={() => setActiveTab("members")}
-          className={`flex-shrink-0 px-4 py-2 mx-1 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "members" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
+          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "members" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <Users size={16} /> Members
         </button>
+        {isGroup && (
+          <button 
+            onClick={() => setActiveTab("events")}
+            className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "events" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
+          >
+            <Calendar size={16} /> Events
+          </button>
+        )}
       </div>
 
       {/* Main Content Area */}

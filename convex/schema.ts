@@ -264,15 +264,21 @@ export default defineSchema({
     conversationId: v.optional(v.id("conversations")), // Fixes the chat mismatch error
   })
     .index("by_start_time", ["startTime"])
-    .index("by_user", ["createdBy"]),
+    .index("by_user", ["createdBy"])
+    .index("by_workspace", ["workspaceId"]),
 
   // Workspace: tasks, files, polls
   workspace_tasks: defineTable({
     workspaceId: v.string(),
     title: v.string(),
+    description: v.optional(v.string()),
     deadline: v.optional(v.string()),
-    assigneeId: v.optional(v.id("users")),
     createdBy: v.id("users"),
+    // Task enhancements
+    assigneeId: v.optional(v.id("users")),
+    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+    status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
     isCompleted: v.boolean(),
     createdAt: v.number(),
   })
@@ -306,6 +312,67 @@ export default defineSchema({
   })
     .index("by_poll", ["pollId"]) 
     .index("by_poll_user", ["pollId", "userId"]),
+
+  // Group metadata and roles for Workspace collaboration
+  workspace_groups: defineTable({
+    conversationId: v.id("conversations"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    ownerId: v.id("users"),
+    adminIds: v.optional(v.array(v.id("users"))),
+    createdAt: v.number(),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+  })
+    .index("by_conversation", ["conversationId"]) 
+    .index("by_owner", ["ownerId"]),
+
+  // Activity feed for group workspaces
+  workspace_activity: defineTable({
+    workspaceId: v.string(),
+    actorId: v.id("users"),
+    type: v.union(
+      v.literal("task_created"),
+      v.literal("task_updated"),
+      v.literal("task_completed"),
+      v.literal("task_deleted"),
+      v.literal("event_created"),
+      v.literal("member_joined"),
+      v.literal("member_left"),
+      v.literal("file_uploaded")
+    ),
+    data: v.optional(
+      v.union(
+        v.object({
+          taskId: v.id("workspace_tasks"),
+          title: v.string(),
+        }),
+        v.object({
+          taskId: v.id("workspace_tasks"),
+          status: v.union(
+            v.literal("todo"),
+            v.literal("in_progress"),
+            v.literal("done")
+          ),
+        }),
+        v.object({
+          taskId: v.id("workspace_tasks"),
+          patch: v.object({
+            title: v.optional(v.string()),
+            description: v.optional(v.string()),
+            deadline: v.optional(v.string()),
+            assigneeId: v.optional(v.id("users")),
+            priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+            visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+            status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
+          }),
+        }),
+        v.object({ userId: v.id("users") }),
+        v.object({})
+      )
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_workspace_created", ["workspaceId", "createdAt"]),
 
   // Calls / WebRTC
   calls: defineTable({
