@@ -32,6 +32,7 @@ export default function Home() {
   const router = useRouter();
   const { session, currentUserId, currentUser } = useCurrentUser();
   const [feedType, setFeedType] = useState<"all" | "major" | "following" | "interests">("all");
+  const [rankingMode, setRankingMode] = useState<"chronological" | "engagement">("chronological");
   const preloadedImages = useRef<Set<string>>(new Set());
   const [isFirstVisit, setIsFirstVisit] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -79,6 +80,10 @@ export default function Home() {
     api.queries.getFeed,
     currentUserId ? { userId: currentUserId } : {}
   );
+  const allPostsWithRanking = useQuery(
+    api.queries.getFeedWithRanking,
+    rankingMode !== "chronological" && currentUserId ? { userId: currentUserId, rankBy: rankingMode } : "skip"
+  );
   const filteredPostsByMajor = useQuery(
     api.queries.getFilteredFeed,
     currentUser && currentUserMajor ? {
@@ -98,9 +103,9 @@ export default function Home() {
     currentUserId ? { userId: currentUserId } : "skip"
   );
 
-  // Verwende den entsprechenden Feed basierend auf feedType
+  // Verwende den entsprechenden Feed basierend auf feedType und rankingMode
   const postsFromQuery = feedType === "all"
-    ? allPosts
+    ? (rankingMode !== "chronological" ? allPostsWithRanking : allPosts)
     : feedType === "major"
       ? filteredPostsByMajor
       : feedType === "interests"
@@ -266,6 +271,32 @@ export default function Home() {
             Interesse
           </button>
         </div>
+
+        {/* Ranking Mode Selector */}
+        {feedType === "all" && (
+          <div className="flex items-center justify-center gap-2 mb-4 flex-nowrap overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setRankingMode("chronological")}
+              className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rankingMode === "chronological"
+                  ? "bg-slate-600 text-white"
+                  : "bg-slate-100 text-slate-700 hover:opacity-80"
+                }`}
+              title="Neueste Beiträge zuerst"
+            >
+              🕐 Neueste
+            </button>
+            <button
+              onClick={() => setRankingMode("engagement")}
+              className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rankingMode === "engagement"
+                  ? "bg-slate-600 text-white"
+                  : "bg-slate-100 text-slate-700 hover:opacity-80"
+                }`}
+              title="Nach Engagement (Likes, Kommentare) sortiert"
+            >
+              🔥 Beliebt
+            </button>
+          </div>
+        )}
 
         {/* Desktop Compose Box - Facebook/Twitter Style ("Was gibts neues?") */}
         {/* Lädt gemeinsam mit dem Feed: zeigt beim Laden/Refresh ein Skeleton wie die FeedCards */}

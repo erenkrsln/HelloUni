@@ -2,6 +2,7 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
+import { calculateRankingScore, ScoringFactors } from "./scoring";
 
 // Helper function to calculate actual comments count for a post
 async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
@@ -77,6 +78,138 @@ export const getFeed = query({
     );
 
     return postsWithUsers;
+  },
+});
+
+/**
+ * Get feed with engagement-based ranking algorithm
+ * Combines engagement metrics, recency, and personalization
+ */
+export const getFeedWithRanking = query({
+  args: {
+    userId: v.optional(v.id("users")),
+    rankBy: v.optional(v.string()), // "engagement", "trending", or "chronological" (default)
+  },
+  handler: async (ctx, args) => {
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    // Get current user's follows for personalization
+    let followingIds: Id<"users">[] = [];
+    if (args.userId) {
+      const follows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q: any) => q.eq("followerId", args.userId))
+        .collect();
+      followingIds = follows.map((f: any) => f.followingId);
+    }
+
+    // Batch-query all likes for current user
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = posts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
+    // Get current user for interest/major matching
+    let currentUser: any = null;
+    if (args.userId) {
+      currentUser = await ctx.db.get(args.userId);
+    }
+
+    // Enrich posts with rankings
+    const postsWithScores = await Promise.all(
+      posts.map(async (post) => {
+        const user = await ctx.db.get(post.userId);
+        let imageUrl = post.imageUrl;
+
+        // Convert storage ID to URL if it exists
+        imageUrl = await getImageUrl(ctx, imageUrl);
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
+
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+        }
+
+        // Calculate actual comments count (only top-level comments)
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+        // Determine if post matches user interests/major
+        let matchesUserInterests = false;
+        let matchesUserMajor = false;
+        if (currentUser && user) {
+          if (currentUser.interests && Array.isArray(currentUser.interests)) {
+            matchesUserInterests = currentUser.interests.some((interest: string) =>
+              post.tags && Array.isArray(post.tags) && post.tags.includes(interest)
+            );
+          }
+          if (currentUser.major && user.major === currentUser.major) {
+            matchesUserMajor = true;
+          }
+        }
+
+        // Calculate ranking score if ranking is enabled
+        let rankingScore = 0;
+        if (args.rankBy && args.rankBy !== "chronological") {
+          const scoringFactors: ScoringFactors = {
+            likesCount: post.likesCount || 0,
+            commentsCount: actualCommentsCount,
+            participantsCount: actualParticipantsCount,
+            createdAt: post.createdAt,
+            isFromFollowedUser: followingIds.includes(post.userId),
+            matchesUserInterests,
+            matchesUserMajor,
+            isEvent: post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting",
+            eventDate: post.eventDate,
+          };
+          rankingScore = calculateRankingScore(scoringFactors);
+        }
+
+        return {
+          ...post,
+          participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
+          imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+          rankingScore, // Include score for sorting
+          user: user ? {
+            ...user,
+            image: userImageUrl,
+          } : null,
+        };
+      })
+    );
+
+    // Sort based on ranking strategy
+    if (args.rankBy === "engagement") {
+      // Sort by ranking score (highest first)
+      return postsWithScores.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+    } else if (args.rankBy === "trending") {
+      // For now, use same as engagement (real trending would require 24h engagement windows)
+      return postsWithScores.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+    } else {
+      // Default to chronological (newest first)
+      return postsWithScores;
+    }
   },
 });
 
