@@ -1,16 +1,15 @@
 "use client";
 
-import { Plus, MessageCircle } from "lucide-react";
+import { Plus, Bell, MessageCircle } from "lucide-react";
 import { HomeIcon } from "@/components/home-icon";
 import { SearchIcon } from "@/components/search-icon";
-import InfoIcon from '@/public/icons/Info_Icon_in_Circle_fill.svg'
-import InfoIcon2 from '@/public/icons/Info_Icon_in_Circle2_fill.svg'
+import { WorkspaceIcon } from "@/components/workspace-icon";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { useQuery } from "convex/react"; // Added
-import { api } from "@/convex/_generated/api"; // Added
-import { useCurrentUser } from "@/lib/hooks/useCurrentUser"; // Added
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 
 export function BottomNavigation() {
   const pathname = usePathname();
@@ -19,6 +18,8 @@ export function BottomNavigation() {
 
   const unreadData = useQuery(api.queries.getUnreadCounts, currentUser ? { userId: currentUser._id } : "skip");
   const unreadChatCount = unreadData?.totalUnread || 0;
+  const notificationData = useQuery(api.notifications.get, currentUser ? { userId: currentUser._id } : "skip");
+  const unreadNotificationCount = notificationData?.unreadCount || 0;
 
   const isActive = (path: string) => {
     // Sowohl "/" als auch "/home" als Startseite betrachten
@@ -129,6 +130,72 @@ export function BottomNavigation() {
           />
         </Link>
 
+        {/* Workspace */}
+        <Link
+          href="/workspace"
+          prefetch={true}
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+        >
+          <WorkspaceIcon
+            isActive={isActive("/workspace")}
+            size={28}
+            color="#000000"
+          />
+        </Link>
+
+        {/* Create */}
+        <Link
+          id="tour-nav-create"
+          href="/create"
+          prefetch={true}
+          onClick={handleCreateClick}
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+          style={{
+            width: "44px",
+            height: "44px",
+            minWidth: "44px",
+            minHeight: "44px",
+            opacity: 1
+          }}
+        >
+          <Plus
+            style={{
+              width: "32px",
+              height: "32px",
+              color: "#000000",
+              fill: isActive("/create") ? "#000000" : "none",
+              transform: isActive("/create") ? "rotate(45deg) translateZ(0)" : "rotate(0deg) translateZ(0)",
+              transition: "transform 0.2s ease",
+              willChange: "transform",
+              backfaceVisibility: "hidden"
+            }}
+          />
+        </Link>
+
+        {/* Notifications */}
+        <Link
+          id="tour-nav-notifications"
+          href="/notifications"
+          prefetch={true}
+          className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"
+          style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+        >
+          <Bell
+            style={{
+              width: "28px",
+              height: "28px",
+              color: "#000000",
+              fill: isActive("/notifications") ? "#000000" : "none",
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden"
+            }}
+          />
+          {unreadNotificationCount > 0 && (
+            <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
+          )}
+        </Link>
         {/* Chat */}
         <Link
           id="tour-nav-chat"
@@ -151,20 +218,6 @@ export function BottomNavigation() {
           {unreadChatCount > 0 && (
             <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-[#f78d57]" />
           )}
-        </Link>
-        <Link
-          href="/info"
-          prefetch={true}
-          className="flex items-center justify-center transition-transform active:scale-95 touch-manipulation"
-        >
-          <div className='relative w-[28px] h-[28px] shrink-0'>
-            <InfoIcon
-              className={`absolute inset-0 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${!isActive("/info") ? '' : 'opacity-0'}`}
-            />
-            <InfoIcon2
-              className={`absolute inset-0 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isActive("/info") ? '' : 'opacity-0'}`}
-            />
-          </div>
         </Link>
       </div>
     </nav>
