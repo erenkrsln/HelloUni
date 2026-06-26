@@ -2,7 +2,7 @@
 
 import { User, LogOut, Bell } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LogoSidebar } from "@/components/logo-sidebar";
 import Image from "next/image";
 
@@ -12,6 +12,8 @@ import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { globalLoadedImagesCache } from "@/lib/cache/imageCache";
 import { authClient } from "@/lib/auth-client";
+import { NotificationFeed } from "@/components/notification-feed";
+import { NotificationSettingsMenu } from "@/components/notification-settings-menu";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -53,6 +55,33 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
       setImageLoaded(false);
     }
   }, [currentUser?.image]);
+
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  // Close notifications popup when page pathname changes
+  useEffect(() => {
+    setIsNotificationsOpen(false);
+  }, [pathname]);
+
+  // Close notifications popup when clicking outside
+  useEffect(() => {
+    if (!isNotificationsOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".notifications-popup") && !target.closest(".bell-button")) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isNotificationsOpen]);
+
+  const handleBellClick = (e: React.MouseEvent) => {
+    if (window.innerWidth >= 768) {
+      e.preventDefault();
+      setIsNotificationsOpen((prev) => !prev);
+    }
+  };
 
   // Profil-Icon auf allen Seiten ausblenden (wird durch Dropdown ersetzt)
   const showProfileIcon = false;
@@ -228,9 +257,10 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
         {onMenuClick && (
           <Link
             href="/notifications"
+            onClick={handleBellClick}
             prefetch={true}
             aria-label="Benachrichtigungen"
-            className="absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95 right-[76px] top-[18px] w-11 h-11 md:right-[104px]"
+            className="bell-button absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95 right-[76px] top-[18px] w-11 h-11 md:right-[104px]"
             style={{
               willChange: "transform",
               transform: "translateZ(0)",
@@ -243,13 +273,39 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
                 width: "28px",
                 height: "28px",
                 color: "#000000",
-                fill: pathname === "/notifications" ? "#000000" : "none",
+                fill: pathname === "/notifications" || isNotificationsOpen ? "#000000" : "none",
               }}
             />
             {unreadNotificationCount > 0 && (
               <div className="absolute top-2 right-2 w-3 h-3 bg-[#f78d57] rounded-full border border-white" />
             )}
           </Link>
+        )}
+
+        {/* Notifications Popup */}
+        {isNotificationsOpen && currentUser && (
+          <div className="notifications-popup hidden md:flex absolute right-5 md:right-[104px] top-[70px] w-[380px] max-w-[calc(100vw-40px)] bg-white border border-gray-200 rounded-2xl shadow-2xl z-[80] flex-col">
+            {/* Header of popup */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
+              <span className="font-bold text-gray-900 text-sm">Benachrichtigungen</span>
+              <div className="flex items-center gap-2">
+                <NotificationSettingsMenu userId={currentUser._id} />
+
+              </div>
+            </div>
+            {/* Scrollable feed list */}
+            <div
+              className="overflow-y-auto flex-1 relative bg-white min-h-[150px] max-h-[400px] rounded-b-2xl"
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (!target.closest("button")) {
+                  setIsNotificationsOpen(false);
+                }
+              }}
+            >
+              <NotificationFeed userId={currentUser._id} />
+            </div>
+          </div>
         )}
 
         {/* Mobile Menu Button - Profilbild oben rechts */}
