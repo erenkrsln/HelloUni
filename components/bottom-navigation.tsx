@@ -18,7 +18,7 @@ export function BottomNavigation() {
 
   const unreadData = useQuery(api.queries.getUnreadCounts, currentUser ? { userId: currentUser._id } : "skip");
   const unreadChatCount = unreadData?.totalUnread || 0;
-  const notificationData = useQuery(api.queries.notifications.get, currentUser ? { userId: currentUser._id } : "skip");
+  const notificationData = useQuery(api.notifications.get, currentUser ? { userId: currentUser._id } : "skip");
   const unreadNotificationCount = notificationData?.unreadCount || 0;
 
   const isActive = (path: string) => {
