@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin } from "lucide-react";
 import { ChatHeaderCallButtons } from "@/components/call/ChatHeaderCallButtons";
 import { ActiveCallBanner } from "@/components/call/ActiveCallBanner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -14,10 +14,13 @@ import { GroupInfoModal } from "@/components/group-info-modal";
 import { ChatFilesModal } from "@/components/chat-files-modal";
 import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
+import { handleAi } from "@/actions/chatAiSend";
 import { SharedPostMessage } from "@/components/shared-post-message";
 import { SharedProfileMessage } from "@/components/shared-profile-message";
 import { ChatEventModal } from "@/components/chat-event-modal";
 import { ChatEventMessage } from "@/components/chat-event-message";
+import { ChatLocationModal } from "@/components/chat-location-modal";
+import { ChatLocationMessage } from "@/components/chat-location-message";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -29,6 +32,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isInitialLoad = useRef(true);
+    const hasLoadedMessages = useRef(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const messagesInnerRef = useRef<HTMLDivElement>(null);
 
     const messages = useQuery(api.queries.getMessages, {
         conversationId,
@@ -41,6 +47,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const EMOJIS = ["👍", "❤️", "😹", "🙀", "😿", "🙏", "🦫"];
 
+    const aiUserId = useQuery(
+        api.queries.getUserByUsername,
+        { username: "chatbot" }
+    ) ?._id;
+        
     useEffect(() => {
         if (conversationId && currentUser) {
             markAsRead({ conversationId, userId: currentUser._id });
@@ -60,8 +71,52 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [isPollModalOpen, setIsPollModalOpen] = useState(false);
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const updateLiveLocationCoordinates = useMutation(api.mutations.updateLiveLocationCoordinates);
+
+    // Find if the current user has any active live location shared in this conversation
+    const myActiveLiveLocationMessage = messages?.find(
+        (msg) =>
+            msg.type === "live_location" &&
+            msg.senderId === currentUser?._id &&
+            msg.isLiveActive &&
+            (!msg.liveExpiresAt || msg.liveExpiresAt > Date.now())
+    );
+
+    useEffect(() => {
+        if (!currentUser || !myActiveLiveLocationMessage) return;
+
+        let watchId: number | null = null;
+
+        if (typeof window !== "undefined" && navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    updateLiveLocationCoordinates({
+                        messageId: myActiveLiveLocationMessage._id,
+                        userId: currentUser._id,
+                        latitude,
+                        longitude,
+                    }).catch((err) => {
+                        console.error("Error updating live location coordinates:", err);
+                    });
+                },
+                (err) => {
+                    console.warn("Failed to watch user position for live sharing:", err);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        return () => {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+        };
+    }, [currentUser, myActiveLiveLocationMessage, updateLiveLocationCoordinates]);
 
     const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
@@ -146,19 +201,75 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     );
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-        messagesEndRef.current?.scrollIntoView({ behavior });
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior
+            });
+        }
     };
 
+    // Reset initial load state when conversation changes
+    useEffect(() => {
+        isInitialLoad.current = true;
+        hasLoadedMessages.current = false;
+    }, [conversationId]);
+
+    // Handle messages changes & initial scroll
     useEffect(() => {
         if (messages) {
             if (isInitialLoad.current) {
                 scrollToBottom("auto");
-                isInitialLoad.current = false;
+                
+                if (!hasLoadedMessages.current) {
+                    hasLoadedMessages.current = true;
+                    // Keep isInitialLoad.current = true for a bit longer to allow all images/assets to load and trigger ResizeObserver
+                    const timer = setTimeout(() => {
+                        isInitialLoad.current = false;
+                    }, 1500);
+                    return () => clearTimeout(timer);
+                }
             } else {
                 scrollToBottom("smooth");
             }
         }
     }, [messages]);
+
+    // Observe size changes of the inner content container (e.g. image loads, window resize, layout shifts)
+    useEffect(() => {
+        const innerEl = messagesInnerRef.current;
+        const containerEl = scrollContainerRef.current;
+        if (!innerEl || !containerEl) return;
+
+        const observer = new ResizeObserver(() => {
+            const threshold = 250;
+            const isNearBottom =
+                containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < threshold;
+
+            if (isNearBottom || isInitialLoad.current) {
+                scrollToBottom(isInitialLoad.current ? "auto" : "smooth");
+            }
+        });
+
+        observer.observe(innerEl);
+        observer.observe(containerEl);
+
+        // Also attach scroll event listener to detect manual scroll up
+        const handleScroll = () => {
+            const threshold = 250;
+            const isNearBottom = 
+                containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < threshold;
+            if (!isNearBottom && isInitialLoad.current) {
+                isInitialLoad.current = false;
+            }
+        };
+        containerEl.addEventListener("scroll", handleScroll, { passive: true });
+
+        return () => {
+            observer.disconnect();
+            containerEl.removeEventListener("scroll", handleScroll);
+        };
+    }, [conversationId]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -170,7 +281,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 senderId: currentUser._id,
                 content: newMessage.trim(),
             });
+            if (newMessage.startsWith('AI:')) {
+                const msg = await handleAi(newMessage.substring(3).trim(), conversationId);
+                await sendMessage({
+                    conversationId,
+                    senderId: aiUserId ?? currentUser._id,
+                    content: msg,       
+                });
+            }
             setNewMessage("");
+            setTimeout(() => scrollToBottom("smooth"), 50);
         } catch (error) {
             console.error("Failed to send message:", error);
         }
@@ -225,7 +345,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     if (!currentUser) return null;
 
     return (
-        <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
+        <main className="flex flex-col h-full w-full max-w-[428px] md:max-w-none mx-auto bg-white relative">
 
             {/* Header */}
             <div
@@ -238,8 +358,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {/* Left side */}
                 <div className="flex items-center flex-1">
                     <button
-                        onClick={() => router.back()}
-                        className="mr-3 p-2 -ml-2 rounded-full"
+                        onClick={() => router.push("/chat")}
+                        className="mr-3 p-2 -ml-2 rounded-full md:hidden"
                     >
                         <ArrowLeft size={24} />
                     </button>
@@ -298,9 +418,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]">
-                {!messages ? (
-                    <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
+            <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]"
+            >
+                <div ref={messagesInnerRef}>
+                    {!messages ? (
+                        <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
                 ) : messages.length === 0 ? (
                     <div className="text-center text-[#D08945] mt-10 text-sm">
                         Noch keine Nachrichten im Chat. <br /> Schreibe deine erste Nachricht!
@@ -624,6 +748,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
                                                         />
+                                                    ) : (msg.type === "location" || msg.type === "live_location") ? (
+                                                        <ChatLocationMessage
+                                                            messageId={msg._id}
+                                                            senderName={sender?.name || "Benutzer"}
+                                                            isMe={isMe}
+                                                            currentUserId={currentUser._id}
+                                                        />
                                                     ) : (
                                                         <div>
                                                             {linkifyText(msg.content)}
@@ -633,7 +764,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <button className="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
-                                                                    <SmilePlus size={12} className="text-black" />
+                                                                    <SmilePlus className="text-black w-3 h-3 md:w-4 md:h-4" />
                                                                 </button>
                                                             </PopoverTrigger>
                                                             <PopoverContent side="top" align={isMe ? 'end' : 'start'} className="w-auto p-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_10px_20px_-2px_rgba(0,0,0,0.04)] rounded-full bg-white border border-gray-100 z-[60]">
@@ -645,7 +776,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                                 e.preventDefault();
                                                                                 toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                                             }}
-                                                                            className="hover:scale-125 transition-transform text-lg flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100"
+                                                                            className="hover:scale-125 transition-transform text-lg md:text-xl flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full hover:bg-gray-100"
                                                                         >
                                                                             {emoji}
                                                                         </button>
@@ -670,10 +801,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         e.preventDefault();
                                                         toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                     }}
-                                                    className={`flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
+                                                    className={`flex items-center gap-1 md:gap-1.5 text-[11px] md:text-[13px] px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
                                                 >
                                                     <span>{emoji}</span>
-                                                    <span className="font-medium text-[10px]">{data.count}</span>
+                                                    <span className="font-medium text-[10px] md:text-[11px]">{data.count}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -684,6 +815,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     })
                 )}
                 <div ref={messagesEndRef} />
+                </div>
             </div>
 
             {/* Group Info Modal */}
@@ -721,6 +853,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 <ChatEventModal
                     isOpen={isEventModalOpen}
                     onClose={() => setIsEventModalOpen(false)}
+                    conversationId={conversationId}
+                    senderId={currentUser._id}
+                />
+            )}
+
+            {/* Chat Location Modal */}
+            {currentUser && (
+                <ChatLocationModal
+                    isOpen={isLocationModalOpen}
+                    onClose={() => setIsLocationModalOpen(false)}
                     conversationId={conversationId}
                     senderId={currentUser._id}
                 />
@@ -780,6 +922,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     </div>
                                     <span className="text-[11px] text-gray-600 font-medium">Termin</span>
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        setIsLocationModalOpen(true);
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <MapPin size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Standort</span>
+                                </button>
                             </div>
                         </>
                     )}
@@ -801,6 +956,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 ref={textareaRef}
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
+                                onFocus={() => {
+                                    setTimeout(() => scrollToBottom("smooth"), 100);
+                                    setTimeout(() => scrollToBottom("smooth"), 300);
+                                }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
                                         const isMobile = window.matchMedia("(pointer: coarse)").matches;

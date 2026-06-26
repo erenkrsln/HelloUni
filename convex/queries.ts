@@ -1577,6 +1577,78 @@ export const getChatPollVote = query({
   },
 });
 
+export const getActiveLiveLocation = query({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) return null;
+
+    // Handle static location messages
+    if (message.type === "location") {
+      return {
+        isLiveActive: false,
+        latitude: message.latitude,
+        longitude: message.longitude,
+        address: message.address,
+        updatedAt: message.createdAt,
+        liveExpiresAt: undefined,
+      };
+    }
+
+    if (message.type !== "live_location") return null;
+
+    // Check if expired
+    const isExpired = message.liveExpiresAt ? Date.now() > message.liveExpiresAt : false;
+    const isLiveActive = message.isLiveActive && !isExpired;
+
+    if (!isLiveActive) {
+      return {
+        isLiveActive: false,
+        latitude: message.latitude,
+        longitude: message.longitude,
+        address: message.address,
+        updatedAt: message.createdAt,
+        liveExpiresAt: message.liveExpiresAt,
+      };
+    }
+
+    const liveLoc = await ctx.db
+      .query("liveLocations")
+      .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
+      .first();
+
+    return {
+      isLiveActive: true,
+      latitude: liveLoc ? liveLoc.latitude : message.latitude,
+      longitude: liveLoc ? liveLoc.longitude : message.longitude,
+      address: message.address,
+      updatedAt: liveLoc ? liveLoc.updatedAt : message.createdAt,
+      liveExpiresAt: message.liveExpiresAt,
+    };
+  },
+});
+
+// ─── Cache-Queries ────────────────────────────────────────────────────────────
+
+export const getStudiengangCache = query({
+  args: { major: v.string() },
+  handler: async (ctx, { major }) => {
+    return ctx.db
+      .query("studiengangCache")
+      .withIndex("by_major", (q) => q.eq("major", major))
+      .first();
+  },
+});
+
+export const getMensaCache = query({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db.query("mensaCache").first();
+  },
+});
+
 export const searchPublicGroups = query({
   args: {
     searchTerm: v.string(),

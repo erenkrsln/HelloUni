@@ -5,7 +5,7 @@ import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, ArrowLeft, Send } from "lucide-react";
+import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, Send, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
@@ -265,13 +265,16 @@ export function ProfileHeader({
                     transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
                 }}
             >
-                {/* Back Arrow Button - bottom left on mobile, top left on desktop with iOS safe area */}
+                {/* Back Button */}
                 <button
                     onClick={() => router.back()}
-                    className="absolute bottom-12 left-3 sm:bottom-auto sm:left-3 profile-header-button w-[31px] h-[31px] sm:w-8 sm:h-8 rounded-full bg-black/50 hover:bg-black/70 active:bg-black/80 flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
+                    className="absolute left-4 z-20 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 active:scale-95 transition-all shadow-md"
+                    style={{
+                        top: `calc(1rem + env(safe-area-inset-top, 0px))`,
+                    }}
                     aria-label="Zurück"
                 >
-                    <ArrowLeft className="w-[15px] h-[15px] sm:w-4 sm:h-4 text-white" />
+                    <ArrowLeft className="w-5 h-5" />
                 </button>
 
                 {headerImage ? (
@@ -281,7 +284,7 @@ export function ProfileHeader({
                             src={headerImage}
                             alt="Header"
                             fill
-                            sizes="(max-width: 639px) 100vw, 428px"
+                            sizes="(max-width: 768px) 100vw, 768px"
                             priority
                             className="object-cover"
                             onLoad={() => {

@@ -42,6 +42,10 @@ export default defineSchema({
     // Allgemein
     tags: v.optional(v.array(v.string())), // Array von Tags
     mentions: v.optional(v.array(v.string())), // Array von Usernames die erwähnt wurden
+    // Standort
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
+    locationName: v.optional(v.string()),
     likesCount: v.number(),
     commentsCount: v.number(),
     participantsCount: v.optional(v.number()), // Anzahl der Teilnehmer
@@ -134,7 +138,7 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"))),
+    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"), v.literal("location"), v.literal("live_location"))),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
@@ -142,6 +146,12 @@ export default defineSchema({
     chatEventId: v.optional(v.id("chatEvents")),
     sharedPostId: v.optional(v.id("posts")),
     sharedProfileId: v.optional(v.id("users")),
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
+    address: v.optional(v.string()),
+    liveDuration: v.optional(v.number()),
+    liveExpiresAt: v.optional(v.number()),
+    isLiveActive: v.optional(v.boolean()),
     visibleTo: v.optional(v.array(v.id("users"))),
     reactions: v.optional(v.array(v.object({
       emoji: v.string(),
@@ -310,7 +320,7 @@ export default defineSchema({
     optionIndex: v.number(),
     createdAt: v.number(),
   })
-    .index("by_poll", ["pollId"]) 
+    .index("by_poll", ["pollId"])
     .index("by_poll_user", ["pollId", "userId"]),
 
   // Group metadata and roles for Workspace collaboration
@@ -323,7 +333,7 @@ export default defineSchema({
     createdAt: v.number(),
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
   })
-    .index("by_conversation", ["conversationId"]) 
+    .index("by_conversation", ["conversationId"])
     .index("by_owner", ["ownerId"]),
 
   // Activity feed for group workspaces
@@ -374,7 +384,35 @@ export default defineSchema({
   })
     .index("by_workspace_created", ["workspaceId", "createdAt"]),
 
-  // Calls / WebRTC
+  liveLocations: defineTable({
+    messageId: v.id("messages"),
+    userId: v.id("users"),
+    latitude: v.number(),
+    longitude: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_message", ["messageId"])
+    .index("by_user", ["userId"])
+    .index("by_message_user", ["messageId", "userId"]),
+
+  studiengangCache: defineTable({
+    major: v.string(),
+    fullContent: v.string(),
+    pdfLinks: v.array(v.object({ text: v.string(), href: v.string() })),
+    pdfContents: v.optional(v.array(v.object({
+      text: v.string(),
+      href: v.string(),
+      content: v.string(),
+    }))),
+    scrapedAt: v.number(),
+  }).index("by_major", ["major"]),
+
+  mensaCache: defineTable({
+    meals: v.array(v.object({ name: v.string(), price: v.string() })),
+    scrapedAt: v.number(),
+  }),
+  // ─── Voice & Video Calls ───────────────────────────────────────────────────
+
   calls: defineTable({
     conversationId: v.id("conversations"),
     type: v.union(v.literal("voice"), v.literal("video")),
@@ -391,7 +429,7 @@ export default defineSchema({
     endedAt: v.optional(v.number()),
     screenSharingUserId: v.optional(v.id("users")),
   })
-    .index("by_conversation", ["conversationId"]) 
+    .index("by_conversation", ["conversationId"])
     .index("by_conversation_created", ["conversationId", "createdAt"]),
 
   callParticipants: defineTable({
@@ -410,8 +448,8 @@ export default defineSchema({
     cameraEnabled: v.boolean(),
     screenSharing: v.optional(v.boolean()),
   })
-    .index("by_call", ["callId"]) 
-    .index("by_user", ["userId"]) 
+    .index("by_call", ["callId"])
+    .index("by_user", ["userId"])
     .index("by_call_user", ["callId", "userId"]),
 
   callSignals: defineTable({
@@ -423,7 +461,6 @@ export default defineSchema({
     createdAt: v.number(),
     consumed: v.boolean(),
   })
-    .index("by_call", ["callId"]),
-});
-
+    .index("by_call", ["callId"])
+    .index("by_created", ["createdAt"]),
 

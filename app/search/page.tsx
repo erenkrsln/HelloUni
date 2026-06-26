@@ -211,7 +211,7 @@ export default function SearchPage() {
     }, []);
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-white header-spacing">
+        <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white header-spacing">
             <Header onMenuClick={() => setIsSidebarOpen(true)} />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -263,7 +263,6 @@ export default function SearchPage() {
                             placeholder="Suchen..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            autoFocus
                         />
                     </div>
 
