@@ -49,6 +49,9 @@ declare const fullApi: ApiFromModules<{
   scrapingMutations: typeof scrapingMutations;
   workspace: typeof workspace;
 }>;
+
+/**
+ * A utility for referencing Convex functions in your app's public API.
  *
  * Usage:
  * ```js

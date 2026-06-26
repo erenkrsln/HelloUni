@@ -463,4 +463,4 @@ export default defineSchema({
   })
     .index("by_call", ["callId"])
     .index("by_created", ["createdAt"]),
-
+});
