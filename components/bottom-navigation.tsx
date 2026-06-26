@@ -153,6 +153,7 @@ export function BottomNavigation() {
           )}
         </Link>
         <Link
+          id="tour-nav-info"
           href="/info"
           prefetch={true}
           className="flex items-center justify-center transition-transform active:scale-95 touch-manipulation"

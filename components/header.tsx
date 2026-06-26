@@ -256,6 +256,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
         {/* Benachrichtigungs-Icon - links neben dem Avatar (Desktop & Mobile) */}
         {onMenuClick && (
           <Link
+            id="tour-nav-notifications"
             href="/notifications"
             onClick={handleBellClick}
             prefetch={true}

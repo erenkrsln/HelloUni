@@ -30,6 +30,15 @@ export function startAppTour() {
         }
       },
       {
+        element: "#tour-nav-notifications",
+        popover: {
+          title: "Benachrichtigungen",
+          description: "Hier siehst du neue Likes, Kommentare und neue Follower.",
+          side: "bottom",
+          align: "center"
+        }
+      },
+      {
         element: "#tour-logo-menu",
         popover: {
           title: "Die linke Seitenleiste",
@@ -56,29 +65,21 @@ export function startAppTour() {
           align: "center"
         }
       },
-      {
-        element: "#tour-nav-create",
-        popover: {
-          title: "Post erstellen",
-          description: "Hier kannst du deine Gedanken, Fragen oder Umfragen mit deinen Kommilitonen teilen.",
-          side: "top",
-          align: "center"
-        }
-      },
-      {
-        element: "#tour-nav-notifications",
-        popover: {
-          title: "Benachrichtigungen",
-          description: "Hier siehst du neue Likes, Kommentare und neue Follower.",
-          side: "top",
-          align: "center"
-        }
-      },
+
       {
         element: "#tour-nav-chat",
         popover: {
           title: "Chats",
-          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen. <br/> Bei Fragen zum Studium kannst du auch mit dem Chatbot schreiben.",
+          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen.",
+          side: "top",
+          align: "center"
+        }
+      },
+      {
+        element: "#tour-nav-info",
+        popover: {
+          title: "Infoseite",
+          description: "Hier findest du wichtige Dokumente und Informationen rund um dein Studium. Fragen kannst du an unseren KI-Assistenten stellen.",
           side: "top",
           align: "center"
         }
