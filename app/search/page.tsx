@@ -407,7 +407,7 @@ export default function SearchPage() {
                         {/* Primary Controls Row */}
                         <div className="flex items-center justify-between gap-3 mb-4 px-1">
                             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar flex-1">
-                                <span className="text-sm text-gray-500 whitespace-nowrap">Sortieren nach:</span>
+
                                 <button
                                     onClick={() => setSortBy("alphabetical")}
                                     className={`text-sm px-3 py-1 rounded-full transition-colors whitespace-nowrap font-medium ${sortBy === "alphabetical"
