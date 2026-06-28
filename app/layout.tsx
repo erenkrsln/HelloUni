@@ -6,6 +6,7 @@ import "./design-tokens.css";
 import "driver.js/dist/driver.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { PostsCacheWrapper } from "@/components/posts-cache-wrapper";
+import ToastProvider from "@/components/toast";
 import { CallProvider } from "@/components/call/CallProvider";
 import { CallOverlay } from "@/components/call/CallOverlay";
 import { IncomingCallModal } from "@/components/call/IncomingCallModal";
@@ -71,7 +72,9 @@ export default async function RootLayout({
         <ServiceWorkerRegister />
         <ConvexClientProvider initialToken={token}>
           <CallProvider>
-            <PostsCacheWrapper>{children}</PostsCacheWrapper>
+            <ToastProvider>
+              <PostsCacheWrapper>{children}</PostsCacheWrapper>
+            </ToastProvider>
             <CallOverlay />
             <IncomingCallModal />
           </CallProvider>

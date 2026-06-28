@@ -23,6 +23,7 @@ import type * as pushActions from "../pushActions.js";
 import type * as queries from "../queries.js";
 import type * as scraping from "../scraping.js";
 import type * as scrapingMutations from "../scrapingMutations.js";
+import type * as workspace from "../workspace.js";
 
 import type {
   ApiFromModules,
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   queries: typeof queries;
   scraping: typeof scraping;
   scrapingMutations: typeof scrapingMutations;
+  workspace: typeof workspace;
 }>;
 
 /**

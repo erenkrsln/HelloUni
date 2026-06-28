@@ -8,13 +8,34 @@ export const listByUser = query({
         k: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        let q = ctx.db
+        const conversations = await ctx.db.query("conversations").collect();
+        const groupWorkspaceIds = conversations
+            .filter((conv) => conv.isGroup && conv.participants.includes(args.userId))
+            .map((conv) => `group_${conv._id}`);
+
+        const userEvents = await ctx.db
             .query("events")
             .withIndex("by_user", (q) => q.eq("createdBy", args.userId))
-            .order("asc");
+            .order("asc")
+            .collect();
 
-        if (args.k) return await q.take(args.k);
-        return await q.collect();
+        const groupEventsLists = await Promise.all(
+            groupWorkspaceIds.map((workspaceId) =>
+                ctx.db
+                    .query("events")
+                    .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+                    .order("asc")
+                    .collect()
+            )
+        );
+
+        const allEvents = [...userEvents, ...groupEventsLists.flat()];
+        const eventsById = new Map<string, typeof allEvents[number]>();
+        for (const event of allEvents) {
+            eventsById.set(event._id.toString(), event);
+        }
+        const sortedEvents = Array.from(eventsById.values()).sort((a, b) => a.startTime - b.startTime);
+        return args.k ? sortedEvents.slice(0, args.k) : sortedEvents;
     },
 });
 
@@ -42,6 +63,19 @@ export const listPublic = query({
     },
 });
 
+export const listByWorkspace = query({
+    args: {
+        workspaceId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("events")
+            .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+            .order("asc")
+            .collect();
+    },
+});
+
 export const create = mutation({
     args: {
         title: v.string(),
@@ -49,14 +83,9 @@ export const create = mutation({
         startTime: v.number(),
         endTime: v.number(),
         location: v.optional(v.string()),
-        // userId is not needed in args as we use ctx.auth or pass it? 
-        // The user request says "create(...) -> already exists; ensure isPrivate defaults to true if undefined"
-        // The existing create took userId as arg. I should probably trust the auth if available, but for now I will stick to existing pattern or check auth.
-        // Existing pattern used args.userId. I will keep it but verifying it matches auth would be better. 
-        // However, standard Convex pattern is using ctx.auth. 
-        // Let's stick to the prompt: "ensure isPrivate defaults to true if undefined".
         userId: v.id("users"),
         isPrivate: v.optional(v.boolean()),
+        workspaceId: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const user = await ctx.db.get(args.userId);
@@ -71,7 +100,8 @@ export const create = mutation({
             endTime: args.endTime,
             location: args.location,
             createdBy: args.userId,
-            isPrivate: args.isPrivate ?? true, // Default to true
+            isPrivate: args.isPrivate ?? true,
+            workspaceId: args.workspaceId,
         });
     },
 });

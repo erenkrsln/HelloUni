@@ -270,10 +270,119 @@ export default defineSchema({
     location: v.optional(v.string()),
     createdBy: v.id("users"),
     isPrivate: v.optional(v.boolean()),
+    workspaceId: v.optional(v.string()), // Löst die Verbindung zu einem Group/Event Hub
+    conversationId: v.optional(v.id("conversations")), // Fixes the chat mismatch error
   })
     .index("by_start_time", ["startTime"])
-    .index("by_user", ["createdBy"]),
+    .index("by_user", ["createdBy"])
+    .index("by_workspace", ["workspaceId"]),
 
+  // Workspace: tasks, files, polls
+  workspace_tasks: defineTable({
+    workspaceId: v.string(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    deadline: v.optional(v.string()),
+    createdBy: v.id("users"),
+    // Task enhancements
+    assigneeId: v.optional(v.id("users")),
+    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+    status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
+    isCompleted: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_assignee", ["assigneeId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_files: defineTable({
+    workspaceId: v.string(),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    fileType: v.string(),
+    uploaderId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_polls: defineTable({
+    workspaceId: v.string(),
+    question: v.string(),
+    options: v.array(v.string()),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"]),
+
+  workspace_poll_votes: defineTable({
+    pollId: v.id("workspace_polls"),
+    userId: v.id("users"),
+    optionIndex: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_poll", ["pollId"])
+    .index("by_poll_user", ["pollId", "userId"]),
+
+  // Group metadata and roles for Workspace collaboration
+  workspace_groups: defineTable({
+    conversationId: v.id("conversations"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    ownerId: v.id("users"),
+    adminIds: v.optional(v.array(v.id("users"))),
+    createdAt: v.number(),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_owner", ["ownerId"]),
+
+  // Activity feed for group workspaces
+  workspace_activity: defineTable({
+    workspaceId: v.string(),
+    actorId: v.id("users"),
+    type: v.union(
+      v.literal("task_created"),
+      v.literal("task_updated"),
+      v.literal("task_completed"),
+      v.literal("task_deleted"),
+      v.literal("event_created"),
+      v.literal("member_joined"),
+      v.literal("member_left"),
+      v.literal("file_uploaded")
+    ),
+    data: v.optional(
+      v.union(
+        v.object({
+          taskId: v.id("workspace_tasks"),
+          title: v.string(),
+        }),
+        v.object({
+          taskId: v.id("workspace_tasks"),
+          status: v.union(
+            v.literal("todo"),
+            v.literal("in_progress"),
+            v.literal("done")
+          ),
+        }),
+        v.object({
+          taskId: v.id("workspace_tasks"),
+          patch: v.object({
+            title: v.optional(v.string()),
+            description: v.optional(v.string()),
+            deadline: v.optional(v.string()),
+            assigneeId: v.optional(v.id("users")),
+            priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+            visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+            status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
+          }),
+        }),
+        v.object({ userId: v.id("users") }),
+        v.object({})
+      )
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_workspace_created", ["workspaceId", "createdAt"]),
 
   liveLocations: defineTable({
     messageId: v.id("messages"),
@@ -303,6 +412,7 @@ export default defineSchema({
     scrapedAt: v.number(),
   }),
   // ─── Voice & Video Calls ───────────────────────────────────────────────────
+
   calls: defineTable({
     conversationId: v.id("conversations"),
     type: v.union(v.literal("voice"), v.literal("video")),
@@ -320,7 +430,7 @@ export default defineSchema({
     screenSharingUserId: v.optional(v.id("users")),
   })
     .index("by_conversation", ["conversationId"])
-    .index("by_conversation_status", ["conversationId", "status"]),
+    .index("by_conversation_created", ["conversationId", "createdAt"]),
 
   callParticipants: defineTable({
     callId: v.id("calls"),
@@ -336,8 +446,7 @@ export default defineSchema({
     ),
     micEnabled: v.boolean(),
     cameraEnabled: v.boolean(),
-    screenSharing: v.boolean(),
-    connectionStatus: v.optional(v.string()),
+    screenSharing: v.optional(v.boolean()),
   })
     .index("by_call", ["callId"])
     .index("by_user", ["userId"])
@@ -347,18 +456,11 @@ export default defineSchema({
     callId: v.id("calls"),
     fromUserId: v.id("users"),
     toUserId: v.optional(v.id("users")),
-    type: v.union(
-      v.literal("offer"),
-      v.literal("answer"),
-      v.literal("ice-candidate"),
-    ),
+    type: v.union(v.literal("offer"), v.literal("answer"), v.literal("ice-candidate")),
     payload: v.string(),
     createdAt: v.number(),
-    consumed: v.optional(v.boolean()),
+    consumed: v.boolean(),
   })
     .index("by_call", ["callId"])
     .index("by_created", ["createdAt"]),
-
 });
-
-

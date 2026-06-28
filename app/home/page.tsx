@@ -11,6 +11,7 @@ import { MobileSidebar } from "@/components/mobile-sidebar";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { startAppTour } from "@/lib/tour";
 import { User } from "lucide-react";
+import NextImage from "next/image";
 
 // Funktion zur Erkennung mobiler Geräte
 const isMobileDevice = (): boolean => {
@@ -21,7 +22,7 @@ const isMobileDevice = (): boolean => {
 };
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { markImageAsLoaded } from "@/lib/cache/imageCache";
+import { markImageAsLoaded, isImageLoaded } from "@/lib/cache/imageCache";
 import { usePostsCache } from "@/lib/contexts/posts-context";
 
 /**
@@ -37,11 +38,15 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [composerAvatarLoaded, setComposerAvatarLoaded] = useState(() =>
+    isImageLoaded(currentUser?.image)
+  );
 
-  // Markiere das Profilbild des aktuellen Users im Cache, sobald es geladen ist
   useEffect(() => {
     if (currentUser?.image) {
-      markImageAsLoaded(currentUser.image);
+      setComposerAvatarLoaded(isImageLoaded(currentUser.image));
+    } else {
+      setComposerAvatarLoaded(true);
     }
   }, [currentUser?.image]);
 
@@ -178,24 +183,41 @@ export default function Home() {
 
   // Kein Loading Screen - zeige gecachte Daten sofort an
 
-  // Preload alle Bilder im Hintergrund, sobald Posts verfügbar sind
-  // Dies lädt die Bilder bereits während "Feed wird geladen..." im Hintergrund
+  // Preload Post-Bilder und Avatare parallel, damit Composer und FeedCards gleichzeitig erscheinen
   useEffect(() => {
     if (!posts) return;
 
-    // Alle Bilder parallel vorladen für sofortige Anzeige
-    posts.forEach((post) => {
-      if (post.imageUrl && !preloadedImages.current.has(post.imageUrl)) {
-        // Image-Objekt für Browser-Cache (kein Link-Preload, um Warnungen zu vermeiden)
-        const img = new Image();
-        img.src = post.imageUrl;
-        img.loading = "eager";
-        img.fetchPriority = "high";
+    const urlsToPreload = new Set<string>();
 
-        preloadedImages.current.add(post.imageUrl);
+    if (currentUser?.image) {
+      urlsToPreload.add(currentUser.image);
+    }
+
+    posts.forEach((post) => {
+      if (post.imageUrl) {
+        urlsToPreload.add(post.imageUrl);
+      }
+      if (post.user?.image) {
+        urlsToPreload.add(post.user.image);
       }
     });
-  }, [posts]);
+
+    urlsToPreload.forEach((url) => {
+      if (preloadedImages.current.has(url)) return;
+
+      preloadedImages.current.add(url);
+      const img = new Image();
+      img.onload = () => {
+        markImageAsLoaded(url);
+        if (url === currentUser?.image) {
+          setComposerAvatarLoaded(true);
+        }
+      };
+      img.src = url;
+      img.loading = "eager";
+      img.fetchPriority = "high";
+    });
+  }, [posts, currentUser?.image]);
 
   // Upload Progress Tracking
   useEffect(() => {
@@ -288,13 +310,29 @@ export default function Home() {
             }}
             className="hidden md:flex items-center gap-3 px-5 py-4 bg-white rounded-3xl border-2 border-black/5 cursor-pointer transition-colors hover:border-black/10"
           >
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gray-100 flex-shrink-0">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gray-100 flex-shrink-0">
               {currentUser?.image ? (
-                <img
-                  src={currentUser.image}
-                  alt={currentUser.name || "Profil"}
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  {!composerAvatarLoaded && (
+                    <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
+                  )}
+                  <NextImage
+                    src={currentUser.image}
+                    alt={currentUser.name || "Profil"}
+                    width={128}
+                    height={128}
+                    quality={90}
+                    className="object-cover rounded-full w-full h-full transition-opacity duration-300"
+                    style={{
+                      opacity: composerAvatarLoaded ? 1 : 0,
+                      zIndex: composerAvatarLoaded ? 20 : 0,
+                    }}
+                    onLoad={() => {
+                      markImageAsLoaded(currentUser.image);
+                      setComposerAvatarLoaded(true);
+                    }}
+                  />
+                </>
               ) : (
                 <User className="w-6 h-6 text-gray-400" />
               )}

@@ -76,10 +76,10 @@ export function startAppTour() {
         }
       },
       {
-        element: "#tour-nav-info",
+        element: "#tour-nav-workspace",
         popover: {
-          title: "Infoseite",
-          description: "Hier findest du wichtige Dokumente und Informationen rund um dein Studium. Fragen kannst du an unseren KI-Assistenten stellen.",
+          title: "Workspace",
+          description: "Hier findest du deine Gruppen, Aufgaben, Dateien und Events für dein Studium.",
           side: "top",
           align: "center"
         }

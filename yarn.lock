@@ -3304,14 +3304,14 @@ convex-helpers@^0.1.95:
   resolved "https://registry.npmjs.org/convex-helpers/-/convex-helpers-0.1.120.tgz"
   integrity sha512-FPqtmN/10uoxmmhVq0ViNi08AnmHKT/eU1R8+ohmPZoHfg8noZEZCltApY/ASDdhq92o0kLZETggzBvMfHJDLQ==
 
-convex@^1.25.0, convex@^1.32.0, convex@^1.34.1:
-  version "1.34.1"
-  resolved "https://registry.npmjs.org/convex/-/convex-1.34.1.tgz"
-  integrity sha512-ooyFnZVVq0u6b5zt0Ptq8QB2ixhf/2vXe+PIcUtdtrs0lq/TwpkmmruHdqkFmWgMd6N+Tmfy8AGkz6QnZUYZBA==
+convex@^1.25.0, convex@^1.32.0, convex@^1.35.1:
+  version "1.41.0"
+  resolved "https://registry.npmjs.org/convex/-/convex-1.41.0.tgz"
+  integrity sha512-euxVf6yfpB7/VGKOobkLgjpbJidsUgW+b0ezonEyCUPqlpHFwR4/yIiI1hjjErzraiw91GxrtxpXQClMLNqU+w==
   dependencies:
     esbuild "0.27.0"
     prettier "^3.0.0"
-    ws "8.18.0"
+    ws "8.20.1"
 
 core-js-compat@^3.48.0:
   version "3.49.0"
@@ -6056,10 +6056,10 @@ word-wrap@^1.2.5:
   resolved "https://registry.npmjs.org/word-wrap/-/word-wrap-1.2.5.tgz"
   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
 
-ws@8.18.0:
-  version "8.18.0"
-  resolved "https://registry.npmjs.org/ws/-/ws-8.18.0.tgz"
-  integrity sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==
+ws@8.20.1:
+  version "8.20.1"
+  resolved "https://registry.npmjs.org/ws/-/ws-8.20.1.tgz"
+  integrity sha512-It4dO0K5v//JtTXuPkfEOaI3uUN87iYPnqo/ZzqCoG3g8uhA66QUMs/SrM0YK7/NAu+r4LMh/9dq2A7k+rHs+w==
 
 yallist@^3.0.2:
   version "3.1.1"
