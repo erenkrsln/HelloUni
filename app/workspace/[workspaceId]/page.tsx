@@ -28,7 +28,7 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
   // Determine if it's an event or group based on prefix
   const isEvent = workspaceId.startsWith("event_");
   const isGroup = workspaceId.startsWith("group_");
-  
+
   const entityId = workspaceId.replace("event_", "").replace("group_", "");
 
   const handleOpenChat = async () => {
@@ -56,15 +56,15 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
       case "chat":
         return (
           <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center h-full">
-             <MessageSquare size={48} className="text-[#D08945] opacity-50 mb-4" />
-             <p className="mb-4 text-sm text-gray-600">The chat for this workspace is directly integrated into your messages.</p>
-             <button 
-               onClick={handleOpenChat}
-               disabled={isNavigating}
-               className="bg-[#D08945] text-white px-6 py-3 rounded-full font-medium hover:bg-[#b07335] transition-colors shadow-sm disabled:opacity-75"
-             >
-               {isNavigating ? "Opening..." : "Open Full Chat"}
-             </button>
+            <MessageSquare size={48} className="text-[#D08945] opacity-50 mb-4" />
+            <p className="mb-4 text-sm text-gray-600">The chat for this workspace is directly integrated into your messages.</p>
+            <button
+              onClick={handleOpenChat}
+              disabled={isNavigating}
+              className="bg-[#D08945] text-white px-6 py-3 rounded-full font-medium hover:bg-[#b07335] transition-colors shadow-sm disabled:opacity-75"
+            >
+              {isNavigating ? "Opening..." : "Open Full Chat"}
+            </button>
           </div>
         );
       case "tasks":
@@ -83,9 +83,9 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
   };
 
   return (
-    <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
+    <main className="flex flex-col h-screen w-full max-w-[428px] md:max-w-3xl mx-auto bg-white relative">
       {/* Header */}
-      <div 
+      <div
         className="flex flex-col gap-1 px-4 py-3 bg-white border-b border-gray-100 z-10 sticky top-0"
         style={{ paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))` }}
       >
@@ -106,38 +106,38 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-gray-100 px-3 py-2 sticky top-[calc(4.5rem+env(safe-area-inset-top,0px))] bg-white z-10">
-        <button 
+        <button
           onClick={() => setActiveTab("chat")}
           className={`min-w-[86px] px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center justify-center gap-2 ${activeTab === "chat" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <MessageSquare size={16} /> Chat
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("tasks")}
           className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "tasks" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <ListTodo size={16} /> Tasks
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("files")}
           className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "files" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <Folder size={16} /> Files
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("polls")}
           className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "polls" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <BarChart2 size={16} /> Polls
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("members")}
           className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "members" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
         >
           <Users size={16} /> Members
         </button>
         {isGroup && (
-          <button 
+          <button
             onClick={() => setActiveTab("events")}
             className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "events" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
           >
