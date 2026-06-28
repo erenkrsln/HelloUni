@@ -84,6 +84,20 @@ const STATIC_PAGES: StaticPageResult[] = [
         href: "/profile",
         keywords: ["profil", "profile", "mein profil", "account", "konto", "studiengang", "interessen", "avatar", "profilbild", "meine beitraege", "meine beiträge"],
         category: "Bereich"
+    },
+    {
+        title: "Workspace",
+        description: "Verwalte deine anstehenden Events, offenen Aufgaben und Gruppen.",
+        href: "/workspace",
+        keywords: ["workspace", "arbeitsbereich", "aufgaben", "tasks", "termine", "events", "gruppen", "to-do", "todo", "übersicht", "uebersicht", "dashboard"],
+        category: "Bereich"
+    },
+    {
+        title: "Infopage",
+        description: "Wichtige Dokumente, Informationen und Mensaplan zu deinem Studiengang.",
+        href: "/info",
+        keywords: ["infopage", "informationen", "studiengang", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos"],
+        category: "Bereich"
     }
 ];
 
