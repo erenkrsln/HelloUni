@@ -143,34 +143,6 @@ export function BottomNavigation() {
             />
           </Link>
 
-          {/* Create - nur Mobile */}
-          <Link
-            id="tour-nav-create"
-            href="/create"
-            prefetch={true}
-            onClick={handleCreateClick}
-            className="flex lg:hidden items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
-            style={{
-              width: "44px",
-              height: "44px",
-              minWidth: "44px",
-              minHeight: "44px",
-              opacity: 1
-            }}
-          >
-            <Plus
-              style={{
-                width: "32px",
-                height: "32px",
-                color: "#000000",
-                fill: isActive("/create") ? "#000000" : "none",
-                transform: isActive("/create") ? "rotate(45deg) translateZ(0)" : "rotate(0deg) translateZ(0)",
-                transition: "transform 0.2s ease",
-                willChange: "transform",
-                backfaceVisibility: "hidden"
-              }}
-            />
-          </Link>
 
           {/* Chat */}
           <Link
