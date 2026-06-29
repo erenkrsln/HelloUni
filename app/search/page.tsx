@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
@@ -8,7 +8,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, StickyNote } from "lucide-react";
+import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, StickyNote, Hash, AtSign } from "lucide-react";
 import { FeedCard } from "@/components/feed-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -125,6 +125,15 @@ function searchStaticPages(query: string): StaticPageResult[] {
             return normalizedKeyword.includes(normalizedQuery) || normalizedQuery.includes(normalizedKeyword);
         });
     });
+}
+
+function getSearchMode(query: string) {
+    const trimmed = query.trim();
+    if (trimmed.startsWith("/")) return { mode: "pages" as const, term: trimmed.slice(1).trim() };
+    if (trimmed.startsWith("#")) return { mode: "groups" as const, term: trimmed.slice(1).trim() };
+    if (trimmed.startsWith("@")) return { mode: "people" as const, term: trimmed.slice(1).trim() };
+    if (trimmed.startsWith("!")) return { mode: "posts" as const, term: trimmed.slice(1).trim() };
+    return { mode: "all" as const, term: query };
 }
 
 export default function SearchPage() {
@@ -260,6 +269,7 @@ export default function SearchPage() {
 
     // Simple debounce for search query
     const [debouncedQuery, setDebouncedQuery] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -272,19 +282,33 @@ export default function SearchPage() {
     const joinGroup = useMutation(api.mutations.joinPublicGroup);
     const requestToJoin = useMutation(api.mutations.requestToJoinPublicGroup);
 
-    const isRecommendationMode = filterType === "people" && !debouncedQuery && !userMajor && !userInterests;
+    const searchAnalysis = getSearchMode(debouncedQuery);
+    const activeSearchMode = filterType === "all" ? searchAnalysis.mode : "all";
+    const searchTargetTerm = filterType === "all" ? searchAnalysis.term : debouncedQuery;
 
-    // Queries - conditionally skip based on filter
-    const shouldSearchGroups = filterType === "groups" || (filterType === "all" && !!debouncedQuery);
-    const shouldSearchUsers = (filterType === "people" && !isRecommendationMode) || (filterType === "all" && !!debouncedQuery);
-    const shouldSearchPosts = filterType === "posts" || (filterType === "all" && !!debouncedQuery);
+    const isRecommendationMode = filterType === "people" && activeSearchMode === "all" && !searchTargetTerm && !userMajor && !userInterests;
 
-    const pageResults = searchStaticPages(debouncedQuery);
+    // Queries - conditionally skip based on filter or prefix override
+    const shouldSearchGroups =
+        (activeSearchMode === "groups" && !!searchTargetTerm) ||
+        (activeSearchMode === "all" && (filterType === "groups" || (filterType === "all" && !!searchTargetTerm)));
+
+    const shouldSearchUsers =
+        (activeSearchMode === "people" && !!searchTargetTerm) ||
+        (activeSearchMode === "all" && ((filterType === "people" && !isRecommendationMode) || (filterType === "all" && !!searchTargetTerm)));
+
+    const shouldSearchPosts =
+        (activeSearchMode === "posts" && !!searchTargetTerm) ||
+        (activeSearchMode === "all" && (filterType === "posts" || (filterType === "all" && !!searchTargetTerm)));
+
+    const pageResults = activeSearchMode === "pages"
+        ? searchStaticPages(searchTargetTerm)
+        : (activeSearchMode === "all" && filterType === "all" ? searchStaticPages(searchTargetTerm) : []);
 
     const groupResults = useQuery(
         api.queries.searchPublicGroups,
         shouldSearchGroups ? {
-            searchTerm: debouncedQuery,
+            searchTerm: searchTargetTerm,
             sortBy,
             userId: currentUserId || undefined,
         } : "skip"
@@ -293,7 +317,7 @@ export default function SearchPage() {
     const userResults = useQuery(
         api.queries.searchProfiles,
         shouldSearchUsers ? {
-            searchTerm: debouncedQuery,
+            searchTerm: searchTargetTerm,
             sortBy,
             // Only apply user filters if specifically in "people" tab
             major: filterType === "people" ? (userMajor || undefined) : undefined,
@@ -311,7 +335,7 @@ export default function SearchPage() {
     const postResults = useQuery(
         api.queries.searchPosts,
         shouldSearchPosts ? {
-            searchTerm: debouncedQuery,
+            searchTerm: searchTargetTerm,
             userId: currentUserId,
             sortBy,
             // Only apply post filters if specifically in "posts" tab
@@ -319,6 +343,14 @@ export default function SearchPage() {
             major: filterType === "posts" ? (postAuthorMajor || undefined) : undefined
         } : "skip"
     );
+
+    const handlePrefixClick = (prefix: string) => {
+        setFilterType("all");
+        setSearchQuery(prefix);
+        if (searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    };
 
     useEffect(() => {
         // Prüfe, ob Seite bereits besucht wurde
@@ -394,6 +426,7 @@ export default function SearchPage() {
                             <Search className="h-5 w-5" />
                         </div>
                         <input
+                            ref={searchInputRef}
                             type="text"
                             className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
                             placeholder="Suchen..."
@@ -650,23 +683,91 @@ export default function SearchPage() {
                     {
                         // Calculate if we should show results based on query and active filters
                         (() => {
-                            const hasQuery = !!debouncedQuery;
+                            const hasQuery = !!searchTargetTerm;
                             const hasUserFilters = filterType === "people" && (!!userMajor || !!userInterests);
                             const hasPostFilters = filterType === "posts" && (!!postType || !!postAuthorMajor);
-                            const shouldShowResults = filterType === "groups" || hasQuery || hasUserFilters || hasPostFilters || filterType === "people";
+                            const shouldShowResults =
+                                (activeSearchMode !== "all" && hasQuery) ||
+                                filterType === "groups" ||
+                                hasQuery ||
+                                hasUserFilters ||
+                                hasPostFilters ||
+                                (filterType === "people");
 
                             if (!shouldShowResults) {
+                                if (filterType === "all") {
+                                    return (
+                                        <div className="mt-4 p-5 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 shadow-sm">
+                                            <div className="flex items-center gap-2.5 mb-4">
+
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-900 text-base">Schnellsuche mit Präfixen</h3>
+                                                    <p className="text-xs text-gray-500 font-normal">
+                                                        Filtere deine Ergebnisse direkt über das Suchfeld.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 mt-4">
+                                                {[
+                                                    {
+                                                        prefix: "/",
+                                                        label: "Seiten & Bereiche",
+                                                        example: "/kalender",
+                                                        color: "text-purple-600 bg-purple-50 border-purple-100",
+                                                        icon: FileText
+                                                    },
+                                                    {
+                                                        prefix: "#",
+                                                        label: "Öffentliche Gruppen",
+                                                        example: "#sport",
+                                                        color: "text-emerald-600 bg-emerald-50 border-emerald-100",
+                                                        icon: Hash
+                                                    },
+                                                    {
+                                                        prefix: "@",
+                                                        label: "Personen",
+                                                        example: "@liesbeth",
+                                                        color: "text-blue-600 bg-blue-50 border-blue-100",
+                                                        icon: AtSign
+                                                    },
+                                                    {
+                                                        prefix: "!",
+                                                        label: "Posts",
+                                                        example: "!klausur",
+                                                        color: "text-rose-600 bg-rose-50 border-rose-100",
+                                                        icon: MessageCircle
+                                                    }
+                                                ].map((item) => (
+                                                    <button
+                                                        key={item.prefix}
+                                                        onClick={() => handlePrefixClick(item.prefix)}
+                                                        className="flex flex-col items-start p-3.5 rounded-xl border border-gray-100 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 text-left group"
+                                                    >
+                                                        <div className="flex items-center justify-between w-full mb-2">
+
+                                                            <span className=" font-bold text-base px-2 py-0.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-md shadow-sm group-hover:bg-[#D08945] group-hover:text-white group-hover:border-transparent transition-all duration-200">
+                                                                {item.prefix}
+                                                            </span>
+                                                        </div>
+                                                        <span className="font-semibold text-gray-800 text-xs truncate w-full">
+                                                            {item.label}
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-400 mt-0.5">
+                                                            z.B. {item.example}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+
                                 return (
                                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                                         <Search className="w-12 h-12 mb-4 opacity-20" />
                                         <p className="text-center px-4">
-                                            {(filterType as string) === "people"
-                                                ? "Suche nach Personen"
-                                                : filterType === "posts"
-                                                    ? "Suche nach Posts"
-                                                    : filterType === "all"
-                                                        ? "Suche in der gesamten App (Seiten, Gruppen, Personen, Beiträge)..."
-                                                        : "Suche nach Gruppen"}
+                                            Suche nach Posts
                                         </p>
                                     </div>
                                 );
@@ -674,133 +775,126 @@ export default function SearchPage() {
 
                             return (
                                 <div className="space-y-8">
-                                    {/* Gruppen Section */}
-                                    {filterType === "groups" && (
+                                    {/* Override rendering if a prefix is active */}
+                                    {activeSearchMode !== "all" ? (
                                         <div>
-                                            <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
-                                            {groupResults === undefined || !currentUserId ? (
-                                                <div className="py-4 text-center text-sm text-gray-400 font-normal">Laden...</div>
-                                            ) : groupResults.length === 0 ? (
-                                                <div className="py-2 px-1 text-sm text-gray-500 font-normal">Keine öffentlichen Gruppen gefunden.</div>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    {groupResults.map((group) => {
-                                                        const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
-                                                        return (
-                                                            <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50">
-                                                                <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
-                                                                    {group.displayImage ? (
-                                                                        <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center font-bold ">
-                                                                            {group.displayName?.charAt(0).toUpperCase()}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0 mr-2">
-                                                                    <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
-                                                                    <p className="text-xs text-gray-500 mt-0.5 font-normal">
-                                                                        {group.participants.length} Mitglieder
-                                                                    </p>
-                                                                </div>
-                                                                <div>
-                                                                    {isMember ? (
-                                                                        <Link
-                                                                            href={`/chat/${group._id}`}
-                                                                            className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
-                                                                        >
-                                                                            <MessageCircle size={13} />
-                                                                            Öffnen
-                                                                        </Link>
-                                                                    ) : group.joinRequestStatus === "pending" ? (
-                                                                        <button
-                                                                            disabled
-                                                                            className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
-                                                                        >
-                                                                            Angefragt
-                                                                        </button>
-                                                                    ) : (
-                                                                        <button
-                                                                            onClick={async () => {
-                                                                                if (!currentUserId) return;
-                                                                                try {
-                                                                                    if (group.needsRequestToJoin) {
-                                                                                        await requestToJoin({
-                                                                                            conversationId: group._id,
-                                                                                            userId: currentUserId,
-                                                                                        });
-                                                                                        alert("Beitrittsanfrage wurde gesendet!");
-                                                                                    } else {
-                                                                                        await joinGroup({
-                                                                                            conversationId: group._id,
-                                                                                            userId: currentUserId,
-                                                                                        });
-                                                                                        // Redirect to chat screen on join
-                                                                                        router.push(`/chat/${group._id}`);
-                                                                                    }
-                                                                                } catch (err) {
-                                                                                    console.error("Failed to perform join/request action:", err);
-                                                                                    alert("Aktion fehlgeschlagen.");
-                                                                                }
-                                                                            }}
-                                                                            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"
-                                                                        >
-                                                                            <UserPlus size={13} />
-                                                                            {group.needsRequestToJoin ? "Anfragen" : "Beitreten"}
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {/* Personen Section */}
-                                    {filterType === "people" && (
-                                        <div>
-                                            {isRecommendationMode ? (
-                                                <>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Vorschläge für dich</h2>
-                                                    {compatibleUsers === undefined ? (
-                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
-                                                    ) : compatibleUsers.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Vorschläge gefunden.</div>
+                                            {activeSearchMode === "pages" && (
+                                                <div>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">Seiten & Bereiche</h2>
+                                                    {pageResults.length === 0 ? (
+                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Seiten oder Bereiche gefunden.</div>
                                                     ) : (
-                                                        <div className="space-y-3">
-                                                            {compatibleUsers.map((user) => (
-                                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                                                                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
-                                                                        {user.image ? (
-                                                                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                        <div className="space-y-2">
+                                                            {pageResults.map((page) => (
+                                                                <Link
+                                                                    key={page.href}
+                                                                    href={page.href}
+                                                                    className="flex items-center p-3 rounded-xl hover:bg-gray-50 border border-gray-100 bg-white transition-colors"
+                                                                >
+                                                                    <div className="w-10 h-10 rounded-full bg-[#D08945]/10 text-[#D08945] flex items-center justify-center mr-3 shrink-0">
+                                                                        {page.category === "Seite" ? (
+                                                                            <FileText size={20} />
                                                                         ) : (
-                                                                            <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
-                                                                                {user.name?.charAt(0).toUpperCase()}
-                                                                            </div>
+                                                                            <StickyNote size={20} />
                                                                         )}
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                        <p className="text-sm text-gray-500 truncate">@{user.username}</p>
-                                                                        {(user.uni_name || user.major) && (
-                                                                            <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
-
-                                                                                {user.major && (
-                                                                                    <span className="flex items-center truncate">
-                                                                                        {user.major}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h3 className="font-semibold text-gray-900 truncate">{page.title}</h3>
+                                                                        </div>
+                                                                        <p className="text-xs text-gray-500 mt-0.5 truncate">{page.description}</p>
                                                                     </div>
                                                                 </Link>
                                                             ))}
                                                         </div>
                                                     )}
-                                                </>
-                                            ) : (
-                                                <>
+                                                </div>
+                                            )}
+
+                                            {activeSearchMode === "groups" && (
+                                                <div>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
+                                                    {groupResults === undefined || !currentUserId ? (
+                                                        <div className="py-4 text-center text-sm text-gray-400 font-normal">Laden...</div>
+                                                    ) : groupResults.length === 0 ? (
+                                                        <div className="py-2 px-1 text-sm text-gray-500 font-normal">Keine öffentlichen Gruppen gefunden.</div>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {groupResults.map((group) => {
+                                                                const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
+                                                                return (
+                                                                    <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 bg-white border border-gray-100">
+                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                            {group.displayImage ? (
+                                                                                <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center font-bold">
+                                                                                    {group.displayName?.charAt(0).toUpperCase()}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0 mr-2">
+                                                                            <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
+                                                                            <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                                                                                {group.participants.length} Mitglieder
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            {isMember ? (
+                                                                                <Link
+                                                                                    href={`/chat/${group._id}`}
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
+                                                                                >
+                                                                                    <MessageCircle size={13} />
+                                                                                    Öffnen
+                                                                                </Link>
+                                                                            ) : group.joinRequestStatus === "pending" ? (
+                                                                                <button
+                                                                                    disabled
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
+                                                                                >
+                                                                                    Angefragt
+                                                                                </button>
+                                                                            ) : (
+                                                                                <button
+                                                                                    onClick={async () => {
+                                                                                        if (!currentUserId) return;
+                                                                                        try {
+                                                                                            if (group.needsRequestToJoin) {
+                                                                                                await requestToJoin({
+                                                                                                    conversationId: group._id,
+                                                                                                    userId: currentUserId,
+                                                                                                });
+                                                                                                alert("Beitrittsanfrage wurde gesendet!");
+                                                                                            } else {
+                                                                                                await joinGroup({
+                                                                                                    conversationId: group._id,
+                                                                                                    userId: currentUserId,
+                                                                                                });
+                                                                                                router.push(`/chat/${group._id}`);
+                                                                                            }
+                                                                                        } catch (err) {
+                                                                                            console.error("Failed to perform join/request action:", err);
+                                                                                            alert("Aktion fehlgeschlagen.");
+                                                                                        }
+                                                                                    }}
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"
+                                                                                >
+                                                                                    <UserPlus size={13} />
+                                                                                    {group.needsRequestToJoin ? "Anfragen" : "Beitreten"}
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {activeSearchMode === "people" && (
+                                                <div>
                                                     <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
                                                     {userResults === undefined ? (
                                                         <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
@@ -809,7 +903,7 @@ export default function SearchPage() {
                                                     ) : (
                                                         <div className="space-y-3">
                                                             {userResults.map((user) => (
-                                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors bg-white border border-gray-100">
                                                                     <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
                                                                         {user.image ? (
                                                                             <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
@@ -842,225 +936,415 @@ export default function SearchPage() {
                                                             ))}
                                                         </div>
                                                     )}
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Beiträge Section */}
-                                    {filterType === "posts" && (
-                                        <div>
-                                            <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
-                                            {postResults === undefined ? (
-                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
-                                            ) : postResults.length === 0 ? (
-                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
-                                            ) : (
-                                                <div className="space-y-0">
-                                                    {postResults.map((post, index) => (
-                                                        <FeedCard
-                                                            key={post._id}
-                                                            post={post}
-                                                            currentUserId={currentUserId}
-                                                            showDivider={index < postResults.length - 1}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Gesamte App Section */}
-                                    {filterType === "all" && (
-                                        <div className="space-y-6">
-                                            {/* Pages / Bereiche Section */}
-                                            {pageResults.length > 0 && (
-                                                <div>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Seiten & Bereiche</h2>
-                                                    <div className="space-y-2">
-                                                        {pageResults.map((page) => (
-                                                            <Link
-                                                                key={page.href}
-                                                                href={page.href}
-                                                                className="flex items-center p-3 rounded-xl hover:bg-gray-50 border border-gray-100 bg-white transition-colors"
-                                                            >
-                                                                <div className="w-10 h-10 rounded-full bg-[#D08945]/10 text-[#D08945] flex items-center justify-center mr-3 shrink-0">
-                                                                    {page.category === "Seite" ? (
-                                                                        <FileText size={20} />
-                                                                    ) : (
-                                                                        <StickyNote size={20} />
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <h3 className="font-semibold text-gray-900 truncate">{page.title}</h3>
-
-                                                                    </div>
-                                                                    <p className="text-xs text-gray-500 mt-0.5 truncate">{page.description}</p>
-                                                                </div>
-
-                                                            </Link>
-                                                        ))}
-                                                    </div>
                                                 </div>
                                             )}
 
-                                            {/* Gruppen Section */}
-                                            {groupResults !== undefined && groupResults.length > 0 && (
-                                                <div>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
-                                                    <div className="space-y-3">
-                                                        {groupResults.map((group) => {
-                                                            const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
-                                                            return (
-                                                                <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 bg-white border border-gray-100">
-                                                                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
-                                                                        {group.displayImage ? (
-                                                                            <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
-                                                                        ) : (
-                                                                            <div className="w-full h-full flex items-center justify-center font-bold">
-                                                                                {group.displayName?.charAt(0).toUpperCase()}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex-1 min-w-0 mr-2">
-                                                                        <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
-                                                                        <p className="text-xs text-gray-500 mt-0.5 font-normal">
-                                                                            {group.participants.length} Mitglieder
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        {isMember ? (
-                                                                            <Link
-                                                                                href={`/chat/${group._id}`}
-                                                                                className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
-                                                                            >
-                                                                                <MessageCircle size={13} />
-                                                                                Öffnen
-                                                                            </Link>
-                                                                        ) : group.joinRequestStatus === "pending" ? (
-                                                                            <button
-                                                                                disabled
-                                                                                className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
-                                                                            >
-                                                                                Angefragt
-                                                                            </button>
-                                                                        ) : (
-                                                                            <button
-                                                                                onClick={async () => {
-                                                                                    if (!currentUserId) return;
-                                                                                    try {
-                                                                                        if (group.needsRequestToJoin) {
-                                                                                            await requestToJoin({
-                                                                                                conversationId: group._id,
-                                                                                                userId: currentUserId,
-                                                                                            });
-                                                                                            alert("Beitrittsanfrage wurde gesendet!");
-                                                                                        } else {
-                                                                                            await joinGroup({
-                                                                                                conversationId: group._id,
-                                                                                                userId: currentUserId,
-                                                                                            });
-                                                                                            router.push(`/chat/${group._id}`);
-                                                                                        }
-                                                                                    } catch (err) {
-                                                                                        console.error("Failed to perform join/request action:", err);
-                                                                                        alert("Aktion fehlgeschlagen.");
-                                                                                    }
-                                                                                }}
-                                                                                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"
-                                                                            >
-                                                                                <UserPlus size={13} />
-                                                                                {group.needsRequestToJoin ? "Anfragen" : "Beitreten"}
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Personen Section */}
-                                            {userResults !== undefined && userResults.length > 0 && (
-                                                <div>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
-                                                    <div className="space-y-3">
-                                                        {userResults.map((user) => (
-                                                            <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors bg-white">
-                                                                <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
-                                                                    {user.image ? (
-                                                                        <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
-                                                                            {user.name?.charAt(0).toUpperCase()}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                    <p className="text-sm text-gray-500 truncate">@{user.username}</p>
-                                                                    {(user.uni_name || user.major) && (
-                                                                        <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
-                                                                            {user.uni_name && (
-                                                                                <span className="flex items-center truncate">
-                                                                                    <MapPin size={10} className="mr-1" />
-                                                                                    {user.uni_name}
-                                                                                </span>
-                                                                            )}
-                                                                            {user.major && (
-                                                                                <span className="flex items-center truncate">
-                                                                                    {user.major}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </Link>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Beiträge Section */}
-                                            {postResults !== undefined && postResults.length > 0 && (
+                                            {activeSearchMode === "posts" && (
                                                 <div>
                                                     <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
-                                                    <div className="space-y-0 bg-white overflow-hidden pt-2">
-                                                        {postResults.map((post, index) => (
-                                                            <FeedCard
-                                                                key={post._id}
-                                                                post={post}
-                                                                currentUserId={currentUserId}
-                                                                showDivider={index < postResults.length - 1}
-                                                            />
-                                                        ))}
-                                                    </div>
+                                                    {postResults === undefined ? (
+                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                    ) : postResults.length === 0 ? (
+                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                    ) : (
+                                                        <div className="space-y-0 bg-white overflow-hidden pt-2 rounded-xl border border-gray-100">
+                                                            {postResults.map((post, index) => (
+                                                                <FeedCard
+                                                                    key={post._id}
+                                                                    post={post}
+                                                                    currentUserId={currentUserId}
+                                                                    showDivider={index < postResults.length - 1}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
-
-                                            {/* General loading state while querying the database */}
-                                            {(groupResults === undefined || userResults === undefined || postResults === undefined) && (
-                                                <div className="py-8 text-center text-sm text-gray-400">
-                                                    Suchen...
-                                                </div>
-                                            )}
-
-                                            {/* Consolidated empty state */}
-                                            {groupResults !== undefined &&
-                                                userResults !== undefined &&
-                                                postResults !== undefined &&
-                                                pageResults.length === 0 &&
-                                                groupResults.length === 0 &&
-                                                userResults.length === 0 &&
-                                                postResults.length === 0 && (
-                                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                                                        <Search className="w-12 h-12 mb-4 opacity-20" />
-                                                        <p>Keine Ergebnisse für "{debouncedQuery}" gefunden.</p>
-                                                    </div>
-                                                )}
                                         </div>
+                                    ) : (
+                                        <>
+                                            {/* Original tabs rendering */}
+                                            {filterType === "groups" && (
+                                                <div>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
+                                                    {groupResults === undefined || !currentUserId ? (
+                                                        <div className="py-4 text-center text-sm text-gray-400 font-normal">Laden...</div>
+                                                    ) : groupResults.length === 0 ? (
+                                                        <div className="py-2 px-1 text-sm text-gray-500 font-normal">Keine öffentlichen Gruppen gefunden.</div>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {groupResults.map((group) => {
+                                                                const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
+                                                                return (
+                                                                    <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50">
+                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                            {group.displayImage ? (
+                                                                                <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center font-bold ">
+                                                                                    {group.displayName?.charAt(0).toUpperCase()}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0 mr-2">
+                                                                            <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
+                                                                            <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                                                                                {group.participants.length} Mitglieder
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            {isMember ? (
+                                                                                <Link
+                                                                                    href={`/chat/${group._id}`}
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
+                                                                                >
+                                                                                    <MessageCircle size={13} />
+                                                                                    Öffnen
+                                                                                </Link>
+                                                                            ) : group.joinRequestStatus === "pending" ? (
+                                                                                <button
+                                                                                    disabled
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
+                                                                                >
+                                                                                    Angefragt
+                                                                                </button>
+                                                                            ) : (
+                                                                                <button
+                                                                                    onClick={async () => {
+                                                                                        if (!currentUserId) return;
+                                                                                        try {
+                                                                                            if (group.needsRequestToJoin) {
+                                                                                                await requestToJoin({
+                                                                                                    conversationId: group._id,
+                                                                                                    userId: currentUserId,
+                                                                                                });
+                                                                                                alert("Beitrittsanfrage wurde gesendet!");
+                                                                                            } else {
+                                                                                                await joinGroup({
+                                                                                                    conversationId: group._id,
+                                                                                                    userId: currentUserId,
+                                                                                                });
+                                                                                                // Redirect to chat screen on join
+                                                                                                router.push(`/chat/${group._id}`);
+                                                                                            }
+                                                                                        } catch (err) {
+                                                                                            console.error("Failed to perform join/request action:", err);
+                                                                                            alert("Aktion fehlgeschlagen.");
+                                                                                        }
+                                                                                    }}
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"
+                                                                                >
+                                                                                    <UserPlus size={13} />
+                                                                                    {group.needsRequestToJoin ? "Anfragen" : "Beitreten"}
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {filterType === "people" && (
+                                                <div>
+                                                    {isRecommendationMode ? (
+                                                        <>
+                                                            <h2 className="text-lg font-semibold mb-4 px-1">Vorschläge für dich</h2>
+                                                            {compatibleUsers === undefined ? (
+                                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                            ) : compatibleUsers.length === 0 ? (
+                                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Vorschläge gefunden.</div>
+                                                            ) : (
+                                                                <div className="space-y-3">
+                                                                    {compatibleUsers.map((user) => (
+                                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                                {user.image ? (
+                                                                                    <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                        {user.name?.charAt(0).toUpperCase()}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                                                                                <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                                {(user.uni_name || user.major) && (
+                                                                                    <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+
+                                                                                        {user.major && (
+                                                                                            <span className="flex items-center truncate">
+                                                                                                {user.major}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </Link>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
+                                                            {userResults === undefined ? (
+                                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                            ) : userResults.length === 0 ? (
+                                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Personen gefunden.</div>
+                                                            ) : (
+                                                                <div className="space-y-3">
+                                                                    {userResults.map((user) => (
+                                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                                {user.image ? (
+                                                                                    <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                        {user.name?.charAt(0).toUpperCase()}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                                                                                <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                                {(user.uni_name || user.major) && (
+                                                                                    <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                                        {user.uni_name && (
+                                                                                            <span className="flex items-center truncate">
+                                                                                                <MapPin size={10} className="mr-1" />
+                                                                                                {user.uni_name}
+                                                                                            </span>
+                                                                                        )}
+                                                                                        {user.major && (
+                                                                                            <span className="flex items-center truncate">
+                                                                                                {user.major}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </Link>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {filterType === "posts" && (
+                                                <div>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
+                                                    {postResults === undefined ? (
+                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                    ) : postResults.length === 0 ? (
+                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                    ) : (
+                                                        <div className="space-y-0">
+                                                            {postResults.map((post, index) => (
+                                                                <FeedCard
+                                                                    key={post._id}
+                                                                    post={post}
+                                                                    currentUserId={currentUserId}
+                                                                    showDivider={index < postResults.length - 1}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {filterType === "all" && (
+                                                <div className="space-y-6">
+                                                    {/* Pages / Bereiche Section */}
+                                                    {pageResults.length > 0 && (
+                                                        <div>
+                                                            <h2 className="text-lg font-semibold mb-4 px-1">Seiten & Bereiche</h2>
+                                                            <div className="space-y-2">
+                                                                {pageResults.map((page) => (
+                                                                    <Link
+                                                                        key={page.href}
+                                                                        href={page.href}
+                                                                        className="flex items-center p-3 rounded-xl hover:bg-gray-50 border border-gray-100 bg-white transition-colors"
+                                                                    >
+                                                                        <div className="w-10 h-10 rounded-full bg-[#D08945]/10 text-[#D08945] flex items-center justify-center mr-3 shrink-0">
+                                                                            {page.category === "Seite" ? (
+                                                                                <FileText size={20} />
+                                                                            ) : (
+                                                                                <StickyNote size={20} />
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <h3 className="font-semibold text-gray-900 truncate">{page.title}</h3>
+                                                                            </div>
+                                                                            <p className="text-xs text-gray-500 mt-0.5 truncate">{page.description}</p>
+                                                                        </div>
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Gruppen Section */}
+                                                    {groupResults !== undefined && groupResults.length > 0 && (
+                                                        <div>
+                                                            <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
+                                                            <div className="space-y-3">
+                                                                {groupResults.map((group) => {
+                                                                    const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
+                                                                    return (
+                                                                        <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 bg-white border border-gray-100">
+                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                                {group.displayImage ? (
+                                                                                    <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center font-bold">
+                                                                                        {group.displayName?.charAt(0).toUpperCase()}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0 mr-2">
+                                                                                <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
+                                                                                <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                                                                                    {group.participants.length} Mitglieder
+                                                                                </p>
+                                                                            </div>
+                                                                            <div>
+                                                                                {isMember ? (
+                                                                                    <Link
+                                                                                        href={`/chat/${group._id}`}
+                                                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
+                                                                                    >
+                                                                                        <MessageCircle size={13} />
+                                                                                        Öffnen
+                                                                                    </Link>
+                                                                                ) : group.joinRequestStatus === "pending" ? (
+                                                                                    <button
+                                                                                        disabled
+                                                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
+                                                                                    >
+                                                                                        Angefragt
+                                                                                    </button>
+                                                                                ) : (
+                                                                                    <button
+                                                                                        onClick={async () => {
+                                                                                            if (!currentUserId) return;
+                                                                                            try {
+                                                                                                if (group.needsRequestToJoin) {
+                                                                                                    await requestToJoin({
+                                                                                                        conversationId: group._id,
+                                                                                                        userId: currentUserId,
+                                                                                                    });
+                                                                                                    alert("Beitrittsanfrage wurde gesendet!");
+                                                                                                } else {
+                                                                                                    await joinGroup({
+                                                                                                        conversationId: group._id,
+                                                                                                        userId: currentUserId,
+                                                                                                    });
+                                                                                                    router.push(`/chat/${group._id}`);
+                                                                                                }
+                                                                                            } catch (err) {
+                                                                                                console.error("Failed to perform join/request action:", err);
+                                                                                                alert("Aktion fehlgeschlagen.");
+                                                                                            }
+                                                                                        }}
+                                                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-[#D08945] hover:bg-[#b0733a] text-white text-xs font-semibold rounded-full transition-colors"
+                                                                                    >
+                                                                                        <UserPlus size={13} />
+                                                                                        {group.needsRequestToJoin ? "Anfragen" : "Beitreten"}
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Personen Section */}
+                                                    {userResults !== undefined && userResults.length > 0 && (
+                                                        <div>
+                                                            <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
+                                                            <div className="space-y-3">
+                                                                {userResults.map((user) => (
+                                                                    <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors bg-white">
+                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                            {user.image ? (
+                                                                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                    {user.name?.charAt(0).toUpperCase()}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
+                                                                            <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                            {(user.uni_name || user.major) && (
+                                                                                <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                                    {user.uni_name && (
+                                                                                        <span className="flex items-center truncate">
+                                                                                            <MapPin size={10} className="mr-1" />
+                                                                                            {user.uni_name}
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {user.major && (
+                                                                                        <span className="flex items-center truncate">
+                                                                                            {user.major}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Beiträge Section */}
+                                                    {postResults !== undefined && postResults.length > 0 && (
+                                                        <div>
+                                                            <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
+                                                            <div className="space-y-0 bg-white overflow-hidden pt-2">
+                                                                {postResults.map((post, index) => (
+                                                                    <FeedCard
+                                                                        key={post._id}
+                                                                        post={post}
+                                                                        currentUserId={currentUserId}
+                                                                        showDivider={index < postResults.length - 1}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* General loading state while querying the database */}
+                                                    {(groupResults === undefined || userResults === undefined || postResults === undefined) && (
+                                                        <div className="py-8 text-center text-sm text-gray-400">
+                                                            Suchen...
+                                                        </div>
+                                                    )}
+
+                                                    {/* Consolidated empty state */}
+                                                    {groupResults !== undefined &&
+                                                        userResults !== undefined &&
+                                                        postResults !== undefined &&
+                                                        pageResults.length === 0 &&
+                                                        groupResults.length === 0 &&
+                                                        userResults.length === 0 &&
+                                                        postResults.length === 0 && (
+                                                            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                                                <Search className="w-12 h-12 mb-4 opacity-20" />
+                                                                <p>Keine Ergebnisse für "{debouncedQuery}" gefunden.</p>
+                                                            </div>
+                                                        )}
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             );
