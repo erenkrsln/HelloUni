@@ -24,7 +24,7 @@ export function startAppTour() {
         element: "#tour-profile-menu",
         popover: {
           title: "Die rechte Seitenleiste",
-          description: "Hier findest du alle wichtigen Bereiche wie dein Profil, die Infoseiten, Einstellungen und mehr.",
+          description: "Hier findest du dein Profil, die Infoseiten, Einstellungen und mehr.",
           side: "bottom",
           align: "start"
         }
@@ -33,7 +33,7 @@ export function startAppTour() {
         element: "#tour-nav-notifications",
         popover: {
           title: "Benachrichtigungen",
-          description: "Hier siehst du neue Likes, Kommentare und neue Follower.",
+          description: "Hier siehst du neue Interaktionen mit deinen Beiträgen.",
           side: "bottom",
           align: "center"
         }
@@ -60,17 +60,7 @@ export function startAppTour() {
         element: "#tour-nav-search",
         popover: {
           title: "Suche",
-          description: "Hier kannst du nach öffentlichen Gruppen, Profilen anderer Studierender oder nach bestimmten Posts suchen.",
-          side: "top",
-          align: "center"
-        }
-      },
-
-      {
-        element: "#tour-nav-chat",
-        popover: {
-          title: "Chats",
-          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen.",
+          description: "Hier kannst du die App durchsuchen und neue Leute finden.",
           side: "top",
           align: "center"
         }
@@ -79,7 +69,16 @@ export function startAppTour() {
         element: "#tour-nav-workspace",
         popover: {
           title: "Workspace",
-          description: "Hier findest du deine Gruppen, Aufgaben, Dateien und Events für dein Studium.",
+          description: "Hier findest du Gruppen, Aufgaben, Dateien und Events rund um dein Studium.",
+          side: "top",
+          align: "center"
+        }
+      },
+      {
+        element: "#tour-nav-chat",
+        popover: {
+          title: "Chats",
+          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen.",
           side: "top",
           align: "center"
         }
