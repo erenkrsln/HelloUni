@@ -68,6 +68,7 @@ async function insertCallSummaryMessage(
   await ctx.db.patch(conversationId, {
     lastMessageId: messageId,
     updatedAt: now,
+    deletedBy: undefined,
   });
 }
 

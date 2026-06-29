@@ -330,24 +330,6 @@ export function ChatSidebar() {
                                 {conv.unreadCount}
                               </div>
                             )}
-                            {isLeft && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
-                                    deleteConversationFromList({
-                                      conversationId: conv._id,
-                                      userId: currentUser!._id
-                                    });
-                                  }
-                                }}
-                                className="mt-1 p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
-                                title="Chat löschen"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
                           </div>
                         </div>
                         <p className="text-xs text-gray-500 truncate flex items-center pl-0.5 mt-0.5 font-normal">

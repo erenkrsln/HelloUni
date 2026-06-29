@@ -852,7 +852,8 @@ export const getConversations = query({
     const conversations = await ctx.db.query("conversations").collect();
 
     const relevantConversations = conversations.filter(c =>
-      c.participants.includes(args.userId) || c.leftParticipants?.includes(args.userId)
+      (c.participants.includes(args.userId) || c.leftParticipants?.includes(args.userId)) &&
+      !(c.deletedBy?.includes(args.userId))
     );
 
     // 2. Details für die Conversations anreichern
@@ -963,7 +964,8 @@ export const getUnreadCounts = query({
   handler: async (ctx, args) => {
     const conversations = await ctx.db.query("conversations").collect();
     const relevantConversations = conversations.filter(c =>
-      c.participants.includes(args.userId)
+      c.participants.includes(args.userId) &&
+      !(c.deletedBy?.includes(args.userId))
     );
 
     let totalUnread = 0;

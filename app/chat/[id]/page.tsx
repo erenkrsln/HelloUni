@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin, MoreVertical, Trash2, LogOut } from "lucide-react";
 import { ChatHeaderCallButtons } from "@/components/call/ChatHeaderCallButtons";
 import { ActiveCallBanner } from "@/components/call/ActiveCallBanner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -44,6 +44,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const deleteConversation = useMutation(api.mutations.deleteConversation);
     const markAsRead = useMutation(api.mutations.markAsRead);
     const toggleMessageReaction = useMutation(api.mutations.toggleMessageReaction);
+    const deleteConversationFromList = useMutation(api.mutations.deleteConversationFromList);
+    const leaveGroup = useMutation(api.mutations.leaveGroup);
+
+    const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
 
     const EMOJIS = ["👍", "👎", "❤️", "😹", "🙀", "😿", "🙏", "🦫"];
 
@@ -57,6 +61,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             markAsRead({ conversationId, userId: currentUser._id });
         }
     }, [conversationId, currentUser, messages, markAsRead]);
+
+    useEffect(() => {
+        const handleOutsideClick = () => {
+            setIsHeaderMenuOpen(false);
+        };
+        window.addEventListener("click", handleOutsideClick);
+        return () => window.removeEventListener("click", handleOutsideClick);
+    }, []);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -408,6 +420,62 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         >
                             <Folder size={20} />
                         </button>
+                        <div className="relative">
+                            <button
+                                className="p-2 text-[#D08945] hover:bg-gray-50 rounded-full transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsHeaderMenuOpen(!isHeaderMenuOpen);
+                                }}
+                                title="Optionen"
+                            >
+                                <MoreVertical size={20} />
+                            </button>
+                            {isHeaderMenuOpen && (
+                                <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-30">
+                                    {(!conversation.isGroup || isLeft) ? (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsHeaderMenuOpen(false);
+                                                if (confirm(conversation.isGroup ? "Möchtest du diesen Gruppenchat wirklich löschen?" : "Möchtest du diesen Chat wirklich löschen?")) {
+                                                    deleteConversationFromList({
+                                                        conversationId: conversation._id,
+                                                        userId: currentUser._id
+                                                    });
+                                                    router.push("/chat");
+                                                }
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors font-medium"
+                                        >
+                                            <Trash2 size={14} />
+                                            Chat löschen
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                setIsHeaderMenuOpen(false);
+                                                if (confirm("Möchtest du diese Gruppe wirklich verlassen?")) {
+                                                    try {
+                                                        await leaveGroup({
+                                                            conversationId: conversation._id,
+                                                            userId: currentUser._id
+                                                        });
+                                                    } catch (error: any) {
+                                                        alert(error.message || "Fehler beim Verlassen der Gruppe.");
+                                                    }
+                                                }
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors font-medium"
+                                        >
+                                            <LogOut size={14} />
+                                            Gruppe verlassen
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
