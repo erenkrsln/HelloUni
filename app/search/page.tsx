@@ -8,7 +8,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, LayoutGrid } from "lucide-react";
+import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, StickyNote } from "lucide-react";
 import { FeedCard } from "@/components/feed-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,7 +31,7 @@ const STATIC_PAGES: StaticPageResult[] = [
     },
     {
         title: "Impressum",
-        description: "Rechtliches und Kontaktinformationen.",
+        description: "Rechtliches und Kontakt.",
         href: "/imprint",
         keywords: ["impressum", "imprint", "kontakt", "rechtliches", "anbieter", "adresse", "e-mail", "telefon"],
         category: "Seite"
@@ -93,10 +93,10 @@ const STATIC_PAGES: StaticPageResult[] = [
         category: "Bereich"
     },
     {
-        title: "Infopage",
-        description: "Wichtige Dokumente, Informationen und Mensaplan zu deinem Studiengang.",
+        title: "Infoseite",
+        description: "Wichtige Dokumente und Termine deinem Studiengang. Außerdem der Mensaplan.",
         href: "/info",
-        keywords: ["infopage", "informationen", "studiengang", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos"],
+        keywords: ["infopage", "informationen", "studiengang", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos", "modulhandbuch", "prüfungsordnung", "studienplan", "termine"],
         category: "Bereich"
     }
 ];
@@ -893,7 +893,7 @@ export default function SearchPage() {
                                                                     {page.category === "Seite" ? (
                                                                         <FileText size={20} />
                                                                     ) : (
-                                                                        <LayoutGrid size={20} />
+                                                                        <StickyNote size={20} />
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
