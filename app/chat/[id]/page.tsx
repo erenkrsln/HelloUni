@@ -294,14 +294,18 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         e?.preventDefault();
         if (!newMessage.trim() || !currentUser) return;
 
+        const trimmedMessage = newMessage.trim();
+        const aiTriggerMatch = trimmedMessage.match(/^jastell\b(?::\s*|\s+)?/i);
+
         try {
             await sendMessage({
                 conversationId,
                 senderId: currentUser._id,
-                content: newMessage.trim(),
+                content: trimmedMessage,
             });
-            if (newMessage.startsWith('AI:')) {
-                const msg = await handleAi(newMessage.substring(3).trim());
+            if (aiTriggerMatch) {
+                const prompt = trimmedMessage.slice(aiTriggerMatch[0].length).trim();
+                const msg = await handleAi(prompt);
                 await sendMessage({
                     conversationId,
                     senderId: aiUserId ?? currentUser._id,
