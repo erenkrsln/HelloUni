@@ -652,9 +652,14 @@ export function ChatSidebar() {
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className={`font-semibold text-sm ${isSelected ? "text-[#D08945]" : "text-black"}`}>{user.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">@{user.username}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-semibold text-sm truncate ${isSelected ? "text-[#D08945]" : "text-black"}`}>{user.name}</div>
+                          <div className="text-xs text-gray-500 truncate mt-0.5">@{user.username}</div>
+                          {user.major && (
+                            <div className="text-xs text-gray-400 mt-0.5 truncate" title={user.major}>
+                              {user.major}
+                            </div>
+                          )}
                         </div>
                       </button>
                     );
