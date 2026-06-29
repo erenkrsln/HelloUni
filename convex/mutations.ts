@@ -1,5 +1,5 @@
 import { mutation, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { shouldDeleteR2File, createNotification } from "./helpers";
 
@@ -1196,15 +1196,15 @@ export const leaveGroup = mutation({
   },
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation) throw new ConvexError("Conversation not found");
 
     if (!conversation.participants.includes(args.userId)) {
-      throw new Error("User not in group");
+      throw new ConvexError("User not in group");
     }
 
     // If user is the creator, they must transfer creator status first
     if (conversation.creatorId === args.userId) {
-      throw new Error("Creator must transfer creator status before leaving the group");
+      throw new ConvexError("Creator must transfer creator status before leaving the group");
     }
 
     const newParticipants = conversation.participants.filter(id => id !== args.userId);

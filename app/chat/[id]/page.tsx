@@ -456,6 +456,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                             onClick={async (e) => {
                                                 e.stopPropagation();
                                                 setIsHeaderMenuOpen(false);
+                                                if (conversation?.creatorId === currentUser?._id) {
+                                                    alert("Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.");
+                                                    return;
+                                                }
                                                 if (confirm("Möchtest du diese Gruppe wirklich verlassen?")) {
                                                     try {
                                                         await leaveGroup({
@@ -463,7 +467,17 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             userId: currentUser._id
                                                         });
                                                     } catch (error: any) {
-                                                        alert(error.message || "Fehler beim Verlassen der Gruppe.");
+                                                        console.error("Failed to leave group:", error);
+                                                        let errorMessage = "Fehler beim Verlassen der Gruppe.";
+                                                        if (error.data === "Creator must transfer creator status before leaving the group" || 
+                                                            (error.message && error.message.includes("Creator must transfer"))) {
+                                                            errorMessage = "Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.";
+                                                        } else if (error.data) {
+                                                            errorMessage = error.data;
+                                                        } else if (error.message) {
+                                                            errorMessage = error.message;
+                                                        }
+                                                        alert(errorMessage);
                                                     }
                                                 }
                                             }}
