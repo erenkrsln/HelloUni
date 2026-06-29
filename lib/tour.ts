@@ -24,7 +24,7 @@ export function startAppTour() {
         element: "#tour-profile-menu",
         popover: {
           title: "Die rechte Seitenleiste",
-          description: "Hier findest du dein Profil, die Infoseiten, Einstellungen und mehr.",
+          description: "Hier findest du dein Profil, die Infoseiten zu deinem Studiengang und dem Mensaplan, Einstellungen und mehr.",
           side: "bottom",
           align: "start"
         }
@@ -42,7 +42,7 @@ export function startAppTour() {
         element: "#tour-logo-menu",
         popover: {
           title: "Die linke Seitenleiste",
-          description: "Hier findest du Informationen über das Projekt und unser Team, sowie das Impressum und unsere Datenschutzrichtlinien.",
+          description: "Hier findest du Informationen über uns, sowie das Impressum und unsere Datenschutzrichtlinien.",
           side: "bottom",
           align: "end"
         }
@@ -95,7 +95,7 @@ export function startAppTour() {
       {
         popover: {
           title: "HelloUni installieren",
-          description: "Installiere HelloUni auf deinem Gerät, um das beste Erlebnis zu haben. <br/> Eine Anleitung dazu findest du in der rechten Seitenleiste."
+          description: "<img src='https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbjNuZ2k5YXVtanBzbHZyNnNma29vOGFoNWt0c2Rpa2I3MjB3cHN4cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hENDkVRxKsctCpuAun/giphy.gif' style='height: 202.5px; width: 270px;' />Installiere HelloUni auf deinem Gerät, um das beste Erlebnis zu haben. <br/> Eine Anleitung dazu findest du in der rechten Seitenleiste."
         }
       }
     ]
