@@ -704,6 +704,8 @@ export const createConversation = mutation({
     participants: v.array(v.id("users")),
     name: v.optional(v.string()), // Optionaler Name für Gruppen
     creatorId: v.optional(v.id("users")), // Add creatorId argument
+    isPublic: v.optional(v.boolean()),
+    needsRequestToJoin: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const isGroup = args.participants.length > 2 || !!args.name;
@@ -732,6 +734,8 @@ export const createConversation = mutation({
       participants: args.participants,
       name: args.name,
       isGroup,
+      isPublic: isGroup ? (args.isPublic ?? false) : undefined,
+      needsRequestToJoin: isGroup ? (args.needsRequestToJoin ?? false) : undefined,
       creatorId: args.creatorId,
       adminIds: args.creatorId ? [args.creatorId] : undefined, // Creator is initially the only admin
       updatedAt: Date.now(),

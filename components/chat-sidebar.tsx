@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api";
 
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useCall } from "@/lib/hooks/useCall";
-import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, BarChart2, StickyNote, User, CirclePlay, CalendarDays, Phone, Video } from "lucide-react";
+import { Plus, MessageCircle, Search, Trash2, Image, FileIcon, BarChart2, StickyNote, User, CirclePlay, CalendarDays, Phone, Video, Globe, Lock, UserCheck, UserPlus, Users } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
@@ -42,8 +42,23 @@ export function ChatSidebar() {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "direct" | "group">("all");
   const [groupFilterType, setGroupFilterType] = useState<"all" | "public" | "private">("all");
+
+  const [isGroupPublic, setIsGroupPublic] = useState(false);
+  const [needsRequestToJoin, setNeedsRequestToJoin] = useState(false);
+
   const router = useRouter();
   const pathname = usePathname();
+
+  const closeModal = () => {
+    setIsNewChatOpen(false);
+    setTimeout(() => {
+      setSelectedUsers([]);
+      setGroupName("");
+      setUserSearchQuery("");
+      setIsGroupPublic(false);
+      setNeedsRequestToJoin(false);
+    }, 300);
+  };
 
   const { currentUser } = useCurrentUser();
   const [isFirstVisit, setIsFirstVisit] = useState(true);
@@ -117,11 +132,15 @@ export function ChatSidebar() {
         participants,
         name: selectedUsers.length > 1 && groupName ? groupName : undefined,
         creatorId: currentUser._id,
+        isPublic: selectedUsers.length > 1 ? isGroupPublic : undefined,
+        needsRequestToJoin: selectedUsers.length > 1 ? needsRequestToJoin : undefined,
       });
       setIsNewChatOpen(false);
       setSelectedUsers([]);
       setGroupName("");
       setUserSearchQuery("");
+      setIsGroupPublic(false);
+      setNeedsRequestToJoin(false);
       router.push(`/chat/${conversationId}`);
     } catch (error) {
       console.error("Failed to create conversation:", error);
@@ -139,6 +158,34 @@ export function ChatSidebar() {
   const isModalUsersLoading = userSearchQuery.trim()
     ? userSearchResults === undefined
     : chatSuggestions === undefined;
+
+  const [knownUsers, setKnownUsers] = useState<Map<Id<"users">, any>>(new Map());
+
+  useEffect(() => {
+    setKnownUsers(prev => {
+      const next = new Map(prev);
+      let changed = false;
+      chatSuggestions?.forEach(u => {
+        if (!next.has(u._id)) {
+          next.set(u._id, u);
+          changed = true;
+        }
+      });
+      userSearchResults?.forEach(u => {
+        if (!next.has(u._id)) {
+          next.set(u._id, u);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [chatSuggestions, userSearchResults]);
+
+  const selectedUserObjects = useMemo(() => {
+    return selectedUsers.map(id => {
+      return knownUsers.get(id) || { _id: id, name: "Benutzer" };
+    });
+  }, [selectedUsers, knownUsers]);
 
   const filteredConversations = conversations?.filter(conv => {
     const isDirectEmptyChat = !conv.isGroup && !conv.lastMessage;
@@ -416,36 +463,25 @@ export function ChatSidebar() {
         <div
           className={`fixed inset-0 bg-black/50 z-[80] transition-opacity duration-300 ${isNewChatOpen ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
-          onClick={() => {
-            setIsNewChatOpen(false);
-            setTimeout(() => {
-              setSelectedUsers([]);
-              setGroupName("");
-              setUserSearchQuery("");
-            }, 300);
-          }}
+          onClick={closeModal}
         />
 
-        {/* Drawer */}
+        {/* Drawer / Centered Modal on Desktop */}
         <div
-          className={`fixed inset-x-0 bottom-0 max-h-[85vh] md:max-h-[75vh] z-[80] flex flex-col bg-white rounded-t-3xl transition-transform duration-300 ease-out ${isNewChatOpen ? "translate-y-0" : "translate-y-full"
-            }`}
+          className={`fixed inset-x-0 bottom-0 z-[80] flex flex-col bg-white rounded-t-3xl transition-all duration-300 ease-out h-[85vh] md:h-[80vh] md:max-h-[700px] md:w-[500px] md:rounded-3xl md:left-1/2 md:bottom-auto md:shadow-2xl ${
+            isNewChatOpen
+              ? "translate-y-0 opacity-100 md:top-1/2 md:-translate-y-1/2 md:-translate-x-1/2"
+              : "translate-y-full opacity-0 md:top-[55%] md:-translate-y-1/2 md:-translate-x-1/2 pointer-events-none"
+          }`}
           style={{
             pointerEvents: isNewChatOpen ? "auto" : "none"
           }}
         >
           <div
-            className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white rounded-t-3xl"
+            className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white rounded-t-3xl flex-shrink-0"
           >
             <button
-              onClick={() => {
-                setIsNewChatOpen(false);
-                setTimeout(() => {
-                  setSelectedUsers([]);
-                  setGroupName("");
-                  setUserSearchQuery("");
-                }, 300);
-              }}
+              onClick={closeModal}
               className="text-sm font-medium text-gray-500 hover:text-black transition-colors"
             >
               Abbrechen
@@ -460,47 +496,139 @@ export function ChatSidebar() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
-            {/* User Search Input */}
-            <div className="relative mb-6">
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                <Search className="h-4 w-4" />
-              </div>
-              <input
-                type="text"
-                placeholder="Nach Kontakten suchen..."
-                value={userSearchQuery}
-                onChange={(e) => setUserSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm text-black"
-              />
-            </div>
+          {/* Scrollable Container for the entire modal body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            
+            {/* Search & Group Settings Area */}
+            <div className="space-y-4">
+              {/* Group Configuration options */}
+              {selectedUsers.length > 1 && (
+                <div className="space-y-3.5 animate-in slide-in-from-top-2 duration-200">
+                  
+                  {/* Selected People Preview */}
+                  {selectedUserObjects.length > 0 && (
+                    <div className="space-y-1.5 border-b border-gray-100 pb-3">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Ausgewählte Personen ({selectedUserObjects.length})
+                      </label>
+                      <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-hide">
+                        {selectedUserObjects.map((user) => (
+                          <div key={user._id} className="relative flex flex-col items-center flex-shrink-0 w-12">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200" style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}>
+                              {user.image ? (
+                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center font-semibold text-sm text-black">
+                                  {user.name?.charAt(0).toUpperCase() || "?"}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleUserSelection(user._id)}
+                              className="absolute -top-1 -right-1 w-4 h-4 bg-gray-400 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors"
+                            >
+                              <Plus className="w-2.5 h-2.5 rotate-45" />
+                            </button>
+                            <span className="text-[10px] text-gray-500 truncate w-full text-center mt-1">
+                              {user.name?.split(" ")[0]}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-            {/* Group Name Input */}
-            {selectedUsers.length > 1 && (
-              <div className="mb-6 animate-in slide-in-from-top-2 duration-200">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Gruppenname</label>
+                  {/* Group Name Input */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Gruppenname
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <input
+                        type="text"
+                        value={groupName}
+                        onChange={(e) => setGroupName(e.target.value)}
+                        placeholder="z.B. Lerngruppe"
+                        className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm text-black"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Group Settings Toggles */}
+                  <div className="space-y-2 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                    {/* Sichtbarkeit Toggle */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-black">Öffentliche Gruppe</span>
+                        <span className="text-[10px] text-gray-400">Jeder kann die Gruppe finden und beitreten</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsGroupPublic(!isGroupPublic)}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isGroupPublic ? "bg-[#d08945]" : "bg-gray-200"
+                          }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isGroupPublic ? "translate-x-4" : "translate-x-0"
+                            }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Beitrittsmethode Toggle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200/50">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-black">Beitrittsanfrage erforderlich</span>
+                        <span className="text-[10px] text-gray-400">Beitritt muss von einem Admin genehmigt werden</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNeedsRequestToJoin(!needsRequestToJoin)}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${needsRequestToJoin ? "bg-[#d08945]" : "bg-gray-200"
+                          }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${needsRequestToJoin ? "translate-x-4" : "translate-x-0"
+                            }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* User Search Input */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                  <Search className="h-4 w-4" />
+                </div>
                 <input
                   type="text"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="z.B. Lerngruppe"
-                  className="w-full pl-4 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm text-black"
+                  placeholder="Nach Kontakten suchen..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm text-black"
                 />
               </div>
-            )}
+            </div>
 
-            <div className="space-y-2">
+            {/* Suggestions / Results Header & List */}
+            <div>
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                 {userSearchQuery.trim() ? "Suchergebnisse" : "Vorschläge"}
               </div>
 
-              <div className="h-[362px] overflow-y-auto pr-1 space-y-2">
+              <div className="space-y-2 px-1 py-1">
                 {isModalUsersLoading ? (
-                  <div className="flex justify-center items-center h-full">
+                  <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#d08945]" />
                   </div>
                 ) : displayedUsers.length === 0 ? (
-                  <div className="flex justify-center items-center h-full text-gray-400 text-sm text-center">
+                  <div className="flex justify-center items-center py-12 text-gray-400 text-sm text-center">
                     {userSearchQuery.trim() ? "Keine Benutzer gefunden." : "Keine Vorschläge gefunden."}
                   </div>
                 ) : (
@@ -511,7 +639,7 @@ export function ChatSidebar() {
                         key={user._id}
                         onClick={() => toggleUserSelection(user._id)}
                         className={`w-full flex items-center p-3 rounded-2xl text-left transition-all ${isSelected
-                          ? "bg-[#d08945]/5 ring-2 ring-[#d08945]"
+                          ? "bg-[#d08945]/5 ring-2 ring-inset ring-[#d08945]"
                           : "hover:bg-gray-50/50 bg-white border border-gray-100"
                           }`}
                       >
