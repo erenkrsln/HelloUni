@@ -66,6 +66,15 @@ export function startAppTour() {
         }
       },
       {
+        element: "#tour-nav-calendar",
+        popover: {
+          title: "Kalender",
+          description: "Hier findest du deine privaten und allgemeinen Termine.",
+          side: "top",
+          align: "center"
+        }
+      },
+      {
         element: "#tour-nav-workspace",
         popover: {
           title: "Workspace",
