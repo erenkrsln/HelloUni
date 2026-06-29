@@ -28,6 +28,25 @@ export const upsertStudiengangCache = mutation({
   },
 });
 
+export const upsertSemesterTermineCache = mutation({
+  args: {
+    label: v.string(),
+    termine: v.array(v.object({
+      date: v.string(),
+      description: v.string(),
+    })),
+  },
+  handler: async (ctx, { label, termine }) => {
+    const existing = await ctx.db.query("semesterTermineCache").first();
+    const data = { label, termine, scrapedAt: Date.now() };
+    if (existing) {
+      await ctx.db.patch(existing._id, data);
+    } else {
+      await ctx.db.insert("semesterTermineCache", data);
+    }
+  },
+});
+
 export const upsertMensaCache = mutation({
   args: {
     meals: v.array(v.object({ name: v.string(), price: v.string() })),

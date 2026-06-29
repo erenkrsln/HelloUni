@@ -22,4 +22,16 @@ crons.daily(
   api.scraping.scrapeMensa
 );
 
+/**
+ * Semestertermine (SoSe): am 15. März zum Semesterbeginn cachen.
+ * Convex unterstützt keinen Jahres-Cron – der Job läuft monatlich am 15.,
+ * ist aber idempotent (Upsert), also kein Problem für die anderen Monate.
+ * Für WiSe-Start (01. Oktober) hier einen weiteren Eintrag ergänzen.
+ */
+crons.monthly(
+  "scrape semester termine",
+  { day: 15, hourUTC: 5, minuteUTC: 0 },
+  api.scraping.scrapeSemesterTermine
+);
+
 export default crons;

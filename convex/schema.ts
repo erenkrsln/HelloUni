@@ -412,6 +412,15 @@ export default defineSchema({
     meals: v.array(v.object({ name: v.string(), price: v.string() })),
     scrapedAt: v.number(),
   }),
+
+  semesterTermineCache: defineTable({
+    label: v.string(),
+    termine: v.array(v.object({
+      date: v.string(),
+      description: v.string(),
+    })),
+    scrapedAt: v.number(),
+  }),
   // ─── Voice & Video Calls ───────────────────────────────────────────────────
 
   calls: defineTable({

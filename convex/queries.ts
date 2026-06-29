@@ -1837,6 +1837,13 @@ export const getMensaCache = query({
   },
 });
 
+export const getSemesterTermineCache = query({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db.query("semesterTermineCache").first();
+  },
+});
+
 export const searchPublicGroups = query({
   args: {
     searchTerm: v.string(),
