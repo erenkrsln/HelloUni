@@ -38,10 +38,10 @@ export function GroupInfoModal({
     const allConversations = useQuery(api.queries.getConversations, { userId: currentUserId });
     const conversation = allConversations?.find(c => c._id === conversationId);
 
-    const addMember = useMutation(api.mutations.addConversationMember);
-    const removeMember = useMutation(api.mutations.removeConversationMember);
-    const promoteToAdmin = useMutation(api.mutations.promoteToAdmin);
-    const demoteAdmin = useMutation(api.mutations.demoteAdmin);
+    const addMember = useMutation(api.workspace.addMember);
+    const removeMember = useMutation(api.workspace.removeMember);
+    const promoteToAdmin = useMutation(api.workspace.promoteToAdmin);
+    const demoteAdmin = useMutation(api.workspace.demoteAdmin);
     const claimGroup = useMutation(api.mutations.claimGroupOwnership);
     const transferCreator = useMutation(api.mutations.transferCreator);
     const deleteConversation = useMutation(api.mutations.deleteConversation);
@@ -50,6 +50,8 @@ export function GroupInfoModal({
     // New mutations
     const updateGroupName = useMutation(api.mutations.updateGroupName);
     const updateGroupImage = useMutation(api.mutations.updateGroupImage);
+    const toggleGroupPublic = useMutation(api.mutations.toggleGroupPublic);
+    const toggleGroupJoinRequestRequired = useMutation(api.mutations.toggleGroupJoinRequestRequired);
 
     const myself = members?.find(m => m._id === currentUserId);
     const iAmCreator = myself?.role === "creator";
@@ -63,11 +65,7 @@ export function GroupInfoModal({
 
     const handleAddMember = async (userId: Id<"users">) => {
         try {
-            await addMember({
-                conversationId,
-                adminId: currentUserId,
-                newMemberId: userId,
-            });
+            await addMember({ conversationId, userId, actorId: currentUserId });
             setView("list");
         } catch (error) {
             console.error("Failed to add member:", error);
@@ -77,11 +75,7 @@ export function GroupInfoModal({
     const handleRemoveMember = async (userId: Id<"users">) => {
         if (!confirm("Möchtest du dieses Mitglied wirklich entfernen?")) return;
         try {
-            await removeMember({
-                conversationId,
-                adminId: currentUserId,
-                memberIdToRemove: userId,
-            });
+            await removeMember({ conversationId, userId, actorId: currentUserId });
         } catch (error) {
             console.error("Failed to remove member:", error);
         }
@@ -89,11 +83,7 @@ export function GroupInfoModal({
 
     const handlePromote = async (userId: Id<"users">) => {
         try {
-            await promoteToAdmin({
-                conversationId,
-                adminId: currentUserId,
-                memberIdToPromote: userId,
-            });
+            await promoteToAdmin({ conversationId, userId, actorId: currentUserId });
         } catch (error) {
             console.error("Failed to promote member:", error);
         }
@@ -101,11 +91,7 @@ export function GroupInfoModal({
 
     const handleDemote = async (userId: Id<"users">) => {
         try {
-            await demoteAdmin({
-                conversationId,
-                adminId: currentUserId,
-                memberIdToDemote: userId,
-            });
+            await demoteAdmin({ conversationId, userId, actorId: currentUserId });
         } catch (error) {
             console.error("Failed to demote member:", error);
         }
@@ -355,7 +341,78 @@ export function GroupInfoModal({
                                 <p className="text-sm text-gray-500 mt-4">
                                     {members.filter(m => m.role !== 'left').length} Mitglieder
                                 </p>
+                                {!iAmAdmin && (
+                                    <span className={`mt-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${conversation.isPublic ? "bg-[#D08945] text-white" : "bg-gray-100 text-gray-800"
+                                        }`}>
+                                        {conversation.isPublic ? "Öffentliche Gruppe" : "Private Gruppe"}
+                                    </span>
+                                )}
                             </div>
+
+                            {/* Group Settings / Visibility (Admins only) */}
+                            {iAmAdmin && (
+                                <>
+                                    <div className="flex items-center justify-between p-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-semibold text-gray-900">Öffentliche Gruppe</span>
+                                            <span className="text-xs text-gray-500 font-normal">Jeder kann dieser Gruppe über die Suche beitreten</span>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    await toggleGroupPublic({
+                                                        conversationId,
+                                                        isPublic: !conversation.isPublic,
+                                                        userId: currentUserId,
+                                                    });
+                                                } catch (error) {
+                                                    console.error("Failed to toggle group publicity:", error);
+                                                    alert("Fehler beim Ändern der Sichtbarkeit.");
+                                                }
+                                            }}
+                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${conversation.isPublic ? "bg-[#D08945]" : "bg-gray-200"
+                                                }`}
+                                        >
+                                            <span
+                                                aria-hidden="true"
+                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${conversation.isPublic ? "translate-x-5" : "translate-x-0"
+                                                    }`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    {/* Beitrittsanfrage erforderlich (Sub-Toggle) */}
+                                    {conversation.isPublic && (
+                                        <div className="flex items-center justify-between p-4 pt-0">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-semibold text-gray-900">Beitrittsanfrage</span>
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        await toggleGroupJoinRequestRequired({
+                                                            conversationId,
+                                                            needsRequestToJoin: conversation.needsRequestToJoin !== false ? false : true,
+                                                            userId: currentUserId,
+                                                        });
+                                                    } catch (error) {
+                                                        console.error("Failed to toggle join request setting:", error);
+                                                        alert("Fehler beim Ändern der Beitrittsanfrage-Einstellung.");
+                                                    }
+                                                }}
+                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${conversation.needsRequestToJoin !== false ? "bg-[#D08945]" : "bg-gray-200"
+                                                    }`}
+                                            >
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${conversation.needsRequestToJoin !== false ? "translate-x-5" : "translate-x-0"
+                                                        }`}
+                                                />
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
 
                             {!hasAdmins && (
                                 <div className="p-4 bg-yellow-50 border-b border-yellow-100">

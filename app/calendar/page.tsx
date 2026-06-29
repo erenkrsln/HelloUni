@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { useToast } from "@/components/toast";
 import { useQuery, useMutation } from "convex/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +25,7 @@ type Event = {
     location?: string;
     createdBy: Id<"users">;
     isPrivate?: boolean;
+    workspaceId?: string;
 };
 
 export default function CalendarPage() {
@@ -39,6 +42,12 @@ export default function CalendarPage() {
 
     const events = viewMode === "my" ? (currentUser ? myEvents : []) : publicEvents;
 
+    const upcomingEvents = useMemo(() => {
+        if (!events) return [];
+        const now = Date.now();
+        return events.filter(e => e.startTime >= now);
+    }, [events]);
+
     const isLoading = viewMode === "my"
         ? isAuthLoading || (!!currentUser && myEvents === undefined)
         : publicEvents === undefined;
@@ -47,6 +56,15 @@ export default function CalendarPage() {
     const createEvent = useMutation(api.events.create);
     const updateEvent = useMutation(api.events.update);
     const removeEvent = useMutation(api.events.remove);
+
+    const searchParams = useSearchParams();
+    const workspaceParam = searchParams.get("workspace") ?? "";
+    const myConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
+    const groupOptions = useMemo(
+        () => (myConversations || []).filter((conv) => (conv as any).isGroup),
+        [myConversations]
+    );
+    const toast = useToast();
 
     // Modal State
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -59,8 +77,15 @@ export default function CalendarPage() {
         startTime: "09:00",
         endTime: "10:00",
         location: "",
-        isPrivate: true,
+        eventType: workspaceParam.startsWith("group_") ? "group" : "private",
+        groupWorkspaceId: workspaceParam.startsWith("group_") ? workspaceParam : "",
     });
+
+    useEffect(() => {
+        if (workspaceParam.startsWith("group_") && formData.groupWorkspaceId !== workspaceParam) {
+            setFormData((prev) => ({ ...prev, eventType: "group", groupWorkspaceId: workspaceParam }));
+        }
+    }, [workspaceParam, formData.groupWorkspaceId]);
 
     const resetForm = () => {
         setFormData({
@@ -69,62 +94,87 @@ export default function CalendarPage() {
             startTime: "09:00",
             endTime: "10:00",
             location: "",
-            isPrivate: true,
+            eventType: workspaceParam.startsWith("group_") ? "group" : "private",
+            groupWorkspaceId: workspaceParam.startsWith("group_") ? workspaceParam : "",
         });
     };
 
     const handleCreate = async () => {
         if (!currentUser) {
-            alert("You must be logged in to create an event.");
+            toast.error("Please sign in to create an event.");
             return;
         }
+        if (formData.eventType === "group" && !formData.groupWorkspaceId) {
+            toast.error("Select a group for this event.");
+            return;
+        }
+
         const start = new Date(`${formData.date}T${formData.startTime}`).getTime();
         const end = new Date(`${formData.date}T${formData.endTime}`).getTime();
 
-        await createEvent({
-            title: formData.title,
-            startTime: start,
-            endTime: end,
-            location: formData.location,
-            userId: currentUser._id,
-            isPrivate: formData.isPrivate,
-        });
-        setIsCreateOpen(false);
-        resetForm();
+        try {
+            await createEvent({
+                title: formData.title,
+                startTime: start,
+                endTime: end,
+                location: formData.location,
+                userId: currentUser._id,
+                isPrivate: formData.eventType === "public" ? false : true,
+                workspaceId: formData.eventType === "group" ? formData.groupWorkspaceId || undefined : undefined,
+            });
+            setIsCreateOpen(false);
+            resetForm();
+            toast.success("Event created");
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to create event. Please try again.");
+        }
     };
 
     const handleUpdate = async () => {
         if (!editingEvent || !currentUser) {
-            alert("You must be logged in to edit an event.");
+            toast.error("Please sign in to update this event.");
             return;
         }
         const start = new Date(`${formData.date}T${formData.startTime}`).getTime();
         const end = new Date(`${formData.date}T${formData.endTime}`).getTime();
 
-        await updateEvent({
-            eventId: editingEvent._id,
-            userId: currentUser._id,
-            title: formData.title,
-            startTime: start,
-            endTime: end,
-            location: formData.location,
-            isPrivate: formData.isPrivate,
-        });
-        setEditingEvent(null);
-        resetForm();
+        try {
+            await updateEvent({
+                eventId: editingEvent._id,
+                userId: currentUser._id,
+                title: formData.title,
+                startTime: start,
+                endTime: end,
+                location: formData.location,
+                isPrivate: formData.eventType === "public" ? false : true,
+            });
+            setEditingEvent(null);
+            resetForm();
+            toast.success("Event updated");
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to save event. Please try again.");
+        }
     };
 
     const handleDelete = async () => {
         if (!editingEvent || !currentUser) {
-            alert("You must be logged in to delete an event.");
+            toast.error("You must be signed in to delete this event.");
             return;
         }
         if (confirm("Are you sure you want to delete this event?")) {
-            await removeEvent({
-                eventId: editingEvent._id,
-                userId: currentUser._id,
-            });
-            setEditingEvent(null);
+            try {
+                await removeEvent({
+                    eventId: editingEvent._id,
+                    userId: currentUser._id,
+                });
+                setEditingEvent(null);
+                toast.success("Event deleted");
+            } catch (error) {
+                console.error(error);
+                toast.error("Failed to delete event. Please try again.");
+            }
         }
     };
 
@@ -141,7 +191,8 @@ export default function CalendarPage() {
             startTime: timeStr,
             endTime: endTimeStr,
             location: e.location || "",
-            isPrivate: e.isPrivate ?? true,
+            eventType: e.workspaceId ? "group" : e.isPrivate ? "private" : "public",
+            groupWorkspaceId: e.workspaceId || "",
         });
         setEditingEvent(e);
     };
@@ -209,7 +260,7 @@ export default function CalendarPage() {
 
 
     return (
-        <main className="min-h-screen w-full max-w-md mx-auto pb-32 bg-white">
+        <main className="min-h-screen w-full max-w-md mx-auto md:max-w-3xl pb-32 header-spacing bg-white">
             <Header onMenuClick={() => setIsSidebarOpen(true)} title="Calendar" />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -266,17 +317,17 @@ export default function CalendarPage() {
                             <div>
                                 <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
                                     Upcoming Events
-                                    <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{events?.length || 0}</span>
+                                    <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{upcomingEvents.length}</span>
                                 </h3>
 
-                                {events && events.length === 0 ? (
+                                {upcomingEvents.length === 0 ? (
                                     <div className="border-2 border-dashed border-gray-100 rounded-2xl p-8 text-center">
                                         <CalendarIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                                         <p className="text-gray-400 text-sm font-medium">No events scheduled</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {events && events.map(e => (
+                                        {upcomingEvents.map(e => (
                                             <div key={e._id} onClick={() => openEdit(e)} className="group p-4 rounded-2xl border border-gray-100 bg-white hover:border-gray-200 transition-all cursor-pointer flex gap-4 items-start shadow-sm hover:shadow-md">
                                                 <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl w-14 h-14 shrink-0 border border-gray-100 group-hover:bg-black group-hover:text-white transition-colors">
                                                     <span className="text-xs font-bold uppercase">{new Date(e.startTime).toLocaleString('default', { month: 'short' })}</span>
@@ -286,7 +337,15 @@ export default function CalendarPage() {
                                                 <div className="flex-1 min-w-0 pt-0.5">
                                                     <div className="flex justify-between items-start mb-0.5">
                                                         <h4 className="font-semibold text-base text-gray-900 truncate pr-2">{e.title}</h4>
-                                                        {e.isPrivate && <span className="shrink-0 text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Private</span>}
+                                                        {e.workspaceId ? (
+                                                            <span className="shrink-0 text-[10px] font-medium bg-[#FEE3C1] text-[#953F0B] px-2 py-0.5 rounded-full">
+                                                                {groupOptions.find((group) => `group_${(group as any)._id}` === e.workspaceId)?.displayName || "Group event"}
+                                                            </span>
+                                                        ) : e.isPrivate ? (
+                                                            <span className="shrink-0 text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Private</span>
+                                                        ) : (
+                                                            <span className="shrink-0 text-[10px] font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Public</span>
+                                                        )}
                                                     </div>
 
                                                     <div className="flex items-center text-xs text-gray-500 gap-3 mb-1.5">
@@ -321,7 +380,7 @@ export default function CalendarPage() {
 
             {/* Create Modal - Fullscreen Design */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent 
+                <DialogContent
                     hideCloseButton
                     withoutEnterAnimation
                     withoutExitAnimation
@@ -329,18 +388,18 @@ export default function CalendarPage() {
                 >
                     <DialogTitle className="sr-only">Neues Event erstellen</DialogTitle>
                     {/* Header - mit Safe Area für iOS Notch */}
-                    <div 
+                    <div
                         className="px-5 h-14 flex items-center justify-between border-b border-gray-100 shrink-0"
                         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
                     >
-                        <button 
+                        <button
                             type="button"
                             onClick={() => setIsCreateOpen(false)}
                             className="text-base font-medium text-gray-900 active:opacity-50 transition-opacity touch-manipulation"
                         >
                             Abbrechen
                         </button>
-                        <button 
+                        <button
                             type="button"
                             onClick={handleCreate}
                             disabled={!formData.title.trim()}
@@ -351,7 +410,7 @@ export default function CalendarPage() {
                     </div>
 
                     {/* Content - mit Safe Area für iOS Home Indicator */}
-                    <div 
+                    <div
                         className="flex-1 overflow-y-auto px-6 pt-6 overscroll-contain"
                         style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
                     >
@@ -374,9 +433,9 @@ export default function CalendarPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Datum</label>
                                 <div className="border border-gray-300 rounded-lg">
-                                    <input 
-                                        type="date" 
-                                        value={formData.date} 
+                                    <input
+                                        type="date"
+                                        value={formData.date}
                                         onChange={e => setFormData({ ...formData, date: e.target.value })}
                                         className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
                                     />
@@ -387,8 +446,8 @@ export default function CalendarPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Ort (optional)</label>
                                 <div className="border border-gray-300 rounded-lg">
-                                    <input 
-                                        value={formData.location} 
+                                    <input
+                                        value={formData.location}
                                         onChange={e => setFormData({ ...formData, location: e.target.value })}
                                         placeholder="z.B. Raum 101"
                                         className="w-full px-4 py-3 bg-transparent text-base text-gray-900 placeholder-gray-400 border-0 outline-none focus:ring-0"
@@ -401,18 +460,18 @@ export default function CalendarPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Uhrzeit</label>
                                 <div className="flex items-center gap-3">
                                     <div className="flex-1 border border-gray-300 rounded-lg">
-                                        <input 
-                                            type="time" 
-                                            value={formData.startTime} 
+                                        <input
+                                            type="time"
+                                            value={formData.startTime}
                                             onChange={e => setFormData({ ...formData, startTime: e.target.value })}
                                             className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
                                         />
                                     </div>
                                     <span className="text-gray-400">bis</span>
                                     <div className="flex-1 border border-gray-300 rounded-lg">
-                                        <input 
-                                            type="time" 
-                                            value={formData.endTime} 
+                                        <input
+                                            type="time"
+                                            value={formData.endTime}
                                             onChange={e => setFormData({ ...formData, endTime: e.target.value })}
                                             className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
                                         />
@@ -420,37 +479,47 @@ export default function CalendarPage() {
                                 </div>
                             </div>
 
-                            {/* Privacy Toggle */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Sichtbarkeit</label>
-                                <div className="border border-gray-300 rounded-lg p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}>
-                                                {formData.isPrivate ? (
-                                                    <Lock className="w-5 h-5 text-white" />
-                                                ) : (
-                                                    <Globe className="w-5 h-5 text-white" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-gray-900">
-                                                    {formData.isPrivate ? 'Privat' : 'Öffentlich'}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {formData.isPrivate ? 'Nur du kannst es sehen' : 'Sichtbar für alle'}
-                                                </p>
-                                            </div>
-                                        </div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Event type</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { key: "private", label: "Private", icon: Lock },
+                                        { key: "public", label: "Public", icon: Globe },
+                                        { key: "group", label: "Group", icon: CalendarIcon },
+                                    ].map((option) => (
                                         <button
+                                            key={option.key}
                                             type="button"
-                                            onClick={() => setFormData({ ...formData, isPrivate: !formData.isPrivate })}
-                                            className={`relative w-14 h-8 rounded-full transition-colors touch-manipulation ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}
+                                            onClick={() => setFormData({ ...formData, eventType: option.key as "private" | "public" | "group" })}
+                                            className={`rounded-3xl border px-3 py-3 text-xs font-semibold transition ${formData.eventType === option.key ? "border-[#D08945] bg-[#FEE3C1] text-[#953F0B]" : "border-gray-300 bg-white text-slate-700 hover:border-gray-400"}`}
                                         >
-                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${formData.isPrivate ? 'left-1' : 'left-7'}`} />
+                                            <option.icon className="mb-1 h-4 w-4" />
+                                            <div>{option.label}</div>
                                         </button>
-                                    </div>
+                                    ))}
                                 </div>
+                                {formData.eventType === "group" && (
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Group</label>
+                                        <div className="border border-gray-300 rounded-lg bg-white">
+                                            <select
+                                                value={formData.groupWorkspaceId}
+                                                onChange={(e) => setFormData({ ...formData, groupWorkspaceId: e.target.value })}
+                                                className="w-full px-4 py-3 bg-transparent text-base text-gray-900 focus:outline-none focus:ring-0"
+                                            >
+                                                <option value="">Select a group</option>
+                                                {groupOptions.map((group) => (
+                                                    <option key={(group as any)._id.toString()} value={`group_${(group as any)._id}`}>
+                                                        {(group as any).displayName || "Group"}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {groupOptions.length === 0 && (
+                                            <p className="mt-2 text-xs text-slate-500">Join or create a group first to schedule a group event.</p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -459,7 +528,7 @@ export default function CalendarPage() {
 
             {/* Edit Modal - Fullscreen Design */}
             <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-                <DialogContent 
+                <DialogContent
                     hideCloseButton
                     withoutEnterAnimation
                     withoutExitAnimation
@@ -469,11 +538,11 @@ export default function CalendarPage() {
                     {editingEvent && (
                         <>
                             {/* Header - mit Safe Area für iOS Notch */}
-                            <div 
+                            <div
                                 className="px-5 h-14 flex items-center justify-between border-b border-gray-100 shrink-0"
                                 style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
                             >
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => setEditingEvent(null)}
                                     className="text-base font-medium text-gray-900 active:opacity-50 transition-opacity touch-manipulation"
@@ -481,7 +550,7 @@ export default function CalendarPage() {
                                     Abbrechen
                                 </button>
                                 {currentUser && editingEvent.createdBy === currentUser._id && (
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={handleUpdate}
                                         disabled={!formData.title.trim()}
@@ -493,7 +562,7 @@ export default function CalendarPage() {
                             </div>
 
                             {/* Content - mit Safe Area für iOS Home Indicator */}
-                            <div 
+                            <div
                                 className="flex-1 overflow-y-auto px-6 pt-6 overscroll-contain"
                                 style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
                             >
@@ -519,9 +588,9 @@ export default function CalendarPage() {
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">Datum</label>
                                                 <div className="border border-gray-300 rounded-lg">
-                                                    <input 
-                                                        type="date" 
-                                                        value={formData.date} 
+                                                    <input
+                                                        type="date"
+                                                        value={formData.date}
                                                         onChange={e => setFormData({ ...formData, date: e.target.value })}
                                                         className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
                                                     />
@@ -532,8 +601,8 @@ export default function CalendarPage() {
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">Ort (optional)</label>
                                                 <div className="border border-gray-300 rounded-lg">
-                                                    <input 
-                                                        value={formData.location} 
+                                                    <input
+                                                        value={formData.location}
                                                         onChange={e => setFormData({ ...formData, location: e.target.value })}
                                                         placeholder="z.B. Raum 101"
                                                         className="w-full px-4 py-3 bg-transparent text-base text-gray-900 placeholder-gray-400 border-0 outline-none focus:ring-0"
@@ -546,18 +615,18 @@ export default function CalendarPage() {
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">Uhrzeit</label>
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex-1 border border-gray-300 rounded-lg">
-                                                        <input 
-                                                            type="time" 
-                                                            value={formData.startTime} 
+                                                        <input
+                                                            type="time"
+                                                            value={formData.startTime}
                                                             onChange={e => setFormData({ ...formData, startTime: e.target.value })}
                                                             className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
                                                         />
                                                     </div>
                                                     <span className="text-gray-400">bis</span>
                                                     <div className="flex-1 border border-gray-300 rounded-lg">
-                                                        <input 
-                                                            type="time" 
-                                                            value={formData.endTime} 
+                                                        <input
+                                                            type="time"
+                                                            value={formData.endTime}
                                                             onChange={e => setFormData({ ...formData, endTime: e.target.value })}
                                                             className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
                                                         />
@@ -565,37 +634,47 @@ export default function CalendarPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Privacy Toggle */}
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Sichtbarkeit</label>
-                                                <div className="border border-gray-300 rounded-lg p-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}>
-                                                                {formData.isPrivate ? (
-                                                                    <Lock className="w-5 h-5 text-white" />
-                                                                ) : (
-                                                                    <Globe className="w-5 h-5 text-white" />
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <p className="font-semibold text-gray-900">
-                                                                    {formData.isPrivate ? 'Privat' : 'Öffentlich'}
-                                                                </p>
-                                                                <p className="text-xs text-gray-500">
-                                                                    {formData.isPrivate ? 'Nur du kannst es sehen' : 'Sichtbar für alle'}
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Event type</label>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {[
+                                                        { key: "private", label: "Private", icon: Lock },
+                                                        { key: "public", label: "Public", icon: Globe },
+                                                        { key: "group", label: "Group", icon: CalendarIcon },
+                                                    ].map((option) => (
                                                         <button
+                                                            key={option.key}
                                                             type="button"
-                                                            onClick={() => setFormData({ ...formData, isPrivate: !formData.isPrivate })}
-                                                            className={`relative w-14 h-8 rounded-full transition-colors touch-manipulation ${formData.isPrivate ? 'bg-gray-900' : 'bg-emerald-500'}`}
+                                                            onClick={() => setFormData({ ...formData, eventType: option.key as "private" | "public" | "group" })}
+                                                            className={`rounded-3xl border px-3 py-3 text-xs font-semibold transition ${formData.eventType === option.key ? "border-[#D08945] bg-[#FEE3C1] text-[#953F0B]" : "border-gray-300 bg-white text-slate-700 hover:border-gray-400"}`}
                                                         >
-                                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${formData.isPrivate ? 'left-1' : 'left-7'}`} />
+                                                            <option.icon className="mb-1 h-4 w-4" />
+                                                            <div>{option.label}</div>
                                                         </button>
-                                                    </div>
+                                                    ))}
                                                 </div>
+                                                {formData.eventType === "group" && (
+                                                    <div className="mt-4">
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Group</label>
+                                                        <div className="border border-gray-300 rounded-lg bg-white">
+                                                            <select
+                                                                value={formData.groupWorkspaceId}
+                                                                onChange={(e) => setFormData({ ...formData, groupWorkspaceId: e.target.value })}
+                                                                className="w-full px-4 py-3 bg-transparent text-base text-gray-900 focus:outline-none focus:ring-0"
+                                                            >
+                                                                <option value="">Select a group</option>
+                                                                {groupOptions.map((group) => (
+                                                                    <option key={(group as any)._id.toString()} value={`group_${(group as any)._id}`}>
+                                                                        {(group as any).displayName || "Group"}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        {groupOptions.length === 0 && (
+                                                            <p className="mt-2 text-xs text-slate-500">Join or create a group first to schedule a group event.</p>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Delete Button */}
@@ -621,11 +700,11 @@ export default function CalendarPage() {
                                                     <div>
                                                         <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Datum</p>
                                                         <p className="text-lg font-semibold text-gray-900">
-                                                            {new Date(editingEvent.startTime).toLocaleDateString('de-DE', { 
-                                                                weekday: 'long', 
-                                                                day: 'numeric', 
-                                                                month: 'long', 
-                                                                year: 'numeric' 
+                                                            {new Date(editingEvent.startTime).toLocaleDateString('de-DE', {
+                                                                weekday: 'long',
+                                                                day: 'numeric',
+                                                                month: 'long',
+                                                                year: 'numeric'
                                                             })}
                                                         </p>
                                                     </div>

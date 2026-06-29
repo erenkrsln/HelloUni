@@ -1,12 +1,13 @@
 "use client";
 
-import { signOut } from "next-auth/react";
-import { X, LogOut, User } from "lucide-react";
+import { X, LogOut, User, Map, Download, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { markImageAsLoaded } from "@/lib/cache/imageCache";
+import { authClient } from "@/lib/auth-client";
+import { startAppTour } from "@/lib/tour";
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -18,7 +19,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const { currentUser } = useCurrentUser();
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = "/";
+        },
+      },
+    });
   };
 
   // Markiere das Profilbild im Cache, sobald es geladen ist
@@ -117,6 +124,38 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             >
               <User className="w-5 h-5 text-black flex-shrink-0" />
               <span>Profil</span>
+            </button>
+            <button
+              onClick={() => {
+                router.push("/info");
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+            >
+              <Info className="w-5 h-5 text-black flex-shrink-0" />
+              <span>Info</span>
+            </button>
+            <button
+              onClick={() => {
+                onClose();
+                setTimeout(() => {
+                  startAppTour();
+                }, 300);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+            >
+              <Map className="w-5 h-5 text-black flex-shrink-0" />
+              <span>Tour starten</span>
+            </button>
+            <button
+              onClick={() => {
+                router.push("/install");
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+            >
+              <Download className="w-5 h-5 text-black flex-shrink-0" />
+              <span>Installationsguide</span>
             </button>
             <button
               onClick={handleLogout}

@@ -5,7 +5,9 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin, ChevronDown } from "lucide-react";
+import { ChatHeaderCallButtons } from "@/components/call/ChatHeaderCallButtons";
+import { ActiveCallBanner } from "@/components/call/ActiveCallBanner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { GroupInfoModal } from "@/components/group-info-modal";
@@ -13,6 +15,12 @@ import { ChatFilesModal } from "@/components/chat-files-modal";
 import { ChatPollModal } from "@/components/chat-poll-modal";
 import { ChatPollMessage } from "@/components/chat-poll-message";
 import { handleAi } from "@/actions/chatAiSend";
+import { SharedPostMessage } from "@/components/shared-post-message";
+import { SharedProfileMessage } from "@/components/shared-profile-message";
+import { ChatEventModal } from "@/components/chat-event-modal";
+import { ChatEventMessage } from "@/components/chat-event-message";
+import { ChatLocationModal } from "@/components/chat-location-modal";
+import { ChatLocationMessage } from "@/components/chat-location-message";
 
 type ParsedAiContent = {
     summary: string;
@@ -42,6 +50,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isInitialLoad = useRef(true);
+    const hasLoadedMessages = useRef(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const messagesInnerRef = useRef<HTMLDivElement>(null);
 
     const messages = useQuery(api.queries.getMessages, {
         conversationId,
@@ -77,16 +88,83 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
     const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+    const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
     const [expandedAiMessages, setExpandedAiMessages] = useState<Record<string, boolean>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const updateLiveLocationCoordinates = useMutation(api.mutations.updateLiveLocationCoordinates);
+
+    // Find if the current user has any active live location shared in this conversation
+    const myActiveLiveLocationMessage = messages?.find(
+        (msg) =>
+            msg.type === "live_location" &&
+            msg.senderId === currentUser?._id &&
+            msg.isLiveActive &&
+            (!msg.liveExpiresAt || msg.liveExpiresAt > Date.now())
+    );
+
+    useEffect(() => {
+        if (!currentUser || !myActiveLiveLocationMessage) return;
+
+        let watchId: number | null = null;
+
+        if (typeof window !== "undefined" && navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    updateLiveLocationCoordinates({
+                        messageId: myActiveLiveLocationMessage._id,
+                        userId: currentUser._id,
+                        latitude,
+                        longitude,
+                    }).catch((err) => {
+                        console.error("Error updating live location coordinates:", err);
+                    });
+                },
+                (err) => {
+                    console.warn("Failed to watch user position for live sharing:", err);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        return () => {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+        };
+    }, [currentUser, myActiveLiveLocationMessage, updateLiveLocationCoordinates]);
+
+    const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+    const resetFileInput = () => {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
 
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf";
+        const isVideo = file.type === "video/mp4" || file.type === "video/quicktime";
+
+        if (!isImage && !isPdf && !isVideo) {
+            alert(`Nicht unterstützter Dateityp: ${file.type || "unbekannt"}.\n\nErlaubte Typen: Bilder, Videos (MP4/MOV) und PDF.`);
+            resetFileInput();
+            return;
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`Datei ist zu groß (${(file.size / (1024 * 1024)).toFixed(1)} MB).\n\nMaximale Größe: ${MAX_FILE_SIZE / (1024 * 1024)} MB.`);
+            resetFileInput();
+            return;
+        }
+
         try {
-            const { uploadUrl, publicUrl } = await fetch("/api/upload", {
+            const apiRes = await fetch("/api/upload", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -94,7 +172,19 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     contentType: file.type,
                     fileSize: file.size,
                 }),
-            }).then(r => r.json());
+            });
+
+            if (!apiRes.ok) {
+                const errData = await apiRes.json().catch(() => ({}));
+                console.error("Backend rejecting upload:", errData);
+                throw new Error(errData.error || "Upload-URL konnte nicht erstellt werden");
+            }
+
+            const { uploadUrl, publicUrl } = await apiRes.json();
+
+            if (!uploadUrl) {
+                throw new Error("Backend did not return an uploadUrl");
+            }
 
             await fetch(uploadUrl, {
                 method: "PUT",
@@ -106,16 +196,16 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 conversationId,
                 senderId: currentUser._id,
                 content: file.name,
-                type: file.type.startsWith("image/") ? "image" : "pdf",
+                type: isImage ? "image" : isVideo ? "video" : "pdf",
                 storageId: publicUrl,
                 fileName: file.name,
                 contentType: file.type,
             });
         } catch (error) {
             console.error("Failed to upload file:", error);
-            alert("Fehler beim Hochladen der Datei.");
+            alert("Fehler beim Hochladen der Datei. Bitte versuche es erneut.");
         } finally {
-            if (fileInputRef.current) fileInputRef.current.value = "";
+            resetFileInput();
         }
     };
 
@@ -130,19 +220,75 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     );
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-        messagesEndRef.current?.scrollIntoView({ behavior });
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior
+            });
+        }
     };
 
+    // Reset initial load state when conversation changes
+    useEffect(() => {
+        isInitialLoad.current = true;
+        hasLoadedMessages.current = false;
+    }, [conversationId]);
+
+    // Handle messages changes & initial scroll
     useEffect(() => {
         if (messages) {
             if (isInitialLoad.current) {
                 scrollToBottom("auto");
-                isInitialLoad.current = false;
+                
+                if (!hasLoadedMessages.current) {
+                    hasLoadedMessages.current = true;
+                    // Keep isInitialLoad.current = true for a bit longer to allow all images/assets to load and trigger ResizeObserver
+                    const timer = setTimeout(() => {
+                        isInitialLoad.current = false;
+                    }, 1500);
+                    return () => clearTimeout(timer);
+                }
             } else {
                 scrollToBottom("smooth");
             }
         }
     }, [messages]);
+
+    // Observe size changes of the inner content container (e.g. image loads, window resize, layout shifts)
+    useEffect(() => {
+        const innerEl = messagesInnerRef.current;
+        const containerEl = scrollContainerRef.current;
+        if (!innerEl || !containerEl) return;
+
+        const observer = new ResizeObserver(() => {
+            const threshold = 250;
+            const isNearBottom =
+                containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < threshold;
+
+            if (isNearBottom || isInitialLoad.current) {
+                scrollToBottom(isInitialLoad.current ? "auto" : "smooth");
+            }
+        });
+
+        observer.observe(innerEl);
+        observer.observe(containerEl);
+
+        // Also attach scroll event listener to detect manual scroll up
+        const handleScroll = () => {
+            const threshold = 250;
+            const isNearBottom = 
+                containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < threshold;
+            if (!isNearBottom && isInitialLoad.current) {
+                isInitialLoad.current = false;
+            }
+        };
+        containerEl.addEventListener("scroll", handleScroll, { passive: true });
+
+        return () => {
+            observer.disconnect();
+            containerEl.removeEventListener("scroll", handleScroll);
+        };
+    }, [conversationId]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -155,7 +301,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 content: newMessage.trim(),
             });
             if (newMessage.startsWith('AI:')) {
-                const msg = await handleAi(newMessage.substring(3).trim(), conversationId);
+                const msg = await handleAi(newMessage.substring(3).trim());
                 await sendMessage({
                     conversationId,
                     senderId: aiUserId ?? currentUser._id,
@@ -163,6 +309,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 });
             }
             setNewMessage("");
+            setTimeout(() => scrollToBottom("smooth"), 50);
         } catch (error) {
             console.error("Failed to send message:", error);
         }
@@ -201,7 +348,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     };
 
     const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
 
 
     if (!currentUser) return null;
@@ -224,7 +371,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     if (!currentUser) return null;
 
     return (
-        <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
+        <main className="flex flex-col h-full w-full max-w-[428px] md:max-w-none mx-auto bg-white relative">
 
             {/* Header */}
             <div
@@ -237,8 +384,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {/* Left side */}
                 <div className="flex items-center flex-1">
                     <button
-                        onClick={() => router.back()}
-                        className="mr-3 p-2 -ml-2 rounded-full"
+                        onClick={() => router.push("/chat")}
+                        className="mr-3 p-2 -ml-2 rounded-full md:hidden"
                     >
                         <ArrowLeft size={24} />
                     </button>
@@ -275,20 +422,35 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
                 {/* Right side */}
                 {conversation && (
-                    <button
-                        className="p-2 text-[#D08945]"
-                        onClick={() => setIsFilesModalOpen(true)}
-                        title="Geteilte Dateien"
-                    >
-                        <Folder size={20} />
-                    </button>
+                    <div className="flex items-center gap-0.5">
+                        {/* Call-Buttons: Voice & Video */}
+                        {!isLeft && (
+                            <ChatHeaderCallButtons conversationId={conversationId} />
+                        )}
+                        <button
+                            className="p-2 text-[#D08945]"
+                            onClick={() => setIsFilesModalOpen(true)}
+                            title="Geteilte Dateien"
+                        >
+                            <Folder size={20} />
+                        </button>
+                    </div>
                 )}
             </div>
 
+            {/* Aktiver Gruppenanruf Banner */}
+            {conversation?.isGroup && !isLeft && (
+                <ActiveCallBanner conversationId={conversationId} />
+            )}
+
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]">
-                {!messages ? (
-                    <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
+            <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]"
+            >
+                <div ref={messagesInnerRef}>
+                    {!messages ? (
+                        <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
                 ) : messages.length === 0 ? (
                     <div className="text-center text-[#D08945] mt-10 text-sm">
                         Noch keine Nachrichten im Chat. <br /> Schreibe deine erste Nachricht!
@@ -380,6 +542,15 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         return content;
                                                     }
 
+                                                    const joinMatch = content.match(/(.*) ist der Gruppe beigetreten/);
+                                                    if (joinMatch) {
+                                                        const [_, userName] = joinMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du bist der Gruppe beigetreten";
+                                                        }
+                                                        return content;
+                                                    }
+
                                                     const addedMatch = content.match(/(.*) hat (.*) hinzugefügt/);
                                                     if (addedMatch) {
                                                         const [_, adminName, addedName] = addedMatch;
@@ -449,6 +620,42 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         }
                                                         return content;
                                                     }
+
+                                                    const publicMatch = content.match(/(.*) hat die Gruppe öffentlich gemacht/);
+                                                    if (publicMatch) {
+                                                        const [_, userName] = publicMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast die Gruppe öffentlich gemacht";
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const privateMatch = content.match(/(.*) hat die Gruppe privat gemacht/);
+                                                    if (privateMatch) {
+                                                        const [_, userName] = privateMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast die Gruppe privat gemacht";
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const requestActiveMatch = content.match(/(.*) hat Beitrittsanfragen für diese Gruppe aktiviert/);
+                                                    if (requestActiveMatch) {
+                                                        const [_, userName] = requestActiveMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast Beitrittsanfragen für diese Gruppe aktiviert";
+                                                        }
+                                                        return content;
+                                                    }
+
+                                                    const requestInactiveMatch = content.match(/(.*) hat den direkten Beitritt für diese Gruppe aktiviert/);
+                                                    if (requestInactiveMatch) {
+                                                        const [_, userName] = requestInactiveMatch;
+                                                        if (userName === currentUser.name) {
+                                                            return "Du hast den direkten Beitritt für diese Gruppe aktiviert";
+                                                        }
+                                                        return content;
+                                                    }
                                                 }
                                                 return content;
                                             })()}
@@ -491,7 +698,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         <div className={`flex flex-col relative group max-w-full ${isMe ? 'items-end' : 'items-start'}`}>
                                             <div
                                                 className={`
-                                                ${msg.type === "image" ? 'p-1' : 'px-4 py-2'} text-sm
+                                                ${(msg.type === "image" || msg.type === "post") ? 'p-1' : 'px-4 py-2'} text-sm
                                                 ${isMe
                                                         ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
                                                         : 'text-black rounded-2xl bg-white shadow-sm'
@@ -515,7 +722,24 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                 src={(msg as any).url}
                                                                 alt="Bild"
                                                                 className="w-full h-full object-cover cursor-pointer"
-                                                                onClick={() => setSelectedImage((msg as any).url)}
+                                                                onClick={() => setSelectedMedia({ url: (msg as any).url, type: 'image' })}
+                                                            />
+                                                        </div>
+                                                    ) : msg.type === "video" && (msg as any).url ? (
+                                                        <div
+                                                            className="max-w-[240px] max-h-[320px] overflow-hidden rounded-[14px] cursor-pointer relative group"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedMedia({ url: (msg as any).url, type: 'video' });
+                                                            }}
+                                                        >
+                                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10 group-hover:bg-black/30 transition-colors">
+                                                                <CirclePlay size={48} className="text-white/90 drop-shadow-lg" strokeWidth={1.5} />
+                                                            </div>
+                                                            <video
+                                                                src={(msg as any).url}
+                                                                className="w-full max-h-[320px] object-cover pointer-events-none"
+                                                                preload="metadata"
                                                             />
                                                         </div>
                                                     ) : msg.type === "pdf" ? (
@@ -536,6 +760,31 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             chatPollId={(msg as any).chatPollId as Id<"chatPolls">}
                                                             currentUserId={currentUser._id}
                                                             isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "post" && (msg as any).sharedPostId ? (
+                                                        <SharedPostMessage
+                                                            postId={(msg as any).sharedPostId as Id<"posts">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "profile" && (msg as any).sharedProfileId ? (
+                                                        <SharedProfileMessage
+                                                            profileId={(msg as any).sharedProfileId as Id<"users">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : msg.type === "event_invite" && (msg as any).chatEventId ? (
+                                                        <ChatEventMessage
+                                                            chatEventId={(msg as any).chatEventId as Id<"chatEvents">}
+                                                            currentUserId={currentUser._id}
+                                                            isMe={isMe}
+                                                        />
+                                                    ) : (msg.type === "location" || msg.type === "live_location") ? (
+                                                        <ChatLocationMessage
+                                                            messageId={msg._id}
+                                                            senderName={sender?.name || "Benutzer"}
+                                                            isMe={isMe}
+                                                            currentUserId={currentUser._id}
                                                         />
                                                     ) : parsedAiContent ? (
                                                         <div className="flex flex-col gap-2">
@@ -574,7 +823,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <button className="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
-                                                                    <SmilePlus size={12} className="text-black" />
+                                                                    <SmilePlus className="text-black w-3 h-3 md:w-4 md:h-4" />
                                                                 </button>
                                                             </PopoverTrigger>
                                                             <PopoverContent side="top" align={isMe ? 'end' : 'start'} className="w-auto p-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_10px_20px_-2px_rgba(0,0,0,0.04)] rounded-full bg-white border border-gray-100 z-[60]">
@@ -586,7 +835,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                                 e.preventDefault();
                                                                                 toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                                             }}
-                                                                            className="hover:scale-125 transition-transform text-lg flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100"
+                                                                            className="hover:scale-125 transition-transform text-lg md:text-xl flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full hover:bg-gray-100"
                                                                         >
                                                                             {emoji}
                                                                         </button>
@@ -611,10 +860,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         e.preventDefault();
                                                         toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                     }}
-                                                    className={`flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
+                                                    className={`flex items-center gap-1 md:gap-1.5 text-[11px] md:text-[13px] px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
                                                 >
                                                     <span>{emoji}</span>
-                                                    <span className="font-medium text-[10px]">{data.count}</span>
+                                                    <span className="font-medium text-[10px] md:text-[11px]">{data.count}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -625,6 +874,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     })
                 )}
                 <div ref={messagesEndRef} />
+                </div>
             </div>
 
             {/* Group Info Modal */}
@@ -652,6 +902,26 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 <ChatPollModal
                     isOpen={isPollModalOpen}
                     onClose={() => setIsPollModalOpen(false)}
+                    conversationId={conversationId}
+                    senderId={currentUser._id}
+                />
+            )}
+
+            {/* Chat Event Modal */}
+            {currentUser && (
+                <ChatEventModal
+                    isOpen={isEventModalOpen}
+                    onClose={() => setIsEventModalOpen(false)}
+                    conversationId={conversationId}
+                    senderId={currentUser._id}
+                />
+            )}
+
+            {/* Chat Location Modal */}
+            {currentUser && (
+                <ChatLocationModal
+                    isOpen={isLocationModalOpen}
+                    onClose={() => setIsLocationModalOpen(false)}
                     conversationId={conversationId}
                     senderId={currentUser._id}
                 />
@@ -698,6 +968,32 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     </div>
                                     <span className="text-[11px] text-gray-600 font-medium">Umfrage</span>
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        setIsEventModalOpen(true);
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <CalendarDays size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Termin</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttachMenuOpen(false);
+                                        setIsLocationModalOpen(true);
+                                    }}
+                                    className="flex flex-col items-center gap-1.5"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <MapPin size={20} className="text-[#D08945]" />
+                                    </div>
+                                    <span className="text-[11px] text-gray-600 font-medium">Standort</span>
+                                </button>
                             </div>
                         </>
                     )}
@@ -707,11 +1003,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             onSubmit={handleSend}
                             className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                         >
-                        <input
-                            type="file"
-                            accept="image/*,video/*,application/pdf"
-                            className="hidden"
-                            ref={fileInputRef}
+                            <input
+                                type="file"
+                                accept="image/*,application/pdf,video/mp4,video/quicktime"
+                                className="hidden"
+                                ref={fileInputRef}
                                 onChange={handleFileSelect}
                             />
 
@@ -719,6 +1015,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 ref={textareaRef}
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
+                                onFocus={() => {
+                                    setTimeout(() => scrollToBottom("smooth"), 100);
+                                    setTimeout(() => scrollToBottom("smooth"), 300);
+                                }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
                                         const isMobile = window.matchMedia("(pointer: coarse)").matches;
@@ -766,23 +1066,34 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
             )}
 
-            {/* Image Preview Overlay */}
-            {selectedImage && (
+            {/* Media Preview Overlay */}
+            {selectedMedia && (
                 <div
                     className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-2"
-                    onClick={() => setSelectedImage(null)}
+                    onClick={() => setSelectedMedia(null)}
                 >
                     <button
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
-                        onClick={() => setSelectedImage(null)}
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[110]"
+                        onClick={() => setSelectedMedia(null)}
                     >
                         <X size={32} />
                     </button>
-                    <img
-                        src={selectedImage}
-                        alt="Vorschau"
-                        className="max-w-full max-h-[90vh] object-contain"
-                    />
+                    {selectedMedia.type === 'video' ? (
+                        <video
+                            src={selectedMedia.url}
+                            controls
+                            autoPlay
+                            playsInline
+                            className="max-w-[100vw] max-h-[100vh] w-full h-full object-contain"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <img
+                            src={selectedMedia.url}
+                            alt="Vorschau"
+                            className="max-w-full max-h-[90vh] object-contain"
+                        />
+                    )}
                 </div>
             )}
         </main>

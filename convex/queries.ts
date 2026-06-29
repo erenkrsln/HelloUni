@@ -1,7 +1,7 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { getImageUrl } from "./helpers";
+import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
 
 // Helper function to calculate actual comments count for a post
 async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
@@ -47,7 +47,7 @@ export const getFeed = query({
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -94,7 +94,7 @@ export const getPost = query({
     // Convert storage ID to URL if it exists
     let imageUrl = post.imageUrl;
     imageUrl = await getImageUrl(ctx, imageUrl);
-    const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+    const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
     // Calculate actual participants count for events
     let actualParticipantsCount = post.participantsCount || 0;
@@ -216,7 +216,7 @@ export const getUser = query({
       return null;
     }
 
-    const imageUrl = await getImageUrl(ctx, user.image);
+    const imageUrl = await getUserImageUrl(ctx, user.image);
     const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
@@ -274,7 +274,7 @@ export const getUserPosts = query({
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -327,7 +327,7 @@ export const getUserById = query({
       return null;
     }
 
-    const imageUrl = await getImageUrl(ctx, user.image);
+    const imageUrl = await getUserImageUrl(ctx, user.image);
     const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
@@ -377,7 +377,7 @@ export const searchUsers = query({
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       matchingUsers.map(async (user) => {
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           _id: user._id,
           name: user.name,
@@ -404,7 +404,7 @@ export const getUserByUsername = query({
       return null;
     }
 
-    const imageUrl = await getImageUrl(ctx, user.image);
+    const imageUrl = await getUserImageUrl(ctx, user.image);
     const headerImageUrl = await getImageUrl(ctx, user.headerImage);
 
     // If createdAt is not set, try to get it from the first post
@@ -484,7 +484,7 @@ export const getFollowingFeed = query({
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -667,7 +667,7 @@ export const getParticipants = query({
         if (!user) return null;
 
         // Convert storage ID to URL if it exists
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
 
         return {
           _id: user._id,
@@ -760,7 +760,7 @@ export const getFilteredFeed = query({
 
         let imageUrl = post.imageUrl;
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = user?.image ? await getImageUrl(ctx, user.image) : undefined;
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -827,7 +827,7 @@ export const getAllUsers = query({
     // Fix image URLs for all users
     const usersWithImages = await Promise.all(
       users.map(async (user) => {
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           ...user,
           image: imageUrl
@@ -905,14 +905,14 @@ export const getConversations = query({
 
         if (conv.isGroup) {
           displayName = conv.name || "Gruppenchat";
-          displayImage = await getImageUrl(ctx, conv.image);
+          displayImage = await getGroupImageUrl(ctx, conv.image);
         } else {
           // 1:1 Chat: Partner Info anzeigen
           const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId;
           const partner = await ctx.db.get(partnerId);
           if (partner) {
             displayName = partner.name;
-            displayImage = await getImageUrl(ctx, partner.image);
+            displayImage = await getUserImageUrl(ctx, partner.image);
           }
         }
 
@@ -1007,6 +1007,22 @@ export const getUnreadCounts = query({
   },
 });
 
+/** Name + Bild einer Conversation (für Gruppenanruf-UI). */
+export const getConversationDisplay = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) return null;
+
+    if (!conv.isGroup) return null;
+
+    return {
+      displayName: conv.name || "Gruppenchat",
+      displayImage: await getGroupImageUrl(ctx, conv.image),
+    };
+  },
+});
+
 export const getConversationMembers = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
@@ -1025,7 +1041,7 @@ export const getConversationMembers = query({
         const user = await ctx.db.get(userId);
         if (!user) return null;
 
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
 
         const userIdString = userId.toString();
         const creatorIdString = conversation.creatorId?.toString();
@@ -1094,7 +1110,7 @@ export const getComments = query({
         const user = await ctx.db.get(comment.userId);
         if (!user) return null;
 
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
 
         const commentImageUrl = await getImageUrl(ctx, comment.imageUrl);
 
@@ -1172,7 +1188,7 @@ export const getConversationFiles = query({
     const files: any[] = [];
 
     for (const m of visibleMessages) {
-      if (m.type === "image" || m.type === "pdf") {
+      if (m.type === "image" || m.type === "pdf" || m.type === "video") {
         const url = await getImageUrl(ctx, m.storageId);
         files.push({
           ...m,
@@ -1283,7 +1299,7 @@ export const searchGlobal = query({
         .slice(0, 20)
         .map(async (user) => ({
           ...user,
-          image: await getImageUrl(ctx, user.image),
+          image: await getUserImageUrl(ctx, user.image),
         }))
     );
 
@@ -1306,7 +1322,7 @@ export const searchGlobal = query({
           const user = await ctx.db.get(post.userId);
 
           const imageUrl = await getImageUrl(ctx, post.imageUrl);
-          const userImageUrl = await getImageUrl(ctx, user?.image);
+          const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
           // Calculate actual comments count
           const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
@@ -1387,7 +1403,7 @@ export const searchProfiles = query({
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       limitedUsers.map(async (user) => {
-        const imageUrl = await getImageUrl(ctx, user.image);
+        const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           ...user,
           image: imageUrl,
@@ -1398,6 +1414,130 @@ export const searchProfiles = query({
     return usersWithImages;
   },
 });
+
+// Get recommended compatible users for the current user
+export const getCompatibleUsers = query({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    // If no user is logged in, return the 10 most recently joined people
+    if (!args.userId) {
+      const allUsers = await ctx.db
+        .query("users")
+        .collect();
+      
+      const sorted = allUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
+      const top10 = sorted.slice(0, 10);
+      
+      return await Promise.all(
+        top10.map(async (user) => {
+          const image = await getUserImageUrl(ctx, user.image);
+          return { ...user, image };
+        })
+      );
+    }
+
+    const currentUser = await ctx.db.get(args.userId);
+    if (!currentUser) {
+      return [];
+    }
+
+    // Get the list of users the current user is already following
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId!))
+      .collect();
+    const followedUserIds = new Set(follows.map((f) => f.followingId));
+
+    // Get all users
+    const allUsers = await ctx.db
+      .query("users")
+      .collect();
+
+    // Filter out current user and already followed users
+    const potentialUsers = allUsers.filter(
+      (u) => u._id !== args.userId && !followedUserIds.has(u._id)
+    );
+
+    // Score users based on compatibility matching
+    const scoredUsers = potentialUsers.map((user) => {
+      let score = 0;
+
+      // 1. Major match (case-insensitive)
+      if (
+        user.major &&
+        currentUser.major &&
+        user.major.toLowerCase().trim() === currentUser.major.toLowerCase().trim()
+      ) {
+        score += 1;
+      }
+
+      // 2. Semester match
+      if (
+        user.semester !== undefined &&
+        currentUser.semester !== undefined &&
+        user.semester === currentUser.semester
+      ) {
+        score += 1;
+      }
+
+      // 3. Interests match (share at least one interest)
+      if (
+        user.interests &&
+        currentUser.interests &&
+        Array.isArray(user.interests) &&
+        Array.isArray(currentUser.interests)
+      ) {
+        const currentUserInterestsLower = currentUser.interests.map(i => i.toLowerCase().trim());
+        const userInterestsLower = user.interests.map(i => i.toLowerCase().trim());
+        const hasCommonInterest = currentUserInterestsLower.some(i => userInterestsLower.includes(i));
+        if (hasCommonInterest) {
+          score += 1;
+        }
+      }
+
+      return { user, score };
+    });
+
+    // Only keep users that match in at least one category (score >= 1)
+    const matchedUsers = scoredUsers.filter((item) => item.score >= 1);
+
+    // Prioritize more matches higher, then more recently joined (creation time desc)
+    matchedUsers.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return (b.user._creationTime || 0) - (a.user._creationTime || 0);
+    });
+
+    let selectedUsers = matchedUsers.slice(0, 10).map((item) => item.user);
+
+    // If there are less than 10 compatible users, fill the rest with the most recently joined people
+    if (selectedUsers.length < 10) {
+      const selectedUserIds = new Set(selectedUsers.map((u) => u._id));
+      const otherUsers = potentialUsers.filter((u) => !selectedUserIds.has(u._id));
+      
+      // Sort other users by recency (creation time desc)
+      const sortedRecentOthers = otherUsers.sort(
+        (a, b) => (b._creationTime || 0) - (a._creationTime || 0)
+      );
+      
+      const neededCount = 10 - selectedUsers.length;
+      const paddingUsers = sortedRecentOthers.slice(0, neededCount);
+      selectedUsers = [...selectedUsers, ...paddingUsers];
+    }
+
+    // Resolve storage IDs to URLs
+    return await Promise.all(
+      selectedUsers.map(async (user) => {
+        const image = await getUserImageUrl(ctx, user.image);
+        return { ...user, image };
+      })
+    );
+  },
+});
+
 
 // Search all posts by title or content
 // Search all posts by title or content
@@ -1482,7 +1622,7 @@ export const searchPosts = query({
         }
 
         const imageUrl = await getImageUrl(ctx, post.imageUrl);
-        const userImageUrl = await getImageUrl(ctx, user?.image);
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         let actualParticipantsCount = post.participantsCount || 0;
         if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
@@ -1560,3 +1700,259 @@ export const getChatPollVote = query({
     return vote ? vote.optionIndices : [];
   },
 });
+
+export const getActiveLiveLocation = query({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message) return null;
+
+    // Handle static location messages
+    if (message.type === "location") {
+      return {
+        isLiveActive: false,
+        latitude: message.latitude,
+        longitude: message.longitude,
+        address: message.address,
+        updatedAt: message.createdAt,
+        liveExpiresAt: undefined,
+      };
+    }
+
+    if (message.type !== "live_location") return null;
+
+    // Check if expired
+    const isExpired = message.liveExpiresAt ? Date.now() > message.liveExpiresAt : false;
+    const isLiveActive = message.isLiveActive && !isExpired;
+
+    if (!isLiveActive) {
+      return {
+        isLiveActive: false,
+        latitude: message.latitude,
+        longitude: message.longitude,
+        address: message.address,
+        updatedAt: message.createdAt,
+        liveExpiresAt: message.liveExpiresAt,
+      };
+    }
+
+    const liveLoc = await ctx.db
+      .query("liveLocations")
+      .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
+      .first();
+
+    return {
+      isLiveActive: true,
+      latitude: liveLoc ? liveLoc.latitude : message.latitude,
+      longitude: liveLoc ? liveLoc.longitude : message.longitude,
+      address: message.address,
+      updatedAt: liveLoc ? liveLoc.updatedAt : message.createdAt,
+      liveExpiresAt: message.liveExpiresAt,
+    };
+  },
+});
+
+// ─── Cache-Queries ────────────────────────────────────────────────────────────
+
+export const getStudiengangCache = query({
+  args: { major: v.string() },
+  handler: async (ctx, { major }) => {
+    return ctx.db
+      .query("studiengangCache")
+      .withIndex("by_major", (q) => q.eq("major", major))
+      .first();
+  },
+});
+
+export const getMensaCache = query({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db.query("mensaCache").first();
+  },
+});
+
+export const searchPublicGroups = query({
+  args: {
+    searchTerm: v.string(),
+    sortBy: v.union(v.literal("recent"), v.literal("alphabetical")),
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const conversations = await ctx.db.query("conversations").collect();
+
+    let publicGroups = conversations.filter(
+      (c) => c.isGroup === true && c.isPublic === true
+    );
+
+    // Filter by search term
+    if (args.searchTerm.trim() !== "") {
+      const term = args.searchTerm.toLowerCase();
+      publicGroups = publicGroups.filter(
+        (c) => c.name && c.name.toLowerCase().includes(term)
+      );
+    }
+
+    // Map user's join requests
+    const userRequestsMap: Record<string, string> = {};
+    if (args.userId) {
+      const requests = await ctx.db
+        .query("joinRequests")
+        .withIndex("by_user", (q) => q.eq("userId", args.userId!))
+        .collect();
+      requests.forEach((r) => {
+        userRequestsMap[r.conversationId as string] = r.status;
+      });
+    }
+
+    // Enrich public groups with images
+    const enrichedGroups = await Promise.all(
+      publicGroups.map(async (group) => {
+        const displayImage = await getGroupImageUrl(ctx, group.image);
+        return {
+          ...group,
+          displayName: group.name || "Öffentliche Gruppe",
+          displayImage,
+          needsRequestToJoin: group.needsRequestToJoin ?? true, // Default to true!
+          joinRequestStatus: userRequestsMap[group._id as string] || null,
+        };
+      })
+    );
+
+    // Sort groups
+    if (args.sortBy === "alphabetical") {
+      enrichedGroups.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    } else {
+      enrichedGroups.sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+
+    return enrichedGroups;
+  },
+});
+
+export const getChatSuggestions = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // 1. Get the list of users the current user is following
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
+      .collect();
+    const followedUserIds = follows.map((f) => f.followingId);
+
+    // 2. Get all conversations to find who the user has started a direct chat with
+    const conversations = await ctx.db.query("conversations").collect();
+    const directChatPartners = new Set<string>();
+    
+    for (const conv of conversations) {
+      if (!conv.isGroup && conv.participants.includes(args.userId) && conv.participants.length === 2) {
+        const partner = conv.participants.find((p) => p !== args.userId);
+        if (partner) {
+          directChatPartners.add(partner.toString());
+        }
+      }
+    }
+
+    // 3. Find followed users who haven't started a chat with yet
+    const targetFollowedIds = followedUserIds.filter(
+      (id) => !directChatPartners.has(id.toString()) && id !== args.userId
+    );
+
+    let suggestions: any[] = [];
+    if (targetFollowedIds.length > 0) {
+      // Get the profiles of these followed users
+      const users = await Promise.all(targetFollowedIds.map((id) => ctx.db.get(id)));
+      const validUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);
+      
+      suggestions = await Promise.all(
+        validUsers.map(async (user) => {
+          const image = await getUserImageUrl(ctx, user.image);
+          return { ...user, image };
+        })
+      );
+    }
+
+    // 4. Fallback if no suggestions found
+    if (suggestions.length === 0) {
+      const currentUser = await ctx.db.get(args.userId);
+      if (!currentUser) return [];
+
+      const followedUserIdsSet = new Set(followedUserIds.map(id => id.toString()));
+      const allUsers = await ctx.db.query("users").collect();
+
+      // Filter out current user, already followed users, and users who already have a direct chat
+      const potentialUsers = allUsers.filter(
+        (u) => u._id !== args.userId && 
+               !followedUserIdsSet.has(u._id.toString()) && 
+               !directChatPartners.has(u._id.toString())
+      );
+
+      // Score users
+      const scoredUsers = potentialUsers.map((user) => {
+        let score = 0;
+        if (
+          user.major &&
+          currentUser.major &&
+          user.major.toLowerCase().trim() === currentUser.major.toLowerCase().trim()
+        ) {
+          score += 1;
+        }
+        if (
+          user.semester !== undefined &&
+          currentUser.semester !== undefined &&
+          user.semester === currentUser.semester
+        ) {
+          score += 1;
+        }
+        if (
+          user.interests &&
+          currentUser.interests &&
+          Array.isArray(user.interests) &&
+          Array.isArray(currentUser.interests)
+        ) {
+          const currentUserInterestsLower = currentUser.interests.map(i => i.toLowerCase().trim());
+          const userInterestsLower = user.interests.map(i => i.toLowerCase().trim());
+          const hasCommonInterest = currentUserInterestsLower.some(i => userInterestsLower.includes(i));
+          if (hasCommonInterest) {
+            score += 1;
+          }
+        }
+        return { user, score };
+      });
+
+      const matchedUsers = scoredUsers.filter((item) => item.score >= 1);
+      matchedUsers.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return (b.user._creationTime || 0) - (a.user._creationTime || 0);
+      });
+
+      let selectedUsers = matchedUsers.map((item) => item.user);
+      if (selectedUsers.length < 5) {
+        const selectedUserIds = new Set(selectedUsers.map((u) => u._id.toString()));
+        const otherUsers = potentialUsers.filter((u) => !selectedUserIds.has(u._id.toString()));
+        const sortedRecentOthers = otherUsers.sort(
+          (a, b) => (b._creationTime || 0) - (a._creationTime || 0)
+        );
+        const neededCount = 5 - selectedUsers.length;
+        const paddingUsers = sortedRecentOthers.slice(0, neededCount);
+        selectedUsers = [...selectedUsers, ...paddingUsers];
+      }
+
+      suggestions = await Promise.all(
+        selectedUsers.map(async (user) => {
+          const image = await getUserImageUrl(ctx, user.image);
+          return { ...user, image };
+        })
+      );
+    }
+
+    // Return at most 5 suggestions
+    return suggestions.slice(0, 5);
+  },
+});
+

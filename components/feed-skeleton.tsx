@@ -10,7 +10,7 @@ export function FeedSkeleton() {
       {[1, 2, 3, 4, 5].map((index) => (
         <article
           key={index}
-          className="relative px-4 py-3"
+          className="relative px-4 py-3 desktop-feed-card"
           style={{
             marginBottom: "0",
             borderBottom: index < 5 ? "1px solid rgba(0, 0, 0, 0.1)" : "none"
