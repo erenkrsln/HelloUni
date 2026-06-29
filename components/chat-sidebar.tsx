@@ -62,7 +62,7 @@ export function ChatSidebar() {
   }, []);
 
   const conversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
-  
+
   const chatSuggestions = useQuery(
     api.queries.getChatSuggestions,
     currentUser ? { userId: currentUser._id } : "skip"
@@ -178,7 +178,7 @@ export function ChatSidebar() {
       {/* Container for Filters, Search, and Chat List */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Search & Filters Container */}
-        <div className="px-4 pt-4 pb-2 md:px-6 md:pt-6 flex-shrink-0">
+        <div className="px-4 pt-4 pb-4 md:px-6 md:pt-6 border-b border-gray-100 flex-shrink-0">
 
           {/* Filter Tabs */}
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -254,14 +254,14 @@ export function ChatSidebar() {
           )}
 
           {/* Search Bar */}
-          <div className="relative mb-2">
+          <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-              <Search className="h-5 w-5" />
+              <Search className="h-4 w-4" />
             </div>
             <input
               type="text"
-              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
-              placeholder="Suchen..."
+              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm"
+              placeholder="Suche in deinen Chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -269,7 +269,7 @@ export function ChatSidebar() {
         </div>
 
         {/* Scrollable Chat List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-24 md:px-6 md:pb-24 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 md:px-6 md:pt-4 md:pb-24 scrollbar-hide">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#d08945]" />
@@ -510,11 +510,10 @@ export function ChatSidebar() {
                       <button
                         key={user._id}
                         onClick={() => toggleUserSelection(user._id)}
-                        className={`w-full flex items-center p-3 rounded-2xl text-left transition-all ${
-                          isSelected 
-                            ? "bg-[#d08945]/5 ring-2 ring-[#d08945]" 
-                            : "hover:bg-gray-50/50 bg-white border border-gray-100"
-                        }`}
+                        className={`w-full flex items-center p-3 rounded-2xl text-left transition-all ${isSelected
+                          ? "bg-[#d08945]/5 ring-2 ring-[#d08945]"
+                          : "hover:bg-gray-50/50 bg-white border border-gray-100"
+                          }`}
                       >
                         <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                           {user.image ? (
