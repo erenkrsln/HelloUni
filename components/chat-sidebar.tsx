@@ -512,44 +512,46 @@ export function ChatSidebar() {
                 {userSearchQuery.trim() ? "Suchergebnisse" : "Vorschläge"}
               </div>
 
-              {isModalUsersLoading ? (
-                <div className="flex justify-center items-center py-6">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#d08945]" />
-                </div>
-              ) : displayedUsers.length === 0 ? (
-                <div className="text-center py-6 text-gray-400 text-sm">
-                  {userSearchQuery.trim() ? "Keine Benutzer gefunden." : "Keine Vorschläge gefunden."}
-                </div>
-              ) : (
-                displayedUsers.map(user => {
-                  const isSelected = selectedUsers.includes(user._id);
-                  return (
-                    <button
-                      key={user._id}
-                      onClick={() => toggleUserSelection(user._id)}
-                      className={`w-full flex items-center p-3 rounded-2xl text-left transition-all ${
-                        isSelected 
-                          ? "bg-[#d08945]/5 ring-2 ring-[#d08945]" 
-                          : "hover:bg-gray-50/50 bg-white border border-gray-100"
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
-                        {user.image ? (
-                          <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center font-semibold text-sm" style={{ color: "#000000" }}>
-                            {user.name?.charAt(0).toUpperCase() || "?"}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className={`font-semibold text-sm ${isSelected ? "text-[#D08945]" : "text-black"}`}>{user.name}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">@{user.username}</div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
+              <div className="h-[362px] overflow-y-auto pr-1 space-y-2">
+                {isModalUsersLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#d08945]" />
+                  </div>
+                ) : displayedUsers.length === 0 ? (
+                  <div className="flex justify-center items-center h-full text-gray-400 text-sm text-center">
+                    {userSearchQuery.trim() ? "Keine Benutzer gefunden." : "Keine Vorschläge gefunden."}
+                  </div>
+                ) : (
+                  displayedUsers.map(user => {
+                    const isSelected = selectedUsers.includes(user._id);
+                    return (
+                      <button
+                        key={user._id}
+                        onClick={() => toggleUserSelection(user._id)}
+                        className={`w-full flex items-center p-3 rounded-2xl text-left transition-all ${
+                          isSelected 
+                            ? "bg-[#d08945]/5 ring-2 ring-[#d08945]" 
+                            : "hover:bg-gray-50/50 bg-white border border-gray-100"
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
+                          {user.image ? (
+                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-semibold text-sm" style={{ color: "#000000" }}>
+                              {user.name?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className={`font-semibold text-sm ${isSelected ? "text-[#D08945]" : "text-black"}`}>{user.name}</div>
+                          <div className="text-xs text-gray-400 mt-0.5">@{user.username}</div>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         </div>
