@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, MessageCircle } from "lucide-react";
+import { Plus, MessageCircle, CalendarDays } from "lucide-react";
 import { HomeIcon } from "@/components/home-icon";
 import { SearchIcon } from "@/components/search-icon";
 import { WorkspaceIcon } from "@/components/workspace-icon";
@@ -26,6 +26,9 @@ export function BottomNavigation() {
     }
     if (path === "/chat") {
       return pathname === "/chat" || pathname.startsWith("/chat/");
+    }
+    if (path === "/calendar") {
+      return pathname === "/calendar" || pathname.startsWith("/calendar/");
     }
     return pathname === path;
   };
@@ -125,6 +128,27 @@ export function BottomNavigation() {
               isActive={isActive("/search")}
               size={32}
               color="#000000"
+            />
+          </Link>
+
+          {/* Calendar */}
+          <Link
+            id="tour-nav-calendar"
+            href="/calendar"
+            prefetch={true}
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+            style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+          >
+            <CalendarDays
+              strokeWidth={isActive("/calendar") ? 2.5 : 2}
+              style={{
+                width: "27px",
+                height: "27px",
+                color: "#000000",
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden"
+              }}
             />
           </Link>
 
