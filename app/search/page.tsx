@@ -48,56 +48,56 @@ const STATIC_PAGES: StaticPageResult[] = [
         description: "Der Hauptfeed mit allen neuen Beiträgen deiner Mitstudierenden.",
         href: "/home",
         keywords: ["home", "startseite", "feed", "beitraege", "beiträge", "neuigkeiten", "campus"],
-        category: "Bereich"
+        category: "Seite"
     },
     {
         title: "Post erstellen",
         description: "Erstelle einen neuen Post, ein Treffen oder eine Umfrage.",
         href: "/create",
         keywords: ["beitrag erstellen", "post erstellen", "treffen erstellen", "umfrage erstellen", "erstellen", "posten", "neuer beitrag", "umfrage erstellen", "treffen planen", "plus", "schreiben"],
-        category: "Bereich"
+        category: "Seite"
     },
     {
         title: "Benachrichtigungen",
         description: "Bleibe auf dem Laufenden über Likes, Kommentare und Erwähnungen.",
         href: "/notifications",
         keywords: ["benachrichtigungen", "notifications", "glocke", "aktivitaeten", "aktivitäten", "mitteilungen", "erwaehnungen", "erwähnungen", "likes", "kommentare"],
-        category: "Bereich"
+        category: "Seite"
     },
     {
         title: "Chats",
         description: "Unterhalte dich privat oder in Gruppen mit deinen Kommilitonen.",
         href: "/chat",
         keywords: ["chats", "nachrichten", "chat", "mitteilungen", "unterhaltungen", "direktnachrichten", "messenger", "schreiben", "nachricht"],
-        category: "Bereich"
+        category: "Seite"
     },
     {
         title: "Kalender",
         description: "Deine anstehenden privaten und öffentlichen Events und wichtige Termine.",
         href: "/calendar",
         keywords: ["kalender", "calendar", "termine", "events", "veranstaltungen", "planer", "zeitplan"],
-        category: "Bereich"
+        category: "Seite"
     },
     {
         title: "Mein Profil",
         description: "Zeige und bearbeite dein Profil, deine Interessen und Beiträge.",
         href: "/profile",
         keywords: ["profil", "profile", "mein profil", "account", "konto", "studiengang", "interessen", "avatar", "profilbild", "meine beitraege", "meine beiträge"],
-        category: "Bereich"
+        category: "Seite"
     },
     {
         title: "Workspace",
         description: "Verwalte deine anstehenden Events, offenen Aufgaben und Gruppen.",
         href: "/workspace",
         keywords: ["workspace", "arbeitsbereich", "aufgaben", "tasks", "termine", "events", "gruppen", "to-do", "todo", "übersicht", "uebersicht", "dashboard"],
-        category: "Bereich"
+        category: "Seite"
     },
     {
         title: "Infoseite",
         description: "Wichtige Dokumente und Termine deinem Studiengang. Außerdem der Mensaplan.",
         href: "/info",
         keywords: ["infopage", "informationen", "studiengang", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos", "modulhandbuch", "prüfungsordnung", "studienplan", "termine"],
-        category: "Bereich"
+        category: "Seite"
     }
 ];
 
