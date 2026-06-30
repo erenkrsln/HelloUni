@@ -65,6 +65,7 @@ export const createChatEvent = mutation({
     await ctx.db.patch(args.conversationId, {
       lastMessageId: messageId,
       updatedAt: Date.now(),
+      deletedBy: undefined,
     });
 
     return chatEventId;

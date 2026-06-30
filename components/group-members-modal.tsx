@@ -84,6 +84,10 @@ export function GroupMembersModal({
     const leaveGroup = useMutation(api.mutations.leaveGroup);
 
     const handleLeave = async () => {
+        if (iAmCreator) {
+            alert("Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.");
+            return;
+        }
         if (!confirm("Möchtest du die Gruppe wirklich verlassen? Du kannst danach keine Nachrichten mehr senden.")) return;
         try {
             await leaveGroup({
@@ -91,9 +95,18 @@ export function GroupMembersModal({
                 userId: currentUserId,
             });
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to leave group:", error);
-            alert("Fehler beim Verlassen der Gruppe.");
+            let errorMessage = "Fehler beim Verlassen der Gruppe.";
+            if (error.data === "Creator must transfer creator status before leaving the group" || 
+                (error.message && error.message.includes("Creator must transfer"))) {
+                errorMessage = "Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.";
+            } else if (error.data) {
+                errorMessage = error.data;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            alert(errorMessage);
         }
     };
 

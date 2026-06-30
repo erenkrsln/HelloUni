@@ -348,19 +348,20 @@ export const createWorkspaceGroup = mutation({
 export const addMember = mutation({
   args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
   handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) throw new Error("Conversation not found");
+
     const group = await ctx.db
       .query("workspace_groups")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .first();
-    if (!group) throw new Error("Group not found");
 
     // Check actor permission
-    if (group.ownerId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
+    const isOwner = group ? group.ownerId === args.actorId : conv.creatorId === args.actorId;
+    const isAdmin = group ? (group.adminIds || []).includes(args.actorId) : (conv.adminIds || []).includes(args.actorId);
+    if (!isOwner && !isAdmin) {
       throw new Error("Not authorized to invite members");
     }
-
-    const conv = await ctx.db.get(args.conversationId);
-    if (!conv) throw new Error("Conversation not found");
 
     const participants = conv.participants || [];
     if (!participants.includes(args.userId)) {
@@ -382,18 +383,20 @@ export const addMember = mutation({
 export const removeMember = mutation({
   args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
   handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) throw new Error("Conversation not found");
+
     const group = await ctx.db
       .query("workspace_groups")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .first();
-    if (!group) throw new Error("Group not found");
 
-    if (group.ownerId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
+    // Check actor permission
+    const isOwner = group ? group.ownerId === args.actorId : conv.creatorId === args.actorId;
+    const isAdmin = group ? (group.adminIds || []).includes(args.actorId) : (conv.adminIds || []).includes(args.actorId);
+    if (!isOwner && !isAdmin) {
       throw new Error("Not authorized to remove members");
     }
-
-    const conv = await ctx.db.get(args.conversationId);
-    if (!conv) throw new Error("Conversation not found");
 
     const participants = conv.participants || [];
     if (participants.includes(args.userId)) {
@@ -414,16 +417,31 @@ export const removeMember = mutation({
 export const promoteToAdmin = mutation({
   args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
   handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) throw new Error("Conversation not found");
+
     const group = await ctx.db
       .query("workspace_groups")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .first();
-    if (!group) throw new Error("Group not found");
-    if (group.ownerId !== args.actorId) throw new Error("Only owner can promote");
 
-    const admins = group.adminIds || [];
-    if (!admins.includes(args.userId)) {
-      await ctx.db.patch(group._id, { adminIds: [...admins, args.userId] });
+    const isOwner = group ? group.ownerId === args.actorId : conv.creatorId === args.actorId;
+    if (!isOwner) throw new Error("Only owner can promote");
+
+    // Update conversations.adminIds
+    const currentAdmins = conv.adminIds || [];
+    if (!currentAdmins.includes(args.userId)) {
+      await ctx.db.patch(args.conversationId, {
+        adminIds: [...currentAdmins, args.userId],
+      });
+    }
+
+    // Update workspace_groups.adminIds if group exists
+    if (group) {
+      const admins = group.adminIds || [];
+      if (!admins.includes(args.userId)) {
+        await ctx.db.patch(group._id, { adminIds: [...admins, args.userId] });
+      }
     }
   },
 });
@@ -432,16 +450,31 @@ export const promoteToAdmin = mutation({
 export const demoteAdmin = mutation({
   args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
   handler: async (ctx, args) => {
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) throw new Error("Conversation not found");
+
     const group = await ctx.db
       .query("workspace_groups")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .first();
-    if (!group) throw new Error("Group not found");
-    if (group.ownerId !== args.actorId) throw new Error("Only owner can demote");
 
-    const admins = group.adminIds || [];
-    if (admins.includes(args.userId)) {
-      await ctx.db.patch(group._id, { adminIds: admins.filter((a: any) => a !== args.userId) });
+    const isOwner = group ? group.ownerId === args.actorId : conv.creatorId === args.actorId;
+    if (!isOwner) throw new Error("Only owner can demote");
+
+    // Update conversations.adminIds
+    const currentAdmins = conv.adminIds || [];
+    if (currentAdmins.includes(args.userId)) {
+      await ctx.db.patch(args.conversationId, {
+        adminIds: currentAdmins.filter((id) => id !== args.userId),
+      });
+    }
+
+    // Update workspace_groups.adminIds if group exists
+    if (group) {
+      const admins = group.adminIds || [];
+      if (admins.includes(args.userId)) {
+        await ctx.db.patch(group._id, { adminIds: admins.filter((a: any) => a !== args.userId) });
+      }
     }
   },
 });
@@ -460,7 +493,9 @@ export const listGroupMembers = query({
     const participants = conv.participants || [];
     return await Promise.all(participants.map(async (p: any) => {
       const user = await ctx.db.get(p);
-      const role = group ? (group.ownerId === p ? "owner" : (group.adminIds || []).includes(p) ? "admin" : "member") : "member";
+      const role = group
+        ? (group.ownerId === p ? "owner" : (group.adminIds || []).includes(p) ? "admin" : "member")
+        : (conv.creatorId === p ? "owner" : (conv.adminIds || []).includes(p) ? "admin" : "member");
       return { user, role };
     }));
   },
