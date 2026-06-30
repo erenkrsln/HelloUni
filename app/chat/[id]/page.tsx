@@ -393,7 +393,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
 
                             <span
-                                className={`font-semibold truncate transition-opacity ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
+                                className={`font-semibold truncate inline-block max-w-[100px] sm:max-w-[200px] transition-opacity ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 onClick={handleHeaderClick}
                             >
                                 {conversation.displayName}
