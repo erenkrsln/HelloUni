@@ -12,6 +12,7 @@ import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileTe
 import { FeedCard } from "@/components/feed-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FollowButton } from "@/components/follow-button";
 
 interface StaticPageResult {
     title: string;
@@ -139,6 +140,8 @@ function getSearchMode(query: string) {
 export default function SearchPage() {
     const router = useRouter();
     const [isFirstVisit, setIsFirstVisit] = useState(true);
+    const [suggestionsLimit, setSuggestionsLimit] = useState(10);
+    const observerRef = useRef<HTMLDivElement | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -321,16 +324,41 @@ export default function SearchPage() {
             sortBy,
             // Only apply user filters if specifically in "people" tab
             major: filterType === "people" ? (userMajor || undefined) : undefined,
-            interests: filterType === "people" && userInterests ? userInterests.split(",").map(i => i.trim()).filter(Boolean) : undefined
+            interests: filterType === "people" && userInterests ? userInterests.split(",").map(i => i.trim()).filter(Boolean) : undefined,
+            currentUserId: currentUserId || undefined
         } : "skip"
     );
 
     const compatibleUsers = useQuery(
         api.queries.getCompatibleUsers,
         isRecommendationMode ? {
-            userId: currentUserId || undefined
+            userId: currentUserId || undefined,
+            limit: suggestionsLimit
         } : "skip"
     );
+
+    const hasMoreSuggestions = compatibleUsers !== undefined && compatibleUsers.length >= suggestionsLimit;
+
+    useEffect(() => {
+        if (!isRecommendationMode || !hasMoreSuggestions) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                setSuggestionsLimit((prev) => prev + 10);
+            }
+        }, { threshold: 0.1 });
+
+        const currentSentinel = observerRef.current;
+        if (currentSentinel) {
+            observer.observe(currentSentinel);
+        }
+
+        return () => {
+            if (currentSentinel) {
+                observer.unobserve(currentSentinel);
+            }
+        };
+    }, [isRecommendationMode, hasMoreSuggestions]);
 
     const postResults = useQuery(
         api.queries.searchPosts,
@@ -932,6 +960,9 @@ export default function SearchPage() {
                                                                             </div>
                                                                         )}
                                                                     </div>
+                                                                    <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="ml-2">
+                                                                        <FollowButton currentUserId={currentUserId} targetUserId={user._id} preloadedIsFollowing={user.isFollowing} />
+                                                                    </div>
                                                                 </Link>
                                                             ))}
                                                         </div>
@@ -1073,7 +1104,6 @@ export default function SearchPage() {
                                                                                 <p className="text-sm text-gray-500 truncate">@{user.username}</p>
                                                                                 {(user.uni_name || user.major) && (
                                                                                     <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
-
                                                                                         {user.major && (
                                                                                             <span className="flex items-center truncate">
                                                                                                 {user.major}
@@ -1082,8 +1112,16 @@ export default function SearchPage() {
                                                                                     </div>
                                                                                 )}
                                                                             </div>
+                                                                            <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="ml-2">
+                                                                                <FollowButton currentUserId={currentUserId} targetUserId={user._id} preloadedIsFollowing={user.isFollowing} />
+                                                                            </div>
                                                                         </Link>
                                                                     ))}
+                                                                    {hasMoreSuggestions && (
+                                                                        <div ref={observerRef} className="h-12 flex items-center justify-center text-xs text-gray-400 italic">
+                                                                            Mehr Vorschläge werden geladen...
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </>
@@ -1125,6 +1163,9 @@ export default function SearchPage() {
                                                                                         )}
                                                                                     </div>
                                                                                 )}
+                                                                            </div>
+                                                                            <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="ml-2">
+                                                                                <FollowButton currentUserId={currentUserId} targetUserId={user._id} preloadedIsFollowing={user.isFollowing} />
                                                                             </div>
                                                                         </Link>
                                                                     ))}
@@ -1298,6 +1339,9 @@ export default function SearchPage() {
                                                                                     )}
                                                                                 </div>
                                                                             )}
+                                                                        </div>
+                                                                        <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="ml-2">
+                                                                            <FollowButton currentUserId={currentUserId} targetUserId={user._id} preloadedIsFollowing={user.isFollowing} />
                                                                         </div>
                                                                     </Link>
                                                                 ))}

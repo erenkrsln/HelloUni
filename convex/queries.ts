@@ -563,7 +563,10 @@ export const getFollowingCount = query({
 
 // Get list of followers for a user
 export const getFollowers = query({
-  args: { userId: v.id("users") },
+  args: {
+    userId: v.id("users"),
+    currentUserId: v.optional(v.id("users")),
+  },
   handler: async (ctx, args) => {
     const follows = await ctx.db
       .query("follows")
@@ -576,13 +579,37 @@ export const getFollowers = query({
       })
     );
 
-    return followers.filter((user) => user !== null);
+    const activeFollowers = followers.filter((user) => user !== null);
+
+    // Get the list of users the current user is following
+    const myFollowing = new Set<string>();
+    if (args.currentUserId) {
+      const myFollows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q) => q.eq("followerId", args.currentUserId!))
+        .collect();
+      myFollows.forEach((f) => myFollowing.add(f.followingId));
+    }
+
+    return await Promise.all(
+      activeFollowers.map(async (user) => {
+        const image = await getUserImageUrl(ctx, user.image);
+        return {
+          ...user,
+          image,
+          isFollowing: args.currentUserId ? myFollowing.has(user._id) : false,
+        };
+      })
+    );
   },
 });
 
 // Get list of users that a user is following
 export const getFollowing = query({
-  args: { userId: v.id("users") },
+  args: {
+    userId: v.id("users"),
+    currentUserId: v.optional(v.id("users")),
+  },
   handler: async (ctx, args) => {
     const follows = await ctx.db
       .query("follows")
@@ -595,7 +622,28 @@ export const getFollowing = query({
       })
     );
 
-    return following.filter((user) => user !== null);
+    const activeFollowing = following.filter((user) => user !== null);
+
+    // Get the list of users the current user is following
+    const myFollowing = new Set<string>();
+    if (args.currentUserId) {
+      const myFollows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q) => q.eq("followerId", args.currentUserId!))
+        .collect();
+      myFollows.forEach((f) => myFollowing.add(f.followingId));
+    }
+
+    return await Promise.all(
+      activeFollowing.map(async (user) => {
+        const image = await getUserImageUrl(ctx, user.image);
+        return {
+          ...user,
+          image,
+          isFollowing: args.currentUserId ? myFollowing.has(user._id) : false,
+        };
+      })
+    );
   },
 });
 
@@ -1355,7 +1403,8 @@ export const searchProfiles = query({
     searchTerm: v.string(),
     sortBy: v.optional(v.string()),
     major: v.optional(v.string()),
-    interests: v.optional(v.array(v.string()))
+    interests: v.optional(v.array(v.string())),
+    currentUserId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
     const hasFilters = args.major || (args.interests && args.interests.length > 0);
@@ -1402,6 +1451,16 @@ export const searchProfiles = query({
     // Limit to 20 results after sorting and filtering
     const limitedUsers = matchingUsers.slice(0, 20);
 
+    // Get follows if currentUserId is provided
+    const followedUserIds = new Set<string>();
+    if (args.currentUserId) {
+      const follows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q) => q.eq("followerId", args.currentUserId!))
+        .collect();
+      follows.forEach((f) => followedUserIds.add(f.followingId));
+    }
+
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       limitedUsers.map(async (user) => {
@@ -1409,6 +1468,7 @@ export const searchProfiles = query({
         return {
           ...user,
           image: imageUrl,
+          isFollowing: args.currentUserId ? followedUserIds.has(user._id) : false,
         };
       })
     );
@@ -1421,21 +1481,23 @@ export const searchProfiles = query({
 export const getCompatibleUsers = query({
   args: {
     userId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // If no user is logged in, return the 10 most recently joined people
+    const limit = args.limit ?? 10;
+    // If no user is logged in, return the top `limit` most recently joined people
     if (!args.userId) {
       const allUsers = await ctx.db
         .query("users")
         .collect();
       
       const sorted = allUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
-      const top10 = sorted.slice(0, 10);
+      const topN = sorted.slice(0, limit);
       
       return await Promise.all(
-        top10.map(async (user) => {
+        topN.map(async (user) => {
           const image = await getUserImageUrl(ctx, user.image);
-          return { ...user, image };
+          return { ...user, image, isFollowing: false };
         })
       );
     }
@@ -1513,10 +1575,10 @@ export const getCompatibleUsers = query({
       return (b.user._creationTime || 0) - (a.user._creationTime || 0);
     });
 
-    let selectedUsers = matchedUsers.slice(0, 10).map((item) => item.user);
+    let selectedUsers = matchedUsers.slice(0, limit).map((item) => item.user);
 
-    // If there are less than 10 compatible users, fill the rest with the most recently joined people
-    if (selectedUsers.length < 10) {
+    // If there are less than limit compatible users, fill the rest with the most recently joined people
+    if (selectedUsers.length < limit) {
       const selectedUserIds = new Set(selectedUsers.map((u) => u._id));
       const otherUsers = potentialUsers.filter((u) => !selectedUserIds.has(u._id));
       
@@ -1525,7 +1587,7 @@ export const getCompatibleUsers = query({
         (a, b) => (b._creationTime || 0) - (a._creationTime || 0)
       );
       
-      const neededCount = 10 - selectedUsers.length;
+      const neededCount = limit - selectedUsers.length;
       const paddingUsers = sortedRecentOthers.slice(0, neededCount);
       selectedUsers = [...selectedUsers, ...paddingUsers];
     }
@@ -1534,7 +1596,7 @@ export const getCompatibleUsers = query({
     return await Promise.all(
       selectedUsers.map(async (user) => {
         const image = await getUserImageUrl(ctx, user.image);
-        return { ...user, image };
+        return { ...user, image, isFollowing: false };
       })
     );
   },
