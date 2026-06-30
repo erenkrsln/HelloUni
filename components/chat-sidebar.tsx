@@ -501,44 +501,44 @@ export function ChatSidebar() {
             
             {/* Search & Group Settings Area */}
             <div className="space-y-4">
+              {/* Selected People Preview */}
+              {selectedUserObjects.length > 0 && (
+                <div className="space-y-1.5 border-b border-gray-100 pb-3 animate-in slide-in-from-top-2 duration-200">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Ausgewählte Personen ({selectedUserObjects.length})
+                  </label>
+                  <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-hide">
+                    {selectedUserObjects.map((user) => (
+                      <div key={user._id} className="relative flex flex-col items-center flex-shrink-0 w-12">
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200" style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}>
+                          {user.image ? (
+                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-semibold text-sm text-black">
+                              {user.name?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleUserSelection(user._id)}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-gray-400 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors"
+                        >
+                          <Plus className="w-2.5 h-2.5 rotate-45" />
+                        </button>
+                        <span className="text-[10px] text-gray-500 truncate w-full text-center mt-1">
+                          {user.name?.split(" ")[0]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Group Configuration options */}
               {selectedUsers.length > 1 && (
                 <div className="space-y-3.5 animate-in slide-in-from-top-2 duration-200">
                   
-                  {/* Selected People Preview */}
-                  {selectedUserObjects.length > 0 && (
-                    <div className="space-y-1.5 border-b border-gray-100 pb-3">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Ausgewählte Personen ({selectedUserObjects.length})
-                      </label>
-                      <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-hide">
-                        {selectedUserObjects.map((user) => (
-                          <div key={user._id} className="relative flex flex-col items-center flex-shrink-0 w-12">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200" style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}>
-                              {user.image ? (
-                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center font-semibold text-sm text-black">
-                                  {user.name?.charAt(0).toUpperCase() || "?"}
-                                </div>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => toggleUserSelection(user._id)}
-                              className="absolute -top-1 -right-1 w-4 h-4 bg-gray-400 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors"
-                            >
-                              <Plus className="w-2.5 h-2.5 rotate-45" />
-                            </button>
-                            <span className="text-[10px] text-gray-500 truncate w-full text-center mt-1">
-                              {user.name?.split(" ")[0]}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Group Name Input */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
