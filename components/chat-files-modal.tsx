@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileText, X, Download, ExternalLink, Image, CirclePlay } from "lucide-react";
+import { ChatFilesModalLinkPreview } from "@/components/LinkPreview";
 
 interface ChatFilesModalProps {
     isOpen: boolean;
@@ -154,9 +155,7 @@ export function ChatFilesModal({ isOpen, onClose, conversationId, currentUserId 
                                                     >
                                                         {activeTab === "links" ? (
                                                             <>
-                                                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945] mr-3 flex-shrink-0">
-                                                                    <ExternalLink size={30} />
-                                                                </div>
+                                                                <ChatFilesModalLinkPreview url={file.url} />
                                                                 <div className="flex-1 min-w-0">
                                                                     <p className="text-sm font-medium truncate" title={file.url}>
                                                                         {file.url}

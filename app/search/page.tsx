@@ -1150,12 +1150,7 @@ export default function SearchPage() {
                                                                                 <p className="text-sm text-gray-500 truncate">@{user.username}</p>
                                                                                 {(user.uni_name || user.major) && (
                                                                                     <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
-                                                                                        {user.uni_name && (
-                                                                                            <span className="flex items-center truncate">
-                                                                                                <MapPin size={10} className="mr-1" />
-                                                                                                {user.uni_name}
-                                                                                            </span>
-                                                                                        )}
+
                                                                                         {user.major && (
                                                                                             <span className="flex items-center truncate">
                                                                                                 {user.major}
@@ -1326,12 +1321,6 @@ export default function SearchPage() {
                                                                             <p className="text-sm text-gray-500 truncate">@{user.username}</p>
                                                                             {(user.uni_name || user.major) && (
                                                                                 <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
-                                                                                    {user.uni_name && (
-                                                                                        <span className="flex items-center truncate">
-                                                                                            <MapPin size={10} className="mr-1" />
-                                                                                            {user.uni_name}
-                                                                                        </span>
-                                                                                    )}
                                                                                     {user.major && (
                                                                                         <span className="flex items-center truncate">
                                                                                             {user.major}
