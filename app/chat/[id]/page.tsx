@@ -21,6 +21,7 @@ import { ChatEventModal } from "@/components/chat-event-modal";
 import { ChatEventMessage } from "@/components/chat-event-message";
 import { ChatLocationModal } from "@/components/chat-location-modal";
 import { ChatLocationMessage } from "@/components/chat-location-message";
+import { MessageLinkPreview } from "@/components/LinkPreview";
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -469,7 +470,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     } catch (error: any) {
                                                         console.error("Failed to leave group:", error);
                                                         let errorMessage = "Fehler beim Verlassen der Gruppe.";
-                                                        if (error.data === "Creator must transfer creator status before leaving the group" || 
+                                                        if (error.data === "Creator must transfer creator status before leaving the group" ||
                                                             (error.message && error.message.includes("Creator must transfer"))) {
                                                             errorMessage = "Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.";
                                                         } else if (error.data) {
@@ -838,8 +839,23 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                 currentUserId={currentUser._id}
                                                             />
                                                         ) : (
-                                                            <div>
-                                                                {linkifyText(msg.content)}
+                                                            <div className="flex flex-col gap-1">
+
+                                                                {(() => {
+                                                                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                                                                    const matches = msg.content.match(urlRegex);
+                                                                    if (matches) {
+                                                                        const uniqueUrls = Array.from(new Set(matches));
+                                                                        return (
+                                                                            <div className="flex flex-col gap-1 mt-1">
+                                                                                {uniqueUrls.map((url, i) => (
+                                                                                    <MessageLinkPreview key={i} url={url} />
+                                                                                ))}
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                    return null;
+                                                                })()}
                                                             </div>
                                                         )}
                                                         <div className="flex items-center justify-end mt-1 gap-1.5 opacity-70">
