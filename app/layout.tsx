@@ -39,6 +39,27 @@ export const metadata: Metadata = {
     icon: "/logo2.svg",
     apple: "/icon-192.png",
   },
+  openGraph: {
+    title: "HelloUni",
+    description: "Social Media App für Studierende",
+    siteName: "HelloUni",
+    images: [
+      {
+        url: "/logo_font.svg",
+        width: 800,
+        height: 600,
+        alt: "HelloUni Logo",
+      },
+    ],
+    locale: "de_DE",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HelloUni",
+    description: "Social Media App für Studierende",
+    images: ["/logo_font.svg"],
+  },
 };
 
 export const viewport: Viewport = {

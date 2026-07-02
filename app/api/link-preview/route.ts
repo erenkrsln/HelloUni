@@ -16,6 +16,30 @@ export async function GET(request: Request) {
 
     const urlObj = new URL(parsedUrl);
 
+    // Check if the URL points to our own website
+    const hostHeader = request.headers.get("host") || "";
+    const isOwnWebsite =
+      urlObj.host === hostHeader ||
+      urlObj.hostname === "localhost" ||
+      urlObj.hostname === "127.0.0.1" ||
+      (hostHeader && urlObj.host.includes(hostHeader.split(":")[0])) ||
+      urlObj.hostname.includes("hellouni");
+
+    if (isOwnWebsite) {
+      return NextResponse.json(
+        {
+          url: targetUrl,
+          image: "/logo_font.svg",
+          title: "HelloUni",
+        },
+        {
+          headers: {
+            "Cache-Control": "public, max-age=86400, s-maxage=86400", // Cache for 24 hours
+          },
+        }
+      );
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout
 
