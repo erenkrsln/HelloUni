@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     siteName: "HelloUni",
     images: [
       {
-        url: "/logo_font.svg",
+        url: "/logo_preview.png",
         width: 800,
         height: 600,
         alt: "HelloUni Logo",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "HelloUni",
     description: "Social Media App für Studierende",
-    images: ["/logo_font.svg"],
+    images: ["/logo_preview.png"],
   },
 };
 
