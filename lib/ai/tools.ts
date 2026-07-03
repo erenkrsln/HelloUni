@@ -2,6 +2,7 @@ import "server-only";
 
 import { api } from "@/convex/_generated/api";
 import { defaultSpoSourceId, spoSources } from "@/lib/spo-sources";
+import studiengangLinks from "@/lib/studiengang-links.json";
 import { fetchQuery } from "convex/nextjs";
 import { promises as fs } from "fs";
 import type { ChatFunctionTool, ChatToolCall } from "@openrouter/sdk/models";
@@ -10,6 +11,39 @@ import { join } from "path";
 type ToolExecutionResult = {
   content: string;
   toolCallId: string;
+};
+
+export type SearchToolHit = {
+  excerpt: string;
+  score: number;
+  href: string | null;
+  sourceLabel: string;
+  sourceType: "spo" | "website" | "pdf";
+};
+
+export type SearchSpoResult = {
+  query: string;
+  source: string;
+  sourceId: string;
+  title: string;
+  documentUrl: string | null;
+  sourcePageUrl: string | null;
+  scrapedAt: number | null;
+  major: string | null;
+  usingFallback: boolean;
+  hits: SearchToolHit[];
+  message: string;
+};
+
+export type SpoSourceResult = {
+  sourceId: string;
+  available: boolean;
+  title: string;
+  major?: string | null;
+  documentUrl: string | null;
+  sourcePageUrl: string | null;
+  scrapedAt: number | null;
+  message: string;
 };
 
 export type HelloUniToolRuntimeContext = {
@@ -30,6 +64,10 @@ type StudiengangOverviewArgs = {
 
 type SpoSourceArgs = {
   sourceId?: unknown;
+};
+
+type KnownSourcesArgs = {
+  includeStudiengaenge?: unknown;
 };
 
 type StudiengangCacheRecord = {
@@ -62,6 +100,7 @@ const SPO_SOURCE_TOOL_NAME = "get_spo_source";
 const MENSA_TOOL_NAME = "get_mensa_meals";
 const STUDIENGANG_SEARCH_TOOL_NAME = "search_studiengang_documents";
 const STUDIENGANG_OVERVIEW_TOOL_NAME = "get_studiengang_overview";
+const KNOWN_SOURCES_TOOL_NAME = "list_known_sources";
 const DEFAULT_MAX_RESULTS = 3;
 const MAX_RESULTS_LIMIT = 5;
 const MIN_CHUNK_LENGTH = 80;
@@ -198,9 +237,51 @@ const GERMAN_STOPWORDS = new Set([
   "über",
 ]);
 
+const MAJOR_ALIAS_MAP = new Map<string, string>([
+  [normalizeAliasKey("ME"), "Media Engineering (B.Eng.)"],
+  [normalizeAliasKey("BME"), "Media Engineering (B.Eng.)"],
+  [normalizeAliasKey("B-ME"), "Media Engineering (B.Eng.)"],
+]);
+
 let spoContentCache: string | null = null;
 const studiengangCacheByMajor = new Map<string, StudiengangCacheRecord>();
 const spoCacheBySourceId = new Map<string, SpoCacheRecord>();
+
+function decodeHtmlEntities(text: string) {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function normalizeMajorLabel(text: string) {
+  return decodeHtmlEntities(text)
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s*\((b|m)\.\s*(eng|sc|a)\.\)\s*/gi, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeAliasKey(text: string) {
+  return normalizeMajorLabel(text);
+}
+
+function escapeRegex(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasNormalizedTerm(text: string, term: string) {
+  if (!text || !term) return false;
+  const pattern = term
+    .split(/\s+/)
+    .map((part) => escapeRegex(part))
+    .join("\\s+");
+
+  return new RegExp(`(^|\\s)${pattern}(\\s|$)`, "i").test(text);
+}
 
 function normalizeWhitespace(text: string) {
   return text.replace(/\s+/g, " ").trim();
@@ -301,12 +382,49 @@ function rankChunks(chunks: SearchChunk[], query: string, maxResults: number) {
 }
 
 function resolveMajor(rawMajor: unknown, runtimeContext: HelloUniToolRuntimeContext) {
+  const knownMajors = getKnownStudiengaenge();
+
+  const matchKnownMajor = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const aliasMatch = MAJOR_ALIAS_MAP.get(normalizeAliasKey(trimmed));
+    if (aliasMatch) return aliasMatch;
+
+    const directMatch = knownMajors.find((major) => major === trimmed);
+    if (directMatch) return directMatch;
+
+    const caseInsensitiveMatch = knownMajors.find(
+      (major) => major.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (caseInsensitiveMatch) return caseInsensitiveMatch;
+
+    const normalizedTarget = normalizeMajorLabel(trimmed);
+    const normalizedMatches = knownMajors.filter(
+      (major) => normalizeMajorLabel(major) === normalizedTarget,
+    );
+    if (normalizedMatches.length === 1) {
+      return normalizedMatches[0];
+    }
+
+    const partialMatches = knownMajors.filter((major) => {
+      const normalizedMajor = normalizeMajorLabel(major);
+      return normalizedMajor.includes(normalizedTarget) || normalizedTarget.includes(normalizedMajor);
+    });
+
+    if (partialMatches.length === 1) {
+      return partialMatches[0];
+    }
+
+    return trimmed;
+  };
+
   if (typeof rawMajor === "string" && rawMajor.trim() !== "") {
-    return rawMajor.trim();
+    return matchKnownMajor(rawMajor);
   }
 
   if (typeof runtimeContext.currentMajor === "string" && runtimeContext.currentMajor.trim() !== "") {
-    return runtimeContext.currentMajor.trim();
+    return matchKnownMajor(runtimeContext.currentMajor);
   }
 
   return null;
@@ -322,6 +440,30 @@ function resolveSpoSourceId(rawSourceId: unknown) {
 
 function getSpoSourceConfig(sourceId: string) {
   return spoSources.find((source) => source.sourceId === sourceId) ?? null;
+}
+
+function getKnownStudiengaenge() {
+  const entries = Object.keys(studiengangLinks);
+  return entries.map((major) => decodeHtmlEntities(major).trim());
+}
+
+export function findKnownMajorMention(text: string) {
+  const normalizedText = normalizeMajorLabel(text);
+  if (!normalizedText) return null;
+
+  const aliasMatch = Array.from(MAJOR_ALIAS_MAP.entries())
+    .sort((left, right) => right[0].length - left[0].length)
+    .find(([alias]) => hasNormalizedTerm(normalizedText, alias));
+
+  if (aliasMatch) {
+    return aliasMatch[1];
+  }
+
+  return (
+    getKnownStudiengaenge()
+      .sort((left, right) => right.length - left.length)
+      .find((major) => hasNormalizedTerm(normalizedText, normalizeMajorLabel(major))) ?? null
+  );
 }
 
 async function getSpoContentFallback() {
@@ -393,7 +535,7 @@ function buildStudiengangChunks(cache: StudiengangCacheRecord): SearchChunk[] {
   return [...websiteChunks, ...pdfChunks];
 }
 
-async function searchSpo(args: SearchArgs) {
+async function searchSpo(args: SearchArgs): Promise<SearchSpoResult> {
   const query = typeof args.query === "string" ? args.query.trim() : "";
   const maxResults = clampMaxResults(args.maxResults);
   const sourceId = resolveSpoSourceId(args.sourceId);
@@ -404,6 +546,12 @@ async function searchSpo(args: SearchArgs) {
       query,
       source: "SPO",
       sourceId,
+      title: sourceConfig?.title ?? "Studien- und Prüfungsordnung",
+      documentUrl: sourceConfig?.documentUrl ?? null,
+      sourcePageUrl: sourceConfig?.sourcePageUrl ?? null,
+      scrapedAt: null,
+      major: sourceConfig?.major ?? null,
+      usingFallback: false,
       hits: [],
       message: "Die Suche wurde nicht ausgeführt, weil keine Suchanfrage übergeben wurde.",
     };
@@ -430,7 +578,15 @@ async function searchSpo(args: SearchArgs) {
   };
 }
 
-async function getSpoSource(args: SpoSourceArgs) {
+export async function searchSpoForAi(query: string, sourceId?: string) {
+  return searchSpo({
+    query,
+    sourceId,
+    maxResults: DEFAULT_MAX_RESULTS,
+  });
+}
+
+async function getSpoSource(args: SpoSourceArgs): Promise<SpoSourceResult> {
   const sourceId = resolveSpoSourceId(args.sourceId);
   const cache = await getSpoCache(sourceId);
   const sourceConfig = getSpoSourceConfig(sourceId);
@@ -457,6 +613,12 @@ async function getSpoSource(args: SpoSourceArgs) {
     scrapedAt: cache?.scrapedAt ?? null,
     message: `Die offizielle SPO-Quelle für ${cache?.major ?? sourceConfig?.major ?? "diese SPO"} ist hinterlegt.`,
   };
+}
+
+export async function getSpoSourceForAi(sourceId?: string) {
+  return getSpoSource({
+    sourceId,
+  });
 }
 
 async function getMensaMeals() {
@@ -551,6 +713,46 @@ async function searchStudiengangDocuments(args: SearchArgs, runtimeContext: Hell
   };
 }
 
+async function listKnownSources(args: KnownSourcesArgs = {}) {
+  const includeStudiengaenge = args.includeStudiengaenge !== false;
+  const officialSpoMajors = spoSources.map((source) => source.major);
+  const studiengaenge = includeStudiengaenge ? getKnownStudiengaenge() : [];
+  const availableSources = [
+    {
+      type: "mensa",
+      label: "Mensateria Ohm",
+      description: "Aktueller Mensaplan mit Gerichten, Preisen und Zeitstempel der letzten Aktualisierung.",
+    },
+    {
+      type: "spo",
+      label: "Offizielle Studien- und Prüfungsordnungen",
+      description: "Automatisch aktualisierte offizielle SPO-Quellen für ausgewählte Studiengänge.",
+      count: officialSpoMajors.length,
+      majors: officialSpoMajors,
+    },
+    {
+      type: "studiengang",
+      label: "Studiengangsinformationen",
+      description: "Studiengangsseiten und verknüpfte PDF-Dokumente wie Modulhandbücher, Studienpläne und SPO-Links.",
+      count: studiengaenge.length,
+      majors: studiengaenge,
+    },
+  ];
+
+  return {
+    availableSources,
+    officialSpoCount: officialSpoMajors.length,
+    officialSpoMajors,
+    mensaAvailable: true,
+    mensaLabel: "Mensateria Ohm",
+    studiengangCount: studiengaenge.length,
+    studiengaenge,
+    message: officialSpoMajors.length
+      ? `Es sind eine Mensa-Quelle, ${officialSpoMajors.length} offizielle SPO-Quellen und ${studiengaenge.length} Studiengänge hinterlegt.`
+      : `Es sind eine Mensa-Quelle, keine offiziellen SPO-Quellen und ${studiengaenge.length} Studiengänge hinterlegt.`,
+  };
+}
+
 function getInvalidToolArgsResult(toolCallId: string, toolName: string, error: unknown): ToolExecutionResult {
   return {
     toolCallId,
@@ -563,6 +765,23 @@ function getInvalidToolArgsResult(toolCallId: string, toolName: string, error: u
 }
 
 export const helloUniTools: ChatFunctionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: KNOWN_SOURCES_TOOL_NAME,
+      description:
+        "Liefert eine Übersicht darüber, welche Datenquellen im System aktuell hinterlegt sind, zum Beispiel Mensa, offizielle SPO-Quellen und Studiengangsinformationen. Nutze dieses Tool besonders bei Fragen wie 'Welche Quellen kennst du?', 'Welche Studiengänge kennst du?' oder 'Für welche Studiengänge hast du SPO-Infos?'.",
+      parameters: {
+        type: "object",
+        properties: {
+          includeStudiengaenge: {
+            type: "boolean",
+            description: "Ob die Liste der hinterlegten Studiengänge mit zurückgegeben werden soll. Standard ist true.",
+          },
+        },
+      },
+    },
+  },
   {
     type: "function",
     function: {
@@ -678,6 +897,13 @@ export async function executeHelloUniToolCall(
       return {
         toolCallId: toolCall.id,
         content: JSON.stringify(await searchSpo(parsedArgs as SearchArgs)),
+      };
+    }
+
+    if (toolName === KNOWN_SOURCES_TOOL_NAME) {
+      return {
+        toolCallId: toolCall.id,
+        content: JSON.stringify(await listKnownSources(parsedArgs as KnownSourcesArgs)),
       };
     }
 

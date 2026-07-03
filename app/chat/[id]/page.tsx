@@ -40,6 +40,8 @@ function parseAiStructuredContent(text: string): ParsedAiContent | null {
     return details ? { summary, details } : { summary };
 }
 
+const AI_HISTORY_LIMIT = 6;
+
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const conversationId = id as Id<"conversations">;
@@ -69,6 +71,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         api.queries.getUserByUsername,
         { username: "chatbot" }
     ) ?._id;
+    const followerCount = useQuery(
+        api.queries.getFollowerCount,
+        currentUser?._id ? { userId: currentUser._id } : "skip",
+    );
+    const followingCount = useQuery(
+        api.queries.getFollowingCount,
+        currentUser?._id ? { userId: currentUser._id } : "skip",
+    );
         
     useEffect(() => {
         if (conversationId && currentUser) {
@@ -305,7 +315,28 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             });
             if (aiTriggerMatch) {
                 const prompt = trimmedMessage.slice(aiTriggerMatch[0].length).trim();
-                const msg = await handleAi(prompt);
+                const recentHistory = (messages ?? [])
+                    .slice(-AI_HISTORY_LIMIT)
+                    .map((message) => ({
+                        role: message.senderId === aiUserId ? "assistant" as const : "user" as const,
+                        content: message.content,
+                    }));
+                const msg = await handleAi(
+                    prompt,
+                    currentUser.major || undefined,
+                    currentUser.semester,
+                    recentHistory,
+                    {
+                        name: currentUser.name,
+                        username: currentUser.username,
+                        major: currentUser.major,
+                        semester: currentUser.semester,
+                        bio: currentUser.bio,
+                        interests: Array.isArray(currentUser.interests) ? currentUser.interests : undefined,
+                        followerCount: typeof followerCount === "number" ? followerCount : undefined,
+                        followingCount: typeof followingCount === "number" ? followingCount : undefined,
+                    },
+                );
                 await sendMessage({
                     conversationId,
                     senderId: aiUserId ?? currentUser._id,
