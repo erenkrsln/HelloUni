@@ -18,6 +18,11 @@ export type AiContext = {
   semester: number;
 };
 
+export type AiHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 const openRouter = new OpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
@@ -62,7 +67,23 @@ function extractMessageText(message?: ChatAssistantMessage | null) {
   return "";
 }
 
-async function askAi(prompt: string, studiengangContext?: AiContext | null) {
+function buildHistoryMessages(history?: AiHistoryMessage[]) {
+  if (!history?.length) return [];
+
+  return history
+    .filter((message) => message.content.trim() !== "")
+    .slice(-3)
+    .map((message) => ({
+      role: message.role,
+      content: message.content.trim(),
+    })) satisfies ChatMessages[];
+}
+
+async function askAi(
+  prompt: string,
+  studiengangContext?: AiContext | null,
+  history?: AiHistoryMessage[],
+) {
   const chatSystemPrompt = await getChatSystemPrompt();
   const studiengangPrompt = buildStudiengangPrompt(studiengangContext);
   const runtimeContext: HelloUniToolRuntimeContext = {
@@ -78,6 +99,7 @@ async function askAi(prompt: string, studiengangContext?: AiContext | null) {
     ...(studiengangPrompt
       ? [{ role: "system" as const, content: studiengangPrompt }]
       : []),
+    ...buildHistoryMessages(history),
     {
       role: "user",
       content: prompt,

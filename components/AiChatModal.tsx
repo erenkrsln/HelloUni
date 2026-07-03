@@ -8,6 +8,8 @@ import AIChatModalMessageGroup from './AIChatModalMessageGroup'
 import { handleAi } from '@/actions/chatAiSend'
 import { useOptionalStudiengangContext } from '@/lib/contexts/StudiengangContext'
 
+const HISTORY_LIMIT = 3
+
 const AiChatModal = () => {
   const [isClicked, setIsClicked] = useState(false)
   const [iconWidth, setIconWidth] = useState(0)
@@ -31,6 +33,13 @@ const AiChatModal = () => {
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading) return
 
+    const recentHistory = messages
+      .slice(-HISTORY_LIMIT)
+      .map((message) => ({
+        role: message.isUser ? 'user' as const : 'assistant' as const,
+        content: message.message,
+      }))
+
     const userMsg = {
       message: inputText.trim(),
       isUser: true,
@@ -42,7 +51,12 @@ const AiChatModal = () => {
     setIsLoading(true)
 
     try {
-      const aiResponse = await handleAi(currentInput, studiengangContext?.major || undefined, studiengangContext?.semester)
+      const aiResponse = await handleAi(
+        currentInput,
+        studiengangContext?.major || undefined,
+        studiengangContext?.semester,
+        recentHistory,
+      )
       const aiMsg = {
         message: aiResponse || 'Entschuldigung, ich konnte keine Antwort generieren.',
         isUser: false,

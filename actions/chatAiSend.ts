@@ -1,6 +1,6 @@
 "use server";
 
-import { askAi, AiContext } from "@/lib/utils/ai";
+import { askAi, AiContext, type AiHistoryMessage } from "@/lib/utils/ai";
 
 type ErrorPayload = {
     message?: string;
@@ -60,6 +60,7 @@ export async function handleAi(
     msg: string,
     major?: string,
     semester?: number,
+    history?: AiHistoryMessage[],
 ) {
     try {
         const studiengangContext: AiContext | null = major ? {
@@ -67,7 +68,7 @@ export async function handleAi(
             semester: semester ?? 1,
         } : null;
 
-        return await askAi(msg, studiengangContext);
+        return await askAi(msg, studiengangContext, history);
     } catch (error) {
         console.error("Failed to send message:", error);
         return getErrorMessage(error);
