@@ -407,6 +407,16 @@ export default defineSchema({
     scrapedAt: v.number(),
   }).index("by_major", ["major"]),
 
+  spoCache: defineTable({
+    sourceId: v.string(),
+    title: v.string(),
+    major: v.string(),
+    documentUrl: v.string(),
+    sourcePageUrl: v.string(),
+    content: v.string(),
+    scrapedAt: v.number(),
+  }).index("by_source_id", ["sourceId"]),
+
   mensaCache: defineTable({
     meals: v.array(v.object({ name: v.string(), price: v.string() })),
     scrapedAt: v.number(),

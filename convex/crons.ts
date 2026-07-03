@@ -14,6 +14,15 @@ crons.monthly(
 );
 
 /**
+ * Wöchentlich montags um 03:30 UTC: offiziell definierte SPO-Quellen aktualisieren.
+ */
+crons.weekly(
+  "scrape spo sources",
+  { dayOfWeek: "monday", hourUTC: 3, minuteUTC: 30 },
+  api.scraping.scrapeSpoSources
+);
+
+/**
  * Täglich um 06:00 UTC = 08:00 CEST: Mensaspeiseplan für heute cachen.
  */
 crons.daily(

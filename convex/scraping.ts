@@ -3,6 +3,7 @@ import { internalAction, action } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import { v } from "convex/values";
 import { extractText } from "unpdf";
+import { spoSources } from "../lib/spo-sources";
 import studiengangLinks from "../lib/studiengang-links.json";
 
 const normalizeMajorName = (name: string) =>
@@ -114,6 +115,57 @@ async function parsePdfFromUrl(href: string): Promise<string> {
   const { text } = await extractText(buffer, { mergePages: true });
   return text.trim();
 }
+
+// ─── Offizielle SPO-Quelle ───────────────────────────────────────────────────
+
+/** Scrapt eine einzelne offiziell definierte SPO-PDF und speichert den Text im Cache.
+ *  Kann manuell im Convex Dashboard unter scraping → scrapeSpoSources gestartet werden. */
+export const scrapeOneSpoSource = internalAction({
+  args: {
+    sourceId: v.string(),
+    title: v.string(),
+    major: v.string(),
+    documentUrl: v.string(),
+    sourcePageUrl: v.string(),
+  },
+  handler: async (ctx, { sourceId, title, major, documentUrl, sourcePageUrl }) => {
+    try {
+      const content = await parsePdfFromUrl(documentUrl);
+      if (!content) {
+        console.warn(`[scrapeOneSpoSource] SPO nicht lesbar: ${documentUrl}`);
+        return;
+      }
+
+      await ctx.runMutation(api.scrapingMutations.upsertSpoCache, {
+        sourceId,
+        title,
+        major,
+        documentUrl,
+        sourcePageUrl,
+        content,
+      });
+      console.log(`[scrapeOneSpoSource] Gecacht: ${sourceId}`);
+    } catch (error) {
+      console.warn(`[scrapeOneSpoSource] Fehler bei ${sourceId}:`, error);
+    }
+  },
+});
+
+/** Dispatcht pro definierter SPO-Quelle eine eigene Action via Scheduler. */
+export const scrapeSpoSources = action({
+  args: {},
+  handler: async (ctx) => {
+    for (let i = 0; i < spoSources.length; i++) {
+      const source = spoSources[i];
+      await ctx.scheduler.runAfter(
+        i * 1500,
+        internal.scraping.scrapeOneSpoSource,
+        source,
+      );
+    }
+    console.log(`[scrapeSpoSources] ${spoSources.length} Jobs eingeplant.`);
+  },
+});
 
 /** Scrapt einen einzelnen Studiengang und speichert ihn im Cache.
  *  Wird vom Dispatcher (scrapeAllStudiengaenge) per Scheduler gestartet. */
