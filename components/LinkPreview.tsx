@@ -105,7 +105,6 @@ export function MessageLinkPreview({ url }: { url: string }) {
             <div className="h-2.5 bg-gray-200 rounded w-1/2" />
           </div>
         </div>
-        <div className="h-2.5 bg-gray-200 rounded w-2/3 animate-pulse mt-1.5 ml-1" />
       </div>
     );
   }
@@ -152,15 +151,6 @@ export function MessageLinkPreview({ url }: { url: string }) {
             {displayHost}
           </span>
         </div>
-      </a>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className=" text-[#D08945] underline break-all px-1 mt-1 block w-fit"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {url}
       </a>
     </div>
   );
