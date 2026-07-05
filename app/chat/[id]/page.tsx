@@ -840,7 +840,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             />
                                                         ) : (
                                                             <div className="flex flex-col gap-1">
-
+                                                                <div>
+                                                                    {linkifyText(msg.content)}
+                                                                </div>
                                                                 {(() => {
                                                                     const urlRegex = /(https?:\/\/[^\s]+)/g;
                                                                     const matches = msg.content.match(urlRegex);
