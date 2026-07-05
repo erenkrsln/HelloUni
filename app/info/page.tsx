@@ -34,6 +34,7 @@ function InfoPageContent() {
   const handleOpenItemChange = (index: number) => {
     setCurrentSectionIndex(index)
     if (!isDesktop) return
+    if (index === 0) return window.scrollTo({ top: 0, behavior: 'smooth' })
     const section = sectionRefs.current?.[index]
     if (!section) return
     window.scrollTo({ top: section.offsetTop - 122, behavior: 'smooth' })
@@ -140,17 +141,17 @@ function InfoPageContent() {
     if (!isDesktop) return
 
     const checkVisibility = () => {
-      const threshold = 122
+      const midpoint = (window.innerHeight + 80) / 2
+      let active = 0
 
       for (let i = 0; i < sectionRefs.current.length; i++) {
         const el = sectionRefs.current[i]
         if (!el) continue
-        const rect = el.getBoundingClientRect()
-        if (rect.top <= threshold && rect.bottom > threshold) {
-          setCurrentSectionIndex(i)
-          break
-        }
+        if (el.getBoundingClientRect().top <= midpoint) active = i
+        else break
       }
+
+      setCurrentSectionIndex(active)
     }
 
     window.addEventListener('scroll', checkVisibility, { passive: true })
