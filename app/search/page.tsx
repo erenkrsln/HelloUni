@@ -95,7 +95,7 @@ const STATIC_PAGES: StaticPageResult[] = [
     },
     {
         title: "Infoseite",
-        description: "Wichtige Dokumente und Termine deinem Studiengang. Außerdem der Mensaplan.",
+        description: "Wichtige Dokumente und Termine zu deinem Studiengang. Außerdem der Mensaplan.",
         href: "/info",
         keywords: ["infopage", "informationen", "studiengang", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos", "modulhandbuch", "prüfungsordnung", "studienplan", "termine"],
         category: "Seite"

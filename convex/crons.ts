@@ -15,10 +15,17 @@ crons.monthly(
 
 /**
  * Täglich um 06:00 UTC = 08:00 CEST: Mensaspeiseplan für heute cachen.
+ * Retry um 09:00 UTC = 11:00 CEST: Plan ist dann garantiert vollständig.
  */
 crons.daily(
   "scrape mensa",
   { hourUTC: 6, minuteUTC: 0 },
+  api.scraping.scrapeMensa
+);
+
+crons.daily(
+  "scrape mensa retry",
+  { hourUTC: 9, minuteUTC: 0 },
   api.scraping.scrapeMensa
 );
 

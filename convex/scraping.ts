@@ -23,6 +23,7 @@ const cleanMealName = (rawHtml: string) =>
     .replace(/<\/br>/g, "")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
+    .replace(/\s*[\(\[][A-Za-z0-9,\s]+[\)\]]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
