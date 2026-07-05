@@ -302,13 +302,13 @@ function InfoPageContent() {
         )}
       </div>
       {!isLoading && <AiChatModal />}
-      <SectionNavigation
+      {!isLoading && <SectionNavigation
         labels={visibleSections.map(s => s.navigationLabel)}
         currentSectionIndex={currentSectionIndex}
         onOpenItemChange={handleOpenItemChange}
         onHoverChange={handleSectionHoverChange}
         hoveredSectionIndex={hoveredSectionIndex}
-      />
+      />}
       <BottomNavigation />
     </>
   )
