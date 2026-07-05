@@ -840,16 +840,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             />
                                                         ) : (
                                                             <div className="flex flex-col gap-1">
-                                                                <div>
-                                                                    {linkifyText(msg.content)}
-                                                                </div>
                                                                 {(() => {
                                                                     const urlRegex = /(https?:\/\/[^\s]+)/g;
                                                                     const matches = msg.content.match(urlRegex);
                                                                     if (matches) {
                                                                         const uniqueUrls = Array.from(new Set(matches));
                                                                         return (
-                                                                            <div className="flex flex-col gap-1 mt-1">
+                                                                            <div className="flex flex-col gap-1 mb-1">
                                                                                 {uniqueUrls.map((url, i) => (
                                                                                     <MessageLinkPreview key={i} url={url} />
                                                                                 ))}
@@ -858,6 +855,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                     }
                                                                     return null;
                                                                 })()}
+                                                                <div>
+                                                                    {linkifyText(msg.content)}
+                                                                </div>
                                                             </div>
                                                         )}
                                                         <div className="flex items-center justify-end mt-1 gap-1.5 opacity-70">
