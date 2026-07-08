@@ -1,6 +1,6 @@
 "use server";
 
-import { askAi, AiContext, type AiHistoryMessage, type AiPublicProfileFacts } from "@/lib/utils/ai";
+import { askAi, type AiContext, type AiHistoryMessage, type AiPublicProfileFacts } from "@/lib/utils/ai";
 
 type ErrorPayload = {
     message?: string;
