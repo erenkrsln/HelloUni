@@ -3,6 +3,60 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
 
+const AI_ASSISTANT_USERNAME = "chatbot";
+const AI_ASSISTANT_DISPLAY_NAME = "Jastell";
+const AI_ASSISTANT_SEARCH_ALIASES = [
+  "jastell",
+  "ai assistent",
+  "ki assistent",
+  "assistent",
+  "chatbot",
+];
+
+function isAiAssistantUser(user: { username?: string | null }) {
+  return (user.username || "").toLowerCase() === AI_ASSISTANT_USERNAME;
+}
+
+function getChatUserDisplayName(user: { username?: string | null; name?: string | null }) {
+  return isAiAssistantUser(user) ? AI_ASSISTANT_DISPLAY_NAME : (user.name || "Unbekannt");
+}
+
+function getChatUserDisplayUsername(user: { username?: string | null }) {
+  return isAiAssistantUser(user) ? AI_ASSISTANT_DISPLAY_NAME : (user.username || "");
+}
+
+function matchesChatUserSearch(
+  user: { username?: string | null; name?: string | null },
+  searchLower: string,
+) {
+  const normalizedQuery = searchLower.trim().toLowerCase();
+  if (!normalizedQuery) return false;
+
+  const candidates = [
+    user.name || "",
+    user.username || "",
+    getChatUserDisplayName(user),
+    getChatUserDisplayUsername(user),
+    ...(isAiAssistantUser(user) ? AI_ASSISTANT_SEARCH_ALIASES : []),
+  ];
+
+  return candidates.some((value) => value.toLowerCase().includes(normalizedQuery));
+}
+
+function sortChatUsersWithAssistantFirst<T extends { username?: string | null; _creationTime?: number | null }>(
+  users: T[],
+) {
+  return [...users].sort((a, b) => {
+    const aIsAssistant = isAiAssistantUser(a);
+    const bIsAssistant = isAiAssistantUser(b);
+
+    if (aIsAssistant && !bIsAssistant) return -1;
+    if (!aIsAssistant && bIsAssistant) return 1;
+
+    return (b._creationTime || 0) - (a._creationTime || 0);
+  });
+}
+
 // Helper function to calculate actual comments count for a post
 async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
   const allComments = await ctx.db
@@ -368,10 +422,7 @@ export const searchUsers = query({
     // Filter users by username (case-insensitive)
     // Skip users without username
     const matchingUsers = allUsers
-      .filter(user => user.username && (
-        user.username.toLowerCase().startsWith(searchLower) ||
-        user.username.toLowerCase().includes(searchLower)
-      ))
+      .filter((user) => user.username && matchesChatUserSearch(user, searchLower))
       .slice(0, 10); // Limit to 10 results
 
     // Convert storage IDs to URLs
@@ -383,6 +434,8 @@ export const searchUsers = query({
           name: user.name,
           username: user.username,
           image: imageUrl,
+          displayName: getChatUserDisplayName(user),
+          displayUsername: getChatUserDisplayUsername(user),
         };
       })
     );
@@ -878,7 +931,9 @@ export const getAllUsers = query({
         const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           ...user,
-          image: imageUrl
+          image: imageUrl,
+          displayName: getChatUserDisplayName(user),
+          displayUsername: getChatUserDisplayUsername(user),
         };
       })
     );
@@ -960,7 +1015,7 @@ export const getConversations = query({
           const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId;
           const partner = await ctx.db.get(partnerId);
           if (partner) {
-            displayName = partner.name;
+            displayName = getChatUserDisplayName(partner);
             displayImage = await getUserImageUrl(ctx, partner.image);
           }
         }
@@ -1421,10 +1476,7 @@ export const searchProfiles = query({
     let matchingUsers = allUsers;
     if (args.searchTerm && args.searchTerm.trim().length > 0) {
       const searchLow = args.searchTerm.toLowerCase().trim();
-      matchingUsers = matchingUsers.filter(user =>
-        (user.name && user.name.toLowerCase().includes(searchLow)) ||
-        (user.username && user.username.toLowerCase().includes(searchLow))
-      );
+      matchingUsers = matchingUsers.filter((user) => matchesChatUserSearch(user, searchLow));
     }
 
     // Filter by major if provided
@@ -1469,6 +1521,8 @@ export const searchProfiles = query({
           ...user,
           image: imageUrl,
           isFollowing: args.currentUserId ? followedUserIds.has(user._id) : false,
+          displayName: getChatUserDisplayName(user),
+          displayUsername: getChatUserDisplayUsername(user),
         };
       })
     );
@@ -1907,17 +1961,18 @@ export const getChatSuggestions = query({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    // 1. Get the list of users the current user is following
+    const allUsers = await ctx.db.query("users").collect();
+    const aiAssistant = allUsers.find((user) => isAiAssistantUser(user)) || null;
+
     const follows = await ctx.db
       .query("follows")
       .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
       .collect();
     const followedUserIds = follows.map((f) => f.followingId);
 
-    // 2. Get all conversations to find who the user has started a direct chat with
     const conversations = await ctx.db.query("conversations").collect();
     const directChatPartners = new Set<string>();
-    
+
     for (const conv of conversations) {
       if (!conv.isGroup && conv.participants.includes(args.userId) && conv.participants.length === 2) {
         const partner = conv.participants.find((p) => p !== args.userId);
@@ -1927,40 +1982,48 @@ export const getChatSuggestions = query({
       }
     }
 
-    // 3. Find followed users (even if they already have a chat together)
-    const targetFollowedIds = followedUserIds.filter(
-      (id) => id !== args.userId
-    );
+    const targetFollowedIds = followedUserIds.filter((id) => id !== args.userId);
+    const suggestions: any[] = [];
+    const suggestionIds = new Set<string>();
 
-    let suggestions: any[] = [];
-    if (targetFollowedIds.length > 0) {
-      // Get the profiles of these followed users
-      const users = await Promise.all(targetFollowedIds.map((id) => ctx.db.get(id)));
-      const validUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);
-      
-      suggestions = await Promise.all(
-        validUsers.map(async (user) => {
-          const image = await getUserImageUrl(ctx, user.image);
-          return { ...user, image };
-        })
-      );
+    const pushSuggestion = async (user: NonNullable<typeof aiAssistant>) => {
+      const userId = user._id.toString();
+      if (suggestionIds.has(userId) || user._id === args.userId) return;
+
+      const image = await getUserImageUrl(ctx, user.image);
+      suggestions.push({
+        ...user,
+        image,
+        displayName: getChatUserDisplayName(user),
+        displayUsername: getChatUserDisplayUsername(user),
+      });
+      suggestionIds.add(userId);
+    };
+
+    if (aiAssistant) {
+      await pushSuggestion(aiAssistant);
     }
 
-    // 4. If we have fewer than 5 suggestions, pad with other recommended users
+    if (targetFollowedIds.length > 0) {
+      const users = await Promise.all(targetFollowedIds.map((id) => ctx.db.get(id)));
+      const validUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);
+
+      for (const user of validUsers) {
+        await pushSuggestion(user);
+      }
+    }
+
     if (suggestions.length < 5) {
       const currentUser = await ctx.db.get(args.userId);
       if (currentUser) {
-        const followedUserIdsSet = new Set(followedUserIds.map(id => id.toString()));
-        const allUsers = await ctx.db.query("users").collect();
+        const followedUserIdsSet = new Set(followedUserIds.map((id) => id.toString()));
 
-        // Filter out current user, already followed users, and users who already have a direct chat
         const potentialUsers = allUsers.filter(
-          (u) => u._id !== args.userId && 
-                 !followedUserIdsSet.has(u._id.toString()) && 
+          (u) => u._id !== args.userId &&
+                 !followedUserIdsSet.has(u._id.toString()) &&
                  !directChatPartners.has(u._id.toString())
         );
 
-        // Score users
         const scoredUsers = potentialUsers.map((user) => {
           let score = 0;
           if (
@@ -1983,9 +2046,9 @@ export const getChatSuggestions = query({
             Array.isArray(user.interests) &&
             Array.isArray(currentUser.interests)
           ) {
-            const currentUserInterestsLower = currentUser.interests.map(i => i.toLowerCase().trim());
-            const userInterestsLower = user.interests.map(i => i.toLowerCase().trim());
-            const hasCommonInterest = currentUserInterestsLower.some(i => userInterestsLower.includes(i));
+            const currentUserInterestsLower = currentUser.interests.map((i) => i.toLowerCase().trim());
+            const userInterestsLower = user.interests.map((i) => i.toLowerCase().trim());
+            const hasCommonInterest = currentUserInterestsLower.some((i) => userInterestsLower.includes(i));
             if (hasCommonInterest) {
               score += 1;
             }
@@ -1995,6 +2058,8 @@ export const getChatSuggestions = query({
 
         const matchedUsers = scoredUsers.filter((item) => item.score >= 1);
         matchedUsers.sort((a, b) => {
+          if (isAiAssistantUser(a.user) && !isAiAssistantUser(b.user)) return -1;
+          if (!isAiAssistantUser(a.user) && isAiAssistantUser(b.user)) return 1;
           if (b.score !== a.score) {
             return b.score - a.score;
           }
@@ -2005,28 +2070,20 @@ export const getChatSuggestions = query({
         if (selectedUsers.length < 5) {
           const selectedUserIds = new Set(selectedUsers.map((u) => u._id.toString()));
           const otherUsers = potentialUsers.filter((u) => !selectedUserIds.has(u._id.toString()));
-          const sortedRecentOthers = otherUsers.sort(
-            (a, b) => (b._creationTime || 0) - (a._creationTime || 0)
-          );
+          const sortedRecentOthers = sortChatUsersWithAssistantFirst(otherUsers);
           const neededCount = 5 - selectedUsers.length;
           const paddingUsers = sortedRecentOthers.slice(0, neededCount);
           selectedUsers = [...selectedUsers, ...paddingUsers];
         }
 
-        const fallbackSuggestions = await Promise.all(
-          selectedUsers.map(async (user) => {
-            const image = await getUserImageUrl(ctx, user.image);
-            return { ...user, image };
-          })
-        );
-
-        // Add fallback suggestions until we have 5 in total
-        const needed = 5 - suggestions.length;
-        suggestions = [...suggestions, ...fallbackSuggestions.slice(0, needed)];
+        for (const user of selectedUsers) {
+          if (suggestions.length >= 5) break;
+          await pushSuggestion(user);
+        }
       }
     }
 
-    return suggestions;
+    return suggestions.slice(0, 5);
   },
 });
 
