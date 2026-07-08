@@ -5,6 +5,52 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
+import studiengangLinks from "@/lib/studiengang-links.json";
+
+// --- Major inference helpers (extracted from tools) ---
+
+const MAJOR_ALIAS_MAP = new Map<string, string>([
+    ["me", "Media Engineering (B.Eng.)"],
+    ["bme", "Media Engineering (B.Eng.)"],
+    ["b-me", "Media Engineering (B.Eng.)"],
+]);
+
+function normalizeMajorLabel(text: string) {
+    return text
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s*\((b|m)\.\s*(eng|sc|a)\.\)\s*/gi, " ")
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function hasNormalizedTerm(text: string, term: string) {
+    if (!text || !term) return false;
+    const pattern = term.split(/\s+/).map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+");
+    return new RegExp(`(^|\\s)${pattern}(\\s|$)`, "i").test(text);
+}
+
+function getKnownStudiengaenge() {
+    return Object.keys(studiengangLinks as Record<string, unknown>).map(k =>
+        k.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim()
+    );
+}
+
+function findKnownMajorMention(text: string): string | null {
+    const normalizedText = normalizeMajorLabel(text);
+    if (!normalizedText) return null;
+
+    const aliasMatch = Array.from(MAJOR_ALIAS_MAP.entries())
+        .sort((a, b) => b[0].length - a[0].length)
+        .find(([alias]) => hasNormalizedTerm(normalizedText, alias));
+    if (aliasMatch) return aliasMatch[1];
+
+    return getKnownStudiengaenge()
+        .sort((a, b) => b.length - a.length)
+        .find(major => hasNormalizedTerm(normalizedText, normalizeMajorLabel(major))) ?? null;
+}
 
 export type AiContext = {
   major: string;
@@ -68,7 +114,11 @@ async function askAi(
 ) {
     const chatSystemPrompt = await getChatSystemPrompt();
 
-    const major = context?.major ?? profileFacts?.major ?? null;
+    const historyText = history?.map(m => m.content).join("\n") ?? "";
+    const major = context?.major
+        ?? profileFacts?.major
+        ?? findKnownMajorMention(`${prompt}\n${historyText}`)
+        ?? null;
     const semester = context?.semester ?? profileFacts?.semester ?? null;
 
     const today = new Date().toLocaleDateString('de-DE', {
