@@ -61,3 +61,35 @@ export const upsertMensaCache = mutation({
     }
   },
 });
+
+export const upsertSpoCache = mutation({
+  args: {
+    sourceId: v.string(),
+    title: v.string(),
+    major: v.string(),
+    documentUrl: v.string(),
+    sourcePageUrl: v.string(),
+    content: v.string(),
+  },
+  handler: async (ctx, { sourceId, title, major, documentUrl, sourcePageUrl, content }) => {
+    const existing = await ctx.db
+      .query("spoCache")
+      .withIndex("by_source_id", (q) => q.eq("sourceId", sourceId))
+      .first();
+
+    const data = {
+      title,
+      major,
+      documentUrl,
+      sourcePageUrl,
+      content,
+      scrapedAt: Date.now(),
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, data);
+    } else {
+      await ctx.db.insert("spoCache", { sourceId, ...data });
+    }
+  },
+});

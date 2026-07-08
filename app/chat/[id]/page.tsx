@@ -5,7 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin, MoreVertical, Trash2, LogOut } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, X, Folder, FileText, SmilePlus, BarChart2, CalendarDays, CirclePlay, MapPin, ChevronDown, MoreVertical, Trash2, LogOut } from "lucide-react";
 import { ChatHeaderCallButtons } from "@/components/call/ChatHeaderCallButtons";
 import { ActiveCallBanner } from "@/components/call/ActiveCallBanner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,6 +22,26 @@ import { ChatEventMessage } from "@/components/chat-event-message";
 import { ChatLocationModal } from "@/components/chat-location-modal";
 import { ChatLocationMessage } from "@/components/chat-location-message";
 import { MessageLinkPreview } from "@/components/LinkPreview";
+
+type ParsedAiContent = {
+    summary: string;
+    details?: string;
+};
+
+function parseAiStructuredContent(text: string): ParsedAiContent | null {
+    const summaryMatch = text.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/i);
+    if (!summaryMatch) return null;
+
+    const summary = summaryMatch[1].trim();
+    if (!summary) return null;
+
+    const detailsMatch = text.match(/\[DETAILS\]([\s\S]*?)\[\/DETAILS\]/i);
+    const details = detailsMatch?.[1]?.trim();
+
+    return details ? { summary, details } : { summary };
+}
+
+const AI_HISTORY_LIMIT = 6;
 
 export default function ChatDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -55,7 +75,15 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const aiUserId = useQuery(
         api.queries.getUserByUsername,
         { username: "chatbot" }
-    )?._id;
+    ) ?._id;
+    const followerCount = useQuery(
+        api.queries.getFollowerCount,
+        currentUser?._id ? { userId: currentUser._id } : "skip",
+    );
+    const followingCount = useQuery(
+        api.queries.getFollowingCount,
+        currentUser?._id ? { userId: currentUser._id } : "skip",
+    );
 
     useEffect(() => {
         if (conversationId && currentUser) {
@@ -86,6 +114,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+    const [expandedAiMessages, setExpandedAiMessages] = useState<Record<string, boolean>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const updateLiveLocationCoordinates = useMutation(api.mutations.updateLiveLocationCoordinates);
@@ -288,14 +317,39 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         e?.preventDefault();
         if (!newMessage.trim() || !currentUser) return;
 
+        const trimmedMessage = newMessage.trim();
+        const aiTriggerMatch = trimmedMessage.match(/^jastell\b(?::\s*|\s+)?/i);
+
         try {
             await sendMessage({
                 conversationId,
                 senderId: currentUser._id,
-                content: newMessage.trim(),
+                content: trimmedMessage,
             });
-            if (newMessage.startsWith('AI:')) {
-                const msg = await handleAi(newMessage.substring(3).trim(), conversationId);
+            if (aiTriggerMatch) {
+                const prompt = trimmedMessage.slice(aiTriggerMatch[0].length).trim();
+                const recentHistory = (messages ?? [])
+                    .slice(-AI_HISTORY_LIMIT)
+                    .map((message) => ({
+                        role: message.senderId === aiUserId ? "assistant" as const : "user" as const,
+                        content: message.content,
+                    }));
+                const msg = await handleAi(
+                    prompt,
+                    currentUser.major || undefined,
+                    currentUser.semester,
+                    recentHistory,
+                    {
+                        name: currentUser.name,
+                        username: currentUser.username,
+                        major: currentUser.major,
+                        semester: currentUser.semester,
+                        bio: currentUser.bio,
+                        interests: Array.isArray(currentUser.interests) ? currentUser.interests : undefined,
+                        followerCount: typeof followerCount === "number" ? followerCount : undefined,
+                        followingCount: typeof followingCount === "number" ? followingCount : undefined,
+                    },
+                );
                 await sendMessage({
                     conversationId,
                     senderId: aiUserId ?? currentUser._id,
@@ -332,6 +386,13 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             }
             return part;
         });
+    };
+
+    const toggleAiDetails = (messageId: string) => {
+        setExpandedAiMessages((prev) => ({
+            ...prev,
+            [messageId]: !prev[messageId],
+        }));
     };
 
     const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
@@ -516,6 +577,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         messages.map((msg, index) => {
                             const isMe = msg.senderId === currentUser._id;
                             const sender = getMember(msg.senderId);
+                            const isAiMessage = !!aiUserId && msg.senderId === aiUserId;
 
                             const nextMsg = messages[index + 1];
                             const isNextSameSender = nextMsg && nextMsg.senderId === msg.senderId && nextMsg.type !== "system";
@@ -534,6 +596,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 return acc;
                             }, {} as Record<string, { count: number, hasReacted: boolean }>) || {};
                             const hasReactions = Object.keys(reactionCounts).length > 0;
+                            const parsedAiContent = (msg.type === "text" || !msg.type) && isAiMessage
+                                ? parseAiStructuredContent(msg.content)
+                                : null;
+                            const isAiDetailsExpanded = !!expandedAiMessages[msg._id];
 
                             let dateDivider = null;
                             if (isNewDay) {
@@ -838,6 +904,34 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                 isMe={isMe}
                                                                 currentUserId={currentUser._id}
                                                             />
+                                                        ) : parsedAiContent ? (
+                                                            <div className="flex flex-col gap-2">
+                                                                <div>{linkifyText(parsedAiContent.summary)}</div>
+                                                                {parsedAiContent.details && (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="inline-flex items-center gap-1.5 text-xs text-[#8C531E] hover:text-[#6E3E16] transition-colors self-start"
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                toggleAiDetails(msg._id);
+                                                                            }}
+                                                                        >
+                                                                            <span>{isAiDetailsExpanded ? "Weniger Details" : "Mehr Details"}</span>
+                                                                            <ChevronDown
+                                                                                size={14}
+                                                                                className={`transition-transform duration-200 ${isAiDetailsExpanded ? "rotate-180" : ""}`}
+                                                                            />
+                                                                        </button>
+                                                                        {isAiDetailsExpanded && (
+                                                                            <div className="pt-2 border-t border-[#E8D6BC]">
+                                                                                {linkifyText(parsedAiContent.details)}
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         ) : (
                                                             <div className="flex flex-col gap-1">
                                                                 {(() => {
