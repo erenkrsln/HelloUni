@@ -3,7 +3,7 @@ import { internalAction, action } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import { v } from "convex/values";
 import { extractText } from "unpdf";
-import { spoSources } from "../lib/spo-sources";
+import { spoSources } from "@/lib/spo-sources";
 import studiengangLinks from "../lib/studiengang-links.json";
 
 const normalizeMajorName = (name: string) =>
