@@ -124,6 +124,7 @@ export default defineSchema({
       leftAt: v.number()
     }))), // Metadaten wann User die Gruppe verlassen haben
     name: v.optional(v.string()), // Optionaler Gruppenname
+    description: v.optional(v.string()), // Gruppenbeschreibung
     image: v.optional(v.string()), // Storage ID für Gruppenbild
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
     isPublic: v.optional(v.boolean()), // Flag für öffentliche Gruppen

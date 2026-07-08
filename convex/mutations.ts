@@ -809,6 +809,27 @@ export const updateGroupName = mutation({
   },
 });
 
+export const updateGroupDescription = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    description: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+
+    if (!conversation.isGroup) throw new Error("Can only update group descriptions");
+
+    // Check admin permissions
+    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+    if (!isAdmin) throw new Error("Only admins can update the group description");
+
+    await ctx.db.patch(args.conversationId, {
+      description: args.description.trim(),
+    });
+  },
+});
 
 
 export const sendMessage = mutation({

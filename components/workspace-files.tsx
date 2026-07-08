@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Plus, FileText, Image as ImageIcon, Download, FileIcon } from "lucide-react";
+import { Plus, FileText, Image as ImageIcon, Download, FileIcon, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useToast } from "@/components/toast";
 
@@ -11,10 +11,12 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
   const { currentUser } = useCurrentUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
 
   const files = useQuery(api.workspace.listFilesByWorkspace, { workspaceId });
   const generateUploadUrl = useMutation(api.workspace.generateUploadUrl);
   const saveFileMetadata = useMutation(api.workspace.saveFileMetadata);
+  const deleteFile = useMutation(api.workspace.deleteFile);
   const toast = useToast();
 
   const [localFiles, setLocalFiles] = useState<any[] | null>(null);
@@ -97,6 +99,32 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
     return <FileIcon size={24} className="text-gray-500" />;
   };
 
+  const handleDeleteFile = async () => {
+    if (!deletingFileId || !currentUser) return;
+
+    try {
+      await deleteFile({
+        fileId: deletingFileId as any,
+        userId: currentUser._id,
+        workspaceId,
+      });
+      
+      setLocalFiles((prev) => 
+        prev ? prev.filter((f) => f._id !== deletingFileId) : prev
+      );
+      
+      toast.success("File deleted");
+      setDeletingFileId(null);
+    } catch (error: any) {
+      console.error("Failed to delete file:", error);
+      toast.error(error.message || "Failed to delete file");
+    }
+  };
+
+  const canDeleteFile = (file: any) => {
+    return currentUser && file.uploaderId === currentUser._id;
+  };
+
   return (
     <div className="p-4 animate-in fade-in slide-in-from-bottom-2">
       <div className="flex justify-between items-center mb-6">
@@ -126,26 +154,65 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
           </div>
         ) : (
           (localFiles || files).map(file => (
-            <a 
-              key={file._id} 
-              href={file.url || file.url || "#"} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow"
+            <div
+              key={file._id}
+              className="group bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow relative"
             >
-              <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
-                {renderFileIcon(file.fileType)}
-              </div>
-              <span className="text-sm font-medium text-gray-800 line-clamp-1 w-full" title={file.fileName}>
-                {file.fileName}
-              </span>
-              <div className="flex items-center text-xs text-gray-500 mt-1">
-                <Download size={12} className="mr-1" /> View
-              </div>
-            </a>
+              <a
+                href={file.url || file.url || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center text-center gap-2"
+              >
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
+                  {renderFileIcon(file.fileType)}
+                </div>
+                <span className="text-sm font-medium text-gray-800 line-clamp-1 w-full" title={file.fileName}>
+                  {file.fileName}
+                </span>
+                <div className="flex items-center text-xs text-gray-500 mt-1">
+                  <Download size={12} className="mr-1" /> View
+                </div>
+              </a>
+
+              {canDeleteFile(file) && (
+                <button
+                  onClick={() => setDeletingFileId(file._id)}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100"
+                  title="Delete file"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
           ))
         )}
       </div>
+
+      {deletingFileId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-3xl bg-white p-6 shadow-xl max-w-sm">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Delete File</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Are you sure you want to delete this file? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeletingFileId(null)}
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteFile}
+                className="rounded-full bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

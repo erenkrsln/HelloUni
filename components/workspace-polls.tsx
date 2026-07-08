@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Plus, BarChart2, Check } from "lucide-react";
+import { Plus, BarChart2, Check, Edit2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { PollEditModal } from "@/components/poll-edit-modal";
 
 export function WorkspacePolls({ workspaceId }: { workspaceId: string }) {
   const { currentUser } = useCurrentUser();
   const [isCreating, setIsCreating] = useState(false);
+  const [editingPollId, setEditingPollId] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState(["", ""]);
 
@@ -132,38 +134,60 @@ export function WorkspacePolls({ workspaceId }: { workspaceId: string }) {
         ) : (
           polls.map((poll) => {
             const totalVotes = poll.votes.length;
+            const editingPoll = editingPollId === poll._id.toString() ? poll : null;
             
             return (
-              <div key={poll._id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="font-semibold text-gray-900 mb-4">{poll.question}</h3>
+              <div key={poll._id} className="group bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-semibold text-gray-900 flex-1">{poll.question}</h3>
+                  {currentUser && poll.createdBy === currentUser._id && (
+                   <button
+                     onClick={() => setEditingPollId(poll._id.toString())}
+                     className="p-2 rounded-full hover:bg-slate-100 transition-colors opacity-0 group-hover:opacity-100"
+                     title="Edit poll"
+                   >
+                     <Edit2 size={16} className="text-[#D08945]" />
+                   </button>
+                  )}
+                </div>
                 <div className="space-y-2">
                   {poll.options.map((option, idx) => {
-                    const percentage = calculatePercentage(poll.votes, idx);
-                    const voted = hasUserVotedFor(poll.votes, idx);
-                    const isWinning = percentage > 0 && Math.max(...poll.options.map((_, i) => calculatePercentage(poll.votes, i))) === percentage;
+                   const percentage = calculatePercentage(poll.votes, idx);
+                   const voted = hasUserVotedFor(poll.votes, idx);
+                   const isWinning = percentage > 0 && Math.max(...poll.options.map((_, i) => calculatePercentage(poll.votes, i))) === percentage;
 
-                    return (
-                      <div 
-                        key={idx}
-                        onClick={() => currentUser && votePoll({ pollId: poll._id, userId: currentUser._id, optionIndex: idx })}
-                        className={`relative overflow-hidden rounded-lg border p-3 cursor-pointer transition-colors ${voted ? 'border-[#D08945] bg-orange-50' : 'border-gray-200 hover:bg-gray-50'}`}
-                      >
-                         <div 
-                           className={`absolute left-0 top-0 bottom-0 transition-all duration-500 ${voted || isWinning ? 'bg-[#D08945] opacity-10' : 'bg-gray-200 opacity-50'}`} 
-                           style={{ width: `${percentage}%` }}
-                         />
-                         <div className="relative flex justify-between items-center z-10">
-                           <div className="flex items-center gap-2">
-                             {voted ? <Check size={16} className="text-[#D08945]" /> : <div className="w-4 h-4 border rounded-full border-gray-300" />}
-                             <span className={`text-sm ${voted ? 'font-medium text-gray-900' : 'text-gray-700'}`}>{option}</span>
-                           </div>
-                           <span className="text-xs font-semibold text-gray-500">{percentage}%</span>
-                         </div>
+                   return (
+                     <div 
+                       key={idx}
+                       onClick={() => currentUser && votePoll({ pollId: poll._id, userId: currentUser._id, optionIndex: idx })}
+                       className={`relative overflow-hidden rounded-lg border p-3 cursor-pointer transition-colors ${voted ? 'border-[#D08945] bg-orange-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                     >
+                        <div 
+                          className={`absolute left-0 top-0 bottom-0 transition-all duration-500 ${voted || isWinning ? 'bg-[#D08945] opacity-10' : 'bg-gray-200 opacity-50'}`} 
+                          style={{ width: `${percentage}%` }}
+                        />
+                        <div className="relative flex justify-between items-center z-10">
+                          <div className="flex items-center gap-2">
+                            {voted ? <Check size={16} className="text-[#D08945]" /> : <div className="w-4 h-4 border rounded-full border-gray-300" />}
+                            <span className={`text-sm ${voted ? 'font-medium text-gray-900' : 'text-gray-700'}`}>{option}</span>
+                          </div>
+                          <span className="text-xs font-semibold text-gray-500">{percentage}%</span>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
                 <div className="text-xs text-gray-400 mt-3">{totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}</div>
+
+                {editingPoll && currentUser && (
+                  <PollEditModal
+                   poll={editingPoll}
+                   isOpen={!!editingPollId}
+                   onClose={() => setEditingPollId(null)}
+                   userId={currentUser._id}
+                   hasVotes={totalVotes > 0}
+                  />
+                )}
               </div>
             );
           })

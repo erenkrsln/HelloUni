@@ -525,6 +525,37 @@ export const saveFileMetadata = mutation({
   },
 });
 
+export const deleteFile = mutation({
+  args: {
+    fileId: v.id("workspace_files"),
+    userId: v.id("users"),
+    workspaceId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const file = await ctx.db.get(args.fileId);
+    if (!file) throw new Error("File not found");
+
+    // Check if user is the uploader or an admin/owner of the group
+    if (file.uploaderId !== args.userId) {
+      // If workspace is a group, check if user is admin/owner
+      if (args.workspaceId.startsWith("group_")) {
+        const convId = args.workspaceId.replace("group_", "") as any;
+        const group = await ctx.db
+          .query("workspace_groups")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", convId))
+          .first();
+        
+        const isAdmin = group && (group.ownerId === args.userId || (group.adminIds || []).includes(args.userId));
+        if (!isAdmin) throw new Error("Unauthorized to delete this file");
+      } else {
+        throw new Error("Unauthorized to delete this file");
+      }
+    }
+
+    await ctx.db.delete(args.fileId);
+  },
+});
+
 // ------------------------------
 // POLLS
 // ------------------------------
@@ -646,5 +677,67 @@ export const votePoll = mutation({
       optionIndex: args.optionIndex,
       createdAt: Date.now(),
     });
+  },
+});
+
+export const updatePoll = mutation({
+  args: {
+    pollId: v.id("workspace_polls"),
+    userId: v.id("users"),
+    question: v.optional(v.string()),
+    options: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new Error("Poll not found");
+
+    // Only the creator can edit
+    if (poll.createdBy !== args.userId) {
+      throw new Error("Unauthorized: Only the poll creator can edit");
+    }
+
+    // Check if there are votes - if so, only allow question edit, not options
+    const existingVotes = await ctx.db
+      .query("workspace_poll_votes")
+      .withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+      .collect();
+
+    if (existingVotes.length > 0 && args.options !== undefined) {
+      throw new Error("Cannot edit poll options after voting has started");
+    }
+
+    await ctx.db.patch(args.pollId, {
+      ...(args.question !== undefined && { question: args.question }),
+      ...(args.options !== undefined && { options: args.options }),
+    });
+  },
+});
+
+export const deletePoll = mutation({
+  args: {
+    pollId: v.id("workspace_polls"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new Error("Poll not found");
+
+    // Only the creator can delete
+    if (poll.createdBy !== args.userId) {
+      throw new Error("Unauthorized: Only the poll creator can delete");
+    }
+
+    // Delete all votes for this poll
+    const votes = await ctx.db
+      .query("workspace_poll_votes")
+      .withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+      .collect();
+
+    for (const vote of votes) {
+      await ctx.db.delete(vote._id);
+    }
+
+    // Delete the poll itself
+    await ctx.db.delete(args.pollId);
   },
 });

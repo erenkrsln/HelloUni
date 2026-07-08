@@ -29,6 +29,8 @@ export function GroupInfoModal({
     // Group Editing State
     const [isEditingName, setIsEditingName] = useState(false);
     const [newName, setNewName] = useState("");
+    const [isEditingDescription, setIsEditingDescription] = useState(false);
+    const [newDescription, setNewDescription] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const members = useQuery(api.queries.getConversationMembers, { conversationId });
@@ -49,6 +51,7 @@ export function GroupInfoModal({
 
     // New mutations
     const updateGroupName = useMutation(api.mutations.updateGroupName);
+    const updateGroupDescription = useMutation(api.mutations.updateGroupDescription);
     const updateGroupImage = useMutation(api.mutations.updateGroupImage);
     const toggleGroupPublic = useMutation(api.mutations.toggleGroupPublic);
     const toggleGroupJoinRequestRequired = useMutation(api.mutations.toggleGroupJoinRequestRequired);
@@ -171,6 +174,21 @@ export function GroupInfoModal({
         } catch (error) {
             console.error("Failed to update group name:", error);
             alert("Fehler beim Umbenennen der Gruppe.");
+        }
+    };
+
+    const handleUpdateDescription = async () => {
+        try {
+            await updateGroupDescription({
+                conversationId,
+                description: newDescription.trim(),
+                userId: currentUserId,
+            });
+            setIsEditingDescription(false);
+            setNewDescription("");
+        } catch (error) {
+            console.error("Failed to update group description:", error);
+            alert("Fehler beim Aktualisieren der Gruppenbeschreibung.");
         }
     };
 
@@ -341,6 +359,57 @@ export function GroupInfoModal({
                                 <p className="text-sm text-gray-500 mt-4">
                                     {members.filter(m => m.role !== 'left').length} Mitglieder
                                 </p>
+                                 
+                                {/* Group Description */}
+                                <div className="mt-4 px-8 w-full">
+                                    {isEditingDescription ? (
+                                        <div className="flex flex-col gap-3 w-full">
+                                            <textarea
+                                                value={newDescription}
+                                                onChange={(e) => setNewDescription(e.target.value)}
+                                                placeholder="Gruppenbeschreibung"
+                                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors min-h-[80px]"
+                                                autoFocus
+                                            />
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={handleUpdateDescription}
+                                                    className="px-3 py-1.5 bg-[#D08945] text-white rounded-full hover:bg-[#b0733a] transition-colors text-sm font-medium"
+                                                >
+                                                    Speichern
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsEditingDescription(false)}
+                                                    className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors text-sm font-medium"
+                                                >
+                                                    Abbrechen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-start gap-2 w-full">
+                                            <div className="flex-1">
+                                                <p className="text-xs font-semibold text-gray-500 mb-1">Beschreibung</p>
+                                                <p className="text-sm text-gray-700 break-words">
+                                                    {conversation.description || "Keine Beschreibung"}
+                                                </p>
+                                            </div>
+                                            {iAmAdmin && (
+                                                <button
+                                                    onClick={() => {
+                                                        setNewDescription(conversation.description || "");
+                                                        setIsEditingDescription(true);
+                                                    }}
+                                                    className="p-1.5 text-[#D08945] hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+                                                    title="Beschreibung bearbeiten"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                 
                                 {!iAmAdmin && (
                                     <span className={`mt-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${conversation.isPublic ? "bg-[#D08945] text-white" : "bg-gray-100 text-gray-800"
                                         }`}>

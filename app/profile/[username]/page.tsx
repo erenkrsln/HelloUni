@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ProfileHeader } from "@/components/profile-header";
+import { ProfileGroupsSection } from "@/components/profile-groups-section";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
@@ -105,6 +106,13 @@ export default function UserProfilePage() {
                         isFollowing={profileData.isFollowing}
                         onEditClick={isOwnProfile ? () => setIsEditModalOpen(true) : undefined}
                     />
+
+                    {/* TODO: Re-enable Groups Section once Convex regenerates types for getUserGroupsForProfile */}
+                    {/* <ProfileGroupsSection
+                        userId={profileData.user._id}
+                        showOnlyPublic={true}
+                        maxDisplay={3}
+                    /> */}
 
                     {/* Posts section */}
                     <div data-posts-section>

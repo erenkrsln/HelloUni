@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ProfileHeader } from "@/components/profile-header";
+import { ProfileGroupsSection } from "@/components/profile-groups-section";
 import { FeedCard } from "@/components/feed-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
@@ -99,6 +100,12 @@ export default function ProfilePage() {
                         onEditClick={() => setIsEditModalOpen(true)}
                     />
 
+                    {/* TODO: Re-enable Groups Section once Convex regenerates types for getUserGroupsForProfile */}
+                    {/* <ProfileGroupsSection
+                        userId={profileData.user._id}
+                        showOnlyPublic={false}
+                        maxDisplay={3}
+                    /> */}
 
                     {/* Calendar Link - Only show on own profile */}
                     {currentUser && (

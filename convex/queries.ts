@@ -1839,3 +1839,58 @@ export const searchPublicGroups = query({
     return enrichedGroups;
   },
 });
+
+/**
+ * Get groups for a user's profile
+ * Used on profile pages to display groups a user belongs to
+ * Can filter to show only public groups (for viewing other users' profiles)
+ */
+export const getUserGroupsForProfile = query({
+  args: {
+    userId: v.id("users"),
+    showOnlyPublic: v.optional(v.boolean()),
+  },
+  handler: async (ctx: any, args: any) => {
+    // Get all conversations where the user is a participant and isGroup is true
+    const allConversations = await ctx.db
+      .query("conversations")
+      .collect();
+
+    // Filter for groups where user is a participant
+    const userGroups = allConversations.filter((conv: any) => {
+      const isGroup = conv.isGroup === true;
+      const isParticipant = conv.participants && conv.participants.includes(args.userId);
+      const isActive = !conv.leftParticipants || !conv.leftParticipants.includes(args.userId);
+      
+      return isGroup && isParticipant && isActive;
+    });
+
+    // Filter by visibility if requested (for other users' profiles)
+    let groupsToDisplay = userGroups;
+    if (args.showOnlyPublic === true) {
+      groupsToDisplay = userGroups.filter((conv: any) => conv.isPublic === true);
+    }
+
+    // Sort by most recently updated first
+    groupsToDisplay.sort((a: any, b: any) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    // Enrich groups with converted image URLs and member count
+    const enrichedGroups = await Promise.all(
+      groupsToDisplay.map(async (group: any) => {
+        const displayImage = await getGroupImageUrl(ctx, group.image);
+        const memberCount = group.participants ? group.participants.length : 0;
+
+        return {
+          _id: group._id,
+          name: group.name || "Unnamed Group",
+          displayImage,
+          memberCount,
+          isPublic: group.isPublic,
+          updatedAt: group.updatedAt,
+        };
+      })
+    );
+
+    return enrichedGroups;
+  },
+});
