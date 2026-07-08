@@ -480,9 +480,16 @@ async function getSpoCache(sourceId = defaultSpoSourceId) {
     return cached;
   }
 
-  const cache = await fetchQuery(api.queries.getSpoCache, {
-    sourceId,
-  }) as SpoCacheRecord | null;
+  let cache: SpoCacheRecord | null = null;
+
+  try {
+    cache = await fetchQuery(api.queries.getSpoCache, {
+      sourceId,
+    }) as SpoCacheRecord | null;
+  } catch (error) {
+    console.warn(`[helloUniTools] getSpoCache fallback for ${sourceId}:`, error);
+    return null;
+  }
 
   if (cache) {
     spoCacheBySourceId.set(sourceId, cache);
@@ -496,9 +503,16 @@ async function getStudiengangCache(major: string) {
     return cached;
   }
 
-  const cache = await fetchQuery(api.queries.getStudiengangCache, {
-    major,
-  }) as StudiengangCacheRecord | null;
+  let cache: StudiengangCacheRecord | null = null;
+
+  try {
+    cache = await fetchQuery(api.queries.getStudiengangCache, {
+      major,
+    }) as StudiengangCacheRecord | null;
+  } catch (error) {
+    console.warn(`[helloUniTools] getStudiengangCache fallback for ${major}:`, error);
+    return null;
+  }
 
   if (cache) {
     studiengangCacheByMajor.set(major, cache);
@@ -622,7 +636,13 @@ export async function getSpoSourceForAi(sourceId?: string) {
 }
 
 async function getMensaMeals() {
-  const mensaCache = await fetchQuery(api.queries.getMensaCache, {});
+  let mensaCache: Awaited<ReturnType<typeof fetchQuery>> | null = null;
+
+  try {
+    mensaCache = await fetchQuery(api.queries.getMensaCache, {});
+  } catch (error) {
+    console.warn("[helloUniTools] getMensaMeals fallback:", error);
+  }
 
   return {
     source: "Mensateria Ohm",

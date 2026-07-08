@@ -214,6 +214,13 @@ function inferMajorFromConversation(
   history?: AiHistoryMessage[],
   profileFacts?: AiPublicProfileFacts,
 ) {
+  const historyText = history?.map((message) => message.content).join("\n") ?? "";
+  const mentionedMajor = findKnownMajorMention(`${prompt}\n${historyText}`);
+
+  if (mentionedMajor) {
+    return mentionedMajor;
+  }
+
   if (studiengangContext?.major) {
     return studiengangContext.major;
   }
@@ -222,8 +229,7 @@ function inferMajorFromConversation(
     return profileFacts.major.trim();
   }
 
-  const historyText = history?.map((message) => message.content).join("\n") ?? "";
-  return findKnownMajorMention(`${prompt}\n${historyText}`);
+  return null;
 }
 
 function getConversationText(history?: AiHistoryMessage[]) {
@@ -313,9 +319,19 @@ function buildSpoSourceAnswer(result: SpoSourceResult, topicHint = "") {
   }
 
   const topicPart = topicHint ? ` ${topicHint}` : "";
-  const sourcePagePart = result.sourcePageUrl ? ` Studiengangsseite: ${result.sourcePageUrl}` : "";
+  const lines = [`Die Info stammt aus der offiziellen ${result.title}${topicPart}.`];
 
-  return `Die Info stammt aus der offiziellen ${result.title}${topicPart}. PDF: ${result.documentUrl ?? "keine PDF-URL hinterlegt"}.${sourcePagePart}`;
+  if (result.documentUrl) {
+    lines.push(`PDF-Link: ${result.documentUrl}`);
+  } else {
+    lines.push("PDF-Link: keine PDF-URL hinterlegt");
+  }
+
+  if (result.sourcePageUrl) {
+    lines.push(`Studiengangsseite: ${result.sourcePageUrl}`);
+  }
+
+  return lines.join("\n");
 }
 
 function buildToolFallbackResponse(results: ToolResultRecord[], preferSourceAnswer = false) {
