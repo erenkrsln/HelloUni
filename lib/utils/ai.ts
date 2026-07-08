@@ -105,7 +105,7 @@ async function askAi(
         : [getMensaPlanTool, getSemesterTermineTool];
 
     const result = openRouter.callModel({
-        model: 'google/gemini-2.5-flash',
+        model: 'openai/gpt-oss-120b',
         instructions: chatSystemPrompt + userContext,
         input: buildHistoryInput(prompt, history),
         tools,
