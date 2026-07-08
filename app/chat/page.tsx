@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
@@ -20,6 +20,7 @@ export default function ChatPage() {
   const [selectedUsers, setSelectedUsers] = useState<Id<"users">[]>([]);
   const [groupName, setGroupName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "direct" | "group">("all");
   const router = useRouter();
 
@@ -45,11 +46,29 @@ export default function ChatPage() {
   }, []);
 
   const conversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
-  const allUsers = useQuery(api.queries.getAllUsers);
+  const chatSuggestions = useQuery(
+    api.queries.getChatSuggestions,
+    currentUser ? { userId: currentUser._id } : "skip"
+  );
+  const userSearchResults = useQuery(
+    api.queries.searchProfiles,
+    userSearchQuery.trim() ? { searchTerm: userSearchQuery } : "skip"
+  );
 
   const isLoading = isFirstVisit && (currentUser === undefined || conversations === undefined);
   const createConversation = useMutation(api.mutations.createConversation);
   const deleteConversationFromList = useMutation(api.mutations.deleteConversationFromList);
+
+  const displayedUsers = useMemo(() => {
+    if (userSearchQuery.trim()) {
+      return userSearchResults?.filter((user) => user._id !== currentUser?._id) || [];
+    }
+    return chatSuggestions || [];
+  }, [chatSuggestions, currentUser?._id, userSearchQuery, userSearchResults]);
+
+  const isModalUsersLoading = userSearchQuery.trim()
+    ? userSearchResults === undefined
+    : chatSuggestions === undefined;
 
   const toggleUserSelection = (userId: Id<"users">) => {
     setSelectedUsers(prev =>
@@ -64,10 +83,13 @@ export default function ChatPage() {
     if (selectedUsers.length > 1 && !groupName.trim()) return;
 
     // Add current user to participants
-    const participants = [currentUser._id, ...selectedUsers];
-    if (aiUserId) {
-      participants.push (aiUserId);
-    }
+    const participants = Array.from(
+      new Set([
+        currentUser._id,
+        ...selectedUsers,
+        ...(aiUserId ? [aiUserId] : []),
+      ])
+    );
     try {
       const conversationId = await createConversation({
         participants,
@@ -77,14 +99,12 @@ export default function ChatPage() {
       setIsNewChatOpen(false);
       setSelectedUsers([]);
       setGroupName("");
+      setUserSearchQuery("");
       router.push(`/chat/${conversationId}`);
     } catch (error) {
       console.error("Failed to create conversation:", error);
     }
   };
-
-  // Filter users to exclude current user
-  const selectableUsers = allUsers?.filter(u => u._id !== currentUser?._id) || [];
 
   const filteredConversations = conversations?.filter(conv => {
     const isDirectEmptyChat = !conv.isGroup && !conv.lastMessage;
@@ -261,6 +281,7 @@ export default function ChatPage() {
             setTimeout(() => {
               setSelectedUsers([]);
               setGroupName("");
+              setUserSearchQuery("");
             }, 300);
           }}
         />
@@ -285,6 +306,7 @@ export default function ChatPage() {
                 setTimeout(() => {
                   setSelectedUsers([]);
                   setGroupName("");
+                  setUserSearchQuery("");
                 }, 300);
               }}
               className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
@@ -317,8 +339,31 @@ export default function ChatPage() {
             )}
 
             <div className="space-y-2">
-              <div className="text-sm font-semibold text-gray-500 mb-2">Vorschläge</div>
-              {selectableUsers.map(user => {
+              <div className="relative mb-4">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                  <Search className="h-4 w-4" />
+                </div>
+                <input
+                  type="text"
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  placeholder="Nach Kontakten suchen..."
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                />
+              </div>
+
+              <div className="text-sm font-semibold text-gray-500 mb-2">
+                {userSearchQuery.trim() ? "Suchergebnisse" : "Vorschläge"}
+              </div>
+              {isModalUsersLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#d08945]" />
+                </div>
+              ) : displayedUsers.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  {userSearchQuery.trim() ? "Keine Benutzer gefunden." : "Keine Vorschläge gefunden."}
+                </div>
+              ) : displayedUsers.map(user => {
                 const isSelected = selectedUsers.includes(user._id);
                 return (
                   <button
@@ -329,17 +374,25 @@ export default function ChatPage() {
                   >
                     <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                       {user.image ? (
-                        <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                        <img
+                          src={user.image}
+                          alt={(user as { displayName?: string; name?: string }).displayName || user.name}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center font-semibold" style={{ color: "#000000" }}>
-                          {user.name.charAt(0).toUpperCase()}
+                          {((user as { displayName?: string; name?: string }).displayName || user.name).charAt(0).toUpperCase()}
                         </div>
                       )}
 
                     </div>
                     <div className="flex-1">
-                      <div className={`font-medium ${isSelected ? "text-[#D08945]" : "text-black"}`}>{user.name}</div>
-                      <div className="text-xs text-gray-500">@{user.username}</div>
+                      <div className={`font-medium ${isSelected ? "text-[#D08945]" : "text-black"}`}>
+                        {(user as { displayName?: string; name?: string }).displayName || user.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        @{(user as { displayUsername?: string; username?: string }).displayUsername || user.username}
+                      </div>
                     </div>
                   </button>
                 );

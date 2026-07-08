@@ -512,10 +512,10 @@ export function ChatSidebar() {
                       <div key={user._id} className="relative flex flex-col items-center flex-shrink-0 w-12">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200" style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}>
                           {user.image ? (
-                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                            <img src={user.image} alt={user.displayName || user.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center font-semibold text-sm text-black">
-                              {user.name?.charAt(0).toUpperCase() || "?"}
+                              {(user.displayName || user.name)?.charAt(0).toUpperCase() || "?"}
                             </div>
                           )}
                         </div>
@@ -527,7 +527,7 @@ export function ChatSidebar() {
                           <Plus className="w-2.5 h-2.5 rotate-45" />
                         </button>
                         <span className="text-[10px] text-gray-500 truncate w-full text-center mt-1">
-                          {user.name?.split(" ")[0]}
+                          {(user.displayName || user.name)?.split(" ")[0]}
                         </span>
                       </div>
                     ))}
@@ -645,16 +645,20 @@ export function ChatSidebar() {
                       >
                         <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                           {user.image ? (
-                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                            <img src={user.image} alt={user.displayName || user.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center font-semibold text-sm" style={{ color: "#000000" }}>
-                              {user.name?.charAt(0).toUpperCase() || "?"}
+                              {(user.displayName || user.name)?.charAt(0).toUpperCase() || "?"}
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className={`font-semibold text-sm truncate ${isSelected ? "text-[#D08945]" : "text-black"}`}>{user.name}</div>
-                          <div className="text-xs text-gray-500 truncate mt-0.5">@{user.username}</div>
+                          <div className={`font-semibold text-sm truncate ${isSelected ? "text-[#D08945]" : "text-black"}`}>
+                            {user.displayName || user.name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate mt-0.5">
+                            @{user.displayUsername || user.username}
+                          </div>
                           {user.major && (
                             <div className="text-xs text-gray-400 mt-0.5 truncate" title={user.major}>
                               {user.major}
