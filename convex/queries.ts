@@ -1830,6 +1830,20 @@ export const getStudiengangCache = query({
   },
 });
 
+export const getSpoCache = query({
+  args: { sourceId: v.optional(v.string()) },
+  handler: async (ctx, { sourceId }) => {
+    if (sourceId) {
+      return ctx.db
+        .query("spoCache")
+        .withIndex("by_source_id", (q) => q.eq("sourceId", sourceId))
+        .first();
+    }
+
+    return ctx.db.query("spoCache").first();
+  },
+});
+
 export const getMensaCache = query({
   args: {},
   handler: async (ctx) => {
@@ -2029,4 +2043,3 @@ export const getChatSuggestions = query({
     return suggestions;
   },
 });
-
