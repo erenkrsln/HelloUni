@@ -5,6 +5,28 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
+
+export type AiContext = {
+  major: string;
+  semester: number;
+};
+
+export type AiHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AiPublicProfileFacts = {
+  name?: string;
+  username?: string;
+  major?: string;
+  semester?: number;
+  bio?: string;
+  interests?: string[];
+  followerCount?: number;
+  followingCount?: number;
+};
+
 const openRouter = new OpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY,
 });
@@ -18,18 +40,44 @@ async function getChatSystemPrompt() {
     return chatSystemPromptCache;
 }
 
+function buildProfileContext(profileFacts?: AiPublicProfileFacts): string {
+    if (!profileFacts) return '';
+    const parts: string[] = [];
+    if (profileFacts.name) parts.push(`Name: ${profileFacts.name}`);
+    if (profileFacts.username) parts.push(`Username: @${profileFacts.username}`);
+    if (profileFacts.major) parts.push(`Studiengang: ${profileFacts.major}`);
+    if (profileFacts.semester) parts.push(`Semester: ${profileFacts.semester}`);
+    if (profileFacts.bio) parts.push(`Bio: ${profileFacts.bio}`);
+    if (profileFacts.interests?.length) parts.push(`Interessen: ${profileFacts.interests.join(', ')}`);
+    return parts.length ? `\nNutzerprofil:\n${parts.join('\n')}` : '';
+}
+
+function buildHistoryInput(prompt: string, history?: AiHistoryMessage[]): string {
+    if (!history?.length) return prompt;
+    const historyText = history
+        .map(m => `${m.role === 'user' ? 'Nutzer' : 'Assistent'}: ${m.content}`)
+        .join('\n');
+    return `${historyText}\nNutzer: ${prompt}`;
+}
+
 async function askAi(
     prompt: string,
-    major?: string | null,
-    semester?: number | null,
+    context?: AiContext | null,
+    history?: AiHistoryMessage[],
+    profileFacts?: AiPublicProfileFacts,
 ) {
     const chatSystemPrompt = await getChatSystemPrompt();
+
+    const major = context?.major ?? profileFacts?.major ?? null;
+    const semester = context?.semester ?? profileFacts?.semester ?? null;
 
     const today = new Date().toLocaleDateString('de-DE', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
+
     const userContext = `\nHeutiges Datum: ${today}.`
-        + (major ? ` Der Nutzer studiert ${major}${semester ? ` im ${semester}. Semester` : ''}.` : '');
+        + (major ? ` Der Nutzer studiert ${major}${semester ? ` im ${semester}. Semester` : ''}.` : '')
+        + buildProfileContext(profileFacts);
 
     const getMensaPlanTool = tool({
         name: 'getMensaPlan',
@@ -59,7 +107,7 @@ async function askAi(
     const result = openRouter.callModel({
         model: 'google/gemini-2.5-flash',
         instructions: chatSystemPrompt + userContext,
-        input: prompt,
+        input: buildHistoryInput(prompt, history),
         tools,
     });
 
