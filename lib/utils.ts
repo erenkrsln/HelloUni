@@ -3,6 +3,19 @@ import { twMerge } from "tailwind-merge";
 import { isToday, format } from "date-fns";
 import { de } from "date-fns/locale";
 
+export const parseTerminStartDate = (dateStr: string): Date | null => {
+  const m = dateStr.match(/(\d{2})\.(\d{2})\.(\d{4})/)
+  return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null
+}
+
+export const parseTerminEndDate = (dateStr: string): Date | null => {
+  if (/^ab\s/i.test(dateStr.trim())) return new Date(9999, 11, 31)
+  const all = [...dateStr.matchAll(/(\d{2})\.(\d{2})\.(\d{4})/g)]
+  if (!all.length) return null
+  const last = all[all.length - 1]
+  return new Date(+last[3], +last[2] - 1, +last[1])
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

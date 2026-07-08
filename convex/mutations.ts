@@ -1,5 +1,5 @@
 import { mutation, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { shouldDeleteR2File, createNotification } from "./helpers";
 
@@ -704,6 +704,8 @@ export const createConversation = mutation({
     participants: v.array(v.id("users")),
     name: v.optional(v.string()), // Optionaler Name für Gruppen
     creatorId: v.optional(v.id("users")), // Add creatorId argument
+    isPublic: v.optional(v.boolean()),
+    needsRequestToJoin: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const isGroup = args.participants.length > 2 || !!args.name;
@@ -717,13 +719,23 @@ export const createConversation = mutation({
         c.participants.includes(args.participants[1]) &&
         c.participants.length === 2
       );
-      if (existing) return existing._id;
+      if (existing) {
+        // Wenn der Chat von einem Teilnehmer gelöscht wurde, heben wir das Löschen auf
+        if (existing.deletedBy && existing.deletedBy.length > 0) {
+          await ctx.db.patch(existing._id, {
+            deletedBy: undefined
+          });
+        }
+        return existing._id;
+      }
     }
 
     const conversationId = await ctx.db.insert("conversations", {
       participants: args.participants,
       name: args.name,
       isGroup,
+      isPublic: isGroup ? (args.isPublic ?? false) : undefined,
+      needsRequestToJoin: isGroup ? (args.needsRequestToJoin ?? false) : undefined,
       creatorId: args.creatorId,
       adminIds: args.creatorId ? [args.creatorId] : undefined, // Creator is initially the only admin
       updatedAt: Date.now(),
@@ -873,10 +885,11 @@ export const sendMessage = mutation({
       });
     }
 
-    // Update conversation: lastMessageId und updatedAt
+    // Update conversation: lastMessageId und updatedAt, and clear deletedBy
     await ctx.db.patch(args.conversationId, {
       lastMessageId: messageId,
       updatedAt: Date.now(),
+      deletedBy: undefined,
     });
 
     // Push notification to the other participants (best-effort, never blocks send)
@@ -962,6 +975,7 @@ export const sendChatPoll = mutation({
     await ctx.db.patch(args.conversationId, {
       lastMessageId: messageId,
       updatedAt: Date.now(),
+      deletedBy: undefined,
     });
 
     return { pollId, messageId };
@@ -1182,15 +1196,15 @@ export const leaveGroup = mutation({
   },
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation) throw new ConvexError("Conversation not found");
 
     if (!conversation.participants.includes(args.userId)) {
-      throw new Error("User not in group");
+      throw new ConvexError("User not in group");
     }
 
     // If user is the creator, they must transfer creator status first
     if (conversation.creatorId === args.userId) {
-      throw new Error("Creator must transfer creator status before leaving the group");
+      throw new ConvexError("Creator must transfer creator status before leaving the group");
     }
 
     const newParticipants = conversation.participants.filter(id => id !== args.userId);
@@ -1239,21 +1253,30 @@ export const deleteConversationFromList = mutation({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) throw new Error("Conversation not found");
 
-    // Only allow if user is in leftParticipants
-    if (!conversation.leftParticipants?.includes(args.userId)) {
-      // Or if they are in participants? If they delete active chat -> implies leaving?
-      // User requirement: "after leaving... or being removed... list option to delete".
-      // So strict check for leftParticipants is safer.
-      throw new Error("Cannot delete active conversation. Leave first.");
+    if (conversation.isGroup) {
+      // Only allow if user is in leftParticipants
+      if (!conversation.leftParticipants?.includes(args.userId)) {
+        throw new Error("Cannot delete active conversation. Leave first.");
+      }
+
+      const newLeftParticipants = conversation.leftParticipants.filter(id => id !== args.userId);
+      const newMetadata = (conversation.leftMetadata || []).filter(m => m.userId !== args.userId);
+
+      await ctx.db.patch(args.conversationId, {
+        leftParticipants: newLeftParticipants,
+        leftMetadata: newMetadata,
+      });
+    } else {
+      // For individual (1:1) chats, add the user's ID to deletedBy array
+      const currentDeleted = conversation.deletedBy || [];
+      const newDeleted = currentDeleted.includes(args.userId)
+        ? currentDeleted
+        : [...currentDeleted, args.userId];
+
+      await ctx.db.patch(args.conversationId, {
+        deletedBy: newDeleted,
+      });
     }
-
-    const newLeftParticipants = conversation.leftParticipants.filter(id => id !== args.userId);
-    const newMetadata = (conversation.leftMetadata || []).filter(m => m.userId !== args.userId);
-
-    await ctx.db.patch(args.conversationId, {
-      leftParticipants: newLeftParticipants,
-      leftMetadata: newMetadata,
-    });
   }
 });
 
@@ -1544,6 +1567,15 @@ export const markAsRead = mutation({
         userId: args.userId,
         conversationId: args.conversationId,
         lastReadAt: Date.now(),
+      });
+    }
+
+    // Falls die Konversation als gelöscht markiert war, entfernen wir den User aus deletedBy
+    const conversation = await ctx.db.get(args.conversationId);
+    if (conversation && conversation.deletedBy?.includes(args.userId)) {
+      const newDeleted = conversation.deletedBy.filter(id => id !== args.userId);
+      await ctx.db.patch(args.conversationId, {
+        deletedBy: newDeleted.length > 0 ? newDeleted : undefined,
       });
     }
   },

@@ -100,7 +100,7 @@ svg {
 }
 
 /* Desktop: Scrollbar immer sichtbar (native Farbe) */
-@media (min-width: 1024px) {
+@media (min-width: 1230px) {
   html {
     overflow-y: scroll;
     scrollbar-width: auto;

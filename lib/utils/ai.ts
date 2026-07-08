@@ -38,9 +38,8 @@ export type AiPublicProfileFacts = {
   followerCount?: number;
   followingCount?: number;
 };
-
 const openRouter = new OpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
+    apiKey: process.env.OPENROUTER_API_KEY,
 });
 
 let chatSystemPromptCache: string | null = null;
@@ -663,7 +662,6 @@ async function askAi(
   });
   return fallbackFromTools || "Sorry, ich konnte die Antwort nicht zuverlässig ermitteln.";
 }
-
 async function getChatSystemPrompt() {
   if (chatSystemPromptCache) return chatSystemPromptCache;
   const filePath = join(process.cwd(), "assets", "prompts", "system-chatbot.md");
@@ -678,4 +676,4 @@ async function getAiUserId() {
   return (aiUser?._id ?? "ai") as Id<"users">;
 }
 
-export { askAi, getAiUserId };
+export { askAi };

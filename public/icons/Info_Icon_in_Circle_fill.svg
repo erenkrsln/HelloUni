@@ -6,7 +6,7 @@
         fill: none;
         stroke: currentColor;
         stroke-miterlimit: 10;
-        stroke-width: 42px;
+        stroke-width: 56px;
       }
 
       .cls-2 {

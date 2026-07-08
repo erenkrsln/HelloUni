@@ -131,6 +131,7 @@ export default defineSchema({
     adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
     creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
+    deletedBy: v.optional(v.array(v.id("users"))), // Array von User IDs die den Chat gelöscht haben
     updatedAt: v.number(),
   }).index("by_participant", ["participants"]), // Dies könnte ineffizient sein, aber für V1 ok
 
@@ -419,6 +420,15 @@ export default defineSchema({
 
   mensaCache: defineTable({
     meals: v.array(v.object({ name: v.string(), price: v.string() })),
+    scrapedAt: v.number(),
+  }),
+
+  semesterTermineCache: defineTable({
+    label: v.string(),
+    termine: v.array(v.object({
+      date: v.string(),
+      description: v.string(),
+    })),
     scrapedAt: v.number(),
   }),
   // ─── Voice & Video Calls ───────────────────────────────────────────────────

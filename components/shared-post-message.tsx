@@ -45,7 +45,7 @@ export function SharedPostMessage({ postId, currentUserId, isMe }: SharedPostMes
 
   return (
     <div
-      onClick={() => router.push(`/posts/${postId}`)}
+      onClick={() => router.push(`/post/${postId}`)}
       className="flex flex-col w-full max-w-[320px] sm:max-w-[360px] bg-white rounded-2xl overflow-hidden mt-1 cursor-pointer"
     >
       <div className="flex items-center justify-between px-3 py-2">

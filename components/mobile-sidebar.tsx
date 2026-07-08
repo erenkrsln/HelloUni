@@ -130,10 +130,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 router.push("/info");
                 onClose();
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+              className="w-full flex items-start gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left leading-normal"
             >
               <Info className="w-5 h-5 text-black flex-shrink-0" />
-              <span>Info</span>
+              <div className='flex w-full flex-col items-start justify-center gap-[2px]'>
+                <span>Info</span>
+                <span className='text-[11px] opacity-[0.42]'>Dein Studium, Semestertermine, Mensaplan...</span>
+              </div>
             </button>
             <button
               onClick={() => {

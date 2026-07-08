@@ -24,6 +24,7 @@ const cleanMealName = (rawHtml: string) =>
     .replace(/<\/br>/g, "")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
+    .replace(/\s*[\(\[][A-Za-z0-9,\s]+[\)\]]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -198,6 +199,63 @@ export const scrapeOneStudiengang = internalAction({
       pdfContents,
     });
     console.log(`[scrapeOneStudiengang] Gecacht: ${major}`);
+  },
+});
+
+// ─── Semestertermine ──────────────────────────────────────────────────────────
+
+const SOSE_URL = "https://www.th-nuernberg.de/studium-karriere/wichtiges-zum-studienstart/termine-im-ueberblick/sommersemester/";
+const SOSE_LABEL = "Sommersemester 2026";
+
+async function fetchSemesterTermine(): Promise<{
+  label: string;
+  termine: Array<{ date: string; description: string }>;
+}> {
+  const response = await fetch(SOSE_URL);
+  if (!response.ok) return { label: SOSE_LABEL, termine: [] };
+
+  const html = await response.text();
+
+  const tableMatch = html.match(/<table[^>]*class="[^"]*contenttable[^"]*"[^>]*>([\s\S]*?)<\/table>/i);
+  if (!tableMatch) return { label: SOSE_LABEL, termine: [] };
+
+  const cleanCell = (raw: string) =>
+    raw
+      .replace(/<sup>[\s\S]*?<\/sup>/gi, "")
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const rowMatches = Array.from(tableMatch[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi));
+
+  const termine = rowMatches
+    .map((rowMatch) => {
+      const cells = Array.from(rowMatch[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi));
+      if (cells.length < 2) return null;
+
+      const dateRaw = cells[0][1];
+      const descRaw = cells[1][1];
+
+      const date = cleanCell(dateRaw);
+      const description = cleanCell(descRaw);
+
+      return date && description ? { date, description } : null;
+    })
+    .filter((t): t is NonNullable<typeof t> => t !== null);
+
+  return { label: SOSE_LABEL, termine };
+}
+
+/** Scrapt die Semestertermine (SoSe 2026) und cacht sie.
+ *  Wird zum Semesterbeginn vom Cron aufgerufen; kann auch manuell im Convex Dashboard gestartet werden. */
+export const scrapeSemesterTermine = action({
+  args: {},
+  handler: async (ctx) => {
+    const { label, termine } = await fetchSemesterTermine();
+    await ctx.runMutation(api.scrapingMutations.upsertSemesterTermineCache, { label, termine });
+    console.log(`[scrapeSemesterTermine] ${termine.length} Termine gecacht (${label}).`);
   },
 });
 
