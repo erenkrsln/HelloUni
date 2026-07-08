@@ -4,22 +4,28 @@ import { useState } from "react";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
-import { Plus, Calendar, Users, ListTodo } from "lucide-react";
-import { useQuery } from "convex/react";
+import { Plus, Calendar, Users, ListTodo, Trash2, Check } from "lucide-react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import Link from "next/link";
 import { CreateGroupModal } from "@/components/workspace-create-group-modal";
+import { PersonalTodoModal } from "@/components/personal-todo-modal";
 
 export default function WorkspacePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [isCreateTodoModalOpen, setIsCreateTodoModalOpen] = useState(false);
   const { currentUser } = useCurrentUser();
 
   // Fetch Real Data via Convex
   const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
   const rawEvents = useQuery(api.events.listByUser, currentUser ? { userId: currentUser._id } : "skip");
-  const pendingTasksData = useQuery(api.workspace.listPendingTasksByUser, currentUser ? { userId: currentUser._id } : "skip");
+  const personalTodos = useQuery(api.workspace.getPersonalTodos, currentUser ? { userId: currentUser._id } : "skip");
+  
+  // Mutations
+  const toggleTodoCompletion = useMutation(api.workspace.togglePersonalTodoCompletion);
+  const deletePersonalTodo = useMutation(api.workspace.deletePersonalTodo);
 
   // Format Data
   const myGroups = allConversations?.filter(conv => conv.isGroup) || [];
@@ -29,8 +35,28 @@ export default function WorkspacePage() {
   const upcomingEvents = rawEvents?.filter(e => e.endTime >= Date.now())
                                   .sort((a,b) => a.startTime - b.startTime)
                                   .slice(0, 3) || [];
-  // Pending Tasks
-  const pendingTasks = pendingTasksData || [];
+  
+  // Personal To-Dos (incomplete)
+  const pendingTodos = personalTodos?.filter(t => !t.completed) || [];
+
+  const handleToggleTodo = async (todoId: string, completed: boolean) => {
+    if (currentUser) {
+      await toggleTodoCompletion({
+        todoId: todoId as any,
+        userId: currentUser._id,
+        completed: !completed,
+      });
+    }
+  };
+
+  const handleDeleteTodo = async (todoId: string) => {
+    if (currentUser && confirm("Delete this to-do?")) {
+      await deletePersonalTodo({
+        todoId: todoId as any,
+        userId: currentUser._id,
+      });
+    }
+  };
 
   return (
     <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden bg-white">
@@ -52,10 +78,10 @@ export default function WorkspacePage() {
              <Users size={16} /> New Group
            </button>
            <button 
-             onClick={() => alert("Please open a specific Workspace from the Dashboard below to add tasks.")}
+             onClick={() => setIsCreateTodoModalOpen(true)}
              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm font-medium whitespace-nowrap hover:bg-gray-200 transition-colors cursor-pointer"
            >
-             <ListTodo size={16} /> Add Task
+             <ListTodo size={16} /> Personal To-Do
            </button>
         </div>
 
@@ -83,19 +109,47 @@ export default function WorkspacePage() {
             
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
               <h3 className="font-medium text-blue-800 flex items-center gap-2 mb-2">
-                <ListTodo size={18} /> Pending Tasks
+                <ListTodo size={18} /> My To-Dos
               </h3>
               <ul className="space-y-2">
-                {pendingTasks.length > 0 ? pendingTasks.map(task => (
-                  <li key={task._id} className="text-sm text-gray-700 bg-white p-2 rounded-lg shadow-sm border border-blue-50 flex justify-between items-center cursor-pointer">
-                    <div>
-                      <span className="font-medium block text-gray-900">{task.title}</span>
-                      <span className="text-xs text-gray-500">{task.deadline || "No deadline"}</span>
+                {pendingTodos.length > 0 ? pendingTodos.map(todo => (
+                  <li key={todo._id} className="text-sm text-gray-700 bg-white p-2 rounded-lg shadow-sm border border-blue-50 flex justify-between items-start gap-2">
+                    <div className="flex-1">
+                      <span className="font-medium block text-gray-900">{todo.title}</span>
+                      {todo.dueDate && (
+                        <span className="text-xs text-gray-500">
+                          Due: {new Date(todo.dueDate).toLocaleDateString()}
+                        </span>
+                      )}
+                      {todo.priority && (
+                        <span className={`text-xs font-medium rounded-full px-2 py-1 inline-block mt-1 ${
+                          todo.priority === "high" ? "bg-red-100 text-red-700" :
+                          todo.priority === "medium" ? "bg-yellow-100 text-yellow-700" :
+                          "bg-green-100 text-green-700"
+                        }`}>
+                          {todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1)}
+                        </span>
+                      )}
                     </div>
-                    <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleToggleTodo(todo._id, todo.completed)}
+                        className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
+                        title="Mark complete"
+                      >
+                        <Check size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTodo(todo._id)}
+                        className="p-1.5 hover:bg-red-100 rounded-lg transition-colors text-red-600"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </li>
                 )) : (
-                  <li className="text-sm text-gray-500 py-2">No pending tasks. You're all caught up!</li>
+                  <li className="text-sm text-gray-500 py-2">No to-dos. You're all caught up!</li>
                 )}
               </ul>
             </div>
@@ -167,6 +221,11 @@ export default function WorkspacePage() {
       
       <BottomNavigation />
       <CreateGroupModal isOpen={isCreateGroupModalOpen} onClose={() => setIsCreateGroupModalOpen(false)} />
+      <PersonalTodoModal 
+        isOpen={isCreateTodoModalOpen} 
+        onClose={() => setIsCreateTodoModalOpen(false)}
+        onSuccess={() => setIsCreateTodoModalOpen(false)}
+      />
     </main>
   );
 }

@@ -741,3 +741,119 @@ export const deletePoll = mutation({
     await ctx.db.delete(args.pollId);
   },
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// PERSONAL TO-DOS
+// ────────────────────────────────────────────────────────────────────────────
+
+export const getPersonalTodos = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const todos = await ctx.db
+      .query("personal_todos")
+      .withIndex("by_user_created", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .collect();
+
+    return todos;
+  },
+});
+
+export const createPersonalTodo = mutation({
+  args: {
+    userId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    dueDate: v.optional(v.number()),
+    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const todoId = await ctx.db.insert("personal_todos", {
+      userId: args.userId,
+      title: args.title,
+      description: args.description,
+      dueDate: args.dueDate,
+      priority: args.priority || "medium",
+      status: "pending",
+      completed: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return todoId;
+  },
+});
+
+export const updatePersonalTodo = mutation({
+  args: {
+    todoId: v.id("personal_todos"),
+    userId: v.id("users"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    dueDate: v.optional(v.number()),
+    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+  },
+  handler: async (ctx, args) => {
+    const todo = await ctx.db.get(args.todoId);
+    if (!todo) throw new Error("To-do not found");
+
+    // Only the owner can update
+    if (todo.userId !== args.userId) {
+      throw new Error("Unauthorized: To-do does not belong to you");
+    }
+
+    const updates: any = { updatedAt: Date.now() };
+    if (args.title !== undefined) updates.title = args.title;
+    if (args.description !== undefined) updates.description = args.description;
+    if (args.dueDate !== undefined) updates.dueDate = args.dueDate;
+    if (args.priority !== undefined) updates.priority = args.priority;
+
+    await ctx.db.patch(args.todoId, updates);
+  },
+});
+
+export const togglePersonalTodoCompletion = mutation({
+  args: {
+    todoId: v.id("personal_todos"),
+    userId: v.id("users"),
+    completed: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const todo = await ctx.db.get(args.todoId);
+    if (!todo) throw new Error("To-do not found");
+
+    // Only the owner can toggle
+    if (todo.userId !== args.userId) {
+      throw new Error("Unauthorized: To-do does not belong to you");
+    }
+
+    await ctx.db.patch(args.todoId, {
+      completed: args.completed,
+      status: args.completed ? "completed" : "pending",
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const deletePersonalTodo = mutation({
+  args: {
+    todoId: v.id("personal_todos"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const todo = await ctx.db.get(args.todoId);
+    if (!todo) throw new Error("To-do not found");
+
+    // Only the owner can delete
+    if (todo.userId !== args.userId) {
+      throw new Error("Unauthorized: To-do does not belong to you");
+    }
+
+    await ctx.db.delete(args.todoId);
+  },
+});
+

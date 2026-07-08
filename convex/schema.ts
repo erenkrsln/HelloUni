@@ -464,4 +464,19 @@ export default defineSchema({
   })
     .index("by_call", ["callId"])
     .index("by_created", ["createdAt"]),
+
+  personal_todos: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    dueDate: v.optional(v.number()), // timestamp
+    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    status: v.optional(v.union(v.literal("pending"), v.literal("completed"))),
+    completed: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_completed", ["userId", "completed"])
+    .index("by_user_created", ["userId", "createdAt"]),
 });
