@@ -3,10 +3,11 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
 
-const AI_ASSISTANT_USERNAME = "chatbot";
-const AI_ASSISTANT_DISPLAY_NAME = "Jastell";
+const AI_ASSISTANT_USERNAME = "jastell";
+const AI_ASSISTANT_DISPLAY_NAME = "Jastell (HelloUni-KI)";
 const AI_ASSISTANT_SEARCH_ALIASES = [
   "jastell",
+  "hellounki",
   "ai assistent",
   "ki assistent",
   "assistent",

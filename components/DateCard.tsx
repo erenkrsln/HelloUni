@@ -1,3 +1,4 @@
+'use client'
 import { useState, useRef, useLayoutEffect } from 'react'
 
 interface DateCardProps {

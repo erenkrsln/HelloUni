@@ -21,9 +21,8 @@ const ALLOWED_TYPES = new Set([
     "image/gif",
     "image/webp",
     "video/mp4",
-    "application/pdf",
-    "video/mp4",
     "video/quicktime",
+    "application/pdf"
 ]);
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;

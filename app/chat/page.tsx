@@ -29,7 +29,7 @@ export default function ChatPage() {
 
   const aiUserId = useQuery(
       api.queries.getUserByUsername,
-      { username: "chatbot" }
+      { username: "jastell" }
   ) ?._id;
 
   useEffect(() => {

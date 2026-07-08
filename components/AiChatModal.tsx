@@ -238,7 +238,7 @@ const AiChatModal = () => {
               </div>
             </div>
             <span className={`text-[17px] font-bold leading-normal text-black text-left whitespace-nowrap transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? '' : 'opacity-0'}`}>
-              HelloUni-KI
+              Jastell (HelloUni-KI)
             </span>
           </div>
           <button

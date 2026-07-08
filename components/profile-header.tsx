@@ -403,7 +403,7 @@ export function ProfileHeader({
             </div>
 
             {/* Profile Information */}
-            <div className="px-4 pb-4 space-y-3 mt-2 sm:-mt-2">
+            <div className="px-4 pb-4 space-y-3 mt-[11px]">
                 {/* Name and Username */}
                 <div>
                     <div className="flex items-center gap-3 mb-1">
@@ -599,8 +599,8 @@ function FollowsModal({ isOpen, onClose, userId, currentUserId, type }: FollowsM
                         </div>
                     ) : (
                         list.map((user: any) => (
-                            <div 
-                                key={user._id} 
+                            <div
+                                key={user._id}
                                 onClick={() => {
                                     router.push(`/profile/${user.username}`);
                                     onClose();

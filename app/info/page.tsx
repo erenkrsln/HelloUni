@@ -177,7 +177,7 @@ function InfoPageContent() {
             <div className='w-full tablet:max-w-[768px] flex flex-col items-center justify-center gap-[56px] tablet:gap-[82px] desktop:gap-[114px]'>
               <div className='w-full flex flex-col items-center justify-center gap-[56px]'>
                 <div className='w-full flex flex-col items-center justify-center'>
-                  <div className='relative flex w-full items-center justify-center gap-[11px]'>
+                  <div className='relative flex w-full items-center justify-center gap-[11px] px-[22px] py-[11px]'>
                     <div className='absolute bg-[#F78D57] inset-y-0 -inset-x-[22px] tablet:inset-x-0 tablet:rounded-[8px]' />
                     <InfoIcon className='w-[28px] fill-current text-black shrink-0 z-[1]' />
                     <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-black desktop:text-center z-[1]'>

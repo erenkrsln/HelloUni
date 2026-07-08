@@ -74,7 +74,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const aiUserId = useQuery(
         api.queries.getUserByUsername,
-        { username: "chatbot" }
+        { username: "jastell" }
     ) ?._id;
     const followerCount = useQuery(
         api.queries.getFollowerCount,
