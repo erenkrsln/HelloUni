@@ -382,20 +382,19 @@ export const addMember = mutation({
 export const removeMember = mutation({
   args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
   handler: async (ctx, args) => {
-    const group = await ctx.db
-      .query("workspace_groups")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
-      .first();
-    if (!group) throw new Error("Group not found");
+    const group = await ctx.db.get(args.conversationId);
+    if (!group || !group.isGroup) throw new Error("Group not found");
 
-    if (group.ownerId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
+    if (group.creatorId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
       throw new Error("Not authorized to remove members");
     }
 
-    const conv = await ctx.db.get(args.conversationId);
-    if (!conv) throw new Error("Conversation not found");
+    // Cannot remove owner
+    if (group.creatorId === args.userId) {
+      throw new Error("Cannot remove group owner");
+    }
 
-    const participants = conv.participants || [];
+    const participants = group.participants || [];
     if (participants.includes(args.userId)) {
       await ctx.db.patch(args.conversationId, { participants: participants.filter((p: any) => p !== args.userId) });
     }
@@ -414,16 +413,13 @@ export const removeMember = mutation({
 export const promoteToAdmin = mutation({
   args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
   handler: async (ctx, args) => {
-    const group = await ctx.db
-      .query("workspace_groups")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
-      .first();
-    if (!group) throw new Error("Group not found");
-    if (group.ownerId !== args.actorId) throw new Error("Only owner can promote");
+    const group = await ctx.db.get(args.conversationId);
+    if (!group || !group.isGroup) throw new Error("Group not found");
+    if (group.creatorId !== args.actorId) throw new Error("Only owner can promote");
 
     const admins = group.adminIds || [];
     if (!admins.includes(args.userId)) {
-      await ctx.db.patch(group._id, { adminIds: [...admins, args.userId] });
+      await ctx.db.patch(args.conversationId, { adminIds: [...admins, args.userId] });
     }
   },
 });
@@ -432,16 +428,13 @@ export const promoteToAdmin = mutation({
 export const demoteAdmin = mutation({
   args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
   handler: async (ctx, args) => {
-    const group = await ctx.db
-      .query("workspace_groups")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
-      .first();
-    if (!group) throw new Error("Group not found");
-    if (group.ownerId !== args.actorId) throw new Error("Only owner can demote");
+    const group = await ctx.db.get(args.conversationId);
+    if (!group || !group.isGroup) throw new Error("Group not found");
+    if (group.creatorId !== args.actorId) throw new Error("Only owner can demote");
 
     const admins = group.adminIds || [];
     if (admins.includes(args.userId)) {
-      await ctx.db.patch(group._id, { adminIds: admins.filter((a: any) => a !== args.userId) });
+      await ctx.db.patch(args.conversationId, { adminIds: admins.filter((a: any) => a !== args.userId) });
     }
   },
 });
@@ -883,3 +876,47 @@ export const leaveGroup = mutation({
     });
   },
 });
+
+// Add member to group (Owner/Admin only)
+export const addMemberToGroup = mutation({
+  args: {
+    groupId: v.id("conversations"),
+    userId: v.id("users"),
+    actorId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Get group
+    const group = await ctx.db.get(args.groupId);
+    if (!group || !group.isGroup) throw new Error("Group not found");
+
+    // Check permissions: Owner or Admin
+    if (group.creatorId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
+      throw new Error("Not authorized to add members");
+    }
+
+    // Check if user already in group
+    if ((group.participants || []).includes(args.userId)) {
+      throw new Error("User is already a member of this group");
+    }
+
+    // Verify the user to add exists
+    const userToAdd = await ctx.db.get(args.userId);
+    if (!userToAdd) throw new Error("User not found");
+
+    // Add user to group
+    const updatedParticipants = [...(group.participants || []), args.userId];
+    await ctx.db.patch(args.groupId, {
+      participants: updatedParticipants,
+    });
+
+    // Log activity
+    await ctx.db.insert("workspace_activity", {
+      workspaceId: args.groupId,
+      actorId: args.actorId,
+      type: "member_joined",
+      data: { userId: args.userId },
+      createdAt: Date.now(),
+    });
+  },
+});
+

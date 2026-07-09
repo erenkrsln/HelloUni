@@ -8,10 +8,12 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { MoreVertical, Plus, LogOut } from "lucide-react";
 import { useToast } from "@/components/toast";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+import { AddMemberModal } from "@/components/add-member-modal";
 
 export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
   const { currentUser } = useCurrentUser();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<{
     type: "remove" | "promote" | "demote" | "leave";
     memberName: string;
@@ -144,7 +146,11 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
           <p className="text-sm text-slate-500">{members?.length || 0} in this {isGroup ? "group" : "workspace"}</p>
         </div>
         {canManageMembers && (
-          <button className="p-2 rounded-full bg-[#D08945] text-white hover:bg-[#b07335] transition-colors" title="Add member (coming soon)">
+          <button 
+            onClick={() => setIsAddMemberModalOpen(true)}
+            className="p-2 rounded-full bg-[#D08945] text-white hover:bg-[#b07335] transition-colors" 
+            title="Add member"
+          >
             <Plus size={16} />
           </button>
         )}
@@ -292,6 +298,20 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
           </div>
         )}
       </div>
+
+      {/* Add Member Modal */}
+      {isGroup && (
+        <AddMemberModal
+          isOpen={isAddMemberModalOpen}
+          onClose={() => setIsAddMemberModalOpen(false)}
+          groupId={entityId}
+          currentMembers={members || []}
+          onMemberAdded={() => {
+            setIsAddMemberModalOpen(false);
+            // Refresh members list by closing and reopening would trigger query re-fetch
+          }}
+        />
+      )}
 
       {/* Confirmation Dialog */}
       <ConfirmationDialog
