@@ -103,12 +103,13 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 w-full bg-white bg-opacity-[0.65] backdrop-blur-[57px] z-[70] pt-safe-top"
+      className="fixed top-0 left-0 right-0 w-full z-[70] pt-safe-top"
       style={{
         height: `calc(80px + env(safe-area-inset-top, 0px))`,
         minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
       }}
     >
+      <div className="absolute inset-0 bg-white bg-opacity-[0.65] backdrop-blur-[57px] pointer-events-none" />
       <div className="relative w-full h-[80px]">
         {/* Clickable area for logo sidebar - left third of header */}
         <button
