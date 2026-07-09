@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Link as LinkIcon, Share2, Send } from "lucide-react";
+import { X, Link as LinkIcon, Share2 } from "lucide-react";
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { useEffect, useState } from "react";
 
@@ -106,7 +106,7 @@ export function ShareMenuModal({ isOpen, onClose, postId, postTitle, onInternalS
               className="flex flex-col items-center gap-2 group w-full"
             >
               <div className="w-14 h-14 rounded-full bg-[#D08945] text-white flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-                <Send size={24} />
+                <img src="/logo2.svg" alt="HelloUni" className="w-7 h-7 object-contain brightness-0 invert" />
               </div>
               <span className="text-[11px] sm:text-xs font-medium text-gray-700 text-center leading-tight">In HelloUni</span>
             </button>
