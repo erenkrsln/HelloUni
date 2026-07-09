@@ -1166,10 +1166,37 @@ export const getGroupById = query({
       _id: group._id,
       name: group.name,
       description: group.description,
+      icon: group.icon,
       creatorId: group.creatorId,
       adminIds: group.adminIds || [],
       participants: group.participants || [],
       isGroup: group.isGroup,
+    };
+  },
+});
+
+export const getWorkspaceGroup = query({
+  args: { groupId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    // Get workspace group metadata from workspace_groups table
+    const workspaceGroup = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.groupId))
+      .first();
+
+    if (!workspaceGroup) return null;
+
+    return {
+      _id: workspaceGroup._id,
+      conversationId: workspaceGroup.conversationId,
+      title: workspaceGroup.title,
+      description: workspaceGroup.description,
+      groupType: workspaceGroup.groupType,
+      currentGoal: workspaceGroup.currentGoal,
+      visibility: workspaceGroup.visibility,
+      createdAt: workspaceGroup.createdAt,
+      ownerId: workspaceGroup.ownerId,
+      adminIds: workspaceGroup.adminIds || [],
     };
   },
 });
@@ -1910,5 +1937,74 @@ export const getUserGroupsForProfile = query({
     );
 
     return enrichedGroups;
+  },
+});
+
+// Get group tasks assigned to the current user
+export const getAssignedGroupTasks = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    // Get all tasks assigned to the user
+    const assignedTasks = await ctx.db
+      .query("workspace_tasks")
+      .withIndex("by_assignee", (q) => q.eq("assigneeId", args.userId))
+      .collect();
+
+    // Filter to include only tasks from groups where user is a member
+    // and status is not "done"
+    const userConversations = await ctx.db
+      .query("conversations")
+      .collect();
+
+    const userGroups = new Set(
+      userConversations
+        .filter((conv: any) => {
+          const isGroup = conv.isGroup === true;
+          const isParticipant = conv.participants && conv.participants.includes(args.userId);
+          const isActive = !conv.leftParticipants || !conv.leftParticipants.includes(args.userId);
+          return isGroup && isParticipant && isActive;
+        })
+        .map((conv: any) => conv._id.toString())
+    );
+
+    // Filter assigned tasks to only those in user's groups and not done
+    const relevantTasks = assignedTasks.filter((task: any) => {
+      const groupId = task.workspaceId.replace("group_", "");
+      return userGroups.has(groupId) && task.status !== "done";
+    });
+
+    // Enrich tasks with group names and sort by due date
+    const enrichedTasks = await Promise.all(
+      relevantTasks.map(async (task: any) => {
+        const groupId = task.workspaceId.replace("group_", "");
+        const group = await ctx.db.get(groupId as any);
+        const groupName = (group && "name" in group) ? (group.name as string) : "Unknown Group";
+        
+        return {
+          _id: task._id,
+          title: task.title,
+          description: task.description,
+          dueDate: task.deadline,
+          priority: task.priority || "medium",
+          status: task.status || "todo",
+          visibility: task.visibility,
+          groupId: groupId,
+          groupName: groupName,
+          workspaceId: task.workspaceId,
+          createdAt: task.createdAt,
+          isGroupTask: true,
+        };
+      })
+    );
+
+    // Sort by due date (soonest first)
+    enrichedTasks.sort((a: any, b: any) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+
+    return enrichedTasks;
   },
 });

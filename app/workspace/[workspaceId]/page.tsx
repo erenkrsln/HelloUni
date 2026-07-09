@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MessageSquare, ListTodo, Folder, Users, BarChart2, Calendar } from "lucide-react";
+import { ArrowLeft, MessageSquare, ListTodo, Folder, Users, BarChart2, Calendar, Layout, Info } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -10,7 +10,9 @@ import { WorkspaceTasks } from "@/components/workspace-tasks";
 import { WorkspaceFiles } from "@/components/workspace-files";
 import { WorkspacePolls } from "@/components/workspace-polls";
 import { WorkspaceMembers } from "@/components/workspace-members";
+import { WorkspaceGroupInfoEnhanced } from "@/components/workspace-group-info-enhanced";
 import { WorkspaceEvents } from "@/components/workspace-events";
+import { WorkspaceOverview } from "@/components/workspace-overview";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useMutation } from "convex/react";
 import Link from "next/link";
@@ -18,27 +20,43 @@ import Link from "next/link";
 export default function WorkspaceHubPage({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = use(params);
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"chat" | "tasks" | "files" | "polls" | "members" | "events">("chat");
+  const [activeTab, setActiveTab] = useState<"overview" | "chat" | "tasks" | "files" | "polls" | "group-info" | "events">("overview");
   const { currentUser } = useCurrentUser();
   const getOrCreateEventChat = useMutation(api.workspace.getOrCreateEventChat);
-  const groupDisplay = useQuery(api.queries.getConversationDisplay, workspaceId.startsWith("group_") ? { conversationId: workspaceId.replace("group_", "") as Id<"conversations"> } : "skip");
-  const groupMembers = useQuery(api.queries.getConversationMembers, workspaceId.startsWith("group_") ? { conversationId: workspaceId.replace("group_", "") as Id<"conversations"> } : "skip");
-  const [isNavigating, setIsNavigating] = useState(false);
-
+  
   // Determine if it's an event or group based on prefix
   const isEvent = workspaceId.startsWith("event_");
   const isGroup = workspaceId.startsWith("group_");
   
-  const entityId = workspaceId.replace("event_", "").replace("group_", "");
+  const groupId = workspaceId.replace("group_", "") as Id<"conversations">;
+  const eventId = workspaceId.replace("event_", "") as Id<"events">;
+  
+  const groupDisplay = useQuery(api.queries.getConversationDisplay, isGroup ? { conversationId: groupId } : "skip");
+  const groupMembers = useQuery(api.queries.getConversationMembers, isGroup ? { conversationId: groupId } : "skip");
+  
+  // For events, fetch the event to get its group relationship
+  const eventData = useQuery(
+    api.events.getById,
+    isEvent ? { eventId } : "skip"
+  );
+  
+  // If event belongs to a group, fetch that group
+  const eventGroupId = eventData?.workspaceId?.replace("group_", "") as Id<"conversations"> | undefined;
+  const eventGroup = useQuery(
+    api.queries.getConversationDisplay,
+    eventGroupId ? { conversationId: eventGroupId } : "skip"
+  );
+  
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleOpenChat = async () => {
     if (isGroup) {
-      router.push(`/chat/${entityId}`);
+      router.push(`/chat/${groupId}`);
     } else if (isEvent && currentUser) {
       setIsNavigating(true);
       try {
         const conversationId = await getOrCreateEventChat({
-          eventId: entityId as Id<"events">,
+          eventId,
           userId: currentUser._id,
         });
         router.push(`/chat/${conversationId}`);
@@ -53,6 +71,8 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
   // Render proper tab content based on activeTab
   const renderTabContent = () => {
     switch (activeTab) {
+      case "overview":
+        return <WorkspaceOverview workspaceId={workspaceId} onTabChange={setActiveTab} />;
       case "chat":
         return (
           <div className="p-8 text-center text-gray-500 flex flex-col items-center justify-center h-full">
@@ -73,10 +93,13 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
         return <WorkspaceFiles workspaceId={workspaceId} />;
       case "polls":
         return <WorkspacePolls workspaceId={workspaceId} />;
-      case "members":
-        return <WorkspaceMembers workspaceId={workspaceId} />;
+      case "group-info":
+        return isGroup ? <WorkspaceGroupInfoEnhanced workspaceId={workspaceId} onBackToOverview={() => setActiveTab("overview")} /> : <WorkspaceMembers workspaceId={workspaceId} />;
       case "events":
         return isGroup ? <WorkspaceEvents workspaceId={workspaceId} /> : null;
+      // Backward compatibility: map "members" to "group-info"
+      case "members" as any:
+        return isGroup ? <WorkspaceGroupInfoEnhanced workspaceId={workspaceId} onBackToOverview={() => setActiveTab("overview")} /> : <WorkspaceMembers workspaceId={workspaceId} />;
       default:
         return null;
     }
@@ -95,56 +118,17 @@ export default function WorkspaceHubPage({ params }: { params: Promise<{ workspa
           </button>
           <div className="min-w-0">
             <h1 className="font-bold text-lg truncate">
-              {isGroup ? groupDisplay?.displayName || "Collaboration Group" : isEvent ? "Collaboration Event" : "Workspace"}
+              {isGroup ? groupDisplay?.displayName || "Collaboration Group" : isEvent ? eventData?.title || "Event" : "Workspace"}
             </h1>
             <p className="text-sm text-gray-500 truncate">
-              {isGroup ? `${groupMembers?.length ?? 0} members · Group workspace` : isEvent ? "Event workspace" : "Workspace hub"}
+              {isGroup ? `${groupMembers?.length ?? 0} members · Group workspace` : isEvent ? (eventGroup ? `${eventGroup.displayName} · Event` : "Event workspace") : "Workspace hub"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-gray-100 px-3 py-2 sticky top-[calc(4.5rem+env(safe-area-inset-top,0px))] bg-white z-10">
-        <button 
-          onClick={() => setActiveTab("chat")}
-          className={`min-w-[86px] px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center justify-center gap-2 ${activeTab === "chat" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
-        >
-          <MessageSquare size={16} /> Chat
-        </button>
-        <button 
-          onClick={() => setActiveTab("tasks")}
-          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "tasks" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
-        >
-          <ListTodo size={16} /> Tasks
-        </button>
-        <button 
-          onClick={() => setActiveTab("files")}
-          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "files" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
-        >
-          <Folder size={16} /> Files
-        </button>
-        <button 
-          onClick={() => setActiveTab("polls")}
-          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "polls" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
-        >
-          <BarChart2 size={16} /> Polls
-        </button>
-        <button 
-          onClick={() => setActiveTab("members")}
-          className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "members" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
-        >
-          <Users size={16} /> Members
-        </button>
-        {isGroup && (
-          <button 
-            onClick={() => setActiveTab("events")}
-            className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${activeTab === "events" ? "bg-[#D08945] text-white" : "text-gray-600 hover:bg-gray-100"}`}
-          >
-            <Calendar size={16} /> Events
-          </button>
-        )}
-      </div>
+      {/* Tabs - REMOVED: Using Overview function boxes as primary navigation */}
+      {/* This navigation was redundant with the function boxes in Overview */}
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto bg-gray-50">

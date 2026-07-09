@@ -704,6 +704,11 @@ export const createConversation = mutation({
     participants: v.array(v.id("users")),
     name: v.optional(v.string()), // Optionaler Name für Gruppen
     creatorId: v.optional(v.id("users")), // Add creatorId argument
+    description: v.optional(v.string()), // Group description
+    icon: v.optional(v.string()), // Group emoji/icon
+    groupType: v.optional(v.union(v.literal("Study Group"), v.literal("Project Team"), v.literal("Course Group"), v.literal("Event Team"), v.literal("Other"))),
+    currentGoal: v.optional(v.string()), // Current group goal
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
   },
   handler: async (ctx, args) => {
     const isGroup = args.participants.length > 2 || !!args.name;
@@ -723,13 +728,76 @@ export const createConversation = mutation({
     const conversationId = await ctx.db.insert("conversations", {
       participants: args.participants,
       name: args.name,
+      description: args.description,
+      icon: args.icon,
       isGroup,
       creatorId: args.creatorId,
       adminIds: args.creatorId ? [args.creatorId] : undefined, // Creator is initially the only admin
       updatedAt: Date.now(),
     });
 
+    // If it's a group and we have a creator, create the workspace_groups record
+    if (isGroup && args.creatorId) {
+      await ctx.db.insert("workspace_groups", {
+        conversationId,
+        title: args.name,
+        description: args.description,
+        groupType: args.groupType,
+        currentGoal: args.currentGoal,
+        ownerId: args.creatorId,
+        adminIds: [args.creatorId],
+        createdAt: Date.now(),
+        visibility: args.visibility || "private",
+      });
+    }
+
     return conversationId;
+  },
+});
+
+export const updateGroupDetails = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    description: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    groupType: v.optional(v.union(v.literal("Study Group"), v.literal("Project Team"), v.literal("Course Group"), v.literal("Event Team"), v.literal("Other"))),
+    currentGoal: v.optional(v.string()),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+    userId: v.id("users"), // User making the update (for permission check)
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Group not found");
+
+    // Check if user is owner or admin
+    const isOwnerOrAdmin = conversation.creatorId === args.userId || conversation.adminIds?.includes(args.userId);
+    if (!isOwnerOrAdmin) throw new Error("Only group owner/admin can update details");
+
+    // Update conversations table
+    const updates: any = {};
+    if (args.description !== undefined) updates.description = args.description;
+    if (args.icon !== undefined) updates.icon = args.icon;
+    updates.updatedAt = Date.now();
+
+    await ctx.db.patch(args.conversationId, updates);
+
+    // Update workspace_groups table if it exists
+    const workspaceGroup = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .first();
+
+    if (workspaceGroup) {
+      const wsUpdates: any = {};
+      if (args.groupType !== undefined) wsUpdates.groupType = args.groupType;
+      if (args.currentGoal !== undefined) wsUpdates.currentGoal = args.currentGoal;
+      if (args.visibility !== undefined) wsUpdates.visibility = args.visibility;
+      if (Object.keys(wsUpdates).length > 0) {
+        await ctx.db.patch(workspaceGroup._id, wsUpdates);
+      }
+    }
+
+    return { success: true };
   },
 });
 
