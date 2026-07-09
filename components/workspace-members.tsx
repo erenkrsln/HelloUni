@@ -1,122 +1,333 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { MoreVertical, Plus, LogOut } from "lucide-react";
+import { useToast } from "@/components/toast";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
   const { currentUser } = useCurrentUser();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    type: "remove" | "promote" | "demote" | "leave";
+    memberName: string;
+    memberId: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   const isGroup = workspaceId.startsWith("group_");
   const entityId = workspaceId.replace("group_", "").replace("event_", "") as Id<"conversations">;
 
-  // We only fetch members if it's a group for now. 
-  // (In the future, Events will need an event_participants table)
+  // Fetch group data to determine roles
+  const groupData = useQuery(
+    api.queries.getGroupById,
+    isGroup ? { groupId: entityId } : "skip"
+  );
+
+  // Fetch members
   const conversationMembers = useQuery(
     api.queries.getConversationMembers, 
     isGroup ? { conversationId: entityId } : "skip"
   );
   
-  // Example dummy data for Events just to maintain UI consistency for the MVP
+  // Dummy data for Events
   const dummyEventMembers = currentUser ? [currentUser] : [];
-  
   const members = isGroup ? conversationMembers : dummyEventMembers;
+
+  // Mutations
+  const promoteToAdmin = useMutation(api.workspace.promoteToAdmin);
+  const demoteAdmin = useMutation(api.workspace.demoteAdmin);
+  const removeMember = useMutation(api.workspace.removeMember);
+  const leaveGroup = useMutation(api.workspace.leaveGroup);
+  
+  const toast = useToast();
 
   if (!members) {
     return <div className="text-center p-8 text-gray-500">Loading members...</div>;
   }
 
+  // Determine current user's role
+  let currentUserRole = "member";
+  if (currentUser && isGroup && groupData) {
+    if (groupData.creatorId === currentUser._id) {
+      currentUserRole = "creator";
+    } else if (groupData.adminIds?.includes(currentUser._id)) {
+      currentUserRole = "admin";
+    }
+  }
+
+  const canManageMembers = isGroup && (currentUserRole === "creator" || currentUserRole === "admin");
+
+  // Get member role
+  const getMemberRole = (memberId: string): string => {
+    if (groupData?.creatorId?.toString() === memberId) return "creator";
+    if (groupData?.adminIds?.some((id: any) => id.toString() === memberId)) return "admin";
+    return "member";
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmState || !currentUser) return;
+
+    setIsLoading(true);
+    try {
+      switch (confirmState.type) {
+        case "remove":
+          await removeMember({
+            conversationId: entityId,
+            userId: confirmState.memberId as any,
+            actorId: currentUser._id,
+          });
+          toast.success(`${confirmState.memberName} has been removed from the group`);
+          break;
+
+        case "promote":
+          await promoteToAdmin({
+            conversationId: entityId,
+            userId: confirmState.memberId as any,
+            actorId: currentUser._id,
+          });
+          toast.success(`${confirmState.memberName} has been promoted to Admin`);
+          break;
+
+        case "demote":
+          await demoteAdmin({
+            conversationId: entityId,
+            userId: confirmState.memberId as any,
+            actorId: currentUser._id,
+          });
+          toast.success(`${confirmState.memberName} has been demoted to Member`);
+          break;
+
+        case "leave":
+          await leaveGroup({
+            conversationId: entityId,
+            userId: currentUser._id,
+          });
+          toast.success("You have left the group");
+          break;
+      }
+
+      setConfirmState(null);
+    } catch (error: any) {
+      toast.error(error.message || "Action failed");
+    } finally {
+      setIsLoading(false);
+      setOpenMenuId(null);
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "creator":
+        return "bg-purple-100 text-purple-700";
+      case "admin":
+        return "bg-blue-100 text-blue-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getRoleName = (role: string) => {
+    return role === "creator" ? "Owner" : role === "admin" ? "Admin" : "Member";
+  };
+
   return (
     <div className="p-4 animate-in fade-in slide-in-from-bottom-2">
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg">Members ({members.length})</h2>
-        <p className="text-sm text-gray-500">People participating in this workspace.</p>
-      </div>
-
-      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-        {members.map((member, idx) => (
-          <MemberRow
-            key={member._id || idx}
-            member={member}
-            isLast={idx === members.length - 1}
-            conversationId={isGroup ? entityId : undefined}
-            currentUser={currentUser}
-          />
-        ))}
-        {!isGroup && (
-          <div className="p-3 text-xs text-gray-400 text-center bg-gray-50">
-            Event participants feature arriving in Phase 4.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function MemberRow({ member, isLast, conversationId, currentUser }: any) {
-  const promoteToAdmin = useMutation(api.workspace.promoteToAdmin);
-  const demoteAdmin = useMutation(api.workspace.demoteAdmin);
-  const removeMember = useMutation(api.workspace.removeMember);
-
-  const myRole = currentUser && member && member.role ? (member.role === "creator" ? "creator" : member.role) : null;
-
-  // Determine current user's role in this conversation by checking member list is done by parent, but
-  // we compute allowed actions based on currentUser props and server-side permission model.
-  const canPromote = currentUser && member && myRole === "creator" && currentUser._id !== member._id;
-  const canDemote = currentUser && member && myRole === "creator" && currentUser._id !== member._id;
-  const canRemove = currentUser && member && (myRole === "creator" || myRole === "admin") && currentUser._id !== member._id;
-
-  const handlePromote = async () => {
-    if (!conversationId || !currentUser) return;
-    try {
-      await promoteToAdmin({ conversationId, userId: member._id, actorId: currentUser._id });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDemote = async () => {
-    if (!conversationId || !currentUser) return;
-    try {
-      await demoteAdmin({ conversationId, userId: member._id, actorId: currentUser._id });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleRemove = async () => {
-    if (!conversationId || !currentUser) return;
-    if (!confirm("Remove member?")) return;
-    try {
-      await removeMember({ conversationId, userId: member._id, actorId: currentUser._id });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  return (
-    <div className={`flex items-center gap-3 p-3 ${!isLast ? 'border-b border-gray-50' : ''}`}>
-      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-200">
-        {member.image ? (
-          <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center font-bold text-gray-500 text-sm">
-            {member.name?.charAt(0).toUpperCase()}
-          </div>
-        )}
-      </div>
-      <div className="flex-1">
-        <div className="font-medium text-sm text-gray-900">
-          {member.name} {currentUser?._id === member._id && <span className="text-xs text-gray-400 font-normal">(You)</span>}
+      {/* Header */}
+      <div className="mb-4 flex justify-between items-center">
+        <div>
+          <h2 className="font-semibold text-lg text-slate-900">Members</h2>
+          <p className="text-sm text-slate-500">{members?.length || 0} in this {isGroup ? "group" : "workspace"}</p>
         </div>
-        <div className="text-xs text-gray-500">@{member.username || "student"} {member.role ? `· ${member.role}` : ''}</div>
+        {canManageMembers && (
+          <button className="p-2 rounded-full bg-[#D08945] text-white hover:bg-[#b07335] transition-colors" title="Add member (coming soon)">
+            <Plus size={16} />
+          </button>
+        )}
       </div>
-      <div className="flex items-center gap-2">
-        {canPromote && <button onClick={handlePromote} className="text-sm text-blue-600 p-2">Promote</button>}
-        {canDemote && <button onClick={handleDemote} className="text-sm text-yellow-600 p-2">Demote</button>}
-        {canRemove && <button onClick={handleRemove} className="text-sm text-red-600 p-2">Remove</button>}
+
+      {/* Members List */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        {members && members.length > 0 ? (
+          members.map((member, idx) => {
+            const memberRole = getMemberRole(member._id.toString());
+            
+            return (
+              <div
+                key={member._id || idx}
+                className={`p-3 flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                  idx !== members.length - 1 ? "border-b border-slate-100" : ""
+                }`}
+              >
+                {/* Member Info */}
+                <div className="flex items-center gap-3 flex-1">
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-200 border border-slate-300 flex items-center justify-center">
+                    {member.image ? (
+                      <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-bold text-slate-700 text-sm">
+                        {member.name?.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Name & Username */}
+                  <div className="flex-1">
+                    <div className="font-medium text-sm text-slate-900">
+                      {member.name}{" "}
+                      {currentUser?._id === member._id && (
+                        <span className="text-xs text-slate-400 font-normal">(You)</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500">@{member.username || "student"}</div>
+                  </div>
+                </div>
+
+                {/* Role Badge & Menu */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getRoleBadgeColor(memberRole)}`}>
+                    {getRoleName(memberRole)}
+                  </span>
+
+                  {/* Action Menu */}
+                  {isGroup && currentUser?._id !== member._id && canManageMembers && (
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === member._id.toString() ? null : member._id.toString())}
+                        className="p-1.5 rounded-full hover:bg-slate-200 transition-colors text-slate-600"
+                        title="Member actions"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+
+                      {openMenuId === member._id.toString() && (
+                        <div className="absolute right-0 mt-1 w-40 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+                          {memberRole !== "admin" && memberRole !== "creator" && (
+                            <button
+                              onClick={() => {
+                                setConfirmState({
+                                  type: "promote",
+                                  memberName: member.name,
+                                  memberId: member._id.toString(),
+                                });
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                            >
+                              Make Admin
+                            </button>
+                          )}
+
+                          {memberRole === "admin" && (
+                            <button
+                              onClick={() => {
+                                setConfirmState({
+                                  type: "demote",
+                                  memberName: member.name,
+                                  memberId: member._id.toString(),
+                                });
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                            >
+                              Make Member
+                            </button>
+                          )}
+
+                          {memberRole !== "creator" && (
+                            <>
+                              <div className="border-t border-slate-100"></div>
+                              <button
+                                onClick={() => {
+                                  setConfirmState({
+                                    type: "remove",
+                                    memberName: member.name,
+                                    memberId: member._id.toString(),
+                                  });
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                              >
+                                Remove from Group
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Leave Group Button (for current user) */}
+                  {isGroup && currentUser?._id === member._id && memberRole !== "creator" && (
+                    <button
+                      onClick={() => {
+                        setConfirmState({
+                          type: "leave",
+                          memberName: "Group",
+                          memberId: member._id.toString(),
+                        });
+                      }}
+                      className="p-1.5 rounded-full hover:bg-red-100 transition-colors text-red-600"
+                      title="Leave group"
+                    >
+                      <LogOut size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-4 text-center text-slate-500">No members yet</div>
+        )}
+
+        {!isGroup && (
+          <div className="p-3 text-xs text-slate-400 text-center bg-slate-50 border-t border-slate-100">
+            Event members feature coming soon
+          </div>
+        )}
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={!!confirmState}
+        onClose={() => setConfirmState(null)}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmState?.type === "remove"
+            ? "Remove Member?"
+            : confirmState?.type === "promote"
+            ? "Promote to Admin?"
+            : confirmState?.type === "demote"
+            ? "Demote to Member?"
+            : "Leave Group?"
+        }
+        description={
+          confirmState?.type === "remove"
+            ? `Remove ${confirmState.memberName} from this group? They will no longer have access to group content.`
+            : confirmState?.type === "promote"
+            ? `Promote ${confirmState.memberName} to Admin? They will have permission to manage members and group settings.`
+            : confirmState?.type === "demote"
+            ? `Demote ${confirmState.memberName} to regular Member? They will lose admin permissions.`
+            : "Are you sure you want to leave this group? You can rejoin later if it's public."
+        }
+        confirmLabel={
+          confirmState?.type === "remove"
+            ? "Remove Member"
+            : confirmState?.type === "promote"
+            ? "Promote"
+            : confirmState?.type === "demote"
+            ? "Demote"
+            : "Leave Group"
+        }
+        isDangerous={confirmState?.type === "remove" || confirmState?.type === "leave"}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

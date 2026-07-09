@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Plus, Clock, Trash2, User, ShieldCheck } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useToast } from "@/components/toast";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -25,6 +26,9 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
   const { currentUser } = useCurrentUser();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [deletingTaskTitle, setDeletengTaskTitle] = useState("");
+  const [isSavingDelete, setIsSavingDelete] = useState(false);
   const [formState, setFormState] = useState<TaskFormState>({
     title: "",
     description: "",
@@ -201,17 +205,27 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
 
   const handleDelete = async (task: any) => {
     if (!currentUser) return;
-    if (!confirm("Delete this task?")) return;
+    setDeletingTaskId(task._id);
+    setDeletengTaskTitle(task.title);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingTaskId || !currentUser) return;
     const previous = tasks.slice();
-    setLocalTasks((prev) => prev?.filter((item) => item._id !== task._id) ?? prev);
+    setLocalTasks((prev) => prev?.filter((item) => item._id !== deletingTaskId) ?? prev);
 
     try {
-      await deleteTaskMutation({ taskId: task._id, actorId: currentUser._id });
+      setIsSavingDelete(true);
+      await deleteTaskMutation({ taskId: deletingTaskId, actorId: currentUser._id });
       toast.success("Task deleted");
     } catch (error) {
       console.error("Failed to delete task", error);
       setLocalTasks(previous);
       toast.error("Failed to delete task. Please try again.");
+    } finally {
+      setIsSavingDelete(false);
+      setDeletingTaskId(null);
+      setDeletengTaskTitle("");
     }
   };
 
@@ -507,6 +521,21 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
           </Modal>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={!!deletingTaskId}
+        onClose={() => {
+          setDeletingTaskId(null);
+          setDeletengTaskTitle("");
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Task?"
+        description={`Delete "${deletingTaskTitle}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        isDangerous={true}
+        isLoading={isSavingDelete}
+      />
     </div>
   );
 }

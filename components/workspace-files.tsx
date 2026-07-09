@@ -6,12 +6,15 @@ import { api } from "@/convex/_generated/api";
 import { Plus, FileText, Image as ImageIcon, Download, FileIcon, Trash2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useToast } from "@/components/toast";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
 
 export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
   const { currentUser } = useCurrentUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+  const [deletingFileName, setDeletingFileName] = useState("");
+  const [isDeletingFile, setIsDeletingFile] = useState(false);
 
   const files = useQuery(api.workspace.listFilesByWorkspace, { workspaceId });
   const generateUploadUrl = useMutation(api.workspace.generateUploadUrl);
@@ -103,6 +106,7 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
     if (!deletingFileId || !currentUser) return;
 
     try {
+      setIsDeletingFile(true);
       await deleteFile({
         fileId: deletingFileId as any,
         userId: currentUser._id,
@@ -115,9 +119,12 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
       
       toast.success("File deleted");
       setDeletingFileId(null);
+      setDeletingFileName("");
     } catch (error: any) {
       console.error("Failed to delete file:", error);
       toast.error(error.message || "Failed to delete file");
+    } finally {
+      setIsDeletingFile(false);
     }
   };
 
@@ -177,7 +184,10 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
 
               {canDeleteFile(file) && (
                 <button
-                  onClick={() => setDeletingFileId(file._id)}
+                  onClick={() => {
+                    setDeletingFileId(file._id);
+                    setDeletingFileName(file.fileName);
+                  }}
                   className="absolute top-2 right-2 p-1.5 rounded-full bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100"
                   title="Delete file"
                 >
@@ -190,28 +200,19 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
       </div>
 
       {deletingFileId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-3xl bg-white p-6 shadow-xl max-w-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Delete File</h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Are you sure you want to delete this file? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeletingFileId(null)}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteFile}
-                className="rounded-full bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-semibold text-white"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmationDialog
+          isOpen={!!deletingFileId}
+          onClose={() => {
+            setDeletingFileId(null);
+            setDeletingFileName("");
+          }}
+          onConfirm={handleDeleteFile}
+          title="Delete File?"
+          description={`Delete "${deletingFileName}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          isDangerous={true}
+          isLoading={isDeletingFile}
+        />
       )}
     </div>
   );

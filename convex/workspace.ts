@@ -857,3 +857,29 @@ export const deletePersonalTodo = mutation({
   },
 });
 
+// ────────────────────────────────────────────────────────────────────────────
+// MEMBER GROUP MANAGEMENT
+// ────────────────────────────────────────────────────────────────────────────
+
+export const leaveGroup = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const group = await ctx.db.get(args.conversationId);
+    if (!group) throw new Error("Group not found");
+
+    // Prevent owner from leaving without transferring ownership
+    if (group.creatorId === args.userId) {
+      throw new Error("Owner cannot leave the group. Transfer ownership or delete the group.");
+    }
+
+    // Remove user from participants
+    const updatedParticipants = group.participants.filter((p) => p !== args.userId);
+
+    await ctx.db.patch(args.conversationId, {
+      participants: updatedParticipants,
+    });
+  },
+});

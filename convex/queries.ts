@@ -1156,6 +1156,24 @@ export const getConversationDisplay = query({
   },
 });
 
+export const getGroupById = query({
+  args: { groupId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const group = await ctx.db.get(args.groupId);
+    if (!group) return null;
+
+    return {
+      _id: group._id,
+      name: group.name,
+      description: group.description,
+      creatorId: group.creatorId,
+      adminIds: group.adminIds || [],
+      participants: group.participants || [],
+      isGroup: group.isGroup,
+    };
+  },
+});
+
 export const getConversationMembers = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
