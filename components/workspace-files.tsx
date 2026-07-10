@@ -102,13 +102,13 @@ export function WorkspaceFiles({
             uploaderId: currentUser._id,
           });
           completed = true;
-          toast.success("File uploaded");
+          toast.success("Datei erfolgreich hochgeladen");
         } catch (err) {
           console.error("Failed to save file metadata:", err);
           setLocalFiles((prev) =>
             prev ? prev.filter((f) => f._id !== tempId) : prev,
           );
-          toast.error("Failed to register file. Reverted.");
+          toast.error("Fehler beim Registrieren der Datei. Zurückgesetzt.");
         }
       };
 
@@ -122,9 +122,9 @@ export function WorkspaceFiles({
       };
 
       const toastId = toast.push({
-        message: `Upload ${file.name}`,
+        message: `Lade ${file.name} hoch`,
         type: "info",
-        action: { label: "Undo", onClick: undo },
+        action: { label: "Rückgängig", onClick: undo },
         duration: DURATION,
       });
       const timer = setTimeout(async () => {
@@ -165,12 +165,12 @@ export function WorkspaceFiles({
         prev ? prev.filter((f) => f._id !== deletingFileId) : prev,
       );
 
-      toast.success("File deleted");
+      toast.success("Datei erfolgreich gelöscht");
       setDeletingFileId(null);
       setDeletingFileName("");
     } catch (error: any) {
       console.error("Failed to delete file:", error);
-      toast.error(error.message || "Failed to delete file");
+      toast.error(error.message || "Fehler beim Löschen der Datei");
     } finally {
       setIsDeletingFile(false);
     }
@@ -186,21 +186,21 @@ export function WorkspaceFiles({
         {onBackToOverview && (
           <SectionHeader
             title="Files"
-            subtitle="Shared files and documents"
+            subtitle="Freigegebene Dateien und Dokumente"
             onBackClick={onBackToOverview}
           />
         )}
 
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center px-1">
           {!onBackToOverview && (
-            <h2 className="font-semibold text-lg">Shared Files</h2>
+            <h2 className="font-bold text-lg text-slate-900">Freigegebene Dateien</h2>
           )}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="bg-[#D08945] text-white px-4 py-2 rounded-full flex items-center justify-center gap-2 disabled:opacity-50 text-sm font-medium hover:bg-[#b07335] transition-colors"
+            className="bg-[#D08945] text-white px-4 py-2 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50 text-sm font-semibold hover:bg-[#b07335] transition-all active:scale-95 shadow-sm min-h-[38px]"
           >
-            <Plus size={18} /> {isUploading ? "Uploading..." : "Upload File"}
+            <Plus size={18} /> {isUploading ? "Wird hochgeladen..." : "Datei hochladen"}
           </button>
           <input
             type="file"
@@ -212,19 +212,19 @@ export function WorkspaceFiles({
 
         <div className="grid grid-cols-2 gap-3">
           {!files ? (
-            <div className="col-span-2 text-center text-gray-500 p-8">
-              Loading files...
+            <div className="col-span-2 text-center text-slate-500 p-8 font-medium">
+              Dateien werden geladen...
             </div>
           ) : files.length === 0 ? (
-            <div className="col-span-2 text-center py-12 text-gray-400 bg-white rounded-xl border border-gray-100 border-dashed">
+            <div className="col-span-2 text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed shadow-sm">
               <FolderPlusIcon className="w-12 h-12 mx-auto mb-2 opacity-20 text-[#D08945]" />
-              <p>No files uploaded yet.</p>
+              <p className="text-sm font-semibold text-slate-500">Noch keine Dateien hochgeladen.</p>
             </div>
           ) : (
             (localFiles || files).map((file) => (
               <div
                 key={file._id}
-                className="group bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow relative"
+                className="group bg-white border border-slate-100 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative"
               >
                 <a
                   href={file.url || file.url || "#"}
@@ -232,17 +232,17 @@ export function WorkspaceFiles({
                   rel="noopener noreferrer"
                   className="flex flex-col items-center text-center gap-2"
                 >
-                  <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
                     {renderFileIcon(file.fileType)}
                   </div>
                   <span
-                    className="text-sm font-medium text-gray-800 line-clamp-1 w-full"
+                    className="text-sm font-bold text-slate-800 line-clamp-1 w-full"
                     title={file.fileName}
                   >
                     {file.fileName}
                   </span>
-                  <div className="flex items-center text-xs text-gray-500 mt-1">
-                    <Download size={12} className="mr-1" /> View
+                  <div className="flex items-center text-xs text-slate-500 mt-1 font-semibold">
+                    <Download size={12} className="mr-1" /> Ansehen
                   </div>
                 </a>
 
@@ -252,8 +252,8 @@ export function WorkspaceFiles({
                       setDeletingFileId(file._id);
                       setDeletingFileName(file.fileName);
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100"
-                    title="Delete file"
+                    className="absolute top-2 right-2 p-1.5 rounded-xl bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 border border-transparent hover:border-red-100"
+                    title="Datei löschen"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -272,9 +272,9 @@ export function WorkspaceFiles({
             setDeletingFileName("");
           }}
           onConfirm={handleDeleteFile}
-          title="Delete File?"
-          description={`Delete "${deletingFileName}"? This action cannot be undone.`}
-          confirmLabel="Delete"
+          title="Datei löschen?"
+          description={`Möchtest du "${deletingFileName}" löschen? Dies kann nicht rückgängig gemacht werden.`}
+          confirmLabel="Löschen"
           isDangerous={true}
           isLoading={isDeletingFile}
         />

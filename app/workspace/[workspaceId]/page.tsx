@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
-import { useRouter } from "next/navigation";
+import { use, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   MessageSquare,
@@ -23,6 +23,7 @@ import { WorkspaceMembers } from "@/components/workspace-members";
 import { WorkspaceGroupInfoEnhanced } from "@/components/workspace-group-info-enhanced";
 import { WorkspaceEvents } from "@/components/workspace-events";
 import { WorkspaceOverview } from "@/components/workspace-overview";
+import { WorkspaceEventDetails } from "@/components/workspace-event-details";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useMutation } from "convex/react";
 import Link from "next/link";
@@ -34,9 +35,21 @@ export default function WorkspaceHubPage({
 }) {
   const { workspaceId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   const [activeTab, setActiveTab] = useState<
-    "overview" | "chat" | "tasks" | "files" | "polls" | "group-info" | "events"
+    "overview" | "chat" | "tasks" | "files" | "polls" | "group-info" | "events" | "event-details"
   >("overview");
+
+  useEffect(() => {
+    if (tabParam) {
+      const validTabs = ["overview", "chat", "tasks", "files", "polls", "group-info", "events", "event-details"];
+      if (validTabs.includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      }
+    }
+  }, [tabParam]);
   const { currentUser } = useCurrentUser();
   const getOrCreateEventChat = useMutation(api.workspace.getOrCreateEventChat);
 
@@ -110,16 +123,15 @@ export default function WorkspaceHubPage({
                 size={48}
                 className="text-[#D08945] opacity-50 mb-4"
               />
-              <p className="mb-4 text-sm text-gray-600">
-                The chat for this workspace is directly integrated into your
-                messages.
+              <p className="mb-4 text-sm text-gray-600 text-center leading-relaxed">
+                Der Chat für diesen Workspace ist direkt in deine Nachrichten integriert.
               </p>
               <button
                 onClick={handleOpenChat}
                 disabled={isNavigating}
                 className="bg-[#D08945] text-white px-6 py-3 rounded-full font-medium hover:bg-[#b07335] transition-colors shadow-sm disabled:opacity-75"
               >
-                {isNavigating ? "Opening..." : "Open Full Chat"}
+                {isNavigating ? "Wird geöffnet..." : "Chat öffnen"}
               </button>
             </div>
           </div>
@@ -161,6 +173,13 @@ export default function WorkspaceHubPage({
             onBackToOverview={() => setActiveTab("overview")}
           />
         ) : null;
+      case "event-details":
+        return (
+          <WorkspaceEventDetails
+            workspaceId={workspaceId}
+            onBackToOverview={() => setActiveTab("overview")}
+          />
+        );
       // Backward compatibility: map "members" to "group-info"
       case "members" as any:
         return isGroup ? (
@@ -193,19 +212,19 @@ export default function WorkspaceHubPage({
           <div className="min-w-0">
             <h1 className="font-bold text-lg truncate">
               {isGroup
-                ? groupDisplay?.displayName || "Collaboration Group"
+                ? groupDisplay?.displayName || "Kollaborationsgruppe"
                 : isEvent
                   ? eventData?.title || "Event"
                   : "Workspace"}
             </h1>
-            <p className="text-sm text-gray-500 truncate">
+            <p className="text-sm text-gray-500 truncate font-medium">
               {isGroup
-                ? `${groupMembers?.length ?? 0} members · Group workspace`
+                ? `${groupMembers?.length ?? 0} ${groupMembers?.length === 1 ? "Mitglied" : "Mitglieder"} · Gruppen-Workspace`
                 : isEvent
                   ? eventGroup
                     ? `${eventGroup.displayName} · Event`
-                    : "Event workspace"
-                  : "Workspace hub"}
+                    : "Event-Workspace"
+                  : "Workspace-Hub"}
             </p>
           </div>
         </div>

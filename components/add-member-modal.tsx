@@ -58,11 +58,11 @@ export function AddMemberModal({
         actorId: currentUser._id,
       });
 
-      toast.success("Member added to group");
+      toast.success("Mitglied zur Gruppe hinzugefügt");
       setSearchTerm("");
       onMemberAdded?.();
     } catch (error: any) {
-      toast.error(error.message || "Failed to add member");
+      toast.error(error.message || "Mitglied konnte nicht hinzugefügt werden");
     } finally {
       setIsAdding(null);
     }
@@ -70,12 +70,12 @@ export function AddMemberModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex flex-col p-0">
-        <div className="flex-shrink-0 border-b border-slate-200 px-6 py-4">
+      <DialogContent className="flex flex-col p-0 max-h-[85vh]">
+        <div className="flex-shrink-0 border-b border-slate-100 px-6 py-4">
           <DialogHeader>
             <div className="flex-1">
-              <DialogTitle className="text-lg font-semibold text-slate-900">
-                Add Member to Group
+              <DialogTitle className="text-lg font-bold text-slate-900">
+                Mitglied zur Gruppe hinzufügen
               </DialogTitle>
             </div>
           </DialogHeader>
@@ -84,31 +84,31 @@ export function AddMemberModal({
         <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-6 py-4">
           {/* Search Input */}
           <div className="flex-shrink-0 relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search by name or username..."
+              placeholder="Nach Name oder Benutzername suchen..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 bg-white outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 text-sm text-slate-900"
               autoFocus
             />
           </div>
 
           {/* Results - Scrollable */}
-          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-0 pr-1">
             {searchTerm.length === 0 ? (
               <div className="text-center py-8 text-slate-500 flex items-center justify-center h-full">
-                <p className="text-sm">Enter a name or username to search</p>
+                <p className="text-sm font-medium">Gib einen Namen oder Benutzernamen ein, um zu suchen</p>
               </div>
             ) : searchResults === undefined ? (
               <div className="text-center py-8 flex flex-col items-center justify-center h-full">
                 <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#D08945]"></div>
-                <p className="text-sm text-slate-500 mt-2">Searching...</p>
+                <p className="text-sm text-slate-500 mt-2 font-medium">Wird gesucht...</p>
               </div>
             ) : searchResults.length === 0 ? (
               <div className="text-center py-8 text-slate-500 flex items-center justify-center h-full">
-                <p className="text-sm">No users found</p>
+                <p className="text-sm font-medium">Keine Benutzer gefunden</p>
               </div>
             ) : (
               searchResults.map((user) => {
@@ -118,7 +118,7 @@ export function AddMemberModal({
                 return (
                   <div
                     key={user._id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors gap-3"
+                    className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 transition-colors gap-3"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {/* Avatar */}
@@ -130,7 +130,7 @@ export function AddMemberModal({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="font-bold text-slate-700 text-sm">
+                          <span className="font-bold text-slate-700 text-sm select-none">
                             {user.name?.charAt(0).toUpperCase()}
                           </span>
                         )}
@@ -138,10 +138,10 @@ export function AddMemberModal({
 
                       {/* User Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-900 truncate">
+                        <div className="text-sm font-semibold text-slate-900 truncate">
                           {user.name}
                         </div>
-                        <div className="text-xs text-slate-500 truncate">
+                        <div className="text-xs text-slate-500 truncate font-medium">
                           @{user.username}
                         </div>
                       </div>
@@ -149,17 +149,17 @@ export function AddMemberModal({
 
                     {/* Status / Button */}
                     {isAlreadyMember ? (
-                      <div className="flex items-center gap-1 text-xs font-medium text-slate-500 px-3 py-1.5 rounded-full bg-slate-100 flex-shrink-0 whitespace-nowrap">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-slate-500 px-3 py-1.5 rounded-full bg-slate-100 flex-shrink-0 whitespace-nowrap">
                         <Check size={14} />
-                        <span className="hidden sm:inline">Already member</span>
+                        <span>Bereits Mitglied</span>
                       </div>
                     ) : (
                       <button
                         onClick={() => handleAddMember(user._id)}
                         disabled={isAdding_}
-                        className="px-3 py-1.5 rounded-full bg-[#D08945] text-white text-xs font-medium hover:bg-[#b07335] disabled:opacity-50 transition-colors flex-shrink-0 whitespace-nowrap touch-target"
+                        className="px-3.5 py-1.5 rounded-2xl bg-[#D08945] text-white text-xs font-bold hover:bg-[#b07335] disabled:opacity-50 transition-all flex-shrink-0 whitespace-nowrap touch-target active:scale-95"
                       >
-                        {isAdding_ ? "Adding..." : "Add"}
+                        {isAdding_ ? "Wird hinzugefügt..." : "Hinzufügen"}
                       </button>
                     )}
                   </div>

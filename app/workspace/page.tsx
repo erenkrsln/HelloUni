@@ -9,13 +9,17 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CreateGroupModal } from "@/components/workspace-create-group-modal";
 import { PersonalTodoModal } from "@/components/personal-todo-modal";
+import { EventCard } from "@/components/event-card";
 
 export default function WorkspacePage() {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isCreateTodoModalOpen, setIsCreateTodoModalOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<any | null>(null);
   const [eventFilter, setEventFilter] = useState<
     "all" | "personal" | "groups" | "public"
   >("all");
@@ -96,7 +100,7 @@ export default function WorkspacePage() {
   };
 
   const handleDeleteTodo = async (todoId: string) => {
-    if (currentUser && confirm("Delete this to-do?")) {
+    if (currentUser && confirm("Dieses To-do löschen?")) {
       await deletePersonalTodo({
         todoId: todoId as any,
         userId: currentUser._id,
@@ -125,6 +129,12 @@ export default function WorkspacePage() {
     ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const priorityLabels = {
+    high: "Hoch",
+    medium: "Mittel",
+    low: "Niedrig",
+  };
+
   return (
     <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden bg-white">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
@@ -136,30 +146,30 @@ export default function WorkspacePage() {
       <div className="px-4 mt-6">
         {/* Title & Subtitle */}
         <div className="mb-6 text-center max-w-md mx-auto">
-          <h1 className="text-2xl font-bold mb-1">Workspace</h1>
+          <h1 className="text-2xl font-bold mb-1 text-slate-900">Workspace-Übersicht</h1>
           <p className="text-sm text-gray-500">
-            Manage your groups, tasks and events in one place.
+            Verwalte deine Gruppen, Aufgaben und Events an einem Ort.
           </p>
         </div>
 
         {/* Section Navigation */}
         <div className="flex justify-center mb-8">
-          <div className="flex gap-2 bg-gray-100 rounded-full p-1">
+          <div className="flex gap-2 bg-gray-100 rounded-full p-1 shadow-sm">
             <button
               onClick={() => scrollToSection(groupsRef)}
-              className="px-4 py-2 text-sm font-medium rounded-full transition-colors hover:text-gray-900 text-gray-700"
+              className="px-4 py-2 text-sm font-semibold rounded-full transition-colors hover:text-gray-900 text-gray-700 active:scale-95"
             >
-              Groups
+              Gruppen
             </button>
             <button
               onClick={() => scrollToSection(tasksRef)}
-              className="px-4 py-2 text-sm font-medium rounded-full transition-colors hover:text-gray-900 text-gray-700"
+              className="px-4 py-2 text-sm font-semibold rounded-full transition-colors hover:text-gray-900 text-gray-700 active:scale-95"
             >
-              Tasks
+              Aufgaben
             </button>
             <button
               onClick={() => scrollToSection(eventsRef)}
-              className="px-4 py-2 text-sm font-medium rounded-full transition-colors hover:text-gray-900 text-gray-700"
+              className="px-4 py-2 text-sm font-semibold rounded-full transition-colors hover:text-gray-900 text-gray-700 active:scale-95"
             >
               Events
             </button>
@@ -168,13 +178,13 @@ export default function WorkspacePage() {
 
         {/* My Groups Section */}
         <section ref={groupsRef} className="mb-8 scroll-mt-16">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">My Groups</h2>
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h2 className="text-lg font-bold text-slate-900">Meine Gruppen</h2>
             <button
               onClick={() => setIsCreateGroupModalOpen(true)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
             >
-              <Plus size={16} /> New Group
+              <Plus size={16} /> Neue Gruppe
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -182,25 +192,23 @@ export default function WorkspacePage() {
               <Link
                 href={`/workspace/group_${group._id}`}
                 key={group._id}
-                className="border border-gray-100 p-3 rounded-xl shadow-sm text-center bg-gray-50 cursor-pointer hover:shadow-md transition-shadow block"
+                className="border border-slate-100 p-4 rounded-2xl shadow-sm text-center bg-slate-50/50 cursor-pointer hover:shadow-md hover:bg-slate-50 transition-all block flex flex-col justify-between min-h-[140px]"
               >
-                <div className="w-12 h-12 bg-white rounded-full mx-auto mb-2 flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
-                  {(group as any).displayImage ? (
-                    <img
-                      src={(group as any).displayImage}
-                      alt={(group as any).displayName}
-                      className="w-full h-full object-cover"
-                    />
+                <div className="w-12 h-12 bg-white rounded-full mx-auto mb-3 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 text-2xl select-none">
+                  {group.icon ? (
+                    group.icon
                   ) : (
-                    <Users size={20} className="text-gray-500" />
+                    <Users size={20} className="text-slate-400" />
                   )}
                 </div>
-                <h3 className="text-sm font-medium line-clamp-1">
-                  {(group as any).displayName || "Group"}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {group.participants.length} members
-                </p>
+                <div className="flex-1 flex flex-col justify-center">
+                  <h3 className="text-sm font-semibold text-slate-900 line-clamp-1 mb-1">
+                    {(group as any).displayName || "Gruppe"}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {group.participants.length} {group.participants.length === 1 ? "Mitglied" : "Mitglieder"}
+                  </p>
+                </div>
               </Link>
             ))}
           </div>
@@ -208,30 +216,30 @@ export default function WorkspacePage() {
 
         {/* Tasks Section */}
         <section ref={tasksRef} className="mb-8 scroll-mt-16">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">Tasks</h2>
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h2 className="text-lg font-bold text-slate-900">Aufgaben</h2>
             <button
               onClick={() => setIsCreateTodoModalOpen(true)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
             >
-              <Plus size={16} /> New To-Do
+              <Plus size={16} /> Neues To-do
             </button>
           </div>
 
           {/* Task Filter Chips */}
-          <div className="flex gap-2 mb-4 justify-center flex-wrap">
+          <div className="flex gap-1.5 mb-4 overflow-x-auto flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full max-w-full justify-start sm:justify-center px-1 py-0.5">
             {[
-              { id: "all" as const, label: "All" },
-              { id: "personal" as const, label: "My To-Dos" },
-              { id: "assigned" as const, label: "Assigned to Me" },
+              { id: "all" as const, label: "Alle" },
+              { id: "personal" as const, label: "Meine To-dos" },
+              { id: "assigned" as const, label: "Mir zugewiesen" },
             ].map((chip) => (
               <button
                 key={chip.id}
                 onClick={() => setTaskFilter(chip.id)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${
                   taskFilter === chip.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-[#D08945] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {chip.label}
@@ -247,73 +255,87 @@ export default function WorkspacePage() {
                 return (
                   <div
                     key={task._id}
-                    className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg shadow-sm border border-gray-100 flex justify-between items-start gap-2 hover:shadow-md transition-shadow"
+                    onClick={() => {
+                      if (isPersonal) {
+                        setEditingTodo(task);
+                      } else {
+                        router.push(
+                          `/workspace/group_${(task as any).groupId}?tab=tasks&taskId=${task._id}`
+                        );
+                      }
+                    }}
+                    className="text-sm text-slate-700 bg-slate-50/50 p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-start gap-3 hover:shadow-md transition-all cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <span className="font-medium text-gray-900">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <span className="font-semibold text-slate-900 break-words leading-tight">
                           {task.title}
                         </span>
                       </div>
                       {task.dueDate && (
-                        <span className="text-xs text-gray-500 block mb-1">
-                          Due: {new Date(task.dueDate).toLocaleDateString()}
+                        <span className="text-xs text-slate-500 block mb-2 font-medium">
+                          Fällig: {new Date(task.dueDate).toLocaleDateString("de-DE")}
                         </span>
                       )}
-                      <div className="flex gap-1 flex-wrap">
+                      <div className="flex gap-1.5 flex-wrap">
                         {task.priority && (
                           <span
-                            className={`text-xs font-medium rounded-full px-2 py-0.5 ${
+                            className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm ${
                               task.priority === "high"
-                                ? "bg-red-100 text-red-700"
+                                ? "bg-rose-50 text-rose-700 border border-rose-100"
                                 : task.priority === "medium"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-green-100 text-green-700"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-100"
+                                  : "bg-green-50 text-green-700 border border-green-100"
                             }`}
                           >
-                            {task.priority.charAt(0).toUpperCase() +
-                              task.priority.slice(1)}
+                            {priorityLabels[task.priority as keyof typeof priorityLabels]}
                           </span>
                         )}
                         <span
-                          className={`text-xs font-medium rounded-full px-2 py-0.5 ${
+                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm truncate max-w-[140px] ${
                             isPersonal
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-purple-50 text-purple-700 border border-purple-100"
+                              : "bg-blue-50 text-blue-700 border border-blue-100"
                           }`}
                         >
-                          {isPersonal ? "Personal" : (task as any).groupName}
+                          {isPersonal ? "Persönlich" : (task as any).groupName}
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-1 flex-shrink-0">
+                    <div className="flex gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       {isPersonal ? (
                         <>
                           <button
-                            onClick={() =>
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               handleToggleTodo(
                                 task._id,
                                 (task as any).completed,
-                              )
-                            }
-                            className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
-                            title="Mark complete"
+                              );
+                            }}
+                            className="p-2 hover:bg-green-50 rounded-xl transition-colors text-green-600 border border-transparent hover:border-green-100"
+                            title="Als erledigt markieren"
                           >
                             <Check size={16} />
                           </button>
                           <button
-                            onClick={() => handleDeleteTodo(task._id)}
-                            className="p-1.5 hover:bg-red-100 rounded-lg transition-colors text-red-600"
-                            title="Delete"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTodo(task._id);
+                            }}
+                            className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-600 border border-transparent hover:border-red-100"
+                            title="Löschen"
                           >
                             <Trash2 size={16} />
                           </button>
                         </>
                       ) : (
                         <Link
-                          href={`/workspace/group_${(task as any).groupId}`}
-                          className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors text-blue-600 flex items-center justify-center"
-                          title="View in group"
+                          href={`/workspace/group_${(task as any).groupId}?tab=tasks&taskId=${task._id}`}
+                          className="p-2 hover:bg-blue-50 rounded-xl transition-colors text-blue-600 border border-transparent hover:border-blue-100 flex items-center justify-center"
+                          title="In Gruppe anzeigen"
                         >
                           <Check size={16} />
                         </Link>
@@ -323,10 +345,10 @@ export default function WorkspacePage() {
                 );
               })
             ) : (
-              <p className="text-sm text-gray-500 text-center py-6 bg-gray-50 rounded-xl border border-gray-100">
-                {taskFilter === "all" && "No tasks"}
-                {taskFilter === "personal" && "No personal to-dos"}
-                {taskFilter === "assigned" && "No assigned tasks"}
+              <p className="text-sm text-slate-500 text-center py-8 bg-slate-50/50 rounded-2xl border border-slate-100">
+                {taskFilter === "all" && "Keine Aufgaben vorhanden"}
+                {taskFilter === "personal" && "Keine persönlichen To-dos vorhanden"}
+                {taskFilter === "assigned" && "Keine zugewiesenen Aufgaben vorhanden"}
               </p>
             )}
           </div>
@@ -334,31 +356,31 @@ export default function WorkspacePage() {
 
         {/* Events Section */}
         <section ref={eventsRef} className="mb-8 scroll-mt-16">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">Events</h2>
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h2 className="text-lg font-bold text-slate-900">Events</h2>
             <Link
               href="/calendar"
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
             >
-              <Plus size={16} /> Create Event
+              <Plus size={16} /> Event erstellen
             </Link>
           </div>
 
           {/* Filter Chips */}
-          <div className="flex gap-2 mb-4 justify-center flex-wrap">
+          <div className="flex gap-1.5 mb-4 overflow-x-auto flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full max-w-full justify-start sm:justify-center px-1 py-0.5">
             {[
-              { id: "all" as const, label: "All" },
-              { id: "personal" as const, label: "Personal" },
-              { id: "groups" as const, label: "Groups" },
-              { id: "public" as const, label: "Public" },
+              { id: "all" as const, label: "Alle" },
+              { id: "personal" as const, label: "Persönlich" },
+              { id: "groups" as const, label: "Gruppen" },
+              { id: "public" as const, label: "Öffentlich" },
             ].map((chip) => (
               <button
                 key={chip.id}
                 onClick={() => setEventFilter(chip.id)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${
                   eventFilter === chip.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-[#D08945] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {chip.label}
@@ -370,63 +392,32 @@ export default function WorkspacePage() {
           <div className="space-y-3">
             {myEventsWithSource && myEventsWithSource.length > 0 ? (
               myEventsWithSource.map((event) => {
-                const dateObj = new Date(event.startTime);
-                const month = dateObj.toLocaleString("en-US", {
-                  month: "short",
-                });
-                const day = dateObj.getDate();
-                const eventTime = dateObj.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
+                const href = event.workspaceId
+                  ? `/workspace/group_${event.workspaceId.replace("group_", "")}?tab=events`
+                  : `/workspace/event_${event._id}`;
+                const badgeType = event.source === "personal" ? "personal" : event.source === "public" ? "public" : "group";
+                const badgeText = event.source === "personal" ? "Privat" : event.source === "public" ? "Öffentlich" : event.sourceName;
+
                 return (
-                  <Link
-                    href={
-                      event.workspaceId
-                        ? `/workspace/group_${event.workspaceId.replace("group_", "")}`
-                        : `/workspace/event_${event._id}`
-                    }
+                  <EventCard
                     key={event._id}
-                    className="flex items-center gap-3 border border-gray-100 bg-gray-50 p-3 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-shadow block"
-                  >
-                    <div className="w-12 h-12 bg-[#D18E4E] text-white rounded-lg flex flex-col items-center justify-center flex-shrink-0">
-                      <span className="text-xs uppercase leading-none opacity-90">
-                        {month}
-                      </span>
-                      <span className="text-lg font-bold leading-none mt-0.5">
-                        {day}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {event.title}
-                      </h3>
-                      <div className="flex items-center justify-between mt-1 gap-2">
-                        <p className="text-xs text-gray-500 truncate">
-                          {dateObj.toLocaleDateString()} · {eventTime}
-                        </p>
-                        <span
-                          className={`text-xs font-medium rounded-full px-2 py-0.5 flex-shrink-0 ${
-                            event.source === "personal"
-                              ? "bg-purple-100 text-purple-700"
-                              : event.source === "group"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {event.sourceName}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
+                    title={event.title}
+                    startTime={event.startTime}
+                    endTime={event.endTime}
+                    location={event.location}
+                    description={event.description}
+                    badgeText={badgeText}
+                    badgeType={badgeType}
+                    href={href}
+                  />
                 );
               })
             ) : (
-              <p className="text-sm text-gray-500 text-center py-6 bg-gray-50 rounded-xl border border-gray-100">
-                {eventFilter === "all" && "No upcoming events"}
-                {eventFilter === "personal" && "No upcoming personal events"}
-                {eventFilter === "groups" && "No upcoming group events"}
-                {eventFilter === "public" && "No upcoming public events"}
+              <p className="text-sm text-slate-500 text-center py-8 bg-slate-50/50 rounded-2xl border border-slate-100">
+                {eventFilter === "all" && "Keine bevorstehenden Events"}
+                {eventFilter === "personal" && "Keine bevorstehenden persönlichen Events"}
+                {eventFilter === "groups" && "Keine bevorstehenden Gruppen-Events"}
+                {eventFilter === "public" && "Keine bevorstehenden öffentlichen Events"}
               </p>
             )}
           </div>
@@ -439,9 +430,16 @@ export default function WorkspacePage() {
         onClose={() => setIsCreateGroupModalOpen(false)}
       />
       <PersonalTodoModal
-        isOpen={isCreateTodoModalOpen}
-        onClose={() => setIsCreateTodoModalOpen(false)}
-        onSuccess={() => setIsCreateTodoModalOpen(false)}
+        isOpen={isCreateTodoModalOpen || !!editingTodo}
+        todo={editingTodo || undefined}
+        onClose={() => {
+          setIsCreateTodoModalOpen(false);
+          setEditingTodo(null);
+        }}
+        onSuccess={() => {
+          setIsCreateTodoModalOpen(false);
+          setEditingTodo(null);
+        }}
       />
     </main>
   );

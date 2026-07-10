@@ -34,6 +34,19 @@ const GROUP_TYPES = [
   "Other",
 ];
 
+const GROUP_TYPE_LABELS: Record<string, string> = {
+  "Study Group": "Lerngruppe",
+  "Project Team": "Projektteam",
+  "Course Group": "Kursgruppe",
+  "Event Team": "Eventteam",
+  "Other": "Sonstiges",
+};
+
+const VISIBILITY_LABELS: Record<string, string> = {
+  public: "Öffentlich",
+  private: "Privat",
+};
+
 export function WorkspaceGroupInfoEnhanced({
   workspaceId,
   onBackToOverview,
@@ -93,7 +106,7 @@ export function WorkspaceGroupInfoEnhanced({
 
   if (!members || !groupData) {
     return (
-      <div className="text-center p-8 text-gray-500">Loading group settings...</div>
+      <div className="text-center p-8 text-slate-500 font-medium">Einstellungen werden geladen...</div>
     );
   }
 
@@ -144,9 +157,9 @@ export function WorkspaceGroupInfoEnhanced({
         userId: currentUser._id,
       });
       setIsEditOpen(false);
-      toast.success("Group details updated successfully");
+      toast.success("Gruppendetails erfolgreich aktualisiert");
     } catch (error: any) {
-      toast.error(error?.message || "Failed to update group details");
+      toast.error(error?.message || "Aktualisierung der Gruppendetails fehlgeschlagen");
     } finally {
       setIsLoading(false);
     }
@@ -165,7 +178,7 @@ export function WorkspaceGroupInfoEnhanced({
             userId: confirmState.memberId as any,
             actorId: currentUser._id,
           });
-          toast.success(`${confirmState.memberName} has been removed`);
+          toast.success(`${confirmState.memberName} wurde entfernt`);
           break;
 
         case "promote":
@@ -175,7 +188,7 @@ export function WorkspaceGroupInfoEnhanced({
             userId: confirmState.memberId as any,
             actorId: currentUser._id,
           });
-          toast.success(`${confirmState.memberName} is now an admin`);
+          toast.success(`${confirmState.memberName} ist jetzt Admin`);
           break;
 
         case "demote":
@@ -185,7 +198,7 @@ export function WorkspaceGroupInfoEnhanced({
             userId: confirmState.memberId as any,
             actorId: currentUser._id,
           });
-          toast.success(`${confirmState.memberName} is now a member`);
+          toast.success(`${confirmState.memberName} ist jetzt normales Mitglied`);
           break;
 
         case "leave":
@@ -193,7 +206,7 @@ export function WorkspaceGroupInfoEnhanced({
             conversationId: groupId,
             userId: currentUser._id,
           });
-          toast.success("You have left the group");
+          toast.success("Du hast die Gruppe verlassen");
           setTimeout(() => router.push("/workspace"), 500);
           break;
 
@@ -202,13 +215,13 @@ export function WorkspaceGroupInfoEnhanced({
             conversationId: groupId,
             userId: currentUser._id,
           });
-          toast.success("Group deleted successfully");
+          toast.success("Gruppe erfolgreich gelöscht");
           setTimeout(() => router.push("/workspace"), 500);
           break;
       }
       setConfirmState(null);
     } catch (error: any) {
-      toast.error(error?.message || "Failed to perform action");
+      toast.error(error?.message || "Aktion fehlgeschlagen");
     } finally {
       setIsLoading(false);
     }
@@ -220,24 +233,24 @@ export function WorkspaceGroupInfoEnhanced({
         {/* Back to Overview Button */}
         <button
           onClick={handleBackToOverview}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
+          className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 mb-4 transition-colors"
         >
           <ArrowLeft size={16} />
-          Back to Overview
+          Zurück zur Übersicht
         </button>
 
         {/* Page Title */}
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-2">
-          <Settings size={28} className="text-gray-700" />
-          <h1 className="text-2xl font-bold text-gray-900">Group Settings</h1>
+        <div className="flex items-center gap-3 pb-4 border-b border-slate-100 mb-2">
+          <Settings size={28} className="text-slate-700" />
+          <h1 className="text-2xl font-bold text-slate-900">Einstellungen</h1>
         </div>
 
         {/* Group Details Card */}
-        <div className="border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
-            <h2 className="font-semibold text-lg flex items-center">
-              <span className="w-6 h-6 mr-2">📋</span>
-              Group Details
+        <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-sm">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <h2 className="font-bold text-lg flex items-center text-slate-900">
+              <span className="w-6 h-6 mr-2 select-none">📋</span>
+              Gruppendetails
             </h2>
             {canManageGroup && (
               <button
@@ -251,57 +264,57 @@ export function WorkspaceGroupInfoEnhanced({
                   setEditVisibility(workspaceGroup?.visibility || "private");
                   setIsEditOpen(true);
                 }}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Edit group details"
+                className="p-2 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-xl transition-all"
+                title="Gruppendetails bearbeiten"
               >
-                <Edit2 size={16} className="text-gray-600" />
+                <Edit2 size={16} className="text-slate-600" />
               </button>
             )}
           </div>
 
           <div className="space-y-3.5 text-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Name</span>
-              <span className="sm:col-span-2 font-semibold text-gray-900 break-words">{groupData?.name || "Not set"}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-slate-50">
+              <span className="text-slate-500 font-semibold">Name</span>
+              <span className="sm:col-span-2 font-bold text-slate-900 break-words">{groupData?.name || "Nicht festgelegt"}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Description</span>
-              <p className="sm:col-span-2 text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
-                {groupData?.description || <span className="italic text-gray-400">Not set</span>}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-slate-50">
+              <span className="text-slate-500 font-semibold">Beschreibung</span>
+              <p className="sm:col-span-2 text-slate-700 font-medium leading-relaxed whitespace-pre-wrap break-words">
+                {groupData?.description || <span className="italic text-slate-400">Nicht festgelegt</span>}
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Icon</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-slate-50">
+              <span className="text-slate-500 font-semibold">Symbol</span>
               <span className="sm:col-span-2 text-2xl select-none">{groupData?.icon || "👥"}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Type</span>
-              <span className="sm:col-span-2 font-medium text-gray-900">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-slate-50">
+              <span className="text-slate-500 font-semibold">Typ</span>
+              <span className="sm:col-span-2 font-bold text-slate-900">
                 {workspaceGroup?.groupType === "Other" && workspaceGroup?.customGroupType
                   ? workspaceGroup.customGroupType
-                  : workspaceGroup?.groupType || <span className="italic text-gray-400">Not set</span>}
+                  : (workspaceGroup?.groupType ? (GROUP_TYPE_LABELS[workspaceGroup.groupType] || workspaceGroup.groupType) : <span className="italic text-slate-400">Nicht festgelegt</span>)}
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Visibility</span>
-              <span className="sm:col-span-2 font-medium text-gray-900 capitalize">
-                {workspaceGroup?.visibility || <span className="italic text-gray-400">Not set</span>}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-slate-50">
+              <span className="text-slate-500 font-semibold">Sichtbarkeit</span>
+              <span className="sm:col-span-2 font-bold text-slate-900">
+                {workspaceGroup?.visibility ? (VISIBILITY_LABELS[workspaceGroup.visibility] || workspaceGroup.visibility) : <span className="italic text-slate-400">Nicht festgelegt</span>}
               </span>
             </div>
             {workspaceGroup?.currentGoal && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
-                <span className="text-gray-500 font-medium">Current Goal</span>
-                <span className="sm:col-span-2 font-medium text-gray-900 break-words">{workspaceGroup.currentGoal}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-slate-50">
+                <span className="text-slate-500 font-semibold">Aktuelles Ziel</span>
+                <span className="sm:col-span-2 font-bold text-slate-900 break-words">{workspaceGroup.currentGoal}</span>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
-              <span className="text-gray-500 font-medium">Members</span>
-              <span className="sm:col-span-2 font-medium text-gray-900">{members.length}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-slate-50">
+              <span className="text-slate-500 font-semibold">Mitglieder</span>
+              <span className="sm:col-span-2 font-bold text-slate-900">{members.length}</span>
             </div>
             {workspaceGroup?.createdAt && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2">
-                <span className="text-gray-500 font-medium">Created</span>
-                <span className="sm:col-span-2 text-gray-900">
+                <span className="text-slate-500 font-semibold">Erstellt am</span>
+                <span className="sm:col-span-2 text-slate-900 font-bold">
                   {new Date(workspaceGroup.createdAt).toLocaleDateString("de-DE", {
                     day: "numeric",
                     month: "short",
@@ -314,19 +327,19 @@ export function WorkspaceGroupInfoEnhanced({
         </div>
 
         {/* Members Section */}
-        <div className="border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
-            <h2 className="font-semibold text-lg flex items-center">
-              <span className="w-6 h-6 mr-2">👥</span>
-              Members
+        <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-sm">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <h2 className="font-bold text-lg flex items-center text-slate-900">
+              <span className="w-6 h-6 mr-2 select-none">👥</span>
+              Mitglieder
             </h2>
             {canManageMembers && (
               <button
                 onClick={() => setIsAddMemberModalOpen(true)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                title="Add member"
+                className="p-2 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-xl transition-all"
+                title="Mitglied hinzufügen"
               >
-                <Plus size={18} className="text-gray-600" />
+                <Plus size={18} className="text-slate-600" />
               </button>
             )}
           </div>
@@ -339,53 +352,53 @@ export function WorkspaceGroupInfoEnhanced({
               return (
                 <div
                   key={member._id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between p-3 bg-slate-50/50 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-gray-900">
-                        {member.name || "Unknown"}
+                      <span className="font-bold text-sm text-slate-900">
+                        {member.name || "Unbekannt"}
                       </span>
                       {isCurrent && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                          You
+                        <span className="text-[10px] font-bold bg-[#D08945]/10 text-[#D08945] px-2 py-0.5 rounded-full border border-[#D08945]/20">
+                          Du
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       {role === "creator" && (
-                        <div className="flex items-center gap-1 text-xs text-amber-600">
+                        <div className="flex items-center gap-1 text-xs font-semibold text-amber-600">
                           <Crown size={14} />
-                          <span>Owner</span>
+                          <span>Besitzer</span>
                         </div>
                       )}
                       {role === "admin" && (
-                        <div className="flex items-center gap-1 text-xs text-purple-600">
+                        <div className="flex items-center gap-1 text-xs font-semibold text-purple-600">
                           <Star size={14} />
                           <span>Admin</span>
                         </div>
                       )}
                       {role === "member" && (
-                        <span className="text-xs text-gray-500">Member</span>
+                        <span className="text-xs font-medium text-slate-500">Mitglied</span>
                       )}
                     </div>
                   </div>
 
                   {/* Actions */}
                   {canManageMembers && !isCurrent && role !== "creator" && (
-                    <div className="flex items-center gap-1 ml-2">
+                    <div className="flex items-center gap-1.5 ml-2">
                       {role === "member" && (
                         <button
                           onClick={() =>
                             setConfirmState({
                               type: "promote",
-                              memberName: member.name || "Member",
+                              memberName: member.name || "Mitglied",
                               memberId: member._id,
                             })
                           }
-                          className="px-2 py-1 text-xs bg-purple-50 text-purple-600 rounded hover:bg-purple-100 transition-colors"
+                          className="px-2.5 py-1 text-xs font-bold bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 border border-purple-100/50 transition-colors active:scale-95"
                         >
-                          Promote
+                          Zum Admin machen
                         </button>
                       )}
                       {role === "admin" && (
@@ -393,26 +406,26 @@ export function WorkspaceGroupInfoEnhanced({
                           onClick={() =>
                             setConfirmState({
                               type: "demote",
-                              memberName: member.name || "Member",
+                              memberName: member.name || "Mitglied",
                               memberId: member._id,
                             })
                           }
-                          className="px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100 transition-colors"
+                          className="px-2.5 py-1 text-xs font-bold bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors active:scale-95"
                         >
-                          Demote
+                          Zum Mitglied machen
                         </button>
                       )}
                       <button
                         onClick={() =>
                           setConfirmState({
                             type: "remove",
-                            memberName: member.name || "Member",
+                            memberName: member.name || "Mitglied",
                             memberId: member._id,
                           })
                         }
-                        className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                        className="px-2.5 py-1 text-xs font-bold bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-100/50 transition-colors active:scale-95"
                       >
-                        Remove
+                        Entfernen
                       </button>
                     </div>
                   )}
@@ -425,8 +438,8 @@ export function WorkspaceGroupInfoEnhanced({
                           type: "leave",
                         })
                       }
-                      className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="Leave group"
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-xl border border-transparent hover:border-red-100 transition-colors active:scale-95"
+                      title="Gruppe verlassen"
                     >
                       <LogOut size={16} />
                     </button>
@@ -437,21 +450,21 @@ export function WorkspaceGroupInfoEnhanced({
           </div>
         </div>
 
-        {/* Danger Zone */}
+        {/* Danger Zone renamed to Gruppe löschen */}
         {currentUserRole === "creator" && (
-          <div className="border border-red-200 rounded-xl p-4 bg-red-50/20">
-            <h2 className="font-semibold text-lg text-red-800 mb-2 flex items-center">
-              <span className="w-6 h-6 mr-2">⚠️</span>
-              Danger Zone
+          <div className="border border-red-200 rounded-2xl p-5 bg-red-50/20 shadow-sm">
+            <h2 className="font-bold text-lg text-red-800 mb-2 flex items-center">
+              <span className="w-6 h-6 mr-2 select-none">⚠️</span>
+              Gruppe löschen
             </h2>
-            <p className="text-xs text-red-600/80 mb-4 leading-relaxed">
-              Once you delete a group, all data, messages, tasks, and files will be permanently deleted and cannot be undone.
+            <p className="text-xs text-red-600/80 mb-4 leading-relaxed font-medium">
+              Wenn du diese Gruppe löschst, werden zugehörige Aufgaben, Dateien, Umfragen, Events und Nachrichten dauerhaft entfernt.
             </p>
             <button
               onClick={() => setConfirmState({ type: "delete" })}
-              className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-colors shadow-sm"
+              className="w-full px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-2xl transition-all shadow-sm active:scale-95"
             >
-              Delete Group
+              Gruppe löschen
             </button>
           </div>
         )}
@@ -460,54 +473,54 @@ export function WorkspaceGroupInfoEnhanced({
       {/* Edit Group Details Modal */}
       {isEditOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-semibold text-lg border-b border-gray-100 pb-2">Edit Group Details</h3>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <h3 className="font-bold text-lg border-b border-slate-100 pb-3 text-slate-900">Gruppendetails bearbeiten</h3>
 
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Group Name
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Gruppenname
               </label>
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Enter group name"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Gruppenname eingeben"
+                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Beschreibung
               </label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Describe the purpose of this group…"
+                placeholder="Beschreibe den Zweck dieser Gruppe…"
                 rows={3}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] resize-none"
               />
             </div>
 
             {/* Icon */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Group Icon
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Gruppensymbol
               </label>
               <div className="flex items-center gap-2 mb-2">
-                <div className="text-4xl select-none">{editIcon}</div>
+                <div className="text-4xl select-none border border-slate-100 rounded-2xl p-2.5 bg-slate-50/50">{editIcon}</div>
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-3.5 py-2.5 text-sm font-semibold border border-slate-200 bg-slate-50 text-slate-700 rounded-2xl hover:bg-slate-100 transition-colors"
                 >
-                  <Smile size={16} />
+                  <Smile size={18} />
                 </button>
               </div>
               {showEmojiPicker && (
-                <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-2xl border border-slate-200">
                   {EMOJI_SUGGESTIONS.map((emoji) => (
                     <button
                       key={emoji}
@@ -516,7 +529,7 @@ export function WorkspaceGroupInfoEnhanced({
                         setEditIcon(emoji);
                         setShowEmojiPicker(false);
                       }}
-                      className="text-2xl p-2 rounded hover:bg-gray-200 transition-colors"
+                      className="text-2xl p-2 rounded-xl hover:bg-slate-200 transition-colors"
                     >
                       {emoji}
                     </button>
@@ -527,8 +540,8 @@ export function WorkspaceGroupInfoEnhanced({
 
             {/* Group Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Group Type
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Gruppentyp
               </label>
               <select
                 value={editGroupType}
@@ -538,11 +551,11 @@ export function WorkspaceGroupInfoEnhanced({
                     setEditCustomGroupType("");
                   }
                 }}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
               >
                 {GROUP_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {GROUP_TYPE_LABELS[type] || type}
                   </option>
                 ))}
               </select>
@@ -551,62 +564,62 @@ export function WorkspaceGroupInfoEnhanced({
             {/* Custom Group Type (if "Other" selected) */}
             {editGroupType === "Other" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Custom Group Type
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Eigenen Gruppentyp
                 </label>
                 <input
                   type="text"
                   value={editCustomGroupType}
                   onChange={(e) => setEditCustomGroupType(e.target.value)}
-                  placeholder="Enter your custom group type"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Eigenen Gruppentyp eingeben"
+                  className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
                 />
               </div>
             )}
 
             {/* Visibility */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Visibility
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Sichtbarkeit
               </label>
               <select
                 value={editVisibility}
                 onChange={(e) => setEditVisibility(e.target.value as "public" | "private")}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm text-slate-900 bg-white outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
               >
-                <option value="private">Private</option>
-                <option value="public">Public</option>
+                <option value="private">Privat</option>
+                <option value="public">Öffentlich</option>
               </select>
             </div>
 
             {/* Current Goal */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Current Goal
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Aktuelles Ziel
               </label>
               <textarea
                 value={editCurrentGoal}
                 onChange={(e) => setEditCurrentGoal(e.target.value)}
-                placeholder="What is this group currently working toward?"
+                placeholder="Woran arbeitet diese Gruppe zurzeit?"
                 rows={2}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] resize-none"
               />
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
+            <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
               <button
                 onClick={() => setIsEditOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-colors"
               >
-                Cancel
+                Abbrechen
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={isLoading || !editName.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-white bg-[#D08945] hover:bg-[#b07335] disabled:opacity-50 rounded-2xl transition-colors shadow-sm"
               >
-                {isLoading ? "Saving..." : "Save Changes"}
+                {isLoading ? "Wird gespeichert..." : "Änderungen speichern"}
               </button>
             </div>
           </div>
@@ -630,19 +643,25 @@ export function WorkspaceGroupInfoEnhanced({
           isOpen={!!confirmState}
           title={
             confirmState.type === "delete"
-              ? "Delete Group"
-              : `${confirmState.type === "remove" ? "Remove" : confirmState.type === "promote" ? "Promote" : confirmState.type === "demote" ? "Demote" : "Leave"} ${confirmState.type === "leave" ? "Group" : "Member"}`
+              ? "Gruppe löschen"
+              : confirmState.type === "leave"
+                ? "Gruppe verlassen"
+                : confirmState.type === "promote"
+                  ? "Zum Admin machen"
+                  : confirmState.type === "demote"
+                    ? "Zum Mitglied machen"
+                    : "Mitglied entfernen"
           }
           description={
             confirmState.type === "delete"
-              ? "Are you sure you want to delete this group? This cannot be undone."
+              ? "Bist du sicher, dass du diese Gruppe löschen möchtest? Dies kann nicht rückgängig gemacht werden."
               : confirmState.type === "leave"
-                ? "Are you sure you want to leave this group? You can rejoin by being added again."
+                ? "Bist du sicher, dass du diese Gruppe verlassen möchtest? Du kannst nur wieder beitreten, wenn du neu hinzugefügt wirst."
                 : confirmState.type === "promote"
-                  ? `Make ${confirmState.memberName} an admin? They'll have full member management permissions.`
+                  ? `Möchtest du ${confirmState.memberName} zum Admin machen? Sie erhalten damit volle Berechtigungen zur Mitgliederverwaltung.`
                   : confirmState.type === "demote"
-                    ? `Demote ${confirmState.memberName} from admin? They'll become a regular member.`
-                    : `Remove ${confirmState.memberName} from the group? This cannot be undone.`
+                    ? `Möchtest du ${confirmState.memberName} zum normalen Mitglied machen?`
+                    : `Möchtest du ${confirmState.memberName} aus der Gruppe entfernen? Dies kann nicht rückgängig gemacht werden.`
           }
           onConfirm={handleConfirmAction}
           onClose={() => setConfirmState(null)}

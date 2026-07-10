@@ -69,7 +69,9 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
 
   if (!members) {
     return (
-      <div className="text-center p-8 text-gray-500">Loading members...</div>
+      <div className="text-center p-8 text-slate-500 font-medium">
+        {isEvent ? "Teilnehmende werden geladen..." : "Mitglieder werden geladen..."}
+      </div>
     );
   }
 
@@ -111,7 +113,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             actorId: currentUser._id,
           });
           toast.success(
-            `${confirmState.memberName} has been removed from the group`,
+            `${confirmState.memberName} wurde aus der Gruppe entfernt`,
           );
           break;
 
@@ -122,7 +124,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             actorId: currentUser._id,
           });
           toast.success(
-            `${confirmState.memberName} has been promoted to Admin`,
+            `${confirmState.memberName} wurde zum Admin gemacht`,
           );
           break;
 
@@ -133,7 +135,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             actorId: currentUser._id,
           });
           toast.success(
-            `${confirmState.memberName} has been demoted to Member`,
+            `${confirmState.memberName} wurde zum normalen Mitglied gemacht`,
           );
           break;
 
@@ -142,13 +144,13 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             conversationId: targetConversationId,
             userId: currentUser._id,
           });
-          toast.success("You have left the group");
+          toast.success("Du hast die Gruppe verlassen");
           break;
       }
 
       setConfirmState(null);
     } catch (error: any) {
-      toast.error(error.message || "Action failed");
+      toast.error(error.message || "Aktion fehlgeschlagen");
     } finally {
       setIsLoading(false);
       setOpenMenuId(null);
@@ -167,26 +169,26 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
   };
 
   const getRoleName = (role: string) => {
-    return role === "creator" ? "Owner" : role === "admin" ? "Admin" : "Member";
+    return role === "creator" ? "Besitzer" : role === "admin" ? "Admin" : "Mitglied";
   };
 
   return (
     <div className="p-4 animate-in fade-in slide-in-from-bottom-2">
       {/* Header */}
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex justify-between items-center px-1">
         <div>
-          <h2 className="font-semibold text-lg text-slate-900">
-            {isEvent ? "Group Members" : "Members"}
+          <h2 className="font-bold text-lg text-slate-900">
+            {isEvent ? "Gruppenmitglieder" : "Mitglieder"}
           </h2>
-          <p className="text-sm text-slate-500">
-            {members?.length || 0} {isEvent ? "in the group" : "in this group"}
+          <p className="text-sm text-slate-500 font-medium">
+            {members?.length || 0} {isEvent ? "in der Gruppe" : "in dieser Gruppe"}
           </p>
         </div>
         {canManageMembers && (
           <button
             onClick={() => setIsAddMemberModalOpen(true)}
             className="p-2 rounded-full bg-[#D08945] text-white hover:bg-[#b07335] transition-colors"
-            title="Add member"
+            title="Mitglied hinzufügen"
           >
             <Plus size={16} />
           </button>
@@ -202,7 +204,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             return (
               <div
                 key={member._id || idx}
-                className={`p-3 flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                className={`p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors ${
                   idx !== members.length - 1 ? "border-b border-slate-100" : ""
                 }`}
               >
@@ -217,7 +219,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="font-bold text-slate-700 text-sm">
+                      <span className="font-bold text-slate-700 text-sm select-none">
                         {member.name?.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -225,15 +227,15 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
 
                   {/* Name & Username */}
                   <div className="flex-1">
-                    <div className="font-medium text-sm text-slate-900">
+                    <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                       {member.name}{" "}
                       {currentUser?._id === member._id && (
-                        <span className="text-xs text-slate-400 font-normal">
-                          (You)
+                        <span className="text-[10px] bg-[#D08945]/10 text-[#D08945] px-1.5 py-0.5 rounded-full border border-[#D08945]/20 font-bold">
+                          Du
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-500 font-medium">
                       @{member.username || "student"}
                     </div>
                   </div>
@@ -242,7 +244,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                 {/* Role Badge & Menu */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getRoleBadgeColor(memberRole)}`}
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${getRoleBadgeColor(memberRole)}`}
                   >
                     {getRoleName(memberRole)}
                   </span>
@@ -261,27 +263,27 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                             )
                           }
                           className="p-1.5 rounded-full hover:bg-slate-200 transition-colors text-slate-600"
-                          title="Member actions"
+                          title="Mitgliederaktionen"
                         >
                           <MoreVertical size={16} />
                         </button>
 
                         {openMenuId === member._id.toString() && (
-                          <div className="absolute right-0 mt-1 w-40 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+                          <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-10 p-1">
                             {memberRole !== "admin" &&
                               memberRole !== "creator" && (
                                 <button
                                   onClick={() => {
                                     setConfirmState({
                                       type: "promote",
-                                      memberName: member.name,
+                                      memberName: member.name || "Mitglied",
                                       memberId: member._id.toString(),
                                     });
                                     setOpenMenuId(null);
                                   }}
-                                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors font-semibold"
                                 >
-                                  Make Admin
+                                  Zum Admin machen
                                 </button>
                               )}
 
@@ -290,32 +292,32 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                                 onClick={() => {
                                   setConfirmState({
                                     type: "demote",
-                                    memberName: member.name,
+                                    memberName: member.name || "Mitglied",
                                     memberId: member._id.toString(),
                                   });
                                   setOpenMenuId(null);
                                 }}
-                                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors font-semibold"
                               >
-                                Make Member
+                                Zum Mitglied machen
                               </button>
                             )}
 
                             {memberRole !== "creator" && (
                               <>
-                                <div className="border-t border-slate-100"></div>
+                                <div className="border-t border-slate-100 my-1"></div>
                                 <button
                                   onClick={() => {
                                     setConfirmState({
                                       type: "remove",
-                                      memberName: member.name,
+                                      memberName: member.name || "Mitglied",
                                       memberId: member._id.toString(),
                                     });
                                     setOpenMenuId(null);
                                   }}
-                                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold"
                                 >
-                                  Remove from Group
+                                  Aus Gruppe entfernen
                                 </button>
                               </>
                             )}
@@ -332,12 +334,12 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                         onClick={() => {
                           setConfirmState({
                             type: "leave",
-                            memberName: "Group",
+                            memberName: "Gruppe",
                             memberId: member._id.toString(),
                           });
                         }}
                         className="p-1.5 rounded-full hover:bg-red-100 transition-colors text-red-600"
-                        title="Leave group"
+                        title="Gruppe verlassen"
                       >
                         <LogOut size={16} />
                       </button>
@@ -347,12 +349,12 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             );
           })
         ) : (
-          <div className="p-4 text-center text-slate-500">No members yet</div>
+          <div className="p-6 text-center text-slate-500 font-medium">Noch keine Mitglieder</div>
         )}
 
         {!isGroup && (
-          <div className="p-3 text-xs text-slate-400 text-center bg-slate-50 border-t border-slate-100">
-            Event members feature coming soon
+          <div className="p-3 text-xs text-slate-400 text-center bg-slate-50 border-t border-slate-100 font-semibold">
+            Mitglieder-Feature für Events folgt in Kürze
           </div>
         )}
       </div>
@@ -366,48 +368,49 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
           currentMembers={members || []}
           onMemberAdded={() => {
             setIsAddMemberModalOpen(false);
-            // Refresh members list by closing and reopening would trigger query re-fetch
           }}
         />
       )}
 
       {/* Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={!!confirmState}
-        onClose={() => setConfirmState(null)}
-        onConfirm={handleConfirmAction}
-        title={
-          confirmState?.type === "remove"
-            ? "Remove Member?"
-            : confirmState?.type === "promote"
-              ? "Promote to Admin?"
-              : confirmState?.type === "demote"
-                ? "Demote to Member?"
-                : "Leave Group?"
-        }
-        description={
-          confirmState?.type === "remove"
-            ? `Remove ${confirmState.memberName} from this group? They will no longer have access to group content.`
-            : confirmState?.type === "promote"
-              ? `Promote ${confirmState.memberName} to Admin? They will have permission to manage members and group settings.`
-              : confirmState?.type === "demote"
-                ? `Demote ${confirmState.memberName} to regular Member? They will lose admin permissions.`
-                : "Are you sure you want to leave this group? You can rejoin later if it's public."
-        }
-        confirmLabel={
-          confirmState?.type === "remove"
-            ? "Remove Member"
-            : confirmState?.type === "promote"
-              ? "Promote"
-              : confirmState?.type === "demote"
-                ? "Demote"
-                : "Leave Group"
-        }
-        isDangerous={
-          confirmState?.type === "remove" || confirmState?.type === "leave"
-        }
-        isLoading={isLoading}
-      />
+      {confirmState && (
+        <ConfirmationDialog
+          isOpen={!!confirmState}
+          onClose={() => setConfirmState(null)}
+          onConfirm={handleConfirmAction}
+          title={
+            confirmState.type === "remove"
+              ? "Mitglied entfernen"
+              : confirmState.type === "promote"
+                ? "Zum Admin machen"
+                : confirmState.type === "demote"
+                  ? "Zum Mitglied machen"
+                  : "Gruppe verlassen"
+          }
+          description={
+            confirmState.type === "remove"
+              ? `Möchtest du ${confirmState.memberName} aus der Gruppe entfernen? Sie verlieren den Zugriff auf alle Gruppeninhalte.`
+              : confirmState.type === "promote"
+                ? `Möchtest du ${confirmState.memberName} zum Admin machen? Sie erhalten damit volle Berechtigungen zur Mitgliederverwaltung.`
+                : confirmState.type === "demote"
+                  ? `Möchtest du ${confirmState.memberName} zum normalen Mitglied machen? Sie verlieren die Admin-Rechte.`
+                  : "Bist du sicher, dass du diese Gruppe verlassen möchtest? Du kannst nur wieder beitreten, wenn du neu hinzugefügt wirst."
+          }
+          confirmLabel={
+            confirmState.type === "remove"
+              ? "Entfernen"
+              : confirmState.type === "promote"
+                ? "Zum Admin machen"
+                : confirmState.type === "demote"
+                  ? "Zum Mitglied machen"
+                  : "Gruppe verlassen"
+          }
+          isDangerous={
+            confirmState.type === "remove" || confirmState.type === "leave"
+          }
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 }
