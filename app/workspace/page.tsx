@@ -1,172 +1,446 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
-import { Plus, Calendar, Users, ListTodo } from "lucide-react";
-import { useQuery } from "convex/react";
+import { Plus, Calendar, Users, ListTodo, Trash2, Check } from "lucide-react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CreateGroupModal } from "@/components/workspace-create-group-modal";
+import { PersonalTodoModal } from "@/components/personal-todo-modal";
+import { EventCard } from "@/components/event-card";
 
 export default function WorkspacePage() {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [isCreateTodoModalOpen, setIsCreateTodoModalOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<any | null>(null);
+  const [eventFilter, setEventFilter] = useState<
+    "all" | "personal" | "groups" | "public"
+  >("all");
+  const [taskFilter, setTaskFilter] = useState<"all" | "personal" | "assigned">(
+    "all",
+  );
   const { currentUser } = useCurrentUser();
 
+  // Section refs for scroll navigation
+  const groupsRef = useRef<HTMLDivElement>(null);
+  const tasksRef = useRef<HTMLDivElement>(null);
+  const eventsRef = useRef<HTMLDivElement>(null);
+
   // Fetch Real Data via Convex
-  const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
-  const rawEvents = useQuery(api.events.listByUser, currentUser ? { userId: currentUser._id } : "skip");
-  const pendingTasksData = useQuery(api.workspace.listPendingTasksByUser, currentUser ? { userId: currentUser._id } : "skip");
+  const allConversations = useQuery(
+    api.queries.getConversations,
+    currentUser ? { userId: currentUser._id } : "skip",
+  );
+  const myEventsWithSource = useQuery(
+    api.events.getAllUserEventsWithSource,
+    currentUser
+      ? { userId: currentUser._id, filter: eventFilter, limit: 5 }
+      : "skip",
+  );
+  const personalTodos = useQuery(
+    api.workspace.getPersonalTodos,
+    currentUser ? { userId: currentUser._id } : "skip",
+  );
+  const assignedGroupTasks = useQuery(
+    api.queries.getAssignedGroupTasks,
+    currentUser ? { userId: currentUser._id } : "skip",
+  );
+
+  // Mutations
+  const toggleTodoCompletion = useMutation(
+    api.workspace.togglePersonalTodoCompletion,
+  );
+  const deletePersonalTodo = useMutation(api.workspace.deletePersonalTodo);
+  const toggleGroupTaskCompletion = useMutation(
+    api.workspace.toggleTaskCompletion,
+  );
 
   // Format Data
-  const myGroups = allConversations?.filter(conv => conv.isGroup) || [];
-  const myEvents = rawEvents || [];
+  const myGroups = allConversations?.filter((conv) => conv.isGroup) || [];
 
-  // Upcoming Events (startTime >= today or endTime >= today)
-  const upcomingEvents = rawEvents?.filter(e => e.endTime >= Date.now())
-    .sort((a, b) => a.startTime - b.startTime)
-    .slice(0, 3) || [];
-  // Pending Tasks
-  const pendingTasks = pendingTasksData || [];
+  // Personal To-Dos (incomplete)
+  const pendingTodos = personalTodos?.filter((t) => !t.completed) || [];
+
+  // Apply task filters
+  const filteredTasks = () => {
+    const combined = [
+      ...pendingTodos.map((todo) => ({ ...todo, source: "personal" as const })),
+      ...(assignedGroupTasks || []).map((task) => ({
+        ...task,
+        source: "assigned" as const,
+      })),
+    ];
+
+    if (taskFilter === "personal") {
+      return combined.filter((t) => t.source === "personal");
+    }
+    if (taskFilter === "assigned") {
+      return combined.filter((t) => t.source === "assigned");
+    }
+    return combined;
+  };
+
+  const displayedTasks = filteredTasks();
+
+  const handleToggleTodo = async (todoId: string, completed: boolean) => {
+    if (currentUser) {
+      await toggleTodoCompletion({
+        todoId: todoId as any,
+        userId: currentUser._id,
+        completed: !completed,
+      });
+    }
+  };
+
+  const handleDeleteTodo = async (todoId: string) => {
+    if (currentUser && confirm("Dieses To-do löschen?")) {
+      await deletePersonalTodo({
+        todoId: todoId as any,
+        userId: currentUser._id,
+      });
+    }
+  };
+
+  const handleToggleGroupTask = async (
+    taskId: string,
+    isCompleted: boolean,
+  ) => {
+    if (currentUser) {
+      try {
+        await toggleGroupTaskCompletion({
+          taskId: taskId as any,
+          isCompleted: !isCompleted,
+          actorId: currentUser._id,
+        });
+      } catch (error) {
+        console.error("Failed to toggle task:", error);
+      }
+    }
+  };
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
+    ref.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const priorityLabels = {
+    high: "Hoch",
+    medium: "Mittel",
+    low: "Niedrig",
+  };
 
   return (
-    <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 header-spacing overflow-x-hidden bg-white">
+    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden bg-white">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
-      <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <MobileSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       <div className="px-4 mt-6">
-        <h1 className="text-2xl font-bold mb-4">Workspace</h1>
-
-        {/* Quick Actions */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 hide-scrollbar">
-          <Link href="/calendar" className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm font-medium whitespace-nowrap hover:bg-gray-200 transition-colors cursor-pointer">
-            <Plus size={16} /> Create Event
-          </Link>
-          <button
-            onClick={() => setIsCreateGroupModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm font-medium whitespace-nowrap hover:bg-gray-200 transition-colors cursor-pointer"
-          >
-            <Users size={16} /> New Group
-          </button>
-          <button
-            onClick={() => alert("Please open a specific Workspace from the Dashboard below to add tasks.")}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm font-medium whitespace-nowrap hover:bg-gray-200 transition-colors cursor-pointer"
-          >
-            <ListTodo size={16} /> Add Task
-          </button>
+        {/* Title & Subtitle */}
+        <div className="mb-6 text-center max-w-md mx-auto">
+          <h1 className="text-2xl font-bold mb-1 text-slate-900">Workspace-Übersicht</h1>
+          <p className="text-sm text-gray-500">
+            Verwalte deine Gruppen, Aufgaben und Events an einem Ort.
+          </p>
         </div>
 
-        {/* Today Overview */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-3">Today Overview</h2>
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-              <h3 className="font-medium text-orange-800 flex items-center gap-2 mb-2">
-                <Calendar size={18} /> Upcoming Events
-              </h3>
-              <ul className="space-y-2">
-                {upcomingEvents.length > 0 ? upcomingEvents.map(event => (
-                  <li key={event._id} className="text-sm text-gray-700 bg-white p-2 rounded-lg shadow-sm border border-orange-50">
-                    <span className="font-medium block text-gray-900">{event.title}</span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </li>
-                )) : (
-                  <li className="text-sm text-gray-500 py-2">No upcoming events.</li>
-                )}
-              </ul>
-            </div>
-
-            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-              <h3 className="font-medium text-blue-800 flex items-center gap-2 mb-2">
-                <ListTodo size={18} /> Pending Tasks
-              </h3>
-              <ul className="space-y-2">
-                {pendingTasks.length > 0 ? pendingTasks.map(task => (
-                  <li key={task._id} className="text-sm text-gray-700 bg-white p-2 rounded-lg shadow-sm border border-blue-50 flex justify-between items-center cursor-pointer">
-                    <div>
-                      <span className="font-medium block text-gray-900">{task.title}</span>
-                      <span className="text-xs text-gray-500">{task.deadline || "No deadline"}</span>
-                    </div>
-                    <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
-                  </li>
-                )) : (
-                  <li className="text-sm text-gray-500 py-2">No pending tasks. You're all caught up!</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* My Groups */}
-        <section className="mb-8">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">My Groups</h2>
-            <span className="text-sm text-gray-500 cursor-pointer hover:underline">See all</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {myGroups.map(group => (
-              <Link href={`/workspace/group_${group._id}`} key={group._id} className="border border-gray-100 p-3 rounded-xl shadow-sm text-center bg-gray-50 cursor-pointer hover:shadow-md transition-shadow block">
-                <div className="w-12 h-12 bg-white rounded-full mx-auto mb-2 flex items-center justify-center shadow-sm overflow-hidden border border-gray-100">
-                  {(group as any).displayImage ? (
-                    <img src={(group as any).displayImage} alt={(group as any).displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <Users size={20} className="text-gray-500" />
-                  )}
-                </div>
-                <h3 className="text-sm font-medium line-clamp-1">{(group as any).displayName || "Group"}</h3>
-                <p className="text-xs text-gray-500">{group.participants.length} members</p>
-              </Link>
-            ))}
+        {/* Section Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="flex gap-2 bg-gray-100 rounded-full p-1 shadow-sm">
             <button
-              onClick={() => setIsCreateGroupModalOpen(true)}
-              className="border border-dashed border-gray-300 p-3 rounded-xl text-center bg-transparent flex flex-col justify-center items-center cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => scrollToSection(groupsRef)}
+              className="px-4 py-2 text-sm font-semibold rounded-full transition-colors hover:text-gray-900 text-gray-700 active:scale-95"
             >
-              <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center">
-                <Plus size={24} className="text-gray-400" />
-              </div>
-              <h3 className="text-sm font-medium text-gray-500">Create Group</h3>
+              Gruppen
+            </button>
+            <button
+              onClick={() => scrollToSection(tasksRef)}
+              className="px-4 py-2 text-sm font-semibold rounded-full transition-colors hover:text-gray-900 text-gray-700 active:scale-95"
+            >
+              Aufgaben
+            </button>
+            <button
+              onClick={() => scrollToSection(eventsRef)}
+              className="px-4 py-2 text-sm font-semibold rounded-full transition-colors hover:text-gray-900 text-gray-700 active:scale-95"
+            >
+              Events
             </button>
           </div>
+        </div>
+
+        {/* My Groups Section */}
+        <section ref={groupsRef} className="mb-8 scroll-mt-16">
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h2 className="text-lg font-bold text-slate-900">Meine Gruppen</h2>
+            <button
+              onClick={() => setIsCreateGroupModalOpen(true)}
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
+            >
+              <Plus size={16} /> Neue Gruppe
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {myGroups.map((group) => (
+              <Link
+                href={`/workspace/group_${group._id}`}
+                key={group._id}
+                className="border border-slate-100 p-4 rounded-2xl shadow-sm text-center bg-slate-50/50 cursor-pointer hover:shadow-md hover:bg-slate-50 transition-all block flex flex-col justify-between min-h-[140px]"
+              >
+                <div className="w-12 h-12 bg-white rounded-full mx-auto mb-3 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 text-2xl select-none">
+                  {group.icon ? (
+                    group.icon
+                  ) : (
+                    <Users size={20} className="text-slate-400" />
+                  )}
+                </div>
+                <div className="flex-1 flex flex-col justify-center">
+                  <h3 className="text-sm font-semibold text-slate-900 line-clamp-1 mb-1">
+                    {(group as any).displayName || "Gruppe"}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {group.participants.length} {group.participants.length === 1 ? "Mitglied" : "Mitglieder"}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
 
-        {/* My Events */}
-        <section className="mb-8">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold">My Events</h2>
-            <span className="text-sm text-gray-500 cursor-pointer hover:underline">See all</span>
+        {/* Tasks Section */}
+        <section ref={tasksRef} className="mb-8 scroll-mt-16">
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h2 className="text-lg font-bold text-slate-900">Aufgaben</h2>
+            <button
+              onClick={() => setIsCreateTodoModalOpen(true)}
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
+            >
+              <Plus size={16} /> Neues To-do
+            </button>
           </div>
+
+          {/* Task Filter Chips */}
+          <div className="flex gap-1.5 mb-4 overflow-x-auto flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full max-w-full justify-start sm:justify-center px-1 py-0.5">
+            {[
+              { id: "all" as const, label: "Alle" },
+              { id: "personal" as const, label: "Meine To-dos" },
+              { id: "assigned" as const, label: "Mir zugewiesen" },
+            ].map((chip) => (
+              <button
+                key={chip.id}
+                onClick={() => setTaskFilter(chip.id)}
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${
+                  taskFilter === chip.id
+                    ? "bg-[#D08945] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tasks List */}
           <div className="space-y-3">
-            {myEvents.length > 0 ? myEvents.map(event => {
-              const dateObj = new Date(event.startTime);
-              const month = dateObj.toLocaleString('en-US', { month: 'short' });
-              const day = dateObj.getDate();
-              return (
-                <Link href={`/workspace/event_${event._id}`} key={event._id} className="flex items-center gap-3 border border-gray-100 bg-gray-50 p-3 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-shadow block">
-                  <div className="w-12 h-12 bg-[#D18E4E] text-white rounded-lg flex flex-col items-center justify-center flex-shrink-0">
-                    <span className="text-xs uppercase leading-none opacity-90">{month}</span>
-                    <span className="text-lg font-bold leading-none mt-0.5">{day}</span>
+            {displayedTasks.length > 0 ? (
+              displayedTasks.map((task) => {
+                const isPersonal = task.source === "personal";
+                return (
+                  <div
+                    key={task._id}
+                    onClick={() => {
+                      if (isPersonal) {
+                        setEditingTodo(task);
+                      } else {
+                        router.push(
+                          `/workspace/group_${(task as any).groupId}?tab=tasks&taskId=${task._id}`
+                        );
+                      }
+                    }}
+                    className="text-sm text-slate-700 bg-slate-50/50 p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-start gap-3 hover:shadow-md transition-all cursor-pointer"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <span className="font-semibold text-slate-900 break-words leading-tight">
+                          {task.title}
+                        </span>
+                      </div>
+                      {task.dueDate && (
+                        <span className="text-xs text-slate-500 block mb-2 font-medium">
+                          Fällig: {new Date(task.dueDate).toLocaleDateString("de-DE")}
+                        </span>
+                      )}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {task.priority && (
+                          <span
+                            className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm ${
+                              task.priority === "high"
+                                ? "bg-rose-50 text-rose-700 border border-rose-100"
+                                : task.priority === "medium"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-100"
+                                  : "bg-green-50 text-green-700 border border-green-100"
+                            }`}
+                          >
+                            {priorityLabels[task.priority as keyof typeof priorityLabels]}
+                          </span>
+                        )}
+                        <span
+                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm truncate max-w-[140px] ${
+                            isPersonal
+                              ? "bg-purple-50 text-purple-700 border border-purple-100"
+                              : "bg-blue-50 text-blue-700 border border-blue-100"
+                          }`}
+                        >
+                          {isPersonal ? "Persönlich" : (task as any).groupName}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {isPersonal ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleTodo(
+                                task._id,
+                                (task as any).completed,
+                              );
+                            }}
+                            className="p-2 hover:bg-green-50 rounded-xl transition-colors text-green-600 border border-transparent hover:border-green-100"
+                            title="Als erledigt markieren"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTodo(task._id);
+                            }}
+                            className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-600 border border-transparent hover:border-red-100"
+                            title="Löschen"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <Link
+                          href={`/workspace/group_${(task as any).groupId}?tab=tasks&taskId=${task._id}`}
+                          className="p-2 hover:bg-blue-50 rounded-xl transition-colors text-blue-600 border border-transparent hover:border-blue-100 flex items-center justify-center"
+                          title="In Gruppe anzeigen"
+                        >
+                          <Check size={16} />
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{event.title}</h3>
-                    <p className="text-xs text-gray-500 truncate">{dateObj.toLocaleDateString()}</p>
-                  </div>
-                </Link>
-              );
-            }) : (
-              <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-xl border border-gray-100">No events joined.</p>
+                );
+              })
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-8 bg-slate-50/50 rounded-2xl border border-slate-100">
+                {taskFilter === "all" && "Keine Aufgaben vorhanden"}
+                {taskFilter === "personal" && "Keine persönlichen To-dos vorhanden"}
+                {taskFilter === "assigned" && "Keine zugewiesenen Aufgaben vorhanden"}
+              </p>
             )}
           </div>
         </section>
 
+        {/* Events Section */}
+        <section ref={eventsRef} className="mb-8 scroll-mt-16">
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h2 className="text-lg font-bold text-slate-900">Events</h2>
+            <Link
+              href="/calendar"
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
+            >
+              <Plus size={16} /> Event erstellen
+            </Link>
+          </div>
+
+          {/* Filter Chips */}
+          <div className="flex gap-1.5 mb-4 overflow-x-auto flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full max-w-full justify-start sm:justify-center px-1 py-0.5">
+            {[
+              { id: "all" as const, label: "Alle" },
+              { id: "personal" as const, label: "Persönlich" },
+              { id: "groups" as const, label: "Gruppen" },
+              { id: "public" as const, label: "Öffentlich" },
+            ].map((chip) => (
+              <button
+                key={chip.id}
+                onClick={() => setEventFilter(chip.id)}
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${
+                  eventFilter === chip.id
+                    ? "bg-[#D08945] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Events List */}
+          <div className="space-y-3">
+            {myEventsWithSource && myEventsWithSource.length > 0 ? (
+              myEventsWithSource.map((event) => {
+                const href = event.workspaceId
+                  ? `/workspace/group_${event.workspaceId.replace("group_", "")}?tab=events`
+                  : `/workspace/event_${event._id}`;
+                const badgeType = event.source === "personal" ? "personal" : event.source === "public" ? "public" : "group";
+                const badgeText = event.source === "personal" ? "Privat" : event.source === "public" ? "Öffentlich" : event.sourceName;
+
+                return (
+                  <EventCard
+                    key={event._id}
+                    title={event.title}
+                    startTime={event.startTime}
+                    endTime={event.endTime}
+                    location={event.location}
+                    description={event.description}
+                    badgeText={badgeText}
+                    badgeType={badgeType}
+                    href={href}
+                  />
+                );
+              })
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-8 bg-slate-50/50 rounded-2xl border border-slate-100">
+                {eventFilter === "all" && "Keine bevorstehenden Events"}
+                {eventFilter === "personal" && "Keine bevorstehenden persönlichen Events"}
+                {eventFilter === "groups" && "Keine bevorstehenden Gruppen-Events"}
+                {eventFilter === "public" && "Keine bevorstehenden öffentlichen Events"}
+              </p>
+            )}
+          </div>
+        </section>
       </div>
 
       <BottomNavigation />
-      <CreateGroupModal isOpen={isCreateGroupModalOpen} onClose={() => setIsCreateGroupModalOpen(false)} />
+      <CreateGroupModal
+        isOpen={isCreateGroupModalOpen}
+        onClose={() => setIsCreateGroupModalOpen(false)}
+      />
+      <PersonalTodoModal
+        isOpen={isCreateTodoModalOpen || !!editingTodo}
+        todo={editingTodo || undefined}
+        onClose={() => {
+          setIsCreateTodoModalOpen(false);
+          setEditingTodo(null);
+        }}
+        onSuccess={() => {
+          setIsCreateTodoModalOpen(false);
+          setEditingTodo(null);
+        }}
+      />
     </main>
   );
 }

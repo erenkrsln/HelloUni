@@ -21,7 +21,12 @@ interface DeletePostDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: DeletePostDialogProps) {
+export function DeletePostDialog({
+  postId,
+  userId,
+  isOpen,
+  onOpenChange,
+}: DeletePostDialogProps) {
   const deletePost = useMutation(api.mutations.deletePost);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -44,7 +49,7 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[420px] p-0 gap-0 overflow-hidden">
+      <DialogContent className="p-0 gap-0 overflow-hidden max-w-[460px]">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-xl font-semibold text-gray-900 m-0 mb-2 text-center">
             Beitrag löschen
@@ -55,15 +60,15 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
         </DialogHeader>
         <div className="px-6 pb-6 pt-4 flex-row gap-3 justify-center border-t border-gray-100 flex">
           <DialogClose asChild>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               disabled={isDeleting}
               className="min-w-[100px]"
               style={{
                 willChange: "transform",
                 transform: "translateZ(0)",
                 backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden"
+                WebkitBackfaceVisibility: "hidden",
               }}
             >
               Abbrechen
@@ -78,14 +83,16 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
               willChange: "transform",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
+              WebkitBackfaceVisibility: "hidden",
             }}
           >
-            <span style={{ 
-              display: "inline-block",
-              minWidth: "80px",
-              textAlign: "center"
-            }}>
+            <span
+              style={{
+                display: "inline-block",
+                minWidth: "80px",
+                textAlign: "center",
+              }}
+            >
               {isDeleting ? "Wird gelöscht..." : "Löschen"}
             </span>
           </Button>
@@ -94,15 +101,3 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

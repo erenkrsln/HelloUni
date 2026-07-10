@@ -21,6 +21,7 @@ import type * as notifications from "../notifications.js";
 import type * as push from "../push.js";
 import type * as pushActions from "../pushActions.js";
 import type * as queries from "../queries.js";
+import type * as scoring from "../scoring.js";
 import type * as scraping from "../scraping.js";
 import type * as scrapingMutations from "../scrapingMutations.js";
 import type * as workspace from "../workspace.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   push: typeof push;
   pushActions: typeof pushActions;
   queries: typeof queries;
+  scoring: typeof scoring;
   scraping: typeof scraping;
   scrapingMutations: typeof scrapingMutations;
   workspace: typeof workspace;

@@ -11,9 +11,11 @@ import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useToast } from "@/components/toast";
 import { useQuery, useMutation } from "convex/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { EventFormModal } from "@/components/event-form-modal";
+import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
-import { Plus, MapPin, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Globe, Lock } from "lucide-react";
+import { Plus, MapPin, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { parseTerminStartDate, parseTerminEndDate } from "@/lib/utils";
 
@@ -33,6 +35,7 @@ export default function CalendarPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { currentUser, isLoading: isAuthLoading } = useCurrentUser();
     const [viewMode, setViewMode] = useState("my"); // "my" | "public"
+    const [currentDate, setCurrentDate] = useState(new Date());
 
     // Data Loading
     const myEvents = useQuery(
@@ -46,19 +49,16 @@ export default function CalendarPage() {
 
     const upcomingEvents = useMemo(() => {
         if (!events) return [];
-        const now = Date.now();
-        return events.filter(e => e.startTime >= now);
-    }, [events]);
+        return events.filter(e => {
+            const ed = new Date(e.startTime);
+            return ed.getMonth() === currentDate.getMonth() && ed.getFullYear() === currentDate.getFullYear();
+        }).sort((a, b) => a.startTime - b.startTime);
+    }, [events, currentDate]);
 
 
     const isLoading = viewMode === "my"
         ? isAuthLoading || (!!currentUser && myEvents === undefined)
         : publicEvents === undefined;
-
-    // Mutators
-    const createEvent = useMutation(api.events.create);
-    const updateEvent = useMutation(api.events.update);
-    const removeEvent = useMutation(api.events.remove);
 
     const searchParams = useSearchParams();
     const workspaceParam = searchParams.get("workspace") ?? "";
@@ -72,136 +72,19 @@ export default function CalendarPage() {
     // Modal State
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-
-    // Form State
-    const [formData, setFormData] = useState({
-        title: "",
-        date: new Date().toISOString().split("T")[0],
-        startTime: "09:00",
-        endTime: "10:00",
-        location: "",
-        eventType: workspaceParam.startsWith("group_") ? "group" : "private",
-        groupWorkspaceId: workspaceParam.startsWith("group_") ? workspaceParam : "",
-    });
-
-    useEffect(() => {
-        if (workspaceParam.startsWith("group_") && formData.groupWorkspaceId !== workspaceParam) {
-            setFormData((prev) => ({ ...prev, eventType: "group", groupWorkspaceId: workspaceParam }));
-        }
-    }, [workspaceParam, formData.groupWorkspaceId]);
-
-    const resetForm = () => {
-        setFormData({
-            title: "",
-            date: new Date().toISOString().split("T")[0],
-            startTime: "09:00",
-            endTime: "10:00",
-            location: "",
-            eventType: workspaceParam.startsWith("group_") ? "group" : "private",
-            groupWorkspaceId: workspaceParam.startsWith("group_") ? workspaceParam : "",
-        });
-    };
-
-    const handleCreate = async () => {
-        if (!currentUser) {
-            toast.error("Please sign in to create an event.");
-            return;
-        }
-        if (formData.eventType === "group" && !formData.groupWorkspaceId) {
-            toast.error("Select a group for this event.");
-            return;
-        }
-
-        const start = new Date(`${formData.date}T${formData.startTime}`).getTime();
-        const end = new Date(`${formData.date}T${formData.endTime}`).getTime();
-
-        try {
-            await createEvent({
-                title: formData.title,
-                startTime: start,
-                endTime: end,
-                location: formData.location,
-                userId: currentUser._id,
-                isPrivate: formData.eventType === "public" ? false : true,
-                workspaceId: formData.eventType === "group" ? formData.groupWorkspaceId || undefined : undefined,
-            });
-            setIsCreateOpen(false);
-            resetForm();
-            toast.success("Event created");
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to create event. Please try again.");
-        }
-    };
-
-    const handleUpdate = async () => {
-        if (!editingEvent || !currentUser) {
-            toast.error("Please sign in to update this event.");
-            return;
-        }
-        const start = new Date(`${formData.date}T${formData.startTime}`).getTime();
-        const end = new Date(`${formData.date}T${formData.endTime}`).getTime();
-
-        try {
-            await updateEvent({
-                eventId: editingEvent._id,
-                userId: currentUser._id,
-                title: formData.title,
-                startTime: start,
-                endTime: end,
-                location: formData.location,
-                isPrivate: formData.eventType === "public" ? false : true,
-            });
-            setEditingEvent(null);
-            resetForm();
-            toast.success("Event updated");
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to save event. Please try again.");
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!editingEvent || !currentUser) {
-            toast.error("You must be signed in to delete this event.");
-            return;
-        }
-        if (confirm("Are you sure you want to delete this event?")) {
-            try {
-                await removeEvent({
-                    eventId: editingEvent._id,
-                    userId: currentUser._id,
-                });
-                setEditingEvent(null);
-                toast.success("Event deleted");
-            } catch (error) {
-                console.error(error);
-                toast.error("Failed to delete event. Please try again.");
-            }
-        }
-    };
+    const [selectedDate, setSelectedDate] = useState("");
+    const [selectedDayEvents, setSelectedDayEvents] = useState<{
+        dateLabel: string;
+        dateStr: string;
+        events: Event[];
+        termine: any[];
+    } | null>(null);
 
     const openEdit = (e: Event) => {
-        const d = new Date(e.startTime);
-        const endD = new Date(e.endTime);
-        const dateStr = d.toISOString().split("T")[0];
-        const timeStr = d.toTimeString().slice(0, 5);
-        const endTimeStr = endD.toTimeString().slice(0, 5);
-
-        setFormData({
-            title: e.title,
-            date: dateStr,
-            startTime: timeStr,
-            endTime: endTimeStr,
-            location: e.location || "",
-            eventType: e.workspaceId ? "group" : e.isPrivate ? "private" : "public",
-            groupWorkspaceId: e.workspaceId || "",
-        });
         setEditingEvent(e);
     };
 
     // Calendar View Logic
-    const [currentDate, setCurrentDate] = useState(new Date());
 
     const monthTermine = useMemo(() => {
         const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -249,38 +132,90 @@ export default function CalendarPage() {
                 return start <= day && effectiveEnd >= day;
             });
 
+            const combinedItems = [
+                ...dayTermine.map((t, idx) => ({
+                    id: `t-${idx}`,
+                    title: t.description || "Semestertermin",
+                    colorClass: "bg-[#F78D57]/10 text-[#b55018] border border-[#F78D57]/20",
+                    isTermin: true,
+                    eventObj: null
+                })),
+                ...dayEvents.map(e => ({
+                    id: e._id,
+                    title: e.title || "Event",
+                    colorClass: e.workspaceId
+                        ? "bg-blue-50 text-blue-700 border border-blue-100/70"
+                        : e.isPrivate
+                            ? "bg-purple-50 text-purple-700 border border-purple-100/70"
+                            : "bg-amber-50 text-amber-700 border border-amber-100/70",
+                    isTermin: false,
+                    eventObj: e
+                }))
+            ];
+
+            const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const dateLabel = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString("de-DE", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            });
+
+            const handleDayCellClick = () => {
+                setSelectedDate(dateStr);
+                if (combinedItems.length > 1) {
+                    setSelectedDayEvents({
+                        dateLabel,
+                        dateStr,
+                        events: dayEvents,
+                        termine: dayTermine
+                    });
+                } else {
+                    setIsCreateOpen(true);
+                }
+            };
+
+            const visibleItems = combinedItems.slice(0, 2);
+            const remainingCount = combinedItems.length - 2;
+
             days.push(
                 <div key={i}
-                    className={`min-h-[4rem] bg-white border-b border-r border-gray-100 last:border-r-0 p-1 relative active:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-1 ${isToday ? 'bg-blue-50/10' : ''}`}
-                    onClick={() => {
-                        setFormData(prev => ({ ...prev, date: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}` }));
-                        setIsCreateOpen(true);
-                    }}
+                    className={`min-h-[4.8rem] md:min-h-[6.8rem] bg-white border-b border-r border-gray-100 last:border-r-0 p-1 relative active:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-1 overflow-hidden ${isToday ? 'bg-blue-50/10 font-bold' : ''}`}
+                    onClick={handleDayCellClick}
                 >
-                    <div className={`text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'bg-black text-white' : 'text-gray-500'}`}>
-                        {i}
+                    <div className="flex justify-between items-center w-full mb-0.5">
+                        <div className={`text-[10px] font-semibold w-5 h-5 flex items-center justify-center rounded-full select-none ${isToday ? 'bg-black text-white shadow-sm' : 'text-gray-500'}`}>
+                            {i}
+                        </div>
                     </div>
 
-                    <div className="flex flex-col gap-1 w-full">
-                        {dayTermine.map((t, idx) => (
-                            <div key={`t-${idx}`}
-                                className="h-1.5 w-full rounded-full bg-[#F78D57] bg-opacity-[0.65]"
-                                title={t.description}
-                                onClick={ev => ev.stopPropagation()}
-                            />
-                        ))}
-                        {dayEvents.slice(0, 3).map(e => (
-                            <div key={e._id}
-                                className="h-1.5 w-full rounded-full bg-amber-200"
-                                title={e.title}
+                    <div className="flex flex-col gap-1 w-full flex-1 justify-start overflow-hidden">
+                        {visibleItems.map(item => (
+                            <div key={item.id}
+                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md truncate w-full select-none ${item.colorClass}`}
+                                title={item.title}
                                 onClick={(ev) => {
                                     ev.stopPropagation();
-                                    openEdit(e);
+                                    if (!item.isTermin && item.eventObj) {
+                                        openEdit(item.eventObj);
+                                    } else {
+                                        handleDayCellClick();
+                                    }
                                 }}
-                            />
+                            >
+                                {item.title}
+                            </div>
                         ))}
-                        {dayEvents.length > 3 && (
-                            <div className="h-1.5 w-1.5 rounded-full bg-gray-300 self-center" />
+                        {remainingCount > 0 && (
+                            <div
+                                onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    handleDayCellClick();
+                                }}
+                                className="text-[9px] font-extrabold text-slate-500 hover:text-slate-700 pl-1 select-none w-full text-left"
+                            >
+                                +{remainingCount} mehr
+                            </div>
                         )}
                     </div>
                 </div>
@@ -292,34 +227,34 @@ export default function CalendarPage() {
 
     return (
         <main className="min-h-screen w-full max-w-md mx-auto md:max-w-3xl pb-32 header-spacing bg-white">
-            <Header onMenuClick={() => setIsSidebarOpen(true)} title="Calendar" />
+            <Header onMenuClick={() => setIsSidebarOpen(true)} title="Kalender" />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             <div className="px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-                        <p className="text-sm text-gray-500">Manage your schedule</p>
+                        <h1 className="text-2xl font-bold text-gray-900">Kalender</h1>
+                        <p className="text-sm text-gray-500">Verwalte deinen Zeitplan</p>
                     </div>
-                    <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} size="icon" className="h-10 w-10 bg-black text-white hover:bg-gray-800 rounded-full shadow-lg">
+                    <Button onClick={() => { setSelectedDate(""); setIsCreateOpen(true); }} size="icon" className="h-10 w-10 bg-black text-white hover:bg-gray-800 rounded-full shadow-lg">
                         <Plus className="w-5 h-5" />
                     </Button>
                 </div>
 
                 <Tabs defaultValue="my" className="w-full mb-8" onValueChange={setViewMode}>
                     <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100/80 p-1 rounded-2xl h-12">
-                        <TabsTrigger value="my" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">My Events</TabsTrigger>
-                        <TabsTrigger value="public" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Public Feed</TabsTrigger>
+                        <TabsTrigger value="my" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Meine Events</TabsTrigger>
+                        <TabsTrigger value="public" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Öffentlicher Feed</TabsTrigger>
                     </TabsList>
 
                     {isLoading ? (
-                        <div className="py-20 text-center"><LoadingScreen text="Loading calendar..." /></div>
+                        <div className="py-20 text-center"><LoadingScreen text="Kalender wird geladen..." /></div>
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {/* Calendar Navigation */}
                             <div className="flex items-center justify-between mb-4">
                                 <span className="font-bold text-lg text-gray-900 ml-1">
-                                    {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                    {currentDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}
                                 </span>
                                 <div className="flex gap-1">
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
@@ -331,15 +266,17 @@ export default function CalendarPage() {
                                 </div>
                             </div>
                             {/* Legend */}
-                            <div className="flex items-center gap-[17px] text-[11px] leading-normal text-black text-left pb-[8px]">
-                                <span className="flex justify-center items-center gap-[5px]"><span className="w-[11px] h-[11px] rounded-full bg-amber-200" />Your Event</span>
-                                <span className="flex justify-center items-center gap-[5px]"><span className="w-[11px] h-[11px] rounded-full bg-[#F78D57] opacity-65" />Semester Date</span>
+                            <div className="flex flex-wrap items-center gap-[17px] text-[11px] leading-normal text-slate-600 text-left pb-[8px] select-none">
+                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-purple-400" />Privat</span>
+                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-blue-400" />Gruppe</span>
+                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" />Öffentlich</span>
+                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-[#F78D57]" />Semestertermin</span>
                             </div>
 
                             {/* Month Grid */}
                             <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-gray-50/50 mb-8">
                                 <div className="grid grid-cols-7 border-b border-gray-200">
-                                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                                    {['S', 'M', 'D', 'M', 'D', 'F', 'S'].map((d, i) => (
                                         <div key={i} className="py-2 text-center text-[10px] uppercase tracking-wider font-semibold text-gray-400">{d}</div>
                                     ))}
                                 </div>
@@ -352,60 +289,41 @@ export default function CalendarPage() {
                             {/* List View of Events in Month (or selected day - let's keep it simple for now and show upcoming) */}
                             <div>
                                 <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
-                                    Upcoming Events
+                                    Bevorstehende Events
                                     <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{upcomingEvents.length}</span>
                                 </h3>
 
                                 {upcomingEvents.length === 0 ? (
-                                    <div className="border-2 border-dashed border-gray-100 rounded-2xl p-8 text-center">
+                                    <div className="border-2 border-dashed border-gray-100 rounded-2xl p-8 text-center select-none">
                                         <CalendarIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-gray-400 text-sm font-medium">No events scheduled</p>
+                                        <p className="text-gray-400 text-sm font-semibold">Keine Events in diesem Monat</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {upcomingEvents.map(e => (
-                                            <div key={e._id} onClick={() => openEdit(e)} className="group p-4 rounded-2xl border border-gray-100 bg-white hover:border-gray-200 transition-all cursor-pointer flex gap-4 items-start shadow-sm hover:shadow-md">
-                                                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl w-14 h-14 shrink-0 border border-gray-100 group-hover:bg-black group-hover:text-white transition-colors">
-                                                    <span className="text-xs font-bold uppercase">{new Date(e.startTime).toLocaleString('default', { month: 'short' })}</span>
-                                                    <span className="text-xl font-bold leading-none">{new Date(e.startTime).getDate()}</span>
-                                                </div>
+                                        {upcomingEvents.map(e => {
+                                            const isGroupEvent = !!e.workspaceId;
+                                            const badgeType = isGroupEvent ? "group" : e.isPrivate ? "personal" : "public";
+                                            const badgeText = isGroupEvent
+                                                ? (groupOptions.find(g => `group_${g._id}` === e.workspaceId)?.displayName || "Gruppe")
+                                                : e.isPrivate ? "Privat" : "Öffentlich";
 
-                                                <div className="flex-1 min-w-0 pt-0.5">
-                                                    <div className="flex justify-between items-start mb-0.5">
-                                                        <h4 className="font-semibold text-base text-gray-900 truncate pr-2">{e.title}</h4>
-                                                        {e.workspaceId ? (
-                                                            <span className="shrink-0 text-[10px] font-medium bg-[#FEE3C1] text-[#953F0B] px-2 py-0.5 rounded-full">
-                                                                {groupOptions.find((group) => `group_${(group as any)._id}` === e.workspaceId)?.displayName || "Group event"}
-                                                            </span>
-                                                        ) : e.isPrivate ? (
-                                                            <span className="shrink-0 text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Private</span>
-                                                        ) : (
-                                                            <span className="shrink-0 text-[10px] font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Public</span>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex items-center text-xs text-gray-500 gap-3 mb-1.5">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Clock className="w-3.5 h-3.5 text-gray-400" />
-                                                            {new Date(e.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            {' - '}
-                                                            {new Date(e.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </div>
-                                                    </div>
-
-                                                    {e.location && (
-                                                        <div className="flex items-center text-xs text-gray-500 gap-1.5">
-                                                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                                                            <span className="truncate">{e.location}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity -ml-2">
-                                                    <ChevronRight className="w-5 h-5 text-gray-300" />
-                                                </div>
-                                            </div>
-                                        ))}
+                                            return (
+                                                <EventCard
+                                                    key={e._id}
+                                                    title={e.title}
+                                                    startTime={e.startTime}
+                                                    endTime={e.endTime}
+                                                    location={e.location}
+                                                    description={e.description}
+                                                    badgeText={badgeText}
+                                                    badgeType={badgeType}
+                                                    onClick={() => openEdit(e)}
+                                                    rightAction={
+                                                        <ChevronRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                                    }
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -413,19 +331,27 @@ export default function CalendarPage() {
                             {monthTermine.length > 0 && (
                                 <div className="mt-6">
                                     <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
-                                        Semester Dates
+                                        Semestertermine
                                         <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{monthTermine.length}</span>
                                     </h3>
                                     <div className="space-y-3">
-                                        {monthTermine.map((t, i) => (
-                                            <div key={i} className="p-4 rounded-2xl border border-gray-100 bg-white flex items-stretch gap-4 shadow-sm">
-                                                <div className="w-[11px] rounded-full bg-[#F78D57] opacity-65 shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-medium text-sm text-gray-900">{t.description}</p>
-                                                    <p className="text-xs text-gray-400 mt-0.5">{t.date}</p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                        {monthTermine.map((t, i) => {
+                                            const start = parseTerminStartDate(t.date);
+                                            const end = parseTerminEndDate(t.date);
+                                            const startTime = start ? start.getTime() : 0;
+                                            const endTime = end && end.getFullYear() !== 9999 ? end.getTime() : startTime;
+
+                                            return (
+                                                <EventCard
+                                                    key={`termin-list-${i}`}
+                                                    title={t.description}
+                                                    startTime={startTime}
+                                                    endTime={endTime}
+                                                    badgeText="Semestertermin"
+                                                    badgeType="termin"
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -434,385 +360,100 @@ export default function CalendarPage() {
                 </Tabs>
             </div>
 
-            {/* Create Modal - Fullscreen Design */}
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent
-                    hideCloseButton
-                    withoutEnterAnimation
-                    withoutExitAnimation
-                    className="fixed inset-0 translate-x-0 translate-y-0 w-full min-h-[100dvh] max-w-none max-h-none rounded-none p-0 border-0 flex flex-col bg-white z-[100] animate-in slide-in-from-bottom duration-300 overscroll-none"
-                >
-                    <DialogTitle className="sr-only">Neues Event erstellen</DialogTitle>
-                    {/* Header - mit Safe Area für iOS Notch */}
-                    <div
-                        className="px-5 h-14 flex items-center justify-between border-b border-gray-100 shrink-0"
-                        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-                    >
-                        <button
-                            type="button"
-                            onClick={() => setIsCreateOpen(false)}
-                            className="text-base font-medium text-gray-900 active:opacity-50 transition-opacity touch-manipulation"
-                        >
-                            Abbrechen
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleCreate}
-                            disabled={!formData.title.trim()}
-                            className="text-base font-medium text-[#D08945] active:opacity-50 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
-                        >
-                            Erstellen
-                        </button>
-                    </div>
+            <EventFormModal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                mode="create"
+                userId={currentUser?._id}
+                defaultWorkspaceId={workspaceParam}
+                defaultDate={selectedDate}
+            />
 
-                    {/* Content - mit Safe Area für iOS Home Indicator */}
-                    <div
-                        className="flex-1 overflow-y-auto px-6 pt-6 overscroll-contain"
-                        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
-                    >
-                        {/* Title Input - wie bei /create */}
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Titel</label>
-                            <div className="border border-gray-300 rounded-lg">
-                                <input
-                                    value={formData.title}
-                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    placeholder="Event Titel"
-                                    className="w-full px-4 py-3 bg-transparent text-base placeholder-gray-400 focus:outline-none focus:ring-0 border-none"
+            <EventFormModal
+                isOpen={!!editingEvent}
+                onClose={() => setEditingEvent(null)}
+                mode="edit"
+                event={editingEvent}
+                userId={currentUser?._id}
+            />
+
+            <Dialog open={!!selectedDayEvents} onOpenChange={(open) => !open && setSelectedDayEvents(null)}>
+                <DialogContent className="w-[calc(100vw-24px)] md:max-w-[480px] max-h-[80vh] rounded-3xl p-6 flex flex-col gap-4 overflow-hidden border-none shadow-2xl">
+                    <DialogHeader className="border-b border-slate-100 pb-3 flex flex-row items-center justify-between">
+                        <div className="flex-1">
+                            <DialogTitle className="text-lg font-bold text-slate-900 leading-tight">
+                                Events am Tag
+                            </DialogTitle>
+                            <DialogDescription className="text-xs font-semibold text-[#D08945] mt-1 select-none">
+                                {selectedDayEvents?.dateLabel}
+                            </DialogDescription>
+                        </div>
+                    </DialogHeader>
+
+                    {/* Scrollable List */}
+                    <div className="flex-1 overflow-y-auto pr-1 py-1 space-y-3 min-h-0">
+                        {/* Semester Termine */}
+                        {selectedDayEvents?.termine.map((t, idx) => (
+                            <div key={`term-${idx}`} className="p-3.5 rounded-2xl border border-[#F78D57]/20 bg-[#F78D57]/5 flex items-start gap-3 shadow-sm select-none">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#F78D57] shrink-0 mt-1" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-sm text-[#b55018] break-words">{t.description}</p>
+                                    <p className="text-[11px] font-medium text-slate-500 mt-0.5">Semestertermin · {t.date}</p>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Real Events */}
+                        {selectedDayEvents?.events.map((e) => {
+                            const isGroupEvent = !!e.workspaceId;
+                            const badgeType = isGroupEvent ? "group" : e.isPrivate ? "personal" : "public";
+                            const badgeText = isGroupEvent
+                                ? (groupOptions.find(g => `group_${g._id}` === e.workspaceId)?.displayName || "Gruppe")
+                                : e.isPrivate ? "Privat" : "Öffentlich";
+
+                            return (
+                                <EventCard
+                                    key={e._id}
+                                    title={e.title}
+                                    startTime={e.startTime}
+                                    endTime={e.endTime}
+                                    location={e.location}
+                                    description={e.description}
+                                    badgeText={badgeText}
+                                    badgeType={badgeType}
+                                    onClick={() => {
+                                        setSelectedDayEvents(null);
+                                        openEdit(e);
+                                    }}
+                                    rightAction={
+                                        <ChevronRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                    }
                                 />
-                            </div>
-                        </div>
-
-                        {/* Options - alle untereinander */}
-                        <div className="space-y-4">
-                            {/* Datum */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Datum</label>
-                                <div className="border border-gray-300 rounded-lg">
-                                    <input
-                                        type="date"
-                                        value={formData.date}
-                                        onChange={e => setFormData({ ...formData, date: e.target.value })}
-                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Ort */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Ort (optional)</label>
-                                <div className="border border-gray-300 rounded-lg">
-                                    <input
-                                        value={formData.location}
-                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                        placeholder="z.B. Raum 101"
-                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 placeholder-gray-400 border-0 outline-none focus:ring-0"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Zeitraum */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Uhrzeit</label>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex-1 border border-gray-300 rounded-lg">
-                                        <input
-                                            type="time"
-                                            value={formData.startTime}
-                                            onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
-                                        />
-                                    </div>
-                                    <span className="text-gray-400">bis</span>
-                                    <div className="flex-1 border border-gray-300 rounded-lg">
-                                        <input
-                                            type="time"
-                                            value={formData.endTime}
-                                            onChange={e => setFormData({ ...formData, endTime: e.target.value })}
-                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Event type</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {[
-                                        { key: "private", label: "Private", icon: Lock },
-                                        { key: "public", label: "Public", icon: Globe },
-                                        { key: "group", label: "Group", icon: CalendarIcon },
-                                    ].map((option) => (
-                                        <button
-                                            key={option.key}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, eventType: option.key as "private" | "public" | "group" })}
-                                            className={`rounded-3xl border px-3 py-3 text-xs font-semibold transition ${formData.eventType === option.key ? "border-[#D08945] bg-[#FEE3C1] text-[#953F0B]" : "border-gray-300 bg-white text-slate-700 hover:border-gray-400"}`}
-                                        >
-                                            <option.icon className="mb-1 h-4 w-4" />
-                                            <div>{option.label}</div>
-                                        </button>
-                                    ))}
-                                </div>
-                                {formData.eventType === "group" && (
-                                    <div className="mt-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Group</label>
-                                        <div className="border border-gray-300 rounded-lg bg-white">
-                                            <select
-                                                value={formData.groupWorkspaceId}
-                                                onChange={(e) => setFormData({ ...formData, groupWorkspaceId: e.target.value })}
-                                                className="w-full px-4 py-3 bg-transparent text-base text-gray-900 focus:outline-none focus:ring-0"
-                                            >
-                                                <option value="">Select a group</option>
-                                                {groupOptions.map((group) => (
-                                                    <option key={(group as any)._id.toString()} value={`group_${(group as any)._id}`}>
-                                                        {(group as any).displayName || "Group"}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        {groupOptions.length === 0 && (
-                                            <p className="mt-2 text-xs text-slate-500">Join or create a group first to schedule a group event.</p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                            );
+                        })}
                     </div>
-                </DialogContent>
-            </Dialog>
 
-            {/* Edit Modal - Fullscreen Design */}
-            <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-                <DialogContent
-                    hideCloseButton
-                    withoutEnterAnimation
-                    withoutExitAnimation
-                    className="fixed inset-0 translate-x-0 translate-y-0 w-full min-h-[100dvh] max-w-none max-h-none rounded-none p-0 border-0 flex flex-col bg-white z-[100] animate-in slide-in-from-bottom duration-300 overscroll-none"
-                >
-                    <DialogTitle className="sr-only">Event bearbeiten</DialogTitle>
-                    {editingEvent && (
-                        <>
-                            {/* Header - mit Safe Area für iOS Notch */}
-                            <div
-                                className="px-5 h-14 flex items-center justify-between border-b border-gray-100 shrink-0"
-                                style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-                            >
-                                <button
-                                    type="button"
-                                    onClick={() => setEditingEvent(null)}
-                                    className="text-base font-medium text-gray-900 active:opacity-50 transition-opacity touch-manipulation"
-                                >
-                                    Abbrechen
-                                </button>
-                                {currentUser && editingEvent.createdBy === currentUser._id && (
-                                    <button
-                                        type="button"
-                                        onClick={handleUpdate}
-                                        disabled={!formData.title.trim()}
-                                        className="text-base font-medium text-[#D08945] active:opacity-50 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
-                                    >
-                                        Speichern
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Content - mit Safe Area für iOS Home Indicator */}
-                            <div
-                                className="flex-1 overflow-y-auto px-6 pt-6 overscroll-contain"
-                                style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
-                            >
-                                {currentUser && editingEvent.createdBy === currentUser._id ? (
-                                    /* Edit Mode */
-                                    <>
-                                        {/* Title Input - wie bei /create */}
-                                        <div className="mb-6">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Titel</label>
-                                            <div className="border border-gray-300 rounded-lg">
-                                                <input
-                                                    value={formData.title}
-                                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                                    placeholder="Event Titel"
-                                                    className="w-full px-4 py-3 bg-transparent text-base placeholder-gray-400 focus:outline-none focus:ring-0 border-none"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Options - alle untereinander */}
-                                        <div className="space-y-4">
-                                            {/* Datum */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Datum</label>
-                                                <div className="border border-gray-300 rounded-lg">
-                                                    <input
-                                                        type="date"
-                                                        value={formData.date}
-                                                        onChange={e => setFormData({ ...formData, date: e.target.value })}
-                                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Ort */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Ort (optional)</label>
-                                                <div className="border border-gray-300 rounded-lg">
-                                                    <input
-                                                        value={formData.location}
-                                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                                        placeholder="z.B. Raum 101"
-                                                        className="w-full px-4 py-3 bg-transparent text-base text-gray-900 placeholder-gray-400 border-0 outline-none focus:ring-0"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Zeitraum */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Uhrzeit</label>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex-1 border border-gray-300 rounded-lg">
-                                                        <input
-                                                            type="time"
-                                                            value={formData.startTime}
-                                                            onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
-                                                        />
-                                                    </div>
-                                                    <span className="text-gray-400">bis</span>
-                                                    <div className="flex-1 border border-gray-300 rounded-lg">
-                                                        <input
-                                                            type="time"
-                                                            value={formData.endTime}
-                                                            onChange={e => setFormData({ ...formData, endTime: e.target.value })}
-                                                            className="w-full px-4 py-3 bg-transparent text-base text-gray-900 border-0 outline-none focus:ring-0"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Event type</label>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    {[
-                                                        { key: "private", label: "Private", icon: Lock },
-                                                        { key: "public", label: "Public", icon: Globe },
-                                                        { key: "group", label: "Group", icon: CalendarIcon },
-                                                    ].map((option) => (
-                                                        <button
-                                                            key={option.key}
-                                                            type="button"
-                                                            onClick={() => setFormData({ ...formData, eventType: option.key as "private" | "public" | "group" })}
-                                                            className={`rounded-3xl border px-3 py-3 text-xs font-semibold transition ${formData.eventType === option.key ? "border-[#D08945] bg-[#FEE3C1] text-[#953F0B]" : "border-gray-300 bg-white text-slate-700 hover:border-gray-400"}`}
-                                                        >
-                                                            <option.icon className="mb-1 h-4 w-4" />
-                                                            <div>{option.label}</div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                {formData.eventType === "group" && (
-                                                    <div className="mt-4">
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Group</label>
-                                                        <div className="border border-gray-300 rounded-lg bg-white">
-                                                            <select
-                                                                value={formData.groupWorkspaceId}
-                                                                onChange={(e) => setFormData({ ...formData, groupWorkspaceId: e.target.value })}
-                                                                className="w-full px-4 py-3 bg-transparent text-base text-gray-900 focus:outline-none focus:ring-0"
-                                                            >
-                                                                <option value="">Select a group</option>
-                                                                {groupOptions.map((group) => (
-                                                                    <option key={(group as any)._id.toString()} value={`group_${(group as any)._id}`}>
-                                                                        {(group as any).displayName || "Group"}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        {groupOptions.length === 0 && (
-                                                            <p className="mt-2 text-xs text-slate-500">Join or create a group first to schedule a group event.</p>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Delete Button */}
-                                            <button
-                                                type="button"
-                                                onClick={handleDelete}
-                                                className="w-full py-4 text-base font-medium text-red-500 active:bg-red-50 rounded-lg border border-red-200 transition-colors touch-manipulation"
-                                            >
-                                                Event löschen
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    /* Read-Only Mode */
-                                    <div className="space-y-4">
-                                        {/* Event Info Cards */}
-                                        <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                                                        <CalendarIcon className="w-6 h-6 text-blue-600" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Datum</p>
-                                                        <p className="text-lg font-semibold text-gray-900">
-                                                            {new Date(editingEvent.startTime).toLocaleDateString('de-DE', {
-                                                                weekday: 'long',
-                                                                day: 'numeric',
-                                                                month: 'long',
-                                                                year: 'numeric'
-                                                            })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="h-px bg-gray-100" />
-
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
-                                                        <Clock className="w-6 h-6 text-purple-600" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Uhrzeit</p>
-                                                        <p className="text-lg font-semibold text-gray-900">
-                                                            {new Date(editingEvent.startTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                                                            {' - '}
-                                                            {new Date(editingEvent.endTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                {editingEvent.location && (
-                                                    <>
-                                                        <div className="h-px bg-gray-100" />
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                                                                <MapPin className="w-6 h-6 text-emerald-600" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Ort</p>
-                                                                <p className="text-lg font-semibold text-gray-900">{editingEvent.location}</p>
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Read-only Notice */}
-                                        <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                                            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                                                <Lock className="w-4 h-4 text-amber-600" />
-                                            </div>
-                                            <p className="text-sm text-amber-800">
-                                                Dieses Event wurde von jemand anderem erstellt. Du kannst es nur ansehen.
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
+                    {/* Actions Footer */}
+                    <div className="flex-shrink-0 border-t border-slate-100 pt-4 flex gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setSelectedDayEvents(null)}
+                            className="flex-1 rounded-2xl h-11 text-slate-700 font-semibold"
+                        >
+                            Schließen
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                setSelectedDayEvents(null);
+                                setIsCreateOpen(true);
+                            }}
+                            className="flex-1 rounded-2xl h-11 bg-[#D08945] hover:bg-[#b07335] text-white font-bold"
+                        >
+                            Event hinzufügen
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
 

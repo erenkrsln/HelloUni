@@ -7,13 +7,15 @@ import { shouldDeleteR2File, createNotification } from "./helpers";
 export const createPost = mutation({
   args: {
     userId: v.id("users"),
-    postType: v.optional(v.union(
-      v.literal("normal"),
-      v.literal("spontaneous_meeting"),
-      v.literal("recurring_meeting"),
-      v.literal("announcement"),
-      v.literal("poll")
-    )),
+    postType: v.optional(
+      v.union(
+        v.literal("normal"),
+        v.literal("spontaneous_meeting"),
+        v.literal("recurring_meeting"),
+        v.literal("announcement"),
+        v.literal("poll"),
+      ),
+    ),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
@@ -70,7 +72,7 @@ export const likePost = mutation({
         const existingLike = await ctx.db
           .query("likes")
           .withIndex("by_user_post", (q) =>
-            q.eq("userId", args.userId).eq("postId", args.postId)
+            q.eq("userId", args.userId).eq("postId", args.postId),
           )
           .first();
 
@@ -122,7 +124,7 @@ export const likePost = mutation({
               (n) =>
                 n.issuerId === args.userId &&
                 n.type === "post_like" &&
-                n.targetId === args.postId
+                n.targetId === args.postId,
             );
 
             if (!duplicate) {
@@ -141,13 +143,20 @@ export const likePost = mutation({
         }
       } catch (error: any) {
         // If it's a write conflict, retry
-        if (error.message?.includes("write conflict") || error.message?.includes("conflict")) {
+        if (
+          error.message?.includes("write conflict") ||
+          error.message?.includes("conflict")
+        ) {
           retries++;
           if (retries >= maxRetries) {
-            throw new Error("Failed to like post after multiple retries due to write conflicts");
+            throw new Error(
+              "Failed to like post after multiple retries due to write conflicts",
+            );
           }
           // Wait a bit before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, retries), 1000)));
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.min(100 * Math.pow(2, retries), 1000)),
+          );
           continue;
         }
         // If it's a different error, throw it
@@ -198,7 +207,9 @@ export const createComment = mutation({
     if (args.parentCommentId) {
       const parentReplies = await ctx.db
         .query("comments")
-        .withIndex("by_parent", (q) => q.eq("parentCommentId", args.parentCommentId))
+        .withIndex("by_parent", (q) =>
+          q.eq("parentCommentId", args.parentCommentId),
+        )
         .collect();
 
       await ctx.db.patch(args.parentCommentId, {
@@ -212,7 +223,9 @@ export const createComment = mutation({
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
 
-    const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
+    const topLevelCount = topLevelComments.filter(
+      (c) => !c.parentCommentId,
+    ).length;
 
     await ctx.db.patch(args.postId, {
       commentsCount: topLevelCount,
@@ -232,7 +245,7 @@ export const createComment = mutation({
         (n) =>
           n.issuerId === args.userId &&
           n.type === "comment" &&
-          n.targetId === commentId
+          n.targetId === commentId,
       );
 
       if (!duplicate) {
@@ -333,18 +346,24 @@ export const deleteComment = mutation({
       .withIndex("by_post", (q) => q.eq("postId", postId))
       .collect();
 
-    const topLevelCount = topLevelComments.filter(c => !c.parentCommentId).length;
+    const topLevelCount = topLevelComments.filter(
+      (c) => !c.parentCommentId,
+    ).length;
 
     await ctx.db.patch(postId, {
       commentsCount: topLevelCount,
     });
 
     if (comment.imageUrl && comment.imageUrl.startsWith("http")) {
-      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: comment.imageUrl });
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+        url: comment.imageUrl,
+      });
     }
     for (const reply of replies) {
       if (reply.imageUrl && reply.imageUrl.startsWith("http")) {
-        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: reply.imageUrl });
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+          url: reply.imageUrl,
+        });
       }
     }
 
@@ -361,7 +380,7 @@ export const likeComment = mutation({
     const existingLike = await ctx.db
       .query("commentLikes")
       .withIndex("by_user_comment", (q) =>
-        q.eq("userId", args.userId).eq("commentId", args.commentId)
+        q.eq("userId", args.userId).eq("commentId", args.commentId),
       )
       .first();
 
@@ -411,7 +430,7 @@ export const likeComment = mutation({
           (n) =>
             n.issuerId === args.userId &&
             n.type === "comment_like" &&
-            n.targetId === args.commentId
+            n.targetId === args.commentId,
         );
 
         if (!duplicate) {
@@ -440,7 +459,7 @@ export const dislikeComment = mutation({
     const existingDislike = await ctx.db
       .query("commentDislikes")
       .withIndex("by_user_comment", (q) =>
-        q.eq("userId", args.userId).eq("commentId", args.commentId)
+        q.eq("userId", args.userId).eq("commentId", args.commentId),
       )
       .first();
 
@@ -457,7 +476,7 @@ export const dislikeComment = mutation({
       const existingLike = await ctx.db
         .query("commentLikes")
         .withIndex("by_user_comment", (q) =>
-          q.eq("userId", args.userId).eq("commentId", args.commentId)
+          q.eq("userId", args.userId).eq("commentId", args.commentId),
         )
         .first();
 
@@ -498,7 +517,7 @@ export const followUser = mutation({
     const existingFollow = await ctx.db
       .query("follows")
       .withIndex("by_follower_following", (q) =>
-        q.eq("followerId", args.followerId).eq("followingId", args.followingId)
+        q.eq("followerId", args.followerId).eq("followingId", args.followingId),
       )
       .first();
 
@@ -522,9 +541,7 @@ export const followUser = mutation({
       .collect();
 
     const duplicate = recentNotifications.find(
-      (n) =>
-        n.issuerId === args.followerId &&
-        n.type === "follow"
+      (n) => n.issuerId === args.followerId && n.type === "follow",
     );
 
     if (!duplicate) {
@@ -551,7 +568,7 @@ export const unfollowUser = mutation({
     const existingFollow = await ctx.db
       .query("follows")
       .withIndex("by_follower_following", (q) =>
-        q.eq("followerId", args.followerId).eq("followingId", args.followingId)
+        q.eq("followerId", args.followerId).eq("followingId", args.followingId),
       )
       .first();
 
@@ -583,21 +600,34 @@ export const updateUser = mutation({
       throw new Error("User not found");
     }
 
-    const updates: { name?: string; image?: string; headerImage?: string; bio?: string; major?: string; semester?: number; interests?: string[] } = {};
+    const updates: {
+      name?: string;
+      image?: string;
+      headerImage?: string;
+      bio?: string;
+      major?: string;
+      semester?: number;
+      interests?: string[];
+    } = {};
     if (args.name !== undefined) {
       updates.name = args.name;
     }
     if (args.image !== undefined) {
       if (shouldDeleteR2File(user.image, args.image)) {
-        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: user.image });
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+          url: user.image,
+        });
       }
       updates.image = args.image === "" ? undefined : args.image;
     }
     if (args.headerImage !== undefined) {
       if (shouldDeleteR2File(user.headerImage, args.headerImage)) {
-        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: user.headerImage });
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+          url: user.headerImage,
+        });
       }
-      updates.headerImage = args.headerImage === "" ? undefined : args.headerImage;
+      updates.headerImage =
+        args.headerImage === "" ? undefined : args.headerImage;
     }
     if (args.bio !== undefined) {
       // If bio is empty string, set to empty string (will be treated as deleted in UI)
@@ -613,7 +643,8 @@ export const updateUser = mutation({
     }
     if (args.interests !== undefined) {
       // If empty array, set to undefined to clear interests
-      updates.interests = args.interests.length > 0 ? args.interests : undefined;
+      updates.interests =
+        args.interests.length > 0 ? args.interests : undefined;
     }
 
     await ctx.db.patch(args.userId, updates);
@@ -631,7 +662,10 @@ export const joinEvent = mutation({
     if (!post) throw new Error("Post not found");
 
     // Prüfe ob es ein Treffen ist
-    if (post.postType !== "spontaneous_meeting" && post.postType !== "recurring_meeting") {
+    if (
+      post.postType !== "spontaneous_meeting" &&
+      post.postType !== "recurring_meeting"
+    ) {
       throw new Error("This post is not an event");
     }
 
@@ -639,7 +673,7 @@ export const joinEvent = mutation({
     const existingParticipation = await ctx.db
       .query("participants")
       .withIndex("by_user_post", (q) =>
-        q.eq("userId", args.userId).eq("postId", args.postId)
+        q.eq("userId", args.userId).eq("postId", args.postId),
       )
       .first();
 
@@ -648,7 +682,10 @@ export const joinEvent = mutation({
     }
 
     // Prüfe Teilnehmerlimit
-    if (post.participantLimit && (post.participantsCount ?? 0) >= post.participantLimit) {
+    if (
+      post.participantLimit &&
+      (post.participantsCount ?? 0) >= post.participantLimit
+    ) {
       throw new Error("Event is full");
     }
 
@@ -677,7 +714,7 @@ export const joinEvent = mutation({
         (n) =>
           n.issuerId === args.userId &&
           n.type === "event_join" &&
-          n.targetId === args.postId
+          n.targetId === args.postId,
       );
 
       if (!duplicate) {
@@ -687,7 +724,9 @@ export const joinEvent = mutation({
           type: "event_join",
           targetId: args.postId,
           eventMetadata: {
-            eventType: post.postType as "spontaneous_meeting" | "recurring_meeting",
+            eventType: post.postType as
+              | "spontaneous_meeting"
+              | "recurring_meeting",
           },
           isRead: false,
           createdAt: Date.now(),
@@ -704,6 +743,20 @@ export const createConversation = mutation({
     participants: v.array(v.id("users")),
     name: v.optional(v.string()), // Optionaler Name für Gruppen
     creatorId: v.optional(v.id("users")), // Add creatorId argument
+    description: v.optional(v.string()), // Group description
+    icon: v.optional(v.string()), // Group emoji/icon
+    groupType: v.optional(
+      v.union(
+        v.literal("Study Group"),
+        v.literal("Project Team"),
+        v.literal("Course Group"),
+        v.literal("Event Team"),
+        v.literal("Other"),
+      ),
+    ),
+    customGroupType: v.optional(v.string()), // Custom type when "Other" is selected
+    currentGoal: v.optional(v.string()), // Current group goal
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
     isPublic: v.optional(v.boolean()),
     needsRequestToJoin: v.optional(v.boolean()),
   },
@@ -713,11 +766,12 @@ export const createConversation = mutation({
     // Nur bei 1:1 Chats prüfen wir auf Duplikate
     if (!isGroup && args.participants.length === 2) {
       const conversations = await ctx.db.query("conversations").collect();
-      const existing = conversations.find(c =>
-        !c.isGroup &&
-        c.participants.includes(args.participants[0]) &&
-        c.participants.includes(args.participants[1]) &&
-        c.participants.length === 2
+      const existing = conversations.find(
+        (c) =>
+          !c.isGroup &&
+          c.participants.includes(args.participants[0]) &&
+          c.participants.includes(args.participants[1]) &&
+          c.participants.length === 2,
       );
       if (existing) {
         // Wenn der Chat von einem Teilnehmer gelöscht wurde, heben wir das Löschen auf
@@ -733,6 +787,8 @@ export const createConversation = mutation({
     const conversationId = await ctx.db.insert("conversations", {
       participants: args.participants,
       name: args.name,
+      description: args.description,
+      icon: args.icon,
       isGroup,
       isPublic: isGroup ? (args.isPublic ?? false) : undefined,
       needsRequestToJoin: isGroup ? (args.needsRequestToJoin ?? false) : undefined,
@@ -741,7 +797,106 @@ export const createConversation = mutation({
       updatedAt: Date.now(),
     });
 
+    // If it's a group and we have a creator, create the workspace_groups record
+    if (isGroup && args.creatorId) {
+      await ctx.db.insert("workspace_groups", {
+        conversationId,
+        title: args.name,
+        description: args.description,
+        groupType: args.groupType,
+        customGroupType: args.customGroupType,
+        currentGoal: args.currentGoal,
+        ownerId: args.creatorId,
+        adminIds: [args.creatorId],
+        createdAt: Date.now(),
+        visibility: args.visibility || "private",
+      });
+    }
+
     return conversationId;
+  },
+});
+
+export const updateGroupDetails = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    name: v.optional(v.string()), // Optional name to allow renaming in group settings
+    description: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    groupType: v.optional(
+      v.union(
+        v.literal("Study Group"),
+        v.literal("Project Team"),
+        v.literal("Course Group"),
+        v.literal("Event Team"),
+        v.literal("Other"),
+      ),
+    ),
+    customGroupType: v.optional(v.string()), // Custom type when "Other" is selected
+    currentGoal: v.optional(v.string()),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
+    userId: v.id("users"), // User making the update (for permission check)
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Group not found");
+
+    // Check if user is owner or admin
+    const isOwnerOrAdmin =
+      conversation.creatorId === args.userId ||
+      conversation.adminIds?.includes(args.userId);
+    if (!isOwnerOrAdmin)
+      throw new Error("Only group owner/admin can update details");
+
+    // Update conversations table
+    const updates: any = {};
+    if (args.description !== undefined) updates.description = args.description;
+    if (args.icon !== undefined) updates.icon = args.icon;
+    if (args.name !== undefined && args.name.trim() !== conversation.name) {
+      updates.name = args.name.trim();
+
+      const oldName = conversation.name || "Gruppe";
+      const user = await ctx.db.get(args.userId);
+      if (user) {
+        await ctx.db.insert("messages", {
+          conversationId: args.conversationId,
+          senderId: args.userId,
+          content: `${user.name} hat den Gruppennamen von "${oldName}" zu "${args.name.trim()}" geändert`,
+          type: "system",
+          createdAt: Date.now(),
+        });
+      }
+    }
+    if (args.visibility !== undefined) {
+      updates.isPublic = args.visibility === "public";
+    }
+    updates.updatedAt = Date.now();
+
+    await ctx.db.patch(args.conversationId, updates);
+
+    // Update workspace_groups table if it exists
+    const workspaceGroup = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .first();
+
+    if (workspaceGroup) {
+      const wsUpdates: any = {};
+      if (args.groupType !== undefined) wsUpdates.groupType = args.groupType;
+      if (args.customGroupType !== undefined)
+        wsUpdates.customGroupType = args.customGroupType;
+      if (args.currentGoal !== undefined)
+        wsUpdates.currentGoal = args.currentGoal;
+      if (args.visibility !== undefined) wsUpdates.visibility = args.visibility;
+      if (args.name !== undefined) wsUpdates.title = args.name.trim();
+      if (Object.keys(wsUpdates).length > 0) {
+        await ctx.db.patch(workspaceGroup._id, wsUpdates);
+      }
+    }
+
+    return { success: true };
   },
 });
 
@@ -757,16 +912,20 @@ export const updateGroupImage = mutation({
 
     // If userId is provided, check if they are admin
     if (args.userId && conversation.isGroup) {
-      const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+      const isAdmin =
+        conversation.adminIds?.includes(args.userId) ||
+        conversation.creatorId === args.userId;
       if (!isAdmin) throw new Error("Only admins can change group image");
     }
 
     if (shouldDeleteR2File(conversation.image, args.imageId)) {
-      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: conversation.image });
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+        url: conversation.image,
+      });
     }
 
     await ctx.db.patch(args.conversationId, {
-      image: args.imageId === "" ? undefined : args.imageId
+      image: args.imageId === "" ? undefined : args.imageId,
     });
 
     // Create system message
@@ -798,7 +957,9 @@ export const updateGroupName = mutation({
     if (!conversation.isGroup) throw new Error("Can only rename group chats");
 
     // Check admin permissions
-    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+    const isAdmin =
+      conversation.adminIds?.includes(args.userId) ||
+      conversation.creatorId === args.userId;
     if (!isAdmin) throw new Error("Only admins can rename the group");
 
     const oldName = conversation.name || "Gruppe";
@@ -821,14 +982,52 @@ export const updateGroupName = mutation({
   },
 });
 
+export const updateGroupDescription = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    description: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
 
+    if (!conversation.isGroup)
+      throw new Error("Can only update group descriptions");
+
+    // Check admin permissions
+    const isAdmin =
+      conversation.adminIds?.includes(args.userId) ||
+      conversation.creatorId === args.userId;
+    if (!isAdmin)
+      throw new Error("Only admins can update the group description");
+
+    await ctx.db.patch(args.conversationId, {
+      description: args.description.trim(),
+    });
+  },
+});
 
 export const sendMessage = mutation({
   args: {
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"), v.literal("location"), v.literal("live_location"))),
+    type: v.optional(
+      v.union(
+        v.literal("text"),
+        v.literal("system"),
+        v.literal("image"),
+        v.literal("video"),
+        v.literal("pdf"),
+        v.literal("poll"),
+        v.literal("post"),
+        v.literal("profile"),
+        v.literal("event_invite"),
+        v.literal("location"),
+        v.literal("live_location"),
+      ),
+    ),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
@@ -875,7 +1074,11 @@ export const sendMessage = mutation({
     });
 
     // If it's a live location, register initial coordinates
-    if (args.type === "live_location" && args.latitude !== undefined && args.longitude !== undefined) {
+    if (
+      args.type === "live_location" &&
+      args.latitude !== undefined &&
+      args.longitude !== undefined
+    ) {
       await ctx.db.insert("liveLocations", {
         messageId,
         userId: args.senderId,
@@ -900,27 +1103,45 @@ export const sendMessage = mutation({
         const senderName = sender?.name || "Neue Nachricht";
         const left = conversation.leftParticipants || [];
         const recipients = conversation.participants.filter(
-          (id) => id !== args.senderId && !left.includes(id)
+          (id) => id !== args.senderId && !left.includes(id),
         );
 
         if (recipients.length > 0) {
           let preview: string;
           switch (messageType) {
-            case "image": preview = "📷 Bild"; break;
-            case "video": preview = "🎥 Video"; break;
-            case "pdf": preview = args.fileName ? `📄 ${args.fileName}` : "📄 Datei"; break;
-            case "poll": preview = `📊 Umfrage: ${args.content}`; break;
-            case "post": preview = "🔗 Beitrag geteilt"; break;
-            case "profile": preview = "👤 Profil geteilt"; break;
-            case "event_invite": preview = "📅 Termin"; break;
-            default: preview = args.content.length > 120 ? `${args.content.slice(0, 117)}…` : args.content;
+            case "image":
+              preview = "📷 Bild";
+              break;
+            case "video":
+              preview = "🎥 Video";
+              break;
+            case "pdf":
+              preview = args.fileName ? `📄 ${args.fileName}` : "📄 Datei";
+              break;
+            case "poll":
+              preview = `📊 Umfrage: ${args.content}`;
+              break;
+            case "post":
+              preview = "🔗 Beitrag geteilt";
+              break;
+            case "profile":
+              preview = "👤 Profil geteilt";
+              break;
+            case "event_invite":
+              preview = "📅 Termin";
+              break;
+            default:
+              preview =
+                args.content.length > 120
+                  ? `${args.content.slice(0, 117)}…`
+                  : args.content;
           }
 
           const isGroup = conversation.isGroup === true;
           await ctx.scheduler.runAfter(0, internal.pushActions.sendPush, {
             userIds: recipients,
             payload: {
-              title: isGroup ? (conversation.name || "Gruppe") : senderName,
+              title: isGroup ? conversation.name || "Gruppe" : senderName,
               body: isGroup ? `${senderName}: ${preview}` : preview,
               url: `/chat/${args.conversationId}`,
             },
@@ -950,14 +1171,16 @@ export const sendChatPoll = mutation({
     if (!conversation.participants.includes(args.senderId)) {
       throw new Error("User is not a participant of this conversation");
     }
-    if (args.options.length < 2) throw new Error("Poll must have at least 2 options");
-    if (args.question.trim() === "") throw new Error("Poll question cannot be empty");
+    if (args.options.length < 2)
+      throw new Error("Poll must have at least 2 options");
+    if (args.question.trim() === "")
+      throw new Error("Poll question cannot be empty");
 
     const pollId = await ctx.db.insert("chatPolls", {
       conversationId: args.conversationId,
       creatorId: args.senderId,
       question: args.question.trim(),
-      options: args.options.map(o => o.trim()).filter(o => o !== ""),
+      options: args.options.map((o) => o.trim()).filter((o) => o !== ""),
       allowMultiple: args.allowMultiple,
       closeAt: args.closeAt,
       createdAt: Date.now(),
@@ -1019,11 +1242,16 @@ export const voteChatPoll = mutation({
     // Upsert vote
     const existing = await ctx.db
       .query("chatPollVotes")
-      .withIndex("by_poll_user", (q) => q.eq("chatPollId", args.chatPollId).eq("userId", args.userId))
+      .withIndex("by_poll_user", (q) =>
+        q.eq("chatPollId", args.chatPollId).eq("userId", args.userId),
+      )
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, { optionIndices: indices, votedAt: Date.now() });
+      await ctx.db.patch(existing._id, {
+        optionIndices: indices,
+        votedAt: Date.now(),
+      });
     } else {
       await ctx.db.insert("chatPollVotes", {
         chatPollId: args.chatPollId,
@@ -1036,7 +1264,6 @@ export const voteChatPoll = mutation({
     return { success: true };
   },
 });
-
 
 export const toggleMessageReaction = mutation({
   args: {
@@ -1063,7 +1290,10 @@ export const toggleMessageReaction = mutation({
       } else {
         // Replace with new emoji
         newReactions = [...reactions];
-        newReactions[existingIndex] = { emoji: args.emoji, userId: args.userId };
+        newReactions[existingIndex] = {
+          emoji: args.emoji,
+          userId: args.userId,
+        };
       }
     } else {
       // Add new reaction
@@ -1084,10 +1314,13 @@ export const addConversationMember = mutation({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) throw new Error("Conversation not found");
 
-    if (!conversation.isGroup) throw new Error("Can only add members to group chats");
+    if (!conversation.isGroup)
+      throw new Error("Can only add members to group chats");
 
     // Check admin permissions
-    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    const isAdmin =
+      conversation.adminIds?.includes(args.adminId) ||
+      conversation.creatorId === args.adminId;
     if (!isAdmin) throw new Error("Only admins can add members");
 
     if (conversation.participants.includes(args.newMemberId)) {
@@ -1097,13 +1330,17 @@ export const addConversationMember = mutation({
     // Add member
     // Add member and remove from leftParticipants if present
     const leftParticipants = conversation.leftParticipants || [];
-    const newLeftParticipants = leftParticipants.filter(id => id !== args.newMemberId);
+    const newLeftParticipants = leftParticipants.filter(
+      (id) => id !== args.newMemberId,
+    );
 
     await ctx.db.patch(args.conversationId, {
       participants: [...conversation.participants, args.newMemberId],
       leftParticipants: newLeftParticipants,
       // Remove from leftMetadata if present
-      leftMetadata: (conversation.leftMetadata || []).filter(m => m.userId !== args.newMemberId),
+      leftMetadata: (conversation.leftMetadata || []).filter(
+        (m) => m.userId !== args.newMemberId,
+      ),
     });
 
     // Create system message
@@ -1140,7 +1377,9 @@ export const removeConversationMember = mutation({
     if (!conversation) throw new Error("Conversation not found");
 
     // Check admin permissions
-    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    const isAdmin =
+      conversation.adminIds?.includes(args.adminId) ||
+      conversation.creatorId === args.adminId;
     if (!isAdmin) throw new Error("Only admins can remove members");
 
     // Cannot remove creator
@@ -1148,8 +1387,12 @@ export const removeConversationMember = mutation({
       throw new Error("Cannot remove group creator");
     }
 
-    const newParticipants = conversation.participants.filter(id => id !== args.memberIdToRemove);
-    const newAdmins = conversation.adminIds?.filter(id => id !== args.memberIdToRemove);
+    const newParticipants = conversation.participants.filter(
+      (id) => id !== args.memberIdToRemove,
+    );
+    const newAdmins = conversation.adminIds?.filter(
+      (id) => id !== args.memberIdToRemove,
+    );
 
     // Ensure uniqueness in leftParticipants
     const currentLeft = conversation.leftParticipants || [];
@@ -1161,8 +1404,8 @@ export const removeConversationMember = mutation({
     const currentMetadata = conversation.leftMetadata || [];
     // Remove old entry if exists (though unlikely for active member) and add new one
     const newMetadata = [
-      ...currentMetadata.filter(m => m.userId !== args.memberIdToRemove),
-      { userId: args.memberIdToRemove, leftAt: Date.now() }
+      ...currentMetadata.filter((m) => m.userId !== args.memberIdToRemove),
+      { userId: args.memberIdToRemove, leftAt: Date.now() },
     ];
 
     await ctx.db.patch(args.conversationId, {
@@ -1207,8 +1450,10 @@ export const leaveGroup = mutation({
       throw new ConvexError("Creator must transfer creator status before leaving the group");
     }
 
-    const newParticipants = conversation.participants.filter(id => id !== args.userId);
-    const newAdmins = conversation.adminIds?.filter(id => id !== args.userId);
+    const newParticipants = conversation.participants.filter(
+      (id) => id !== args.userId,
+    );
+    const newAdmins = conversation.adminIds?.filter((id) => id !== args.userId);
 
     // Ensure uniqueness in leftParticipants
     const currentLeft = conversation.leftParticipants || [];
@@ -1219,8 +1464,8 @@ export const leaveGroup = mutation({
     // Update leftMetadata
     const currentMetadata = conversation.leftMetadata || [];
     const newMetadata = [
-      ...currentMetadata.filter(m => m.userId !== args.userId),
-      { userId: args.userId, leftAt: Date.now() }
+      ...currentMetadata.filter((m) => m.userId !== args.userId),
+      { userId: args.userId, leftAt: Date.now() },
     ];
 
     await ctx.db.patch(args.conversationId, {
@@ -1241,7 +1486,7 @@ export const leaveGroup = mutation({
         createdAt: Date.now(),
       });
     }
-  }
+  },
 });
 
 export const deleteConversationFromList = mutation({
@@ -1290,7 +1535,9 @@ export const promoteToAdmin = mutation({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) throw new Error("Conversation not found");
 
-    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    const isAdmin =
+      conversation.adminIds?.includes(args.adminId) ||
+      conversation.creatorId === args.adminId;
     if (!isAdmin) throw new Error("Only admins can promote members");
 
     const currentAdmins = conversation.adminIds || [];
@@ -1325,7 +1572,9 @@ export const demoteAdmin = mutation({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) throw new Error("Conversation not found");
 
-    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    const isAdmin =
+      conversation.adminIds?.includes(args.adminId) ||
+      conversation.creatorId === args.adminId;
     if (!isAdmin) throw new Error("Only admins can demote members");
 
     // Cannot demote creator
@@ -1334,7 +1583,9 @@ export const demoteAdmin = mutation({
     }
 
     const currentAdmins = conversation.adminIds || [];
-    const newAdmins = currentAdmins.filter(id => id !== args.memberIdToDemote);
+    const newAdmins = currentAdmins.filter(
+      (id) => id !== args.memberIdToDemote,
+    );
 
     await ctx.db.patch(args.conversationId, {
       adminIds: newAdmins,
@@ -1372,19 +1623,25 @@ export const deleteConversation = mutation({
 
     const messages = await ctx.db
       .query("messages")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
       .collect();
 
     for (const msg of messages) {
       if (msg.storageId && msg.storageId.startsWith("http")) {
-        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: msg.storageId });
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+          url: msg.storageId,
+        });
       }
       await ctx.db.delete(msg._id);
     }
 
     const lastReads = await ctx.db
       .query("last_reads")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
       .collect();
 
     for (const read of lastReads) {
@@ -1392,7 +1649,20 @@ export const deleteConversation = mutation({
     }
 
     if (conversation.image && conversation.image.startsWith("http")) {
-      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: conversation.image });
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+        url: conversation.image,
+      });
+    }
+
+    // Delete associated workspace_group if exists
+    const workspaceGroup = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .first();
+    if (workspaceGroup) {
+      await ctx.db.delete(workspaceGroup._id);
     }
 
     await ctx.db.delete(args.conversationId);
@@ -1413,7 +1683,7 @@ export const leaveEvent = mutation({
     const existingParticipation = await ctx.db
       .query("participants")
       .withIndex("by_user_post", (q) =>
-        q.eq("userId", args.userId).eq("postId", args.postId)
+        q.eq("userId", args.userId).eq("postId", args.postId),
       )
       .first();
 
@@ -1452,7 +1722,7 @@ export const votePoll = mutation({
     const existingVote = await ctx.db
       .query("pollVotes")
       .withIndex("by_user_post", (q) =>
-        q.eq("userId", args.userId).eq("postId", args.postId)
+        q.eq("userId", args.userId).eq("postId", args.postId),
       )
       .first();
 
@@ -1484,7 +1754,8 @@ export const deletePost = mutation({
   handler: async (ctx, args) => {
     const post = await ctx.db.get(args.postId);
     if (!post) throw new Error("Post nicht gefunden");
-    if (post.userId !== args.userId) throw new Error("Nicht berechtigt, diesen Post zu löschen");
+    if (post.userId !== args.userId)
+      throw new Error("Nicht berechtigt, diesen Post zu löschen");
 
     const likes = await ctx.db
       .query("likes")
@@ -1529,7 +1800,9 @@ export const deletePost = mutation({
       }
 
       if (comment.imageUrl && comment.imageUrl.startsWith("http")) {
-        ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: comment.imageUrl });
+        ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+          url: comment.imageUrl,
+        });
       }
 
       await ctx.db.delete(comment._id);
@@ -1538,7 +1811,9 @@ export const deletePost = mutation({
     await ctx.db.delete(args.postId);
 
     if (post.imageUrl && post.imageUrl.startsWith("http")) {
-      ctx.scheduler.runAfter(0, api.actions.deleteR2File, { url: post.imageUrl });
+      ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
+        url: post.imageUrl,
+      });
     }
 
     return { success: true };
@@ -1554,7 +1829,7 @@ export const markAsRead = mutation({
     const existing = await ctx.db
       .query("last_reads")
       .withIndex("by_user_conversation", (q) =>
-        q.eq("userId", args.userId).eq("conversationId", args.conversationId)
+        q.eq("userId", args.userId).eq("conversationId", args.conversationId),
       )
       .first();
 
@@ -1611,7 +1886,9 @@ export const transferCreator = mutation({
     // Validate that the new creator is not in leftParticipants
     const leftParticipants = conversation.leftParticipants || [];
     if (leftParticipants.includes(args.newCreatorId)) {
-      throw new Error("Cannot transfer creator status to a user who has left the group");
+      throw new Error(
+        "Cannot transfer creator status to a user who has left the group",
+      );
     }
 
     // Update adminIds: ensure new creator is in adminIds
@@ -1691,7 +1968,7 @@ export const stopLiveLocation = mutation({
     const activeLoc = await ctx.db
       .query("liveLocations")
       .withIndex("by_message_user", (q) =>
-        q.eq("messageId", args.messageId).eq("userId", args.userId)
+        q.eq("messageId", args.messageId).eq("userId", args.userId),
       )
       .first();
     if (activeLoc) {
@@ -1710,10 +1987,13 @@ export const toggleGroupPublic = mutation({
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) throw new Error("Conversation not found");
-    if (!conversation.isGroup) throw new Error("Can only toggle public state for group chats");
+    if (!conversation.isGroup)
+      throw new Error("Can only toggle public state for group chats");
 
     // Check admin permissions
-    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
+    const isAdmin =
+      conversation.adminIds?.includes(args.userId) ||
+      conversation.creatorId === args.userId;
     if (!isAdmin) throw new Error("Only admins can change group visibility");
 
     // Default needsRequestToJoin to true when group is made public
@@ -1763,7 +2043,7 @@ export const updateLiveLocationCoordinates = mutation({
       const activeLoc = await ctx.db
         .query("liveLocations")
         .withIndex("by_message_user", (q) =>
-          q.eq("messageId", args.messageId).eq("userId", args.userId)
+          q.eq("messageId", args.messageId).eq("userId", args.userId),
         )
         .first();
       if (activeLoc) await ctx.db.delete(activeLoc._id);
@@ -1780,7 +2060,7 @@ export const updateLiveLocationCoordinates = mutation({
     const activeLoc = await ctx.db
       .query("liveLocations")
       .withIndex("by_message_user", (q) =>
-        q.eq("messageId", args.messageId).eq("userId", args.userId)
+        q.eq("messageId", args.messageId).eq("userId", args.userId),
       )
       .first();
 
@@ -1813,11 +2093,15 @@ export const toggleGroupJoinRequestRequired = mutation({
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation) throw new Error("Conversation not found");
-    if (!conversation.isGroup) throw new Error("Can only toggle join request setting for groups");
+    if (!conversation.isGroup)
+      throw new Error("Can only toggle join request setting for groups");
 
     // Check admin permissions
-    const isAdmin = conversation.adminIds?.includes(args.userId) || conversation.creatorId === args.userId;
-    if (!isAdmin) throw new Error("Only admins can change group join request settings");
+    const isAdmin =
+      conversation.adminIds?.includes(args.userId) ||
+      conversation.creatorId === args.userId;
+    if (!isAdmin)
+      throw new Error("Only admins can change group join request settings");
 
     await ctx.db.patch(args.conversationId, {
       needsRequestToJoin: args.needsRequestToJoin,
@@ -1850,20 +2134,25 @@ export const joinPublicGroup = mutation({
     if (!conversation) throw new Error("Conversation not found");
     if (!conversation.isGroup) throw new Error("Not a group chat");
     if (!conversation.isPublic) throw new Error("Group is not public");
-    if (conversation.needsRequestToJoin) throw new Error("Approval is required to join this group");
+    if (conversation.needsRequestToJoin)
+      throw new Error("Approval is required to join this group");
 
     if (conversation.participants.includes(args.userId)) {
       throw new Error("Already a member of this group");
     }
 
     const leftParticipants = conversation.leftParticipants || [];
-    const newLeftParticipants = leftParticipants.filter(id => id !== args.userId);
+    const newLeftParticipants = leftParticipants.filter(
+      (id) => id !== args.userId,
+    );
 
     // Add participant to the conversation
     await ctx.db.patch(args.conversationId, {
       participants: [...conversation.participants, args.userId],
       leftParticipants: newLeftParticipants,
-      leftMetadata: (conversation.leftMetadata || []).filter(m => m.userId !== args.userId),
+      leftMetadata: (conversation.leftMetadata || []).filter(
+        (m) => m.userId !== args.userId,
+      ),
       updatedAt: Date.now(),
     });
 
@@ -1883,7 +2172,7 @@ export const joinPublicGroup = mutation({
     const existingLastRead = await ctx.db
       .query("last_reads")
       .withIndex("by_user_conversation", (q) =>
-        q.eq("userId", args.userId).eq("conversationId", args.conversationId)
+        q.eq("userId", args.userId).eq("conversationId", args.conversationId),
       )
       .first();
 
@@ -1913,7 +2202,8 @@ export const requestToJoinPublicGroup = mutation({
     if (!conversation) throw new Error("Group not found");
     if (!conversation.isGroup) throw new Error("Not a group");
     if (!conversation.isPublic) throw new Error("Group is not public");
-    if (!conversation.needsRequestToJoin) throw new Error("Group does not require approval to join");
+    if (!conversation.needsRequestToJoin)
+      throw new Error("Group does not require approval to join");
 
     if (conversation.participants.includes(args.userId)) {
       throw new Error("Already a member of this group");
@@ -1923,12 +2213,16 @@ export const requestToJoinPublicGroup = mutation({
     const existingRequest = await ctx.db
       .query("joinRequests")
       .withIndex("by_conversation_user", (q) =>
-        q.eq("conversationId", args.conversationId).eq("userId", args.userId)
+        q.eq("conversationId", args.conversationId).eq("userId", args.userId),
       )
       .first();
 
     if (existingRequest && existingRequest.status === "pending") {
-      return { success: true, requestId: existingRequest._id, alreadyRequested: true };
+      return {
+        success: true,
+        requestId: existingRequest._id,
+        alreadyRequested: true,
+      };
     }
 
     // Create or update request to pending
@@ -1953,7 +2247,7 @@ export const requestToJoinPublicGroup = mutation({
       ...(conversation.creatorId ? [conversation.creatorId] : []),
       ...(conversation.adminIds || []),
     ];
-    
+
     // Deduplicate keeping original Id objects
     const seen = new Set<string>();
     const uniqueAdminIds = adminIds.filter((id) => {
@@ -1964,7 +2258,7 @@ export const requestToJoinPublicGroup = mutation({
     });
 
     const resolvedAdmins = await Promise.all(
-      uniqueAdminIds.map((id) => ctx.db.get(id))
+      uniqueAdminIds.map((id) => ctx.db.get(id)),
     );
 
     for (const admin of resolvedAdmins) {
@@ -1994,13 +2288,16 @@ export const handleJoinRequest = mutation({
   handler: async (ctx, args) => {
     const request = await ctx.db.get(args.requestId);
     if (!request) throw new Error("Request not found");
-    if (request.status !== "pending") throw new Error("Request is already handled");
+    if (request.status !== "pending")
+      throw new Error("Request is already handled");
 
     const conversation = await ctx.db.get(request.conversationId);
     if (!conversation) throw new Error("Group not found");
 
     // Check if adminId is admin or creator
-    const isAdmin = conversation.adminIds?.includes(args.adminId) || conversation.creatorId === args.adminId;
+    const isAdmin =
+      conversation.adminIds?.includes(args.adminId) ||
+      conversation.creatorId === args.adminId;
     if (!isAdmin) throw new Error("Only admins can handle join requests");
 
     if (args.approve) {
@@ -2020,12 +2317,16 @@ export const handleJoinRequest = mutation({
       // Add user to conversation if not already added
       if (!conversation.participants.includes(request.userId)) {
         const leftParticipants = conversation.leftParticipants || [];
-        const newLeftParticipants = leftParticipants.filter(id => id !== request.userId);
+        const newLeftParticipants = leftParticipants.filter(
+          (id) => id !== request.userId,
+        );
 
         await ctx.db.patch(request.conversationId, {
           participants: [...conversation.participants, request.userId],
           leftParticipants: newLeftParticipants,
-          leftMetadata: (conversation.leftMetadata || []).filter(m => m.userId !== request.userId),
+          leftMetadata: (conversation.leftMetadata || []).filter(
+            (m) => m.userId !== request.userId,
+          ),
           updatedAt: Date.now(),
         });
 
@@ -2045,7 +2346,9 @@ export const handleJoinRequest = mutation({
         const existingLastRead = await ctx.db
           .query("last_reads")
           .withIndex("by_user_conversation", (q) =>
-             q.eq("userId", request.userId).eq("conversationId", request.conversationId)
+            q
+              .eq("userId", request.userId)
+              .eq("conversationId", request.conversationId),
           )
           .first();
 
@@ -2077,7 +2380,7 @@ export const handleJoinRequest = mutation({
     // Delete all group_join_request notifications for this requestId (clean up from DB)
     const notifications = await ctx.db.query("notifications").collect();
     const relevantNotis = notifications.filter(
-      (n) => n.type === "group_join_request" && n.targetId === args.requestId
+      (n) => n.type === "group_join_request" && n.targetId === args.requestId,
     );
 
     for (const noti of relevantNotis) {

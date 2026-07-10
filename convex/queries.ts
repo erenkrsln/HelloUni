@@ -2,6 +2,7 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
+import { calculateRankingScore, ScoringFactors } from "./scoring";
 
 const AI_ASSISTANT_USERNAME = "jastell";
 const AI_ASSISTANT_DISPLAY_NAME = "Jastell (HelloUni-KI)";
@@ -132,6 +133,138 @@ export const getFeed = query({
     );
 
     return postsWithUsers;
+  },
+});
+
+/**
+ * Get feed with engagement-based ranking algorithm
+ * Combines engagement metrics, recency, and personalization
+ */
+export const getFeedWithRanking = query({
+  args: {
+    userId: v.optional(v.id("users")),
+    rankBy: v.optional(v.string()), // "engagement", "trending", or "chronological" (default)
+  },
+  handler: async (ctx, args) => {
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    // Get current user's follows for personalization
+    let followingIds: Id<"users">[] = [];
+    if (args.userId) {
+      const follows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q: any) => q.eq("followerId", args.userId))
+        .collect();
+      followingIds = follows.map((f: any) => f.followingId);
+    }
+
+    // Batch-query all likes for current user
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = posts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
+    // Get current user for interest/major matching
+    let currentUser: any = null;
+    if (args.userId) {
+      currentUser = await ctx.db.get(args.userId);
+    }
+
+    // Enrich posts with rankings
+    const postsWithScores = await Promise.all(
+      posts.map(async (post) => {
+        const user = await ctx.db.get(post.userId);
+        let imageUrl = post.imageUrl;
+
+        // Convert storage ID to URL if it exists
+        imageUrl = await getImageUrl(ctx, imageUrl);
+        const userImageUrl = await getUserImageUrl(ctx, user?.image);
+
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+        }
+
+        // Calculate actual comments count (only top-level comments)
+        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+        // Determine if post matches user interests/major
+        let matchesUserInterests = false;
+        let matchesUserMajor = false;
+        if (currentUser && user) {
+          if (currentUser.interests && Array.isArray(currentUser.interests)) {
+            matchesUserInterests = currentUser.interests.some((interest: string) =>
+              post.tags && Array.isArray(post.tags) && post.tags.includes(interest)
+            );
+          }
+          if (currentUser.major && user.major === currentUser.major) {
+            matchesUserMajor = true;
+          }
+        }
+
+        // Calculate ranking score if ranking is enabled
+        let rankingScore = 0;
+        if (args.rankBy && args.rankBy !== "chronological") {
+          const scoringFactors: ScoringFactors = {
+            likesCount: post.likesCount || 0,
+            commentsCount: actualCommentsCount,
+            participantsCount: actualParticipantsCount,
+            createdAt: post.createdAt,
+            isFromFollowedUser: followingIds.includes(post.userId),
+            matchesUserInterests,
+            matchesUserMajor,
+            isEvent: post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting",
+            eventDate: post.eventDate,
+          };
+          rankingScore = calculateRankingScore(scoringFactors);
+        }
+
+        return {
+          ...post,
+          participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
+          imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+          rankingScore, // Include score for sorting
+          user: user ? {
+            ...user,
+            image: userImageUrl,
+          } : null,
+        };
+      })
+    );
+
+    // Sort based on ranking strategy
+    if (args.rankBy === "engagement") {
+      // Sort by ranking score (highest first)
+      return postsWithScores.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+    } else if (args.rankBy === "trending") {
+      // For now, use same as engagement (real trending would require 24h engagement windows)
+      return postsWithScores.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+    } else {
+      // Default to chronological (newest first)
+      return postsWithScores;
+    }
   },
 });
 
@@ -1129,6 +1262,52 @@ export const getConversationDisplay = query({
   },
 });
 
+export const getGroupById = query({
+  args: { groupId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const group = await ctx.db.get(args.groupId);
+    if (!group) return null;
+
+    return {
+      _id: group._id,
+      name: group.name,
+      description: group.description,
+      icon: group.icon,
+      creatorId: group.creatorId,
+      adminIds: group.adminIds || [],
+      participants: group.participants || [],
+      isGroup: group.isGroup,
+    };
+  },
+});
+
+export const getWorkspaceGroup = query({
+  args: { groupId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    // Get workspace group metadata from workspace_groups table
+    const workspaceGroup = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.groupId))
+      .first();
+
+    if (!workspaceGroup) return null;
+
+    return {
+      _id: workspaceGroup._id,
+      conversationId: workspaceGroup.conversationId,
+      title: workspaceGroup.title,
+      description: workspaceGroup.description,
+      groupType: workspaceGroup.groupType,
+      customGroupType: workspaceGroup.customGroupType,
+      currentGoal: workspaceGroup.currentGoal,
+      visibility: workspaceGroup.visibility,
+      createdAt: workspaceGroup.createdAt,
+      ownerId: workspaceGroup.ownerId,
+      adminIds: workspaceGroup.adminIds || [],
+    };
+  },
+});
+
 export const getConversationMembers = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
@@ -1954,6 +2133,130 @@ export const searchPublicGroups = query({
     }
 
     return enrichedGroups;
+  },
+});
+
+/**
+ * Get groups for a user's profile
+ * Used on profile pages to display groups a user belongs to
+ * Can filter to show only public groups (for viewing other users' profiles)
+ */
+export const getUserGroupsForProfile = query({
+  args: {
+    userId: v.id("users"),
+    showOnlyPublic: v.optional(v.boolean()),
+  },
+  handler: async (ctx: any, args: any) => {
+    // Get all conversations where the user is a participant and isGroup is true
+    const allConversations = await ctx.db
+      .query("conversations")
+      .collect();
+
+    // Filter for groups where user is a participant
+    const userGroups = allConversations.filter((conv: any) => {
+      const isGroup = conv.isGroup === true;
+      const isParticipant = conv.participants && conv.participants.includes(args.userId);
+      const isActive = !conv.leftParticipants || !conv.leftParticipants.includes(args.userId);
+      
+      return isGroup && isParticipant && isActive;
+    });
+
+    // Filter by visibility if requested (for other users' profiles)
+    let groupsToDisplay = userGroups;
+    if (args.showOnlyPublic === true) {
+      groupsToDisplay = userGroups.filter((conv: any) => conv.isPublic === true);
+    }
+
+    // Sort by most recently updated first
+    groupsToDisplay.sort((a: any, b: any) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    // Enrich groups with converted image URLs and member count
+    const enrichedGroups = await Promise.all(
+      groupsToDisplay.map(async (group: any) => {
+        const displayImage = await getGroupImageUrl(ctx, group.image);
+        const memberCount = group.participants ? group.participants.length : 0;
+
+        return {
+          _id: group._id,
+          name: group.name || "Unnamed Group",
+          displayImage,
+          memberCount,
+          isPublic: group.isPublic,
+          updatedAt: group.updatedAt,
+        };
+      })
+    );
+
+    return enrichedGroups;
+  },
+});
+
+// Get group tasks assigned to the current user
+export const getAssignedGroupTasks = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    // Get all tasks assigned to the user
+    const assignedTasks = await ctx.db
+      .query("workspace_tasks")
+      .withIndex("by_assignee", (q) => q.eq("assigneeId", args.userId))
+      .collect();
+
+    // Filter to include only tasks from groups where user is a member
+    // and status is not "done"
+    const userConversations = await ctx.db
+      .query("conversations")
+      .collect();
+
+    const userGroups = new Set(
+      userConversations
+        .filter((conv: any) => {
+          const isGroup = conv.isGroup === true;
+          const isParticipant = conv.participants && conv.participants.includes(args.userId);
+          const isActive = !conv.leftParticipants || !conv.leftParticipants.includes(args.userId);
+          return isGroup && isParticipant && isActive;
+        })
+        .map((conv: any) => conv._id.toString())
+    );
+
+    // Filter assigned tasks to only those in user's groups and not done
+    const relevantTasks = assignedTasks.filter((task: any) => {
+      const groupId = task.workspaceId.replace("group_", "");
+      return userGroups.has(groupId) && task.status !== "done";
+    });
+
+    // Enrich tasks with group names and sort by due date
+    const enrichedTasks = await Promise.all(
+      relevantTasks.map(async (task: any) => {
+        const groupId = task.workspaceId.replace("group_", "");
+        const group = await ctx.db.get(groupId as any);
+        const groupName = (group && "name" in group) ? (group.name as string) : "Unknown Group";
+        
+        return {
+          _id: task._id,
+          title: task.title,
+          description: task.description,
+          dueDate: task.deadline,
+          priority: task.priority || "medium",
+          status: task.status || "todo",
+          visibility: task.visibility,
+          groupId: groupId,
+          groupName: groupName,
+          workspaceId: task.workspaceId,
+          createdAt: task.createdAt,
+          isGroupTask: true,
+        };
+      })
+    );
+
+    // Sort by due date (soonest first)
+    enrichedTasks.sort((a: any, b: any) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+
+    return enrichedTasks;
   },
 });
 
