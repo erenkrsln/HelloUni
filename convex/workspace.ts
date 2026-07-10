@@ -22,7 +22,7 @@ export const getOrCreateEventChat = mutation({
     const conversationId = await ctx.db.insert("conversations", {
       name: `Event: ${event.title}`,
       isGroup: true,
-      participants: [args.userId], 
+      participants: [args.userId],
       creatorId: args.userId,
       adminIds: [args.userId],
       updatedAt: Date.now(),
@@ -73,7 +73,11 @@ export const toggleTaskCompletion = mutation({
     if (task.assigneeId && args.actorId === task.assigneeId) allowed = true;
 
     // If this is a group workspace, verify actor is part of the conversation or admin/owner
-    if (!allowed && typeof workspaceId === "string" && workspaceId.startsWith("group_")) {
+    if (
+      !allowed &&
+      typeof workspaceId === "string" &&
+      workspaceId.startsWith("group_")
+    ) {
       const convId = workspaceId.replace("group_", "") as any;
       const group = await ctx.db
         .query("workspace_groups")
@@ -102,9 +106,13 @@ export const createTask = mutation({
     deadline: v.optional(v.string()),
     assigneeId: v.optional(v.id("users")),
     createdBy: v.id("users"),
-    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    priority: v.optional(
+      v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    ),
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
-    status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
+    status: v.optional(
+      v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done")),
+    ),
   },
   handler: async (ctx, args) => {
     const taskId = await ctx.db.insert("workspace_tasks", {
@@ -138,7 +146,11 @@ export const createTask = mutation({
 export const updateTaskStatus = mutation({
   args: {
     taskId: v.id("workspace_tasks"),
-    status: v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done")),
+    status: v.union(
+      v.literal("todo"),
+      v.literal("in_progress"),
+      v.literal("done"),
+    ),
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
@@ -149,7 +161,11 @@ export const updateTaskStatus = mutation({
     let allowed = false;
     if (task.assigneeId && args.userId === task.assigneeId) allowed = true;
     const workspaceId = task.workspaceId as string;
-    if (!allowed && typeof workspaceId === "string" && workspaceId.startsWith("group_")) {
+    if (
+      !allowed &&
+      typeof workspaceId === "string" &&
+      workspaceId.startsWith("group_")
+    ) {
       const convId = workspaceId.replace("group_", "") as any;
       const group = await ctx.db
         .query("workspace_groups")
@@ -191,9 +207,15 @@ export const updateTask = mutation({
       description: v.optional(v.string()),
       deadline: v.optional(v.string()),
       assigneeId: v.optional(v.id("users")),
-      priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
-      visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
-      status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
+      priority: v.optional(
+        v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+      ),
+      visibility: v.optional(
+        v.union(v.literal("public"), v.literal("private")),
+      ),
+      status: v.optional(
+        v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done")),
+      ),
     }),
     actorId: v.id("users"),
   },
@@ -205,7 +227,11 @@ export const updateTask = mutation({
     let allowed = false;
     if (task.assigneeId && args.actorId === task.assigneeId) allowed = true;
     const workspaceId = task.workspaceId as string;
-    if (!allowed && typeof workspaceId === "string" && workspaceId.startsWith("group_")) {
+    if (
+      !allowed &&
+      typeof workspaceId === "string" &&
+      workspaceId.startsWith("group_")
+    ) {
       const convId = workspaceId.replace("group_", "") as any;
       const group = await ctx.db
         .query("workspace_groups")
@@ -249,7 +275,11 @@ export const deleteTask = mutation({
     let allowed = false;
     if (task.assigneeId && args.actorId === task.assigneeId) allowed = true;
     const workspaceId = task.workspaceId as string;
-    if (!allowed && typeof workspaceId === "string" && workspaceId.startsWith("group_")) {
+    if (
+      !allowed &&
+      typeof workspaceId === "string" &&
+      workspaceId.startsWith("group_")
+    ) {
       const convId = workspaceId.replace("group_", "") as any;
       const group = await ctx.db
         .query("workspace_groups")
@@ -297,7 +327,9 @@ export const listActivity = query({
     const limit = args.limit || 20;
     return await ctx.db
       .query("workspace_activity")
-      .withIndex("by_workspace_created", (q) => q.eq("workspaceId", args.workspaceId))
+      .withIndex("by_workspace_created", (q) =>
+        q.eq("workspaceId", args.workspaceId),
+      )
       .order("desc")
       .take(limit);
   },
@@ -346,16 +378,25 @@ export const createWorkspaceGroup = mutation({
 
 // Member management: add member (Owner/Admin only)
 export const addMember = mutation({
-  args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    actorId: v.id("users"),
+  },
   handler: async (ctx, args) => {
     const group = await ctx.db
       .query("workspace_groups")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
       .first();
     if (!group) throw new Error("Group not found");
 
     // Check actor permission
-    if (group.ownerId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
+    if (
+      group.ownerId !== args.actorId &&
+      !(group.adminIds || []).includes(args.actorId)
+    ) {
       throw new Error("Not authorized to invite members");
     }
 
@@ -364,7 +405,9 @@ export const addMember = mutation({
 
     const participants = conv.participants || [];
     if (!participants.includes(args.userId)) {
-      await ctx.db.patch(args.conversationId, { participants: [...participants, args.userId] });
+      await ctx.db.patch(args.conversationId, {
+        participants: [...participants, args.userId],
+      });
     }
 
     // Log activity
@@ -380,12 +423,19 @@ export const addMember = mutation({
 
 // Remove member (Owner/Admin only)
 export const removeMember = mutation({
-  args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    actorId: v.id("users"),
+  },
   handler: async (ctx, args) => {
     const group = await ctx.db.get(args.conversationId);
     if (!group || !group.isGroup) throw new Error("Group not found");
 
-    if (group.creatorId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
+    if (
+      group.creatorId !== args.actorId &&
+      !(group.adminIds || []).includes(args.actorId)
+    ) {
       throw new Error("Not authorized to remove members");
     }
 
@@ -396,7 +446,9 @@ export const removeMember = mutation({
 
     const participants = group.participants || [];
     if (participants.includes(args.userId)) {
-      await ctx.db.patch(args.conversationId, { participants: participants.filter((p: any) => p !== args.userId) });
+      await ctx.db.patch(args.conversationId, {
+        participants: participants.filter((p: any) => p !== args.userId),
+      });
     }
 
     await ctx.db.insert("workspace_activity", {
@@ -411,30 +463,44 @@ export const removeMember = mutation({
 
 // Promote to admin (Owner only)
 export const promoteToAdmin = mutation({
-  args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    actorId: v.id("users"),
+  },
   handler: async (ctx, args) => {
     const group = await ctx.db.get(args.conversationId);
     if (!group || !group.isGroup) throw new Error("Group not found");
-    if (group.creatorId !== args.actorId) throw new Error("Only owner can promote");
+    if (group.creatorId !== args.actorId)
+      throw new Error("Only owner can promote");
 
     const admins = group.adminIds || [];
     if (!admins.includes(args.userId)) {
-      await ctx.db.patch(args.conversationId, { adminIds: [...admins, args.userId] });
+      await ctx.db.patch(args.conversationId, {
+        adminIds: [...admins, args.userId],
+      });
     }
   },
 });
 
 // Demote admin (Owner only)
 export const demoteAdmin = mutation({
-  args: { conversationId: v.id("conversations"), userId: v.id("users"), actorId: v.id("users") },
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+    actorId: v.id("users"),
+  },
   handler: async (ctx, args) => {
     const group = await ctx.db.get(args.conversationId);
     if (!group || !group.isGroup) throw new Error("Group not found");
-    if (group.creatorId !== args.actorId) throw new Error("Only owner can demote");
+    if (group.creatorId !== args.actorId)
+      throw new Error("Only owner can demote");
 
     const admins = group.adminIds || [];
     if (admins.includes(args.userId)) {
-      await ctx.db.patch(args.conversationId, { adminIds: admins.filter((a: any) => a !== args.userId) });
+      await ctx.db.patch(args.conversationId, {
+        adminIds: admins.filter((a: any) => a !== args.userId),
+      });
     }
   },
 });
@@ -447,15 +513,25 @@ export const listGroupMembers = query({
     if (!conv) return [];
     const group = await ctx.db
       .query("workspace_groups")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
       .first();
 
     const participants = conv.participants || [];
-    return await Promise.all(participants.map(async (p: any) => {
-      const user = await ctx.db.get(p);
-      const role = group ? (group.ownerId === p ? "owner" : (group.adminIds || []).includes(p) ? "admin" : "member") : "member";
-      return { user, role };
-    }));
+    return await Promise.all(
+      participants.map(async (p: any) => {
+        const user = await ctx.db.get(p);
+        const role = group
+          ? group.ownerId === p
+            ? "owner"
+            : (group.adminIds || []).includes(p)
+              ? "admin"
+              : "member"
+          : "member";
+        return { user, role };
+      }),
+    );
   },
 });
 
@@ -476,25 +552,57 @@ export const listFilesByWorkspace = query({
 
     // Map files to get their URLs
     return await Promise.all(
-      files.map(async (file) => ({
-        ...file,
-        url: await ctx.storage.getUrl(file.storageId),
-      }))
+      files.map(async (file) => {
+        let url: string | null = null;
+
+        // Check if it's a mock storage ID (string that doesn't look like a UUID)
+        const isMockStorage =
+          typeof file.storageId === "string" &&
+          (file.storageId.includes("mock_storage_") || !isUUID(file.storageId));
+
+        if (isMockStorage) {
+          // For mock storage, construct the URL manually
+          url = `/mock/${encodeURIComponent(file.storageId)}`;
+        } else {
+          // For real Convex storage IDs, use storage.getUrl()
+          try {
+            url = await ctx.storage.getUrl(file.storageId as any);
+          } catch (err) {
+            console.error("Failed to get storage URL:", err);
+            url = null;
+          }
+        }
+
+        return {
+          ...file,
+          url,
+        };
+      }),
     );
   },
 });
 
+// Helper to check if a string is a valid UUID
+function isUUID(str: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 export const saveFileMetadata = mutation({
   args: {
     workspaceId: v.string(),
-    storageId: v.id("_storage"),
+    storageId: v.union(v.id("_storage"), v.string()),
     fileName: v.string(),
     fileType: v.string(),
     uploaderId: v.id("users"),
   },
   handler: async (ctx, args) => {
     // If workspace is a group, validate uploader is a member/admin
-    if (typeof args.workspaceId === "string" && args.workspaceId.startsWith("group_")) {
+    if (
+      typeof args.workspaceId === "string" &&
+      args.workspaceId.startsWith("group_")
+    ) {
       const convId = args.workspaceId.replace("group_", "") as any;
       const conv: any = await ctx.db.get(convId);
       if (!conv) throw new Error("Conversation not found");
@@ -503,8 +611,13 @@ export const saveFileMetadata = mutation({
         .query("workspace_groups")
         .withIndex("by_conversation", (q) => q.eq("conversationId", convId))
         .first();
-      const isAllowed = participants.includes(args.uploaderId) || (group && (group.ownerId === args.uploaderId || (group.adminIds || []).includes(args.uploaderId)));
-      if (!isAllowed) throw new Error("Not authorized to upload files to this workspace");
+      const isAllowed =
+        participants.includes(args.uploaderId) ||
+        (group &&
+          (group.ownerId === args.uploaderId ||
+            (group.adminIds || []).includes(args.uploaderId)));
+      if (!isAllowed)
+        throw new Error("Not authorized to upload files to this workspace");
     }
 
     return await ctx.db.insert("workspace_files", {
@@ -537,8 +650,11 @@ export const deleteFile = mutation({
           .query("workspace_groups")
           .withIndex("by_conversation", (q) => q.eq("conversationId", convId))
           .first();
-        
-        const isAdmin = group && (group.ownerId === args.userId || (group.adminIds || []).includes(args.userId));
+
+        const isAdmin =
+          group &&
+          (group.ownerId === args.userId ||
+            (group.adminIds || []).includes(args.userId));
         if (!isAdmin) throw new Error("Unauthorized to delete this file");
       } else {
         throw new Error("Unauthorized to delete this file");
@@ -565,13 +681,15 @@ export const listPollsByWorkspace = query({
       .collect();
 
     // Fetch votes for each poll
-    const pollsWithVotes = await Promise.all(polls.map(async (poll) => {
-      const votes = await ctx.db
-        .query("workspace_poll_votes")
-        .withIndex("by_poll", (q) => q.eq("pollId", poll._id))
-        .collect();
-      return { ...poll, votes };
-    }));
+    const pollsWithVotes = await Promise.all(
+      polls.map(async (poll) => {
+        const votes = await ctx.db
+          .query("workspace_poll_votes")
+          .withIndex("by_poll", (q) => q.eq("pollId", poll._id))
+          .collect();
+        return { ...poll, votes };
+      }),
+    );
 
     return pollsWithVotes;
   },
@@ -627,7 +745,11 @@ export const generateUploadUrl = mutation({
           .query("workspace_groups")
           .withIndex("by_conversation", (q) => q.eq("conversationId", convId))
           .first();
-        if (!group || (group.ownerId !== args.actorId && !(group.adminIds || []).includes(args.actorId))) {
+        if (
+          !group ||
+          (group.ownerId !== args.actorId &&
+            !(group.adminIds || []).includes(args.actorId))
+        ) {
           throw new Error("Not authorized to upload files to this workspace");
         }
       }
@@ -651,7 +773,9 @@ export const votePoll = mutation({
   handler: async (ctx, args) => {
     const existingVote = await ctx.db
       .query("workspace_poll_votes")
-      .withIndex("by_poll_user", (q) => q.eq("pollId", args.pollId).eq("userId", args.userId))
+      .withIndex("by_poll_user", (q) =>
+        q.eq("pollId", args.pollId).eq("userId", args.userId),
+      )
       .first();
 
     if (existingVote) {
@@ -760,7 +884,9 @@ export const createPersonalTodo = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     dueDate: v.optional(v.number()),
-    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    priority: v.optional(
+      v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    ),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -788,7 +914,9 @@ export const updatePersonalTodo = mutation({
     title: v.optional(v.string()),
     description: v.optional(v.string()),
     dueDate: v.optional(v.number()),
-    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    priority: v.optional(
+      v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    ),
   },
   handler: async (ctx, args) => {
     const todo = await ctx.db.get(args.todoId);
@@ -865,11 +993,15 @@ export const leaveGroup = mutation({
 
     // Prevent owner from leaving without transferring ownership
     if (group.creatorId === args.userId) {
-      throw new Error("Owner cannot leave the group. Transfer ownership or delete the group.");
+      throw new Error(
+        "Owner cannot leave the group. Transfer ownership or delete the group.",
+      );
     }
 
     // Remove user from participants
-    const updatedParticipants = group.participants.filter((p) => p !== args.userId);
+    const updatedParticipants = group.participants.filter(
+      (p) => p !== args.userId,
+    );
 
     await ctx.db.patch(args.conversationId, {
       participants: updatedParticipants,
@@ -890,7 +1022,10 @@ export const addMemberToGroup = mutation({
     if (!group || !group.isGroup) throw new Error("Group not found");
 
     // Check permissions: Owner or Admin
-    if (group.creatorId !== args.actorId && !(group.adminIds || []).includes(args.actorId)) {
+    if (
+      group.creatorId !== args.actorId &&
+      !(group.adminIds || []).includes(args.actorId)
+    ) {
       throw new Error("Not authorized to add members");
     }
 
@@ -920,3 +1055,83 @@ export const addMemberToGroup = mutation({
   },
 });
 
+// ────────────────────────────────────────────────────────────────────────────
+// OVERVIEW STATISTICS QUERIES
+// ────────────────────────────────────────────────────────────────────────────
+
+export const getTaskStats = query({
+  args: {
+    workspaceId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const tasks = await ctx.db
+      .query("workspace_tasks")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    const openCount = tasks.filter((t) => !t.isCompleted).length;
+    const completedCount = tasks.filter((t) => t.isCompleted).length;
+
+    return {
+      totalCount: tasks.length,
+      openCount,
+      completedCount,
+    };
+  },
+});
+
+export const getFileStats = query({
+  args: {
+    workspaceId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const files = await ctx.db
+      .query("workspace_files")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    return {
+      count: files.length,
+    };
+  },
+});
+
+export const getPollStats = query({
+  args: {
+    workspaceId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const polls = await ctx.db
+      .query("workspace_polls")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    // Active polls are those created recently (simplified)
+    const activeCount = polls.length;
+
+    return {
+      totalCount: polls.length,
+      activeCount,
+    };
+  },
+});
+
+export const getEventStats = query({
+  args: {
+    workspaceId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const events = await ctx.db
+      .query("events")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+      .collect();
+
+    const now = Date.now();
+    const upcomingCount = events.filter((e) => e.startTime > now).length;
+
+    return {
+      totalCount: events.length,
+      upcomingCount,
+    };
+  },
+});

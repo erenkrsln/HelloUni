@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogBody,
 } from "@/components/ui/dialog";
 import { AlertTriangle } from "lucide-react";
 
@@ -34,35 +35,37 @@ export function ConfirmationDialog({
 }: ConfirmationDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] rounded-3xl">
-        <DialogHeader className="pb-2">
-          <div className="flex items-start gap-3">
-            {isDangerous && (
-              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            )}
+      <DialogContent>
+        <DialogHeader className="flex flex-row items-start gap-3 pb-2">
+          {isDangerous && (
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 min-w-0">
             <DialogTitle className="text-base font-semibold text-slate-900">
               {title}
             </DialogTitle>
           </div>
         </DialogHeader>
 
-        <p className="text-sm text-slate-600 px-1 py-2">{description}</p>
+        <DialogBody>
+          <p className="text-sm text-slate-600">{description}</p>
+        </DialogBody>
 
-        <DialogFooter className="flex gap-2 justify-end pt-4">
+        <DialogFooter className="gap-2">
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 min-h-[40px]"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-4 py-2 rounded-full font-medium transition-colors disabled:opacity-50 text-white ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 text-white min-h-[40px] ${
               isDangerous
                 ? "bg-red-600 hover:bg-red-700"
-                : "bg-[#D08945] hover:bg-[#b07335]"
+                : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
             {isLoading ? "..." : confirmLabel}

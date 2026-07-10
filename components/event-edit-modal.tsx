@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogBody,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 
@@ -21,14 +21,27 @@ interface EventEditModalProps {
   userId: Id<"users">;
 }
 
-export function EventEditModal({ event, isOpen, onClose, userId }: EventEditModalProps) {
+export function EventEditModal({
+  event,
+  isOpen,
+  onClose,
+  userId,
+}: EventEditModalProps) {
   const [title, setTitle] = useState(event.title);
   const [description, setDescription] = useState(event.description || "");
   const [location, setLocation] = useState(event.location || "");
-  const [startDate, setStartDate] = useState(new Date(event.startTime).toISOString().split("T")[0]);
-  const [startTime, setStartTime] = useState(new Date(event.startTime).toISOString().split("T")[1].slice(0, 5));
-  const [endDate, setEndDate] = useState(new Date(event.endTime).toISOString().split("T")[0]);
-  const [endTime, setEndTime] = useState(new Date(event.endTime).toISOString().split("T")[1].slice(0, 5));
+  const [startDate, setStartDate] = useState(
+    new Date(event.startTime).toISOString().split("T")[0],
+  );
+  const [startTime, setStartTime] = useState(
+    new Date(event.startTime).toISOString().split("T")[1].slice(0, 5),
+  );
+  const [endDate, setEndDate] = useState(
+    new Date(event.endTime).toISOString().split("T")[0],
+  );
+  const [endTime, setEndTime] = useState(
+    new Date(event.endTime).toISOString().split("T")[1].slice(0, 5),
+  );
   const [isPrivate, setIsPrivate] = useState(event.isPrivate ?? true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -74,7 +87,11 @@ export function EventEditModal({ event, isOpen, onClose, userId }: EventEditModa
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? This action cannot be undone.",
+      )
+    ) {
       return;
     }
 
@@ -96,119 +113,143 @@ export function EventEditModal({ event, isOpen, onClose, userId }: EventEditModa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Event</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-slate-700">Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
-              className="w-full mt-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-700">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Event description (optional)"
-              className="w-full mt-1 min-h-[92px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-700">Location</label>
-            <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Event location (optional)"
-              className="w-full mt-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        <DialogBody>
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-slate-700">Start Date</label>
+              <label className="text-sm font-medium text-slate-700">
+                Title
+              </label>
               <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full mt-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Event title"
+                className="w-full mt-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
+
             <div>
-              <label className="text-sm font-medium text-slate-700">Start Time</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full mt-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+              <label className="text-sm font-medium text-slate-700">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Event description (optional)"
+                className="w-full mt-1 h-24 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                rows={3}
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-slate-700">End Date</label>
+              <label className="text-sm font-medium text-slate-700">
+                Location
+              </label>
               <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full mt-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Event location (optional)"
+                className="w-full mt-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700">End Time</label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full mt-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full mt-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full mt-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full mt-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full mt-1 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                type="checkbox"
+                id="isPrivate"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                className="rounded border-slate-300"
               />
+              <label
+                htmlFor="isPrivate"
+                className="text-sm font-medium text-slate-700"
+              >
+                Private event
+              </label>
             </div>
           </div>
+        </DialogBody>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isPrivate"
-              checked={isPrivate}
-              onChange={(e) => setIsPrivate(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <label htmlFor="isPrivate" className="text-sm font-medium text-slate-700">
-              Private event
-            </label>
-          </div>
-        </div>
-
-        <DialogFooter className="flex justify-between gap-2 pt-6">
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isLoading}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            Delete Event
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave} 
+        <DialogFooter className="flex-col gap-3">
+          <div className="flex gap-2 justify-between">
+            <button
+              onClick={handleDelete}
               disabled={isLoading}
-              className="bg-[#D08945] hover:bg-[#b07335] text-white"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium min-h-[40px] disabled:opacity-50"
             >
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
+              Delete Event
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={onClose}
+                disabled={isLoading}
+                className="px-4 py-2 rounded-lg text-slate-700 border border-slate-200 hover:bg-slate-50 font-medium min-h-[40px]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium min-h-[40px]"
+              >
+                {isLoading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

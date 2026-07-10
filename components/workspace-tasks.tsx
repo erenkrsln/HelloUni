@@ -7,6 +7,7 @@ import { Plus, Clock, Trash2, User, ShieldCheck } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useToast } from "@/components/toast";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+import { SectionHeader } from "@/components/section-header";
 import { motion, AnimatePresence } from "framer-motion";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -22,7 +23,13 @@ type TaskFormState = {
   status: TaskStatus;
 };
 
-export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
+export function WorkspaceTasks({
+  workspaceId,
+  onBackToOverview,
+}: {
+  workspaceId: string;
+  onBackToOverview?: () => void;
+}) {
   const { currentUser } = useCurrentUser();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
@@ -52,8 +59,13 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
 
   const tasksQuery = useQuery(api.workspace.listGroupTasks, { workspaceId });
   const isGroup = workspaceId.startsWith("group_");
-  const conversationId = (isGroup ? workspaceId.replace("group_", "") : "") as Id<"conversations">;
-  const conversationMembers = useQuery(api.queries.getConversationMembers, isGroup ? { conversationId } : "skip");
+  const conversationId = (
+    isGroup ? workspaceId.replace("group_", "") : ""
+  ) as Id<"conversations">;
+  const conversationMembers = useQuery(
+    api.queries.getConversationMembers,
+    isGroup ? { conversationId } : "skip",
+  );
 
   const assigneeOptions = useMemo(() => {
     if (isGroup) return conversationMembers || [];
@@ -114,7 +126,10 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
       status: formState.status,
       isCompleted: formState.status === "done",
       createdAt: Date.now(),
-      assigneeName: assigneeOptions.find((user) => user._id === (formState.assigneeId || currentUser._id))?.name || currentUser.name,
+      assigneeName:
+        assigneeOptions.find(
+          (user) => user._id === (formState.assigneeId || currentUser._id),
+        )?.name || currentUser.name,
     } as any;
 
     setLocalTasks((prev) => (prev ? [tempTask, ...prev] : [tempTask]));
@@ -132,13 +147,20 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
         status: tempTask.status,
       });
       if (createdId) {
-        setLocalTasks((prev) => prev?.map((task) => task._id === tempId ? { ...task, _id: createdId } : task) ?? prev);
+        setLocalTasks(
+          (prev) =>
+            prev?.map((task) =>
+              task._id === tempId ? { ...task, _id: createdId } : task,
+            ) ?? prev,
+        );
       }
       setShowCreateModal(false);
       toast.success("Task created");
     } catch (error) {
       console.error("Failed to create task", error);
-      setLocalTasks((prev) => prev?.filter((task) => task._id !== tempId) ?? null);
+      setLocalTasks(
+        (prev) => prev?.filter((task) => task._id !== tempId) ?? null,
+      );
       toast.error("Failed to create task. Please try again.");
     } finally {
       setIsSaving(false);
@@ -178,7 +200,14 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
         patch,
         actorId: currentUser._id,
       });
-      setLocalTasks((prev) => prev?.map((task) => task._id === selectedTask._id ? { ...task, ...patch, isCompleted: patch.status === "done" } : task) ?? prev);
+      setLocalTasks(
+        (prev) =>
+          prev?.map((task) =>
+            task._id === selectedTask._id
+              ? { ...task, ...patch, isCompleted: patch.status === "done" }
+              : task,
+          ) ?? prev,
+      );
       setSelectedTask(null);
       toast.success("Task saved");
     } catch (error) {
@@ -192,10 +221,21 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
   const handleChangeStatus = async (task: any, newStatus: TaskStatus) => {
     if (!currentUser) return;
     const previous = tasks.slice();
-    setLocalTasks((prev) => prev?.map((item) => item._id === task._id ? { ...item, status: newStatus, isCompleted: newStatus === "done" } : item) ?? prev);
+    setLocalTasks(
+      (prev) =>
+        prev?.map((item) =>
+          item._id === task._id
+            ? { ...item, status: newStatus, isCompleted: newStatus === "done" }
+            : item,
+        ) ?? prev,
+    );
 
     try {
-      await updateTaskStatus({ taskId: task._id, status: newStatus, userId: currentUser._id });
+      await updateTaskStatus({
+        taskId: task._id,
+        status: newStatus,
+        userId: currentUser._id,
+      });
     } catch (error) {
       console.error("Failed to update task status", error);
       setLocalTasks(previous);
@@ -212,11 +252,16 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
   const handleConfirmDelete = async () => {
     if (!deletingTaskId || !currentUser) return;
     const previous = tasks.slice();
-    setLocalTasks((prev) => prev?.filter((item) => item._id !== deletingTaskId) ?? prev);
+    setLocalTasks(
+      (prev) => prev?.filter((item) => item._id !== deletingTaskId) ?? prev,
+    );
 
     try {
       setIsSavingDelete(true);
-      await deleteTaskMutation({ taskId: deletingTaskId, actorId: currentUser._id });
+      await deleteTaskMutation({
+        taskId: deletingTaskId,
+        actorId: currentUser._id,
+      });
       toast.success("Task deleted");
     } catch (error) {
       console.error("Failed to delete task", error);
@@ -229,7 +274,10 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
     }
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    taskId: string,
+  ) => {
     e.dataTransfer.setData("text/plain", taskId);
     e.dataTransfer.effectAllowed = "move";
   };
@@ -239,7 +287,10 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDropOnColumn = async (e: React.DragEvent<HTMLDivElement>, status: TaskStatus) => {
+  const handleDropOnColumn = async (
+    e: React.DragEvent<HTMLDivElement>,
+    status: TaskStatus,
+  ) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData("text/plain");
     if (!taskId) return;
@@ -251,296 +302,520 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
   const taskCount = tasks.length;
 
   return (
-    <div className="p-4 animate-in fade-in slide-in-from-bottom-2">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900">Tasks</h2>
-          <p className="text-sm text-slate-500">Manage your group work with richer task details and faster updates.</p>
+    <div className="flex-1 overflow-y-auto bg-white px-4 py-6">
+      <div className="max-w-lg mx-auto space-y-4">
+        {/* Section Header */}
+        {onBackToOverview && (
+          <SectionHeader
+            title="Tasks"
+            subtitle="Manage group tasks and responsibilities"
+            onBackClick={onBackToOverview}
+          />
+        )}
+
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {!onBackToOverview && (
+              <>
+                <h2 className="text-xl font-semibold text-slate-900">Tasks</h2>
+                <p className="text-sm text-slate-500">
+                  Manage your group work with richer task details and faster
+                  updates.
+                </p>
+              </>
+            )}
+          </div>
+          <button
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-2 rounded-full bg-[#D08945] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] transition-colors"
+          >
+            <Plus size={16} /> New task
+          </button>
         </div>
-        <button onClick={openCreateModal} className="inline-flex items-center gap-2 rounded-full bg-[#D08945] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] transition-colors">
-          <Plus size={16} /> New task
-        </button>
-      </div>
 
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-        <span>{taskCount} task{taskCount === 1 ? "" : "s"} total</span>
-        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">
-          <ShieldCheck size={14} /> {isGroup ? "Group workspace" : "Event workspace"}
-        </span>
-      </div>
-
-      {taskCount === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
-          <p className="mb-2 text-sm">No tasks yet.</p>
-          <button onClick={openCreateModal} className="text-sm font-semibold text-[#D08945] hover:text-[#b07335]">Create your first task</button>
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+          <span>
+            {taskCount} task{taskCount === 1 ? "" : "s"} total
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">
+            <ShieldCheck size={14} />{" "}
+            {isGroup ? "Group workspace" : "Event workspace"}
+          </span>
         </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-3">
-          {statuses.map((status) => {
-            const statusTasks = tasks.filter((task: any) => task.status === status.key);
-            return (
-              <div key={status.key} className="rounded-3xl bg-slate-50 p-3 shadow-sm">
-                <div className="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
-                  <span>{status.label}</span>
-                  <span className="rounded-full bg-white px-2 py-1 text-xs text-slate-500 shadow-sm">{statusTasks.length}</span>
+
+        {taskCount === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+            <p className="mb-2 text-sm">No tasks yet.</p>
+            <button
+              onClick={openCreateModal}
+              className="text-sm font-semibold text-[#D08945] hover:text-[#b07335]"
+            >
+              Create your first task
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3">
+            {statuses.map((status) => {
+              const statusTasks = tasks.filter(
+                (task: any) => task.status === status.key,
+              );
+              return (
+                <div
+                  key={status.key}
+                  className="rounded-3xl bg-slate-50 p-3 shadow-sm"
+                >
+                  <div className="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
+                    <span>{status.label}</span>
+                    <span className="rounded-full bg-white px-2 py-1 text-xs text-slate-500 shadow-sm">
+                      {statusTasks.length}
+                    </span>
+                  </div>
+                  <div className="space-y-3 min-h-[120px]">
+                    {statusTasks.length === 0 ? (
+                      <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-xs text-slate-500">
+                        No tasks in this column yet.
+                      </div>
+                    ) : (
+                      statusTasks.map((task: any) => (
+                        <TaskCard
+                          key={task._id}
+                          task={{
+                            ...task,
+                            assigneeName:
+                              assigneeOptions.find(
+                                (user) => user._id === task.assigneeId,
+                              )?.name || "Unassigned",
+                          }}
+                          statusKey={status.key}
+                          onDragStart={handleDragStart}
+                          moveTask={handleChangeStatus}
+                          onDelete={handleDelete}
+                          onEdit={handleOpenTask}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-3 min-h-[120px]">
-                  {statusTasks.length === 0 ? (
-                    <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-xs text-slate-500">No tasks in this column yet.</div>
-                  ) : (
-                    statusTasks.map((task: any) => (
-                      <TaskCard
-                        key={task._id}
-                        task={{
-                          ...task,
-                          assigneeName: assigneeOptions.find((user) => user._id === task.assigneeId)?.name || "Unassigned",
-                        }}
-                        statusKey={status.key}
-                        onDragStart={handleDragStart}
-                        moveTask={handleChangeStatus}
-                        onDelete={handleDelete}
-                        onEdit={handleOpenTask}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
 
-      <AnimatePresence>
-        {showCreateModal && (
-          <Modal onClose={() => setShowCreateModal(false)}>
-            <div className="rounded-3xl bg-white p-6 shadow-2xl w-full max-w-lg">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Create Task</h3>
-                  <p className="text-sm text-slate-500">Add details and assign work before saving.</p>
-                </div>
-                <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
-              </div>
-
-              <form onSubmit={handleCreateTask} className="space-y-4">
-                <label className="block text-sm font-medium text-slate-700">Title</label>
-                <input
-                  value={formState.title}
-                  onChange={(e) => setFormState((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                  placeholder="Enter task title"
-                  required
-                />
-
-                <label className="block text-sm font-medium text-slate-700">Description</label>
-                <textarea
-                  value={formState.description}
-                  onChange={(e) => setFormState((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full min-h-[92px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                  placeholder="Add a short description"
-                />
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">
-                    Assignee
-                    <select
-                      value={formState.assigneeId}
-                      onChange={(e) => setFormState((prev) => ({ ...prev, assigneeId: e.target.value }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                    >
-                      <option value="">Unassigned</option>
-                      {assigneeOptions.map((member) => (
-                        <option key={member._id} value={member._id}>{member.name || member.username || "Student"}</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block text-sm font-medium text-slate-700">
-                    Due date
-                    <input
-                      type="date"
-                      value={formState.deadline}
-                      onChange={(e) => setFormState((prev) => ({ ...prev, deadline: e.target.value }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                    />
-                  </label>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">
-                    Priority
-                    <select
-                      value={formState.priority}
-                      onChange={(e) => setFormState((prev) => ({ ...prev, priority: e.target.value as TaskFormState["priority"] }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </label>
-
-                  <label className="block text-sm font-medium text-slate-700">
-                    Visibility
-                    <select
-                      value={formState.visibility}
-                      onChange={(e) => setFormState((prev) => ({ ...prev, visibility: e.target.value as TaskFormState["visibility"] }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                    >
-                      <option value="public">Public</option>
-                      <option value="private">Private</option>
-                    </select>
-                  </label>
-                </div>
-
-                <label className="block text-sm font-medium text-slate-700">
-                  Initial status
-                  <select
-                    value={formState.status}
-                    onChange={(e) => setFormState((prev) => ({ ...prev, status: e.target.value as TaskStatus }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+        <AnimatePresence>
+          {showCreateModal && (
+            <Modal onClose={() => setShowCreateModal(false)}>
+              <div className="rounded-3xl bg-white shadow-2xl w-full flex flex-col max-h-[calc(100dvh-32px)]">
+                {/* Header - Fixed */}
+                <div className="flex-shrink-0 border-b border-slate-200 px-6 py-4 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      Create Task
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      Add details and assign work before saving.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className="text-slate-400 hover:text-slate-600 flex-shrink-0 p-2 -mr-2"
                   >
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="done">Done</option>
-                  </select>
-                </label>
+                    ✕
+                  </button>
+                </div>
 
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                {/* Form - Scrollable */}
+                <form
+                  onSubmit={handleCreateTask}
+                  className="flex-1 overflow-y-auto px-6 py-4 min-h-0"
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Title
+                      </label>
+                      <input
+                        value={formState.title}
+                        onChange={(e) =>
+                          setFormState((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        placeholder="Enter task title"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={formState.description}
+                        onChange={(e) =>
+                          setFormState((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        className="w-full h-24 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 resize-none"
+                        placeholder="Add a short description"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Assignee
+                        </label>
+                        <select
+                          value={formState.assigneeId}
+                          onChange={(e) =>
+                            setFormState((prev) => ({
+                              ...prev,
+                              assigneeId: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        >
+                          <option value="">Unassigned</option>
+                          {assigneeOptions.map((member) => (
+                            <option key={member._id} value={member._id}>
+                              {member.name || member.username || "Student"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Due date
+                        </label>
+                        <input
+                          type="date"
+                          value={formState.deadline}
+                          onChange={(e) =>
+                            setFormState((prev) => ({
+                              ...prev,
+                              deadline: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Priority
+                        </label>
+                        <select
+                          value={formState.priority}
+                          onChange={(e) =>
+                            setFormState((prev) => ({
+                              ...prev,
+                              priority: e.target
+                                .value as TaskFormState["priority"],
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        >
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Visibility
+                        </label>
+                        <select
+                          value={formState.visibility}
+                          onChange={(e) =>
+                            setFormState((prev) => ({
+                              ...prev,
+                              visibility: e.target
+                                .value as TaskFormState["visibility"],
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        >
+                          <option value="public">Public</option>
+                          <option value="private">Private</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Initial status
+                      </label>
+                      <select
+                        value={formState.status}
+                        onChange={(e) =>
+                          setFormState((prev) => ({
+                            ...prev,
+                            status: e.target.value as TaskStatus,
+                          }))
+                        }
+                        className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                      >
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </div>
+                  </div>
+                </form>
+
+                {/* Footer - Fixed */}
+                <div className="flex-shrink-0 border-t border-slate-200 px-6 py-4 flex gap-3 flex-col-reverse sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors touch-target min-h-[40px]"
+                  >
                     Cancel
                   </button>
-                  <button type="submit" disabled={isSaving} className="rounded-full bg-[#D08945] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] disabled:opacity-50">
+                  <button
+                    type="submit"
+                    onClick={handleCreateTask}
+                    disabled={isSaving}
+                    className="rounded-full bg-[#D08945] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] disabled:opacity-50 transition-colors touch-target min-h-[40px]"
+                  >
                     {isSaving ? "Saving..." : "Create task"}
                   </button>
                 </div>
-              </form>
-            </div>
-          </Modal>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {selectedTask && (
-          <Modal onClose={() => setSelectedTask(null)}>
-            <div className="rounded-3xl bg-white p-6 shadow-2xl w-full max-w-lg">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Task details</h3>
-                  <p className="text-sm text-slate-500">Edit the selected task and save your changes.</p>
-                </div>
-                <button onClick={() => setSelectedTask(null)} className="text-slate-400 hover:text-slate-600">✕</button>
               </div>
+            </Modal>
+          )}
+        </AnimatePresence>
 
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-slate-700">Title</label>
-                <input
-                  value={editState.title}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                />
-
-                <label className="block text-sm font-medium text-slate-700">Description</label>
-                <textarea
-                  value={editState.description}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full min-h-[92px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                />
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">Assignee</label>
-                  <select
-                    value={editState.assigneeId}
-                    onChange={(e) => setEditState((prev) => ({ ...prev, assigneeId: e.target.value }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+        <AnimatePresence>
+          {selectedTask && (
+            <Modal onClose={() => setSelectedTask(null)}>
+              <div className="rounded-3xl bg-white shadow-2xl w-full flex flex-col max-h-[calc(100dvh-32px)]">
+                {/* Header - Fixed */}
+                <div className="flex-shrink-0 border-b border-slate-200 px-6 py-4 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      Task details
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      Edit the selected task and save your changes.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedTask(null)}
+                    className="text-slate-400 hover:text-slate-600 flex-shrink-0 p-2 -mr-2"
                   >
-                    <option value="">Unassigned</option>
-                    {assigneeOptions.map((member) => (
-                      <option key={member._id} value={member._id}>{member.name || member.username || "Student"}</option>
-                    ))}
-                  </select>
-
-                  <label className="block text-sm font-medium text-slate-700">Due date</label>
-                  <input
-                    type="date"
-                    value={editState.deadline}
-                    onChange={(e) => setEditState((prev) => ({ ...prev, deadline: e.target.value }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                  />
+                    ✕
+                  </button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">Priority</label>
-                  <select
-                    value={editState.priority}
-                    onChange={(e) => setEditState((prev) => ({ ...prev, priority: e.target.value as TaskFormState["priority"] }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
+                {/* Form - Scrollable */}
+                <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Title
+                      </label>
+                      <input
+                        value={editState.title}
+                        onChange={(e) =>
+                          setEditState((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                      />
+                    </div>
 
-                  <label className="block text-sm font-medium text-slate-700">Visibility</label>
-                  <select
-                    value={editState.visibility}
-                    onChange={(e) => setEditState((prev) => ({ ...prev, visibility: e.target.value as TaskFormState["visibility"] }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                  >
-                    <option value="public">Public</option>
-                    <option value="private">Private</option>
-                  </select>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={editState.description}
+                        onChange={(e) =>
+                          setEditState((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        className="w-full h-24 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 resize-none"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Assignee
+                        </label>
+                        <select
+                          value={editState.assigneeId}
+                          onChange={(e) =>
+                            setEditState((prev) => ({
+                              ...prev,
+                              assigneeId: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        >
+                          <option value="">Unassigned</option>
+                          {assigneeOptions.map((member) => (
+                            <option key={member._id} value={member._id}>
+                              {member.name || member.username || "Student"}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Due date
+                        </label>
+                        <input
+                          type="date"
+                          value={editState.deadline}
+                          onChange={(e) =>
+                            setEditState((prev) => ({
+                              ...prev,
+                              deadline: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Priority
+                        </label>
+                        <select
+                          value={editState.priority}
+                          onChange={(e) =>
+                            setEditState((prev) => ({
+                              ...prev,
+                              priority: e.target
+                                .value as TaskFormState["priority"],
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        >
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Visibility
+                        </label>
+                        <select
+                          value={editState.visibility}
+                          onChange={(e) =>
+                            setEditState((prev) => ({
+                              ...prev,
+                              visibility: e.target
+                                .value as TaskFormState["visibility"],
+                            }))
+                          }
+                          className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        >
+                          <option value="public">Public</option>
+                          <option value="private">Private</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Status
+                      </label>
+                      <select
+                        value={editState.status}
+                        onChange={(e) =>
+                          setEditState((prev) => ({
+                            ...prev,
+                            status: e.target.value as TaskStatus,
+                          }))
+                        }
+                        className="w-full rounded-3xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                      >
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
-                <label className="block text-sm font-medium text-slate-700">Status</label>
-                <select
-                  value={editState.status}
-                  onChange={(e) => setEditState((prev) => ({ ...prev, status: e.target.value as TaskStatus }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
-                >
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="done">Done</option>
-                </select>
-
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
-                  <button type="button" onClick={() => setSelectedTask(null)} className="rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                {/* Footer - Fixed */}
+                <div className="flex-shrink-0 border-t border-slate-200 px-6 py-4 flex gap-2 flex-col-reverse sm:flex-row sm:justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTask(null)}
+                    className="rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors touch-target min-h-[40px]"
+                  >
                     Cancel
                   </button>
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => selectedTask && handleDelete(selectedTask)} className="rounded-full border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-100">
+                  <div className="flex items-center gap-2 flex-col-reverse sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => selectedTask && handleDelete(selectedTask)}
+                      className="rounded-full border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors touch-target min-h-[40px]"
+                    >
                       Delete
                     </button>
-                    <button type="button" onClick={handleSaveTask} disabled={isSaving} className="rounded-full bg-[#D08945] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] disabled:opacity-50">
+                    <button
+                      type="button"
+                      onClick={handleSaveTask}
+                      disabled={isSaving}
+                      className="rounded-full bg-[#D08945] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] disabled:opacity-50 transition-colors touch-target min-h-[40px]"
+                    >
                       {isSaving ? "Saving..." : "Save changes"}
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          </Modal>
-        )}
-      </AnimatePresence>
+            </Modal>
+          )}
+        </AnimatePresence>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={!!deletingTaskId}
-        onClose={() => {
-          setDeletingTaskId(null);
-          setDeletengTaskTitle("");
-        }}
-        onConfirm={handleConfirmDelete}
-        title="Delete Task?"
-        description={`Delete "${deletingTaskTitle}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        isDangerous={true}
-        isLoading={isSavingDelete}
-      />
+        {/* Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={!!deletingTaskId}
+          onClose={() => {
+            setDeletingTaskId(null);
+            setDeletengTaskTitle("");
+          }}
+          onConfirm={handleConfirmDelete}
+          title="Delete Task?"
+          description={`Delete "${deletingTaskTitle}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          isDangerous={true}
+          isLoading={isSavingDelete}
+        />
+      </div>
     </div>
   );
 }
 
-function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Modal({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4"
@@ -549,7 +824,10 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-3xl">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[560px] max-h-[calc(100dvh-32px)]"
+      >
         {children}
       </div>
     </motion.div>
@@ -587,14 +865,26 @@ function TaskCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-slate-900">{task.title || "Untitled task"}</h3>
-            <span className={`text-[11px] font-semibold uppercase tracking-[0.18em] rounded-full px-2 py-1 ${task.visibility === "private" ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-800"}`}>
+            <h3 className="text-sm font-semibold text-slate-900">
+              {task.title || "Untitled task"}
+            </h3>
+            <span
+              className={`text-[11px] font-semibold uppercase tracking-[0.18em] rounded-full px-2 py-1 ${task.visibility === "private" ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-800"}`}
+            >
               {task.visibility === "private" ? "Private" : "Public"}
             </span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-slate-500 line-clamp-2">{task.description || "No description yet."}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-500 line-clamp-2">
+            {task.description || "No description yet."}
+          </p>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(task); }} className="rounded-full border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task);
+          }}
+          className="rounded-full border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+        >
           <Trash2 size={14} />
         </button>
       </div>
@@ -609,20 +899,43 @@ function TaskCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${task.priority === "high" ? "bg-rose-100 text-rose-700" : task.priority === "low" ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-700"}`}>
-          {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : "Medium"}
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${task.priority === "high" ? "bg-rose-100 text-rose-700" : task.priority === "low" ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-700"}`}
+        >
+          {task.priority
+            ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
+            : "Medium"}
         </span>
-        {isPending && <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Saving…</span>}
+        {isPending && (
+          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+            Saving…
+          </span>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
         {statusKey !== "todo" && (
-          <button onClick={(e) => { e.stopPropagation(); moveTask(task, statusKey === "in_progress" ? "todo" : "in_progress"); }} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              moveTask(
+                task,
+                statusKey === "in_progress" ? "todo" : "in_progress",
+              );
+            }}
+            className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200"
+          >
             Back
           </button>
         )}
         {statusKey !== "done" && (
-          <button onClick={(e) => { e.stopPropagation(); moveTask(task, statusKey === "todo" ? "in_progress" : "done"); }} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              moveTask(task, statusKey === "todo" ? "in_progress" : "done");
+            }}
+            className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200"
+          >
             Advance
           </button>
         )}

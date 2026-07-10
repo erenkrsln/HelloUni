@@ -8,8 +8,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/toast";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { Doc, Id } from "@/convex/_generated/dataModel";
@@ -23,7 +23,13 @@ interface PollEditModalProps {
   hasVotes: boolean;
 }
 
-export function PollEditModal({ poll, isOpen, onClose, userId, hasVotes }: PollEditModalProps) {
+export function PollEditModal({
+  poll,
+  isOpen,
+  onClose,
+  userId,
+  hasVotes,
+}: PollEditModalProps) {
   const [question, setQuestion] = useState(poll.question);
   const [options, setOptions] = useState(poll.options);
   const [isLoading, setIsLoading] = useState(false);
@@ -100,29 +106,35 @@ export function PollEditModal({ poll, isOpen, onClose, userId, hasVotes }: PollE
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto rounded-3xl">
-          <DialogHeader className="pb-4">
-            <DialogTitle className="text-xl font-semibold text-slate-900">Edit Poll</DialogTitle>
+        <DialogContent hideCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-slate-900">
+              Edit Poll
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-5 px-1">
+          <div className="flex-1 overflow-y-auto space-y-5">
             {/* Question Field */}
             <div>
-              <label className="text-sm font-semibold text-slate-800 block mb-2">Poll Question</label>
+              <label className="text-sm font-semibold text-slate-800 block mb-2">
+                Poll Question
+              </label>
               <input
                 type="text"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="What would you like to ask?"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 
             {/* Voting Status Warning */}
             {hasVotes && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-sm text-amber-900">
-                  <strong>⚠️ Voting in Progress:</strong> Poll options cannot be changed after voting has started. You can only edit the question.
+                  <strong>⚠️ Voting in Progress:</strong> Poll options cannot be
+                  changed after voting has started. You can only edit the
+                  question.
                 </p>
               </div>
             )}
@@ -130,21 +142,25 @@ export function PollEditModal({ poll, isOpen, onClose, userId, hasVotes }: PollE
             {/* Options Section */}
             {!hasVotes && (
               <div>
-                <label className="text-sm font-semibold text-slate-800 block mb-3">Poll Options</label>
+                <label className="text-sm font-semibold text-slate-800 block mb-3">
+                  Poll Options
+                </label>
                 <div className="space-y-2">
                   {options.map((option, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
                       <input
                         type="text"
                         value={option}
-                        onChange={(e) => handleOptionChange(idx, e.target.value)}
+                        onChange={(e) =>
+                          handleOptionChange(idx, e.target.value)
+                        }
                         placeholder={`Option ${idx + 1}`}
-                        className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                       />
                       {options.length > 2 && (
                         <button
                           onClick={() => handleRemoveOption(idx)}
-                          className="p-2 rounded-full hover:bg-red-50 text-red-600 transition-colors flex-shrink-0"
+                          className="p-2 rounded-full hover:bg-red-50 text-red-600 transition-colors flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
                           title="Remove option"
                         >
                           <X size={18} />
@@ -155,7 +171,7 @@ export function PollEditModal({ poll, isOpen, onClose, userId, hasVotes }: PollE
                 </div>
                 <button
                   onClick={handleAddOption}
-                  className="mt-3 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                  className="mt-3 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
                 >
                   + Add Option
                 </button>
@@ -163,39 +179,37 @@ export function PollEditModal({ poll, isOpen, onClose, userId, hasVotes }: PollE
             )}
           </div>
 
-          {/* Modal Footer with Save/Cancel and Delete Separated */}
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            {/* Primary Actions: Cancel / Save Changes */}
-            <div className="flex gap-3 justify-end mb-4">
-              <Button 
-                variant="outline" 
-                onClick={onClose} 
+          <DialogFooter className="flex-col gap-3">
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={onClose}
                 disabled={isLoading}
-                className="px-6 py-2 rounded-full text-slate-700 border border-slate-200 hover:bg-slate-50"
+                className="px-6 py-2 rounded-lg text-slate-700 border border-slate-200 hover:bg-slate-50 min-h-[40px]"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="px-6 py-2 rounded-full bg-[#D08945] hover:bg-[#b07335] text-white font-semibold"
+                className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold min-h-[40px]"
               >
                 {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
+              </button>
             </div>
 
-            {/* Destructive Action: Delete Poll (Separated) */}
             <div className="pt-4 border-t border-slate-100">
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isLoading}
-                className="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-full py-2.5 font-semibold transition-colors disabled:opacity-50"
+                className="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg py-2.5 font-semibold transition-colors disabled:opacity-50 min-h-[40px]"
               >
                 Delete Poll
               </button>
-              <p className="text-xs text-slate-500 text-center mt-2">This action cannot be undone.</p>
+              <p className="text-xs text-slate-500 text-center mt-2">
+                This action cannot be undone.
+              </p>
             </div>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

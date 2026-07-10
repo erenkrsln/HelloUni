@@ -21,10 +21,14 @@ interface ParticipantsDialogProps {
   participantLimit?: number;
 }
 
-export function ParticipantsDialog({ postId, participantsCount, participantLimit }: ParticipantsDialogProps) {
+export function ParticipantsDialog({
+  postId,
+  participantsCount,
+  participantLimit,
+}: ParticipantsDialogProps) {
   const participantsList = useQuery(
     api.queries.getParticipants,
-    participantsCount > 0 ? { postId } : "skip"
+    participantsCount > 0 ? { postId } : "skip",
   );
 
   return (
@@ -38,19 +42,23 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
           </span>
         </button>
       </DialogTrigger>
-      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[600px] max-h-[60vh] sm:max-h-[70vh] flex flex-col p-6 sm:p-8">
+      <DialogContent className="flex flex-col p-6 sm:p-8 max-w-[560px]">
         <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Teilnehmerliste</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">
+            Teilnehmerliste
+          </DialogTitle>
           <DialogDescription className="text-sm text-gray-600 mt-2">
-            {participantsCount || 0} {participantsCount === 1 ? "Person nimmt" : "Personen nehmen"} an diesem Event teil
+            {participantsCount || 0}{" "}
+            {participantsCount === 1 ? "Person nimmt" : "Personen nehmen"} an
+            diesem Event teil
             {participantLimit && ` (max. ${participantLimit})`}.
           </DialogDescription>
         </DialogHeader>
-        <div 
+        <div
           className="flex-1 overflow-y-auto pr-2 space-y-3 min-h-0"
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#cbd5e1 #f1f5f9'
+            scrollbarWidth: "thin",
+            scrollbarColor: "#cbd5e1 #f1f5f9",
           }}
         >
           {participantsList === undefined ? (
@@ -59,19 +67,26 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
             </div>
           ) : participantsList && participantsList.length > 0 ? (
             participantsList.map((participant) => (
-              <div key={participant._id} className="flex items-center gap-4 py-2">
+              <div
+                key={participant._id}
+                className="flex items-center gap-4 py-2"
+              >
                 {participant.username ? (
                   <Link
                     href={`/profile/${participant.username}`}
                     className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
                   >
                     <Avatar className="w-10 h-10 rounded-full">
-                      <AvatarImage src={participant.image} alt={participant.name} className="object-cover" />
+                      <AvatarImage
+                        src={participant.image}
+                        alt={participant.name}
+                        className="object-cover"
+                      />
                       <AvatarFallback
                         className="font-semibold rounded-full"
                         style={{
                           backgroundColor: "rgba(0, 0, 0, 0.2)",
-                          color: "#000000"
+                          color: "#000000",
                         }}
                       >
                         {participant.name?.[0]?.toUpperCase() || "U"}
@@ -97,12 +112,16 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
                 ) : (
                   <div className="flex items-center gap-3 flex-1">
                     <Avatar className="w-10 h-10 rounded-full">
-                      <AvatarImage src={participant.image} alt={participant.name} className="object-cover" />
+                      <AvatarImage
+                        src={participant.image}
+                        alt={participant.name}
+                        className="object-cover"
+                      />
                       <AvatarFallback
                         className="font-semibold rounded-full"
                         style={{
                           backgroundColor: "rgba(0, 0, 0, 0.2)",
-                          color: "#000000"
+                          color: "#000000",
                         }}
                       >
                         {participant.name?.[0]?.toUpperCase() || "U"}
@@ -133,15 +152,3 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

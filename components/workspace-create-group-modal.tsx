@@ -7,7 +7,14 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { Search, Check, Smile } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogBody,
+} from "@/components/ui/dialog";
 
 interface CreateGroupModalProps {
   isOpen: boolean;
@@ -15,7 +22,13 @@ interface CreateGroupModalProps {
 }
 
 const EMOJI_SUGGESTIONS = ["📚", "💻", "🎉", "🧪", "🏆", "🎓", "📊", "🤝"];
-const GROUP_TYPES = ["Study Group", "Project Team", "Course Group", "Event Team", "Other"];
+const GROUP_TYPES = [
+  "Study Group",
+  "Project Team",
+  "Course Group",
+  "Event Team",
+  "Other",
+];
 
 export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
   const router = useRouter();
@@ -23,6 +36,7 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
   const [groupType, setGroupType] = useState<string>("Study Group");
+  const [customGroupType, setCustomGroupType] = useState("");
   const [visibility, setVisibility] = useState<"private" | "public">("private");
   const [icon, setIcon] = useState("📚");
   const [currentGoal, setCurrentGoal] = useState("");
@@ -36,15 +50,19 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
 
   if (!isOpen || !currentUser) return null;
 
-  const selectableUsers = allUsers?.filter((u) => u._id !== currentUser._id) || [];
-  const filteredUsers = selectableUsers.filter((u) => 
-    u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    u.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  const selectableUsers =
+    allUsers?.filter((u) => u._id !== currentUser._id) || [];
+  const filteredUsers = selectableUsers.filter(
+    (u) =>
+      u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.username?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const toggleUser = (userId: Id<"users">) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
     );
   };
 
@@ -53,7 +71,7 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
       alert("Please provide a group name and select at least one member.");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const participants = [currentUser._id, ...selectedUsers];
@@ -62,7 +80,16 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
         name: groupName.trim(),
         description: description.trim() || undefined,
         icon: icon,
-        groupType: groupType as "Study Group" | "Project Team" | "Course Group" | "Event Team" | "Other",
+        groupType: groupType as
+          | "Study Group"
+          | "Project Team"
+          | "Course Group"
+          | "Event Team"
+          | "Other",
+        customGroupType:
+          groupType === "Other"
+            ? customGroupType.trim() || undefined
+            : undefined,
         currentGoal: currentGoal.trim() || undefined,
         visibility: visibility,
         creatorId: currentUser._id,
@@ -72,6 +99,7 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
       setGroupName("");
       setDescription("");
       setGroupType("Study Group");
+      setCustomGroupType("");
       setVisibility("private");
       setIcon("📚");
       setCurrentGoal("");
@@ -100,8 +128,8 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Group Name <span className="text-red-500">*</span>
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
                 placeholder="E.g. Study Group Math"
@@ -111,8 +139,10 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-              <textarea 
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Description
+              </label>
+              <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the purpose of this group…"
@@ -123,24 +153,54 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
 
             {/* Group Type */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Group Type</label>
-              <select 
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Group Type
+              </label>
+              <select
                 value={groupType}
-                onChange={(e) => setGroupType(e.target.value)}
+                onChange={(e) => {
+                  setGroupType(e.target.value);
+                  // Clear custom type if switching away from "Other"
+                  if (e.target.value !== "Other") {
+                    setCustomGroupType("");
+                  }
+                }}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {GROUP_TYPES.map((type) => (
-                  <option key={type} value={type}>{type}</option>
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
             </div>
 
+            {/* Custom Group Type (if "Other" selected) */}
+            {groupType === "Other" && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Custom Group Type
+                </label>
+                <input
+                  type="text"
+                  value={customGroupType}
+                  onChange={(e) => setCustomGroupType(e.target.value)}
+                  placeholder="Enter your group type"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
             {/* Visibility */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Visibility</label>
-              <select 
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Visibility
+              </label>
+              <select
                 value={visibility}
-                onChange={(e) => setVisibility(e.target.value as "private" | "public")}
+                onChange={(e) =>
+                  setVisibility(e.target.value as "private" | "public")
+                }
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="private">Private</option>
@@ -150,7 +210,9 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
 
             {/* Group Icon */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Group Icon</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Group Icon
+              </label>
               <div className="flex items-center gap-2">
                 <div className="text-4xl">{icon}</div>
                 <button
@@ -183,9 +245,11 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
 
             {/* Current Goal */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Current Goal</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Current Goal
+              </label>
+              <input
+                type="text"
                 value={currentGoal}
                 onChange={(e) => setCurrentGoal(e.target.value)}
                 placeholder="What is this group currently working toward?"
@@ -199,9 +263,12 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                 Add Members <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 text-slate-400 flex-shrink-0" size={16} />
-                <input 
-                  type="text" 
+                <Search
+                  className="absolute left-3 top-2.5 text-slate-400 flex-shrink-0"
+                  size={16}
+                />
+                <input
+                  type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search users..."
@@ -212,26 +279,42 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
 
             <div className="border border-slate-200 rounded-lg overflow-y-auto max-h-[200px] min-h-0">
               {filteredUsers.length === 0 ? (
-                <div className="text-center text-sm text-slate-400 py-4">No users found.</div>
+                <div className="text-center text-sm text-slate-400 py-4">
+                  No users found.
+                </div>
               ) : (
                 <div className="divide-y">
                   {filteredUsers.map((user) => (
-                    <div 
-                      key={user._id} 
+                    <div
+                      key={user._id}
                       onClick={() => toggleUser(user._id)}
                       className="flex items-center justify-between p-3 hover:bg-slate-50 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
-                          {user.image ? <img src={user.image} alt={user.name} className="w-full h-full object-cover" /> : null}
+                          {user.image ? (
+                            <img
+                              src={user.image}
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : null}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">{user.name}</div>
-                          <div className="text-xs text-slate-500 truncate">@{user.username}</div>
+                          <div className="text-sm font-medium truncate">
+                            {user.name}
+                          </div>
+                          <div className="text-xs text-slate-500 truncate">
+                            @{user.username}
+                          </div>
                         </div>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors flex-shrink-0 ${selectedUsers.includes(user._id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300'}`}>
-                        {selectedUsers.includes(user._id) && <Check size={12} className="text-white" />}
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors flex-shrink-0 ${selectedUsers.includes(user._id) ? "bg-blue-500 border-blue-500" : "border-slate-300"}`}
+                      >
+                        {selectedUsers.includes(user._id) && (
+                          <Check size={12} className="text-white" />
+                        )}
                       </div>
                     </div>
                   ))}
@@ -242,15 +325,17 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
         </DialogBody>
 
         <DialogFooter>
-          <button 
+          <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
           >
             Cancel
           </button>
-          <button 
+          <button
             onClick={handleCreate}
-            disabled={isSubmitting || !groupName.trim() || selectedUsers.length === 0}
+            disabled={
+              isSubmitting || !groupName.trim() || selectedUsers.length === 0
+            }
             className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors min-h-[40px]"
           >
             {isSubmitting ? "Creating..." : "Create Group"}

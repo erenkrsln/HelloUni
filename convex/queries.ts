@@ -1192,6 +1192,7 @@ export const getWorkspaceGroup = query({
       title: workspaceGroup.title,
       description: workspaceGroup.description,
       groupType: workspaceGroup.groupType,
+      customGroupType: workspaceGroup.customGroupType,
       currentGoal: workspaceGroup.currentGoal,
       visibility: workspaceGroup.visibility,
       createdAt: workspaceGroup.createdAt,

@@ -5,7 +5,15 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Edit2, Plus, LogOut, Crown, Star, ArrowLeft, Smile } from "lucide-react";
+import {
+  Edit2,
+  Plus,
+  LogOut,
+  Crown,
+  Star,
+  ArrowLeft,
+  Smile,
+} from "lucide-react";
 import { useToast } from "@/components/toast";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { AddMemberModal } from "@/components/add-member-modal";
@@ -17,9 +25,18 @@ interface WorkspaceGroupInfoEnhancedProps {
 }
 
 const EMOJI_SUGGESTIONS = ["📚", "💻", "🎉", "🧪", "🏆", "🎓", "📊", "🤝"];
-const GROUP_TYPES = ["Study Group", "Project Team", "Course Group", "Event Team", "Other"];
+const GROUP_TYPES = [
+  "Study Group",
+  "Project Team",
+  "Course Group",
+  "Event Team",
+  "Other",
+];
 
-export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: WorkspaceGroupInfoEnhancedProps) {
+export function WorkspaceGroupInfoEnhanced({
+  workspaceId,
+  onBackToOverview,
+}: WorkspaceGroupInfoEnhancedProps) {
   const router = useRouter();
   const { currentUser } = useCurrentUser();
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
@@ -27,7 +44,8 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
   const [isEditDetailsOpen, setIsEditDetailsOpen] = useState(false);
   const [editDescription, setEditDescription] = useState("");
   const [editIcon, setEditIcon] = useState("");
-  const [editGroupType, setEditGroupType] = useState("");
+  const [editGroupType, setEditGroupType] = useState<"Study Group" | "Project Team" | "Course Group" | "Event Team" | "Other" | "">("");
+  const [editCustomGroupType, setEditCustomGroupType] = useState("");
   const [editCurrentGoal, setEditCurrentGoal] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [confirmState, setConfirmState] = useState<{
@@ -43,19 +61,19 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
   // Fetch group data
   const groupData = useQuery(
     api.queries.getGroupById,
-    isGroup ? { groupId } : "skip"
+    isGroup ? { groupId } : "skip",
   );
 
   // Fetch workspace group details
   const workspaceGroup = useQuery(
     api.queries.getWorkspaceGroup,
-    isGroup ? { groupId } : "skip"
+    isGroup ? { groupId } : "skip",
   );
 
   // Fetch members
   const members = useQuery(
     api.queries.getConversationMembers,
-    isGroup ? { conversationId: groupId } : "skip"
+    isGroup ? { conversationId: groupId } : "skip",
   );
 
   // Mutations
@@ -68,7 +86,9 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
   const toast = useToast();
 
   if (!members || !groupData) {
-    return <div className="text-center p-8 text-gray-500">Loading group info...</div>;
+    return (
+      <div className="text-center p-8 text-gray-500">Loading group info...</div>
+    );
   }
 
   // Determine current user's role
@@ -81,14 +101,17 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
     }
   }
 
-  const canManageGroup = isGroup && (currentUserRole === "creator" || currentUserRole === "admin");
+  const canManageGroup =
+    isGroup && (currentUserRole === "creator" || currentUserRole === "admin");
   const canManageMembers = canManageGroup;
-  const isCurrentUser = (memberId: string) => currentUser && currentUser._id === memberId;
+  const isCurrentUser = (memberId: string) =>
+    currentUser && currentUser._id === memberId;
 
   // Get member role
   const getMemberRole = (memberId: string): string => {
     if (groupData?.creatorId?.toString() === memberId) return "creator";
-    if (groupData?.adminIds?.some((id: any) => id.toString() === memberId)) return "admin";
+    if (groupData?.adminIds?.some((id: any) => id.toString() === memberId))
+      return "admin";
     return "member";
   };
 
@@ -123,7 +146,9 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
       await updateGroupDetails({
         conversationId: groupId,
         icon: editIcon,
-        groupType: editGroupType as any,
+        groupType: editGroupType || undefined,
+        customGroupType:
+          editGroupType === "Other" ? editCustomGroupType : undefined,
         currentGoal: editCurrentGoal,
         userId: currentUser._id,
       });
@@ -261,24 +286,35 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
             {workspaceGroup?.groupType && (
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Type</span>
-                <span className="font-medium text-gray-900">{workspaceGroup.groupType}</span>
+                <span className="font-medium text-gray-900">
+                  {workspaceGroup.groupType === "Other" &&
+                  workspaceGroup.customGroupType
+                    ? workspaceGroup.customGroupType
+                    : workspaceGroup.groupType}
+                </span>
               </div>
             )}
             {workspaceGroup?.visibility && (
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Visibility</span>
-                <span className="font-medium text-gray-900 capitalize">{workspaceGroup.visibility}</span>
+                <span className="font-medium text-gray-900 capitalize">
+                  {workspaceGroup.visibility}
+                </span>
               </div>
             )}
             {workspaceGroup?.currentGoal && (
               <div className="flex justify-between items-start">
                 <span className="text-gray-600">Current Goal</span>
-                <span className="font-medium text-gray-900 text-right max-w-xs">{workspaceGroup.currentGoal}</span>
+                <span className="font-medium text-gray-900 text-right max-w-xs">
+                  {workspaceGroup.currentGoal}
+                </span>
               </div>
             )}
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Members</span>
-              <span className="font-medium text-gray-900">{members.length}</span>
+              <span className="font-medium text-gray-900">
+                {members.length}
+              </span>
             </div>
           </div>
         </div>
@@ -415,7 +451,17 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
               Group Settings
             </h2>
             <div className="space-y-2">
-              <button className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <button
+                onClick={() => {
+                  // Initialize edit state with current values
+                  setEditIcon(groupData?.icon || "👥");
+                  setEditGroupType(workspaceGroup?.groupType || "Study Group");
+                  setEditCustomGroupType(workspaceGroup?.customGroupType || "");
+                  setEditCurrentGoal(workspaceGroup?.currentGoal || "");
+                  setIsEditDetailsOpen(true);
+                }}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 Edit Group Details
               </button>
               {currentUserRole === "creator" && (
@@ -470,7 +516,9 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
 
             {/* Icon */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Group Icon</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Group Icon
+              </label>
               <div className="flex items-center gap-2 mb-2">
                 <div className="text-4xl">{editIcon}</div>
                 <button
@@ -502,21 +550,49 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
 
             {/* Group Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Group Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Group Type
+              </label>
               <select
                 value={editGroupType}
-                onChange={(e) => setEditGroupType(e.target.value)}
+                onChange={(e) => {
+                  setEditGroupType(e.target.value as "Study Group" | "Project Team" | "Course Group" | "Event Team" | "Other");
+                  // Clear custom type if switching away from "Other"
+                  if (e.target.value !== "Other") {
+                    setEditCustomGroupType("");
+                  }
+                }}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {GROUP_TYPES.map((type) => (
-                  <option key={type} value={type}>{type}</option>
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
             </div>
 
+            {/* Custom Group Type (if "Other" selected) */}
+            {editGroupType === "Other" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Group Type
+                </label>
+                <input
+                  type="text"
+                  value={editCustomGroupType}
+                  onChange={(e) => setEditCustomGroupType(e.target.value)}
+                  placeholder="Enter your group type"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
             {/* Current Goal */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Goal</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Current Goal
+              </label>
               <textarea
                 value={editCurrentGoal}
                 onChange={(e) => setEditCurrentGoal(e.target.value)}
@@ -579,7 +655,11 @@ export function WorkspaceGroupInfoEnhanced({ workspaceId, onBackToOverview }: Wo
           onConfirm={handleConfirmAction}
           onClose={() => setConfirmState(null)}
           isLoading={isLoading}
-          isDangerous={confirmState.type === "remove" || confirmState.type === "leave" || confirmState.type === "delete"}
+          isDangerous={
+            confirmState.type === "remove" ||
+            confirmState.type === "leave" ||
+            confirmState.type === "delete"
+          }
         />
       )}
     </div>
