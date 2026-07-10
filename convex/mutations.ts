@@ -820,6 +820,7 @@ export const createConversation = mutation({
 export const updateGroupDetails = mutation({
   args: {
     conversationId: v.id("conversations"),
+    name: v.optional(v.string()), // Optional name to allow renaming in group settings
     description: v.optional(v.string()),
     icon: v.optional(v.string()),
     groupType: v.optional(
@@ -851,6 +852,24 @@ export const updateGroupDetails = mutation({
     const updates: any = {};
     if (args.description !== undefined) updates.description = args.description;
     if (args.icon !== undefined) updates.icon = args.icon;
+    if (args.name !== undefined && args.name.trim() !== conversation.name) {
+      updates.name = args.name.trim();
+
+      const oldName = conversation.name || "Gruppe";
+      const user = await ctx.db.get(args.userId);
+      if (user) {
+        await ctx.db.insert("messages", {
+          conversationId: args.conversationId,
+          senderId: args.userId,
+          content: `${user.name} hat den Gruppennamen von "${oldName}" zu "${args.name.trim()}" geändert`,
+          type: "system",
+          createdAt: Date.now(),
+        });
+      }
+    }
+    if (args.visibility !== undefined) {
+      updates.isPublic = args.visibility === "public";
+    }
     updates.updatedAt = Date.now();
 
     await ctx.db.patch(args.conversationId, updates);
@@ -871,6 +890,7 @@ export const updateGroupDetails = mutation({
       if (args.currentGoal !== undefined)
         wsUpdates.currentGoal = args.currentGoal;
       if (args.visibility !== undefined) wsUpdates.visibility = args.visibility;
+      if (args.name !== undefined) wsUpdates.title = args.name.trim();
       if (Object.keys(wsUpdates).length > 0) {
         await ctx.db.patch(workspaceGroup._id, wsUpdates);
       }
@@ -1632,6 +1652,17 @@ export const deleteConversation = mutation({
       ctx.scheduler.runAfter(0, api.actions.deleteR2File, {
         url: conversation.image,
       });
+    }
+
+    // Delete associated workspace_group if exists
+    const workspaceGroup = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .first();
+    if (workspaceGroup) {
+      await ctx.db.delete(workspaceGroup._id);
     }
 
     await ctx.db.delete(args.conversationId);

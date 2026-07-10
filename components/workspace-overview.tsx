@@ -8,7 +8,7 @@ import {
   ListTodo,
   Folder,
   BarChart2,
-  Info,
+  Settings,
   Calendar,
   Plus,
   Zap,
@@ -31,10 +31,10 @@ export function WorkspaceOverview({
   const isGroup = workspaceId.startsWith("group_");
   const groupId = workspaceId.replace("group_", "");
 
-  // Fetch group data
-  const groupDisplay = useQuery(
-    api.queries.getConversationDisplay,
-    isGroup ? { conversationId: groupId as any } : "skip",
+  // Fetch group data using getGroupById as the single source of truth for name, icon, description
+  const groupData = useQuery(
+    api.queries.getGroupById,
+    isGroup ? { groupId: groupId as any } : "skip",
   );
 
   const groupMembers = useQuery(
@@ -71,12 +71,12 @@ export function WorkspaceOverview({
   // Determine if user is owner or admin
   const isOwner =
     currentUser &&
-    groupDisplay &&
-    (groupDisplay as any).creatorId === currentUser._id;
+    groupData &&
+    groupData.creatorId === currentUser._id;
   const isAdmin =
     currentUser &&
-    groupDisplay &&
-    (groupDisplay as any).adminIds?.includes(currentUser._id);
+    groupData &&
+    groupData.adminIds?.includes(currentUser._id);
   const canManage = isOwner || isAdmin;
 
   return (
@@ -84,40 +84,62 @@ export function WorkspaceOverview({
       <div className="max-w-lg mx-auto space-y-6">
         {/* Group Header */}
         <div className="text-center pb-6 border-b border-gray-100">
-          {groupDisplay && (
+          {groupData && (
             <>
-              <div className="text-5xl mb-3 opacity-80">
-                {(groupDisplay as any).icon || "👥"}
+              {/* 1. Group Icon */}
+              <div className="text-5xl mb-3 opacity-90 select-none">
+                {groupData.icon || "👥"}
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {groupDisplay?.displayName || "Group"}
+
+              {/* 2. Large Group Name */}
+              <h1 className="text-3xl font-bold text-gray-900 mb-3 break-words px-4">
+                {groupData.name || "Group"}
               </h1>
-              <div className="flex flex-wrap justify-center gap-2 mb-3 text-xs">
+
+              {/* 3. Metadata Badges */}
+              <div className="flex flex-wrap justify-center gap-2 mb-4 text-xs">
                 {workspaceGroup?.groupType && (
-                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                    {workspaceGroup.groupType === "Other" &&
-                    workspaceGroup.customGroupType
+                  <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full font-medium shadow-sm">
+                    {workspaceGroup.groupType === "Other" && workspaceGroup.customGroupType
                       ? workspaceGroup.customGroupType
                       : workspaceGroup.groupType}
                   </span>
                 )}
                 {workspaceGroup?.visibility && (
-                  <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium capitalize">
+                  <span className="bg-gray-50 text-gray-700 border border-gray-200 px-2.5 py-1 rounded-full font-medium capitalize shadow-sm">
                     {workspaceGroup.visibility}
                   </span>
                 )}
-                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium">
+                <span className="bg-gray-50 text-gray-700 border border-gray-200 px-2.5 py-1 rounded-full font-medium shadow-sm">
                   {groupMembers?.length || 0} members
                 </span>
               </div>
-              {(groupDisplay as any).description && (
-                <p className="text-sm text-gray-600 mb-4 italic">
-                  "{(groupDisplay as any).description}"
+
+              {/* 4. Description */}
+              {groupData.description ? (
+                <p className="text-sm text-gray-600 max-w-sm mx-auto whitespace-pre-wrap break-words leading-relaxed italic px-4">
+                  "{groupData.description}"
                 </p>
+              ) : (
+                canManage && (
+                  <button
+                    onClick={() => onTabChange?.("group-info")}
+                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors mt-1"
+                  >
+                    + Add description
+                  </button>
+                )
               )}
+
+              {/* 5. Current Goal */}
               {workspaceGroup?.currentGoal && (
-                <div className="text-xs text-gray-600 bg-blue-50 inline-block px-3 py-2 rounded-full mt-2">
-                  🎯 {workspaceGroup.currentGoal}
+                <div className="mt-5 p-3.5 bg-blue-50/40 border border-blue-100/60 rounded-2xl text-xs text-gray-700 max-w-xs mx-auto shadow-sm">
+                  <div className="font-semibold text-blue-800 mb-1 flex items-center justify-center gap-1 select-none">
+                    🎯 Current Goal
+                  </div>
+                  <p className="italic text-center break-words px-2 text-gray-600">
+                    "{workspaceGroup.currentGoal}"
+                  </p>
                 </div>
               )}
             </>
@@ -184,13 +206,13 @@ export function WorkspaceOverview({
             </p>
           </div>
 
-          {/* Group Info - NEW */}
+          {/* Group Settings */}
           <div
             onClick={() => onTabChange?.("group-info")}
             className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
           >
-            <Info size={24} className="text-slate-600 mb-2" />
-            <h3 className="font-medium text-sm mb-2">Group Info</h3>
+            <Settings size={24} className="text-slate-600 mb-2" />
+            <h3 className="font-medium text-sm mb-2">Group Settings</h3>
             <p className="text-xs text-gray-500">
               {groupMembers?.length || 0} members
               {workspaceGroup?.groupType &&

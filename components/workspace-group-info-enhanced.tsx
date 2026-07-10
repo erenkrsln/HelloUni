@@ -13,6 +13,7 @@ import {
   Star,
   ArrowLeft,
   Smile,
+  Settings,
 } from "lucide-react";
 import { useToast } from "@/components/toast";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
@@ -40,13 +41,17 @@ export function WorkspaceGroupInfoEnhanced({
   const router = useRouter();
   const { currentUser } = useCurrentUser();
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
-  const [isEditAboutOpen, setIsEditAboutOpen] = useState(false);
-  const [isEditDetailsOpen, setIsEditDetailsOpen] = useState(false);
+
+  // Unified Edit Modal States
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editIcon, setEditIcon] = useState("");
   const [editGroupType, setEditGroupType] = useState<"Study Group" | "Project Team" | "Course Group" | "Event Team" | "Other" | "">("");
   const [editCustomGroupType, setEditCustomGroupType] = useState("");
   const [editCurrentGoal, setEditCurrentGoal] = useState("");
+  const [editVisibility, setEditVisibility] = useState<"public" | "private">("private");
+
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [confirmState, setConfirmState] = useState<{
     type: "remove" | "promote" | "demote" | "leave" | "delete";
@@ -82,12 +87,13 @@ export function WorkspaceGroupInfoEnhanced({
   const demoteAdmin = useMutation(api.workspace.demoteAdmin);
   const removeMember = useMutation(api.workspace.removeMember);
   const leaveGroup = useMutation(api.workspace.leaveGroup);
+  const deleteConversation = useMutation(api.mutations.deleteConversation);
 
   const toast = useToast();
 
   if (!members || !groupData) {
     return (
-      <div className="text-center p-8 text-gray-500">Loading group info...</div>
+      <div className="text-center p-8 text-gray-500">Loading group settings...</div>
     );
   }
 
@@ -121,41 +127,26 @@ export function WorkspaceGroupInfoEnhanced({
     }
   };
 
-  const handleSaveAboutEdit = async () => {
+  const handleSaveEdit = async () => {
     if (!currentUser) return;
     setIsLoading(true);
     try {
       await updateGroupDetails({
         conversationId: groupId,
+        name: editName.trim(),
         description: editDescription,
-        userId: currentUser._id,
-      });
-      setIsEditAboutOpen(false);
-      toast.success("Description updated");
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to update description");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSaveDetailsEdit = async () => {
-    if (!currentUser) return;
-    setIsLoading(true);
-    try {
-      await updateGroupDetails({
-        conversationId: groupId,
         icon: editIcon,
         groupType: editGroupType || undefined,
         customGroupType:
           editGroupType === "Other" ? editCustomGroupType : undefined,
         currentGoal: editCurrentGoal,
+        visibility: editVisibility,
         userId: currentUser._id,
       });
-      setIsEditDetailsOpen(false);
-      toast.success("Group details updated");
+      setIsEditOpen(false);
+      toast.success("Group details updated successfully");
     } catch (error: any) {
-      toast.error(error?.message || "Failed to update details");
+      toast.error(error?.message || "Failed to update group details");
     } finally {
       setIsLoading(false);
     }
@@ -203,7 +194,15 @@ export function WorkspaceGroupInfoEnhanced({
             userId: currentUser._id,
           });
           toast.success("You have left the group");
-          // Navigate back to workspace
+          setTimeout(() => router.push("/workspace"), 500);
+          break;
+
+        case "delete":
+          await deleteConversation({
+            conversationId: groupId,
+            userId: currentUser._id,
+          });
+          toast.success("Group deleted successfully");
           setTimeout(() => router.push("/workspace"), 500);
           break;
       }
@@ -227,101 +226,96 @@ export function WorkspaceGroupInfoEnhanced({
           Back to Overview
         </button>
 
-        {/* About Section */}
-        <div className="border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-lg flex items-center">
-              <span className="w-6 h-6 mr-2">ℹ️</span>
-              About
-            </h2>
-            {canManageGroup && (
-              <button
-                onClick={() => {
-                  setEditDescription(groupData?.description || "");
-                  setIsEditAboutOpen(true);
-                }}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                title="Edit description"
-              >
-                <Edit2 size={16} className="text-gray-600" />
-              </button>
-            )}
-          </div>
-          {groupData?.description ? (
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {groupData.description}
-            </p>
-          ) : (
-            <p className="text-sm text-gray-400 italic">No description yet</p>
-          )}
+        {/* Page Title */}
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-2">
+          <Settings size={28} className="text-gray-700" />
+          <h1 className="text-2xl font-bold text-gray-900">Group Settings</h1>
         </div>
 
-        {/* Group Details Section */}
+        {/* Group Details Card */}
         <div className="border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
             <h2 className="font-semibold text-lg flex items-center">
               <span className="w-6 h-6 mr-2">📋</span>
-              Details
+              Group Details
             </h2>
             {canManageGroup && (
               <button
                 onClick={() => {
+                  setEditName(groupData?.name || "");
+                  setEditDescription(groupData?.description || "");
                   setEditIcon(groupData?.icon || "📚");
                   setEditGroupType(workspaceGroup?.groupType || "Study Group");
+                  setEditCustomGroupType(workspaceGroup?.customGroupType || "");
                   setEditCurrentGoal(workspaceGroup?.currentGoal || "");
-                  setIsEditDetailsOpen(true);
+                  setEditVisibility(workspaceGroup?.visibility || "private");
+                  setIsEditOpen(true);
                 }}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                title="Edit details"
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Edit group details"
               >
                 <Edit2 size={16} className="text-gray-600" />
               </button>
             )}
           </div>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Icon</span>
-              <span className="text-2xl">{groupData?.icon || "👥"}</span>
+
+          <div className="space-y-3.5 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Name</span>
+              <span className="sm:col-span-2 font-semibold text-gray-900 break-words">{groupData?.name || "Not set"}</span>
             </div>
-            {workspaceGroup?.groupType && (
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Type</span>
-                <span className="font-medium text-gray-900">
-                  {workspaceGroup.groupType === "Other" &&
-                  workspaceGroup.customGroupType
-                    ? workspaceGroup.customGroupType
-                    : workspaceGroup.groupType}
-                </span>
-              </div>
-            )}
-            {workspaceGroup?.visibility && (
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Visibility</span>
-                <span className="font-medium text-gray-900 capitalize">
-                  {workspaceGroup.visibility}
-                </span>
-              </div>
-            )}
-            {workspaceGroup?.currentGoal && (
-              <div className="flex justify-between items-start">
-                <span className="text-gray-600">Current Goal</span>
-                <span className="font-medium text-gray-900 text-right max-w-xs">
-                  {workspaceGroup.currentGoal}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Members</span>
-              <span className="font-medium text-gray-900">
-                {members.length}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Description</span>
+              <p className="sm:col-span-2 text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
+                {groupData?.description || <span className="italic text-gray-400">Not set</span>}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Icon</span>
+              <span className="sm:col-span-2 text-2xl select-none">{groupData?.icon || "👥"}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Type</span>
+              <span className="sm:col-span-2 font-medium text-gray-900">
+                {workspaceGroup?.groupType === "Other" && workspaceGroup?.customGroupType
+                  ? workspaceGroup.customGroupType
+                  : workspaceGroup?.groupType || <span className="italic text-gray-400">Not set</span>}
               </span>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Visibility</span>
+              <span className="sm:col-span-2 font-medium text-gray-900 capitalize">
+                {workspaceGroup?.visibility || <span className="italic text-gray-400">Not set</span>}
+              </span>
+            </div>
+            {workspaceGroup?.currentGoal && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
+                <span className="text-gray-500 font-medium">Current Goal</span>
+                <span className="sm:col-span-2 font-medium text-gray-900 break-words">{workspaceGroup.currentGoal}</span>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2 border-b border-gray-50">
+              <span className="text-gray-500 font-medium">Members</span>
+              <span className="sm:col-span-2 font-medium text-gray-900">{members.length}</span>
+            </div>
+            {workspaceGroup?.createdAt && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4 py-2">
+                <span className="text-gray-500 font-medium">Created</span>
+                <span className="sm:col-span-2 text-gray-900">
+                  {new Date(workspaceGroup.createdAt).toLocaleDateString("de-DE", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Members Section */}
         <div className="border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
             <h2 className="font-semibold text-lg flex items-center">
               <span className="w-6 h-6 mr-2">👥</span>
               Members
@@ -337,7 +331,7 @@ export function WorkspaceGroupInfoEnhanced({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
             {members.map((member: any) => {
               const role = getMemberRole(member._id);
               const isCurrent = isCurrentUser(member._id);
@@ -443,76 +437,59 @@ export function WorkspaceGroupInfoEnhanced({
           </div>
         </div>
 
-        {/* Group Settings Section */}
-        {canManageGroup && (
-          <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-            <h2 className="font-semibold text-lg mb-3 flex items-center">
-              <span className="w-6 h-6 mr-2">⚙️</span>
-              Group Settings
+        {/* Danger Zone */}
+        {currentUserRole === "creator" && (
+          <div className="border border-red-200 rounded-xl p-4 bg-red-50/20">
+            <h2 className="font-semibold text-lg text-red-800 mb-2 flex items-center">
+              <span className="w-6 h-6 mr-2">⚠️</span>
+              Danger Zone
             </h2>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  // Initialize edit state with current values
-                  setEditIcon(groupData?.icon || "👥");
-                  setEditGroupType(workspaceGroup?.groupType || "Study Group");
-                  setEditCustomGroupType(workspaceGroup?.customGroupType || "");
-                  setEditCurrentGoal(workspaceGroup?.currentGoal || "");
-                  setIsEditDetailsOpen(true);
-                }}
-                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Edit Group Details
-              </button>
-              {currentUserRole === "creator" && (
-                <button
-                  onClick={() => setConfirmState({ type: "delete" })}
-                  className="w-full px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  Delete Group
-                </button>
-              )}
-            </div>
+            <p className="text-xs text-red-600/80 mb-4 leading-relaxed">
+              Once you delete a group, all data, messages, tasks, and files will be permanently deleted and cannot be undone.
+            </p>
+            <button
+              onClick={() => setConfirmState({ type: "delete" })}
+              className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-colors shadow-sm"
+            >
+              Delete Group
+            </button>
           </div>
         )}
       </div>
 
-      {/* Edit About Modal */}
-      {isEditAboutOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="font-semibold text-lg">Edit Description</h3>
-            <textarea
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Describe the purpose of this group…"
-              rows={4}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setIsEditAboutOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveAboutEdit}
-                disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors"
-              >
-                {isLoading ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Details Modal */}
-      {isEditDetailsOpen && (
+      {/* Edit Group Details Modal */}
+      {isEditOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-semibold text-lg">Edit Group Details</h3>
+            <h3 className="font-semibold text-lg border-b border-gray-100 pb-2">Edit Group Details</h3>
+
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Group Name
+              </label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Enter group name"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Describe the purpose of this group…"
+                rows={3}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
 
             {/* Icon */}
             <div>
@@ -520,7 +497,7 @@ export function WorkspaceGroupInfoEnhanced({
                 Group Icon
               </label>
               <div className="flex items-center gap-2 mb-2">
-                <div className="text-4xl">{editIcon}</div>
+                <div className="text-4xl select-none">{editIcon}</div>
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -556,8 +533,7 @@ export function WorkspaceGroupInfoEnhanced({
               <select
                 value={editGroupType}
                 onChange={(e) => {
-                  setEditGroupType(e.target.value as "Study Group" | "Project Team" | "Course Group" | "Event Team" | "Other");
-                  // Clear custom type if switching away from "Other"
+                  setEditGroupType(e.target.value as any);
                   if (e.target.value !== "Other") {
                     setEditCustomGroupType("");
                   }
@@ -582,11 +558,26 @@ export function WorkspaceGroupInfoEnhanced({
                   type="text"
                   value={editCustomGroupType}
                   onChange={(e) => setEditCustomGroupType(e.target.value)}
-                  placeholder="Enter your group type"
+                  placeholder="Enter your custom group type"
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             )}
+
+            {/* Visibility */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Visibility
+              </label>
+              <select
+                value={editVisibility}
+                onChange={(e) => setEditVisibility(e.target.value as "public" | "private")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+              </select>
+            </div>
 
             {/* Current Goal */}
             <div>
@@ -602,16 +593,17 @@ export function WorkspaceGroupInfoEnhanced({
               />
             </div>
 
-            <div className="flex gap-2 justify-end pt-2">
+            {/* Buttons */}
+            <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
               <button
-                onClick={() => setIsEditDetailsOpen(false)}
+                onClick={() => setIsEditOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={handleSaveDetailsEdit}
-                disabled={isLoading}
+                onClick={handleSaveEdit}
+                disabled={isLoading || !editName.trim()}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors"
               >
                 {isLoading ? "Saving..." : "Save Changes"}
