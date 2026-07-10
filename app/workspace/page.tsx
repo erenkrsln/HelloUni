@@ -137,15 +137,18 @@ export default function WorkspacePage() {
 
   return (
     <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden bg-white">
+
       <Header onMenuClick={() => setIsSidebarOpen(true)} title="Workspace" />
       <MobileSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
-
+      
+    
       <div className="px-4 mt-6">
         {/* Title & Subtitle */}
         <div className="mb-6 text-center max-w-md mx-auto">
+         
           <p className="text-sm text-gray-500">
             Verwalte deine Gruppen, Aufgaben und Events an einem Ort.
           </p>
