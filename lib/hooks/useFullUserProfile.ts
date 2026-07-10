@@ -66,9 +66,10 @@ export function useFullUserProfile({ username, currentUserId }: useFullUserProfi
     useEffect(() => {
         if (resolvedData) {
             profileCache.set(cacheKey, resolvedData);
-            // Update local state only if different (deep check or just key check - simplifed here)
+            // Update local state only if different (deep check or just key check - simplified here)
             if (JSON.stringify(resolvedData.user) !== JSON.stringify(cachedData?.user) ||
                 resolvedData.followerCount !== cachedData?.followerCount ||
+                resolvedData.followingCount !== cachedData?.followingCount ||
                 resolvedData.isFollowing !== cachedData?.isFollowing) {
                 setCachedData(resolvedData);
             }

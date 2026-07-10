@@ -4,6 +4,61 @@ import { Id } from "./_generated/dataModel";
 import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
 import { calculateRankingScore, ScoringFactors } from "./scoring";
 
+const AI_ASSISTANT_USERNAME = "jastell";
+const AI_ASSISTANT_DISPLAY_NAME = "Jastell (HelloUni-KI)";
+const AI_ASSISTANT_SEARCH_ALIASES = [
+  "jastell",
+  "hellounki",
+  "ai assistent",
+  "ki assistent",
+  "assistent",
+  "chatbot",
+];
+
+function isAiAssistantUser(user: { username?: string | null }) {
+  return (user.username || "").toLowerCase() === AI_ASSISTANT_USERNAME;
+}
+
+function getChatUserDisplayName(user: { username?: string | null; name?: string | null }) {
+  return isAiAssistantUser(user) ? AI_ASSISTANT_DISPLAY_NAME : (user.name || "Unbekannt");
+}
+
+function getChatUserDisplayUsername(user: { username?: string | null }) {
+  return isAiAssistantUser(user) ? AI_ASSISTANT_DISPLAY_NAME : (user.username || "");
+}
+
+function matchesChatUserSearch(
+  user: { username?: string | null; name?: string | null },
+  searchLower: string,
+) {
+  const normalizedQuery = searchLower.trim().toLowerCase();
+  if (!normalizedQuery) return false;
+
+  const candidates = [
+    user.name || "",
+    user.username || "",
+    getChatUserDisplayName(user),
+    getChatUserDisplayUsername(user),
+    ...(isAiAssistantUser(user) ? AI_ASSISTANT_SEARCH_ALIASES : []),
+  ];
+
+  return candidates.some((value) => value.toLowerCase().includes(normalizedQuery));
+}
+
+function sortChatUsersWithAssistantFirst<T extends { username?: string | null; _creationTime?: number | null }>(
+  users: T[],
+) {
+  return [...users].sort((a, b) => {
+    const aIsAssistant = isAiAssistantUser(a);
+    const bIsAssistant = isAiAssistantUser(b);
+
+    if (aIsAssistant && !bIsAssistant) return -1;
+    if (!aIsAssistant && bIsAssistant) return 1;
+
+    return (b._creationTime || 0) - (a._creationTime || 0);
+  });
+}
+
 // Helper function to calculate actual comments count for a post
 async function calculateCommentsCount(ctx: any, postId: Id<"posts">): Promise<number> {
   const allComments = await ctx.db
@@ -501,10 +556,7 @@ export const searchUsers = query({
     // Filter users by username (case-insensitive)
     // Skip users without username
     const matchingUsers = allUsers
-      .filter(user => user.username && (
-        user.username.toLowerCase().startsWith(searchLower) ||
-        user.username.toLowerCase().includes(searchLower)
-      ))
+      .filter((user) => user.username && matchesChatUserSearch(user, searchLower))
       .slice(0, 10); // Limit to 10 results
 
     // Convert storage IDs to URLs
@@ -516,6 +568,8 @@ export const searchUsers = query({
           name: user.name,
           username: user.username,
           image: imageUrl,
+          displayName: getChatUserDisplayName(user),
+          displayUsername: getChatUserDisplayUsername(user),
         };
       })
     );
@@ -696,7 +750,10 @@ export const getFollowingCount = query({
 
 // Get list of followers for a user
 export const getFollowers = query({
-  args: { userId: v.id("users") },
+  args: {
+    userId: v.id("users"),
+    currentUserId: v.optional(v.id("users")),
+  },
   handler: async (ctx, args) => {
     const follows = await ctx.db
       .query("follows")
@@ -709,13 +766,37 @@ export const getFollowers = query({
       })
     );
 
-    return followers.filter((user) => user !== null);
+    const activeFollowers = followers.filter((user) => user !== null);
+
+    // Get the list of users the current user is following
+    const myFollowing = new Set<string>();
+    if (args.currentUserId) {
+      const myFollows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q) => q.eq("followerId", args.currentUserId!))
+        .collect();
+      myFollows.forEach((f) => myFollowing.add(f.followingId));
+    }
+
+    return await Promise.all(
+      activeFollowers.map(async (user) => {
+        const image = await getUserImageUrl(ctx, user.image);
+        return {
+          ...user,
+          image,
+          isFollowing: args.currentUserId ? myFollowing.has(user._id) : false,
+        };
+      })
+    );
   },
 });
 
 // Get list of users that a user is following
 export const getFollowing = query({
-  args: { userId: v.id("users") },
+  args: {
+    userId: v.id("users"),
+    currentUserId: v.optional(v.id("users")),
+  },
   handler: async (ctx, args) => {
     const follows = await ctx.db
       .query("follows")
@@ -728,7 +809,28 @@ export const getFollowing = query({
       })
     );
 
-    return following.filter((user) => user !== null);
+    const activeFollowing = following.filter((user) => user !== null);
+
+    // Get the list of users the current user is following
+    const myFollowing = new Set<string>();
+    if (args.currentUserId) {
+      const myFollows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q) => q.eq("followerId", args.currentUserId!))
+        .collect();
+      myFollows.forEach((f) => myFollowing.add(f.followingId));
+    }
+
+    return await Promise.all(
+      activeFollowing.map(async (user) => {
+        const image = await getUserImageUrl(ctx, user.image);
+        return {
+          ...user,
+          image,
+          isFollowing: args.currentUserId ? myFollowing.has(user._id) : false,
+        };
+      })
+    );
   },
 });
 
@@ -963,7 +1065,9 @@ export const getAllUsers = query({
         const imageUrl = await getUserImageUrl(ctx, user.image);
         return {
           ...user,
-          image: imageUrl
+          image: imageUrl,
+          displayName: getChatUserDisplayName(user),
+          displayUsername: getChatUserDisplayUsername(user),
         };
       })
     );
@@ -985,7 +1089,8 @@ export const getConversations = query({
     const conversations = await ctx.db.query("conversations").collect();
 
     const relevantConversations = conversations.filter(c =>
-      c.participants.includes(args.userId) || c.leftParticipants?.includes(args.userId)
+      (c.participants.includes(args.userId) || c.leftParticipants?.includes(args.userId)) &&
+      !(c.deletedBy?.includes(args.userId))
     );
 
     // 2. Details für die Conversations anreichern
@@ -1044,7 +1149,7 @@ export const getConversations = query({
           const partnerId = conv.participants.find((id) => id !== args.userId) || args.userId;
           const partner = await ctx.db.get(partnerId);
           if (partner) {
-            displayName = partner.name;
+            displayName = getChatUserDisplayName(partner);
             displayImage = await getUserImageUrl(ctx, partner.image);
           }
         }
@@ -1096,7 +1201,8 @@ export const getUnreadCounts = query({
   handler: async (ctx, args) => {
     const conversations = await ctx.db.query("conversations").collect();
     const relevantConversations = conversations.filter(c =>
-      c.participants.includes(args.userId)
+      c.participants.includes(args.userId) &&
+      !(c.deletedBy?.includes(args.userId))
     );
 
     let totalUnread = 0;
@@ -1532,7 +1638,8 @@ export const searchProfiles = query({
     searchTerm: v.string(),
     sortBy: v.optional(v.string()),
     major: v.optional(v.string()),
-    interests: v.optional(v.array(v.string()))
+    interests: v.optional(v.array(v.string())),
+    currentUserId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
     const hasFilters = args.major || (args.interests && args.interests.length > 0);
@@ -1549,10 +1656,7 @@ export const searchProfiles = query({
     let matchingUsers = allUsers;
     if (args.searchTerm && args.searchTerm.trim().length > 0) {
       const searchLow = args.searchTerm.toLowerCase().trim();
-      matchingUsers = matchingUsers.filter(user =>
-        (user.name && user.name.toLowerCase().includes(searchLow)) ||
-        (user.username && user.username.toLowerCase().includes(searchLow))
-      );
+      matchingUsers = matchingUsers.filter((user) => matchesChatUserSearch(user, searchLow));
     }
 
     // Filter by major if provided
@@ -1579,6 +1683,16 @@ export const searchProfiles = query({
     // Limit to 20 results after sorting and filtering
     const limitedUsers = matchingUsers.slice(0, 20);
 
+    // Get follows if currentUserId is provided
+    const followedUserIds = new Set<string>();
+    if (args.currentUserId) {
+      const follows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q) => q.eq("followerId", args.currentUserId!))
+        .collect();
+      follows.forEach((f) => followedUserIds.add(f.followingId));
+    }
+
     // Convert storage IDs to URLs
     const usersWithImages = await Promise.all(
       limitedUsers.map(async (user) => {
@@ -1586,6 +1700,9 @@ export const searchProfiles = query({
         return {
           ...user,
           image: imageUrl,
+          isFollowing: args.currentUserId ? followedUserIds.has(user._id) : false,
+          displayName: getChatUserDisplayName(user),
+          displayUsername: getChatUserDisplayUsername(user),
         };
       })
     );
@@ -1593,6 +1710,132 @@ export const searchProfiles = query({
     return usersWithImages;
   },
 });
+
+// Get recommended compatible users for the current user
+export const getCompatibleUsers = query({
+  args: {
+    userId: v.optional(v.id("users")),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+    // If no user is logged in, return the top `limit` most recently joined people
+    if (!args.userId) {
+      const allUsers = await ctx.db
+        .query("users")
+        .collect();
+      
+      const sorted = allUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
+      const topN = sorted.slice(0, limit);
+      
+      return await Promise.all(
+        topN.map(async (user) => {
+          const image = await getUserImageUrl(ctx, user.image);
+          return { ...user, image, isFollowing: false };
+        })
+      );
+    }
+
+    const currentUser = await ctx.db.get(args.userId);
+    if (!currentUser) {
+      return [];
+    }
+
+    // Get the list of users the current user is already following
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId!))
+      .collect();
+    const followedUserIds = new Set(follows.map((f) => f.followingId));
+
+    // Get all users
+    const allUsers = await ctx.db
+      .query("users")
+      .collect();
+
+    // Filter out current user and already followed users
+    const potentialUsers = allUsers.filter(
+      (u) => u._id !== args.userId && !followedUserIds.has(u._id)
+    );
+
+    // Score users based on compatibility matching
+    const scoredUsers = potentialUsers.map((user) => {
+      let score = 0;
+
+      // 1. Major match (case-insensitive)
+      if (
+        user.major &&
+        currentUser.major &&
+        user.major.toLowerCase().trim() === currentUser.major.toLowerCase().trim()
+      ) {
+        score += 1;
+      }
+
+      // 2. Semester match
+      if (
+        user.semester !== undefined &&
+        currentUser.semester !== undefined &&
+        user.semester === currentUser.semester
+      ) {
+        score += 1;
+      }
+
+      // 3. Interests match (share at least one interest)
+      if (
+        user.interests &&
+        currentUser.interests &&
+        Array.isArray(user.interests) &&
+        Array.isArray(currentUser.interests)
+      ) {
+        const currentUserInterestsLower = currentUser.interests.map(i => i.toLowerCase().trim());
+        const userInterestsLower = user.interests.map(i => i.toLowerCase().trim());
+        const hasCommonInterest = currentUserInterestsLower.some(i => userInterestsLower.includes(i));
+        if (hasCommonInterest) {
+          score += 1;
+        }
+      }
+
+      return { user, score };
+    });
+
+    // Only keep users that match in at least one category (score >= 1)
+    const matchedUsers = scoredUsers.filter((item) => item.score >= 1);
+
+    // Prioritize more matches higher, then more recently joined (creation time desc)
+    matchedUsers.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return (b.user._creationTime || 0) - (a.user._creationTime || 0);
+    });
+
+    let selectedUsers = matchedUsers.slice(0, limit).map((item) => item.user);
+
+    // If there are less than limit compatible users, fill the rest with the most recently joined people
+    if (selectedUsers.length < limit) {
+      const selectedUserIds = new Set(selectedUsers.map((u) => u._id));
+      const otherUsers = potentialUsers.filter((u) => !selectedUserIds.has(u._id));
+      
+      // Sort other users by recency (creation time desc)
+      const sortedRecentOthers = otherUsers.sort(
+        (a, b) => (b._creationTime || 0) - (a._creationTime || 0)
+      );
+      
+      const neededCount = limit - selectedUsers.length;
+      const paddingUsers = sortedRecentOthers.slice(0, neededCount);
+      selectedUsers = [...selectedUsers, ...paddingUsers];
+    }
+
+    // Resolve storage IDs to URLs
+    return await Promise.all(
+      selectedUsers.map(async (user) => {
+        const image = await getUserImageUrl(ctx, user.image);
+        return { ...user, image, isFollowing: false };
+      })
+    );
+  },
+});
+
 
 // Search all posts by title or content
 // Search all posts by title or content
@@ -1828,6 +2071,13 @@ export const getMensaCache = query({
   },
 });
 
+export const getSemesterTermineCache = query({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db.query("semesterTermineCache").first();
+  },
+});
+
 export const searchPublicGroups = query({
   args: {
     searchTerm: v.string(),
@@ -2007,5 +2257,136 @@ export const getAssignedGroupTasks = query({
     });
 
     return enrichedTasks;
+  },
+});
+
+export const getChatSuggestions = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const allUsers = await ctx.db.query("users").collect();
+    const aiAssistant = allUsers.find((user) => isAiAssistantUser(user)) || null;
+
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
+      .collect();
+    const followedUserIds = follows.map((f) => f.followingId);
+
+    const conversations = await ctx.db.query("conversations").collect();
+    const directChatPartners = new Set<string>();
+
+    for (const conv of conversations) {
+      if (!conv.isGroup && conv.participants.includes(args.userId) && conv.participants.length === 2) {
+        const partner = conv.participants.find((p) => p !== args.userId);
+        if (partner) {
+          directChatPartners.add(partner.toString());
+        }
+      }
+    }
+
+    const targetFollowedIds = followedUserIds.filter((id) => id !== args.userId);
+    const suggestions: any[] = [];
+    const suggestionIds = new Set<string>();
+
+    const pushSuggestion = async (user: NonNullable<typeof aiAssistant>) => {
+      const userId = user._id.toString();
+      if (suggestionIds.has(userId) || user._id === args.userId) return;
+
+      const image = await getUserImageUrl(ctx, user.image);
+      suggestions.push({
+        ...user,
+        image,
+        displayName: getChatUserDisplayName(user),
+        displayUsername: getChatUserDisplayUsername(user),
+      });
+      suggestionIds.add(userId);
+    };
+
+    if (aiAssistant) {
+      await pushSuggestion(aiAssistant);
+    }
+
+    if (targetFollowedIds.length > 0) {
+      const users = await Promise.all(targetFollowedIds.map((id) => ctx.db.get(id)));
+      const validUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);
+
+      for (const user of validUsers) {
+        await pushSuggestion(user);
+      }
+    }
+
+    if (suggestions.length < 5) {
+      const currentUser = await ctx.db.get(args.userId);
+      if (currentUser) {
+        const followedUserIdsSet = new Set(followedUserIds.map((id) => id.toString()));
+
+        const potentialUsers = allUsers.filter(
+          (u) => u._id !== args.userId &&
+                 !followedUserIdsSet.has(u._id.toString()) &&
+                 !directChatPartners.has(u._id.toString())
+        );
+
+        const scoredUsers = potentialUsers.map((user) => {
+          let score = 0;
+          if (
+            user.major &&
+            currentUser.major &&
+            user.major.toLowerCase().trim() === currentUser.major.toLowerCase().trim()
+          ) {
+            score += 1;
+          }
+          if (
+            user.semester !== undefined &&
+            currentUser.semester !== undefined &&
+            user.semester === currentUser.semester
+          ) {
+            score += 1;
+          }
+          if (
+            user.interests &&
+            currentUser.interests &&
+            Array.isArray(user.interests) &&
+            Array.isArray(currentUser.interests)
+          ) {
+            const currentUserInterestsLower = currentUser.interests.map((i) => i.toLowerCase().trim());
+            const userInterestsLower = user.interests.map((i) => i.toLowerCase().trim());
+            const hasCommonInterest = currentUserInterestsLower.some((i) => userInterestsLower.includes(i));
+            if (hasCommonInterest) {
+              score += 1;
+            }
+          }
+          return { user, score };
+        });
+
+        const matchedUsers = scoredUsers.filter((item) => item.score >= 1);
+        matchedUsers.sort((a, b) => {
+          if (isAiAssistantUser(a.user) && !isAiAssistantUser(b.user)) return -1;
+          if (!isAiAssistantUser(a.user) && isAiAssistantUser(b.user)) return 1;
+          if (b.score !== a.score) {
+            return b.score - a.score;
+          }
+          return (b.user._creationTime || 0) - (a.user._creationTime || 0);
+        });
+
+        let selectedUsers = matchedUsers.map((item) => item.user);
+        if (selectedUsers.length < 5) {
+          const selectedUserIds = new Set(selectedUsers.map((u) => u._id.toString()));
+          const otherUsers = potentialUsers.filter((u) => !selectedUserIds.has(u._id.toString()));
+          const sortedRecentOthers = sortChatUsersWithAssistantFirst(otherUsers);
+          const neededCount = 5 - selectedUsers.length;
+          const paddingUsers = sortedRecentOthers.slice(0, neededCount);
+          selectedUsers = [...selectedUsers, ...paddingUsers];
+        }
+
+        for (const user of selectedUsers) {
+          if (suggestions.length >= 5) break;
+          await pushSuggestion(user);
+        }
+      }
+    }
+
+    return suggestions.slice(0, 5);
   },
 });

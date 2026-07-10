@@ -17,6 +17,7 @@ import { LocationDisplay } from "./location-display";
 import { EventDetails } from "./event-details";
 import { CommentDrawer } from "./comment-drawer";
 import { SharePostModal } from "./share-post-modal";
+import { ShareMenuModal } from "./share-menu-modal";
 // Importiere den gemeinsamen globalen Bild-Cache
 import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
 
@@ -66,6 +67,11 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isExternalShareMenuOpen, setIsExternalShareMenuOpen] = useState(false);
+
+  const handleShareClick = () => {
+    setIsExternalShareMenuOpen(true);
+  };
 
   // Auto-open drawer if commentId is provided
   useEffect(() => {
@@ -836,14 +842,23 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                 isLiking={isLiking}
                 currentUserId={currentUserId}
                 onCommentClick={() => setIsDrawerOpen(true)}
-                onShareClick={() => setIsShareModalOpen(true)}
+                onShareClick={handleShareClick}
               />
             )}
           </div>
         </div>
       </article>
 
-      {/* Share Post Modal */}
+      {/* Share Menu Modal (External platforms & Internal) */}
+      <ShareMenuModal 
+        isOpen={isExternalShareMenuOpen}
+        onClose={() => setIsExternalShareMenuOpen(false)}
+        postId={post._id}
+        postTitle={post.title}
+        onInternalShare={() => setIsShareModalOpen(true)}
+      />
+
+      {/* Share Post Modal - used for internal sharing (In HelloUni senden) */}
       {currentUserId && (
         <SharePostModal
           isOpen={isShareModalOpen}

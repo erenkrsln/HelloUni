@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, MapPin, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Globe, Lock } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
+import { parseTerminStartDate, parseTerminEndDate } from "@/lib/utils";
 
 type Event = {
     _id: Id<"events">;
@@ -39,6 +40,7 @@ export default function CalendarPage() {
         currentUser ? { userId: currentUser._id } : "skip"
     );
     const publicEvents = useQuery(api.events.listPublic, {});
+    const semesterTermine = useQuery(api.queries.getSemesterTermineCache)?.termine ?? [];
 
     const events = viewMode === "my" ? (currentUser ? myEvents : []) : publicEvents;
 
@@ -47,6 +49,7 @@ export default function CalendarPage() {
         const now = Date.now();
         return events.filter(e => e.startTime >= now);
     }, [events]);
+
 
     const isLoading = viewMode === "my"
         ? isAuthLoading || (!!currentUser && myEvents === undefined)
@@ -200,6 +203,18 @@ export default function CalendarPage() {
     // Calendar View Logic
     const [currentDate, setCurrentDate] = useState(new Date());
 
+    const monthTermine = useMemo(() => {
+        const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        return semesterTermine.filter(t => {
+            const start = parseTerminStartDate(t.date);
+            const end = parseTerminEndDate(t.date);
+            if (!start || !end) return false;
+            const effectiveEnd = end.getFullYear() === 9999 ? start : end;
+            return start <= monthEnd && effectiveEnd >= monthStart;
+        });
+    }, [semesterTermine, currentDate]);
+
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay(); // 0 is Sunday
     // Adjust for Monday start if needed, but standard US/Sunday start is easier for now. 
@@ -225,6 +240,15 @@ export default function CalendarPage() {
                 return ed.getDate() === i && ed.getMonth() === currentDate.getMonth() && ed.getFullYear() === currentDate.getFullYear();
             }) || [];
 
+            const day = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+            const dayTermine = semesterTermine.filter(t => {
+                const start = parseTerminStartDate(t.date);
+                const end = parseTerminEndDate(t.date);
+                if (!start || !end) return false;
+                const effectiveEnd = end.getFullYear() === 9999 ? start : end;
+                return start <= day && effectiveEnd >= day;
+            });
+
             days.push(
                 <div key={i}
                     className={`min-h-[4rem] bg-white border-b border-r border-gray-100 last:border-r-0 p-1 relative active:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-1 ${isToday ? 'bg-blue-50/10' : ''}`}
@@ -238,6 +262,13 @@ export default function CalendarPage() {
                     </div>
 
                     <div className="flex flex-col gap-1 w-full">
+                        {dayTermine.map((t, idx) => (
+                            <div key={`t-${idx}`}
+                                className="h-1.5 w-full rounded-full bg-[#F78D57] bg-opacity-[0.65]"
+                                title={t.description}
+                                onClick={ev => ev.stopPropagation()}
+                            />
+                        ))}
                         {dayEvents.slice(0, 3).map(e => (
                             <div key={e._id}
                                 className="h-1.5 w-full rounded-full bg-amber-200"
@@ -298,6 +329,11 @@ export default function CalendarPage() {
                                         <ChevronRight className="w-5 h-5 text-gray-600" />
                                     </Button>
                                 </div>
+                            </div>
+                            {/* Legend */}
+                            <div className="flex items-center gap-[17px] text-[11px] leading-normal text-black text-left pb-[8px]">
+                                <span className="flex justify-center items-center gap-[5px]"><span className="w-[11px] h-[11px] rounded-full bg-amber-200" />Your Event</span>
+                                <span className="flex justify-center items-center gap-[5px]"><span className="w-[11px] h-[11px] rounded-full bg-[#F78D57] opacity-65" />Semester Date</span>
                             </div>
 
                             {/* Month Grid */}
@@ -373,6 +409,26 @@ export default function CalendarPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {monthTermine.length > 0 && (
+                                <div className="mt-6">
+                                    <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
+                                        Semester Dates
+                                        <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{monthTermine.length}</span>
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {monthTermine.map((t, i) => (
+                                            <div key={i} className="p-4 rounded-2xl border border-gray-100 bg-white flex items-stretch gap-4 shadow-sm">
+                                                <div className="w-[11px] rounded-full bg-[#F78D57] opacity-65 shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium text-sm text-gray-900">{t.description}</p>
+                                                    <p className="text-xs text-gray-400 mt-0.5">{t.date}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </Tabs>

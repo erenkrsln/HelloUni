@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { useQuery } from 'convex/react'
 import KIIcon from '@/public/icons/HelloUni_KI_Icon.svg'
 import PaperplaneIcon from '@/public/icons/Paperplane_Icon_fill.svg'
 import XIcon from '@/public/icons/X_Icon_Bold.svg'
@@ -7,6 +8,10 @@ import AIChatModalInput from './AIChatModalInput'
 import AIChatModalMessageGroup from './AIChatModalMessageGroup'
 import { handleAi } from '@/actions/chatAiSend'
 import { useOptionalStudiengangContext } from '@/lib/contexts/StudiengangContext'
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser'
+import { api } from '@/convex/_generated/api'
+
+const HISTORY_LIMIT = 6
 
 const AiChatModal = () => {
   const [isClicked, setIsClicked] = useState(false)
@@ -23,6 +28,15 @@ const AiChatModal = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const studiengangContext = useOptionalStudiengangContext()
+  const { currentUser, currentUserId } = useCurrentUser()
+  const followerCount = useQuery(
+    api.queries.getFollowerCount,
+    currentUserId ? { userId: currentUserId } : 'skip',
+  )
+  const followingCount = useQuery(
+    api.queries.getFollowingCount,
+    currentUserId ? { userId: currentUserId } : 'skip',
+  )
 
   const handleClick = () => {
     setIsClicked(!isClicked)
@@ -30,6 +44,13 @@ const AiChatModal = () => {
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading) return
+
+    const recentHistory = messages
+      .slice(-HISTORY_LIMIT)
+      .map((message) => ({
+        role: message.isUser ? 'user' as const : 'assistant' as const,
+        content: message.message,
+      }))
 
     const userMsg = {
       message: inputText.trim(),
@@ -42,7 +63,22 @@ const AiChatModal = () => {
     setIsLoading(true)
 
     try {
-      const aiResponse = await handleAi(currentInput, studiengangContext?.major || undefined, studiengangContext?.semester)
+      const aiResponse = await handleAi(
+        currentInput,
+        studiengangContext?.major || undefined,
+        studiengangContext?.semester,
+        recentHistory,
+        {
+          name: currentUser?.name,
+          username: currentUser?.username,
+          major: currentUser?.major,
+          semester: currentUser?.semester,
+          bio: currentUser?.bio,
+          interests: Array.isArray(currentUser?.interests) ? currentUser.interests : undefined,
+          followerCount: typeof followerCount === 'number' ? followerCount : undefined,
+          followingCount: typeof followingCount === 'number' ? followingCount : undefined,
+        },
+      )
       const aiMsg = {
         message: aiResponse || 'Entschuldigung, ich konnte keine Antwort generieren.',
         isUser: false,
@@ -202,7 +238,7 @@ const AiChatModal = () => {
               </div>
             </div>
             <span className={`text-[17px] font-bold leading-normal text-black text-left whitespace-nowrap transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? '' : 'opacity-0'}`}>
-              HelloUni-KI
+              Jastell (HelloUni-KI)
             </span>
           </div>
           <button

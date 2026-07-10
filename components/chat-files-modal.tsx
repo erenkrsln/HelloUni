@@ -18,6 +18,7 @@ import {
   Image,
   CirclePlay,
 } from "lucide-react";
+import { ChatFilesModalLinkPreview } from "@/components/LinkPreview";
 
 interface ChatFilesModalProps {
   isOpen: boolean;

@@ -435,21 +435,25 @@ export function EditProfileModal({
         onClick={handleClose}
       />
 
-      {/* Drawer */}
+      {/* Drawer / Modal */}
       <div
-        className={`fixed inset-0 bg-white z-[60] flex flex-col transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"
-          } overflow-hidden`}
+        className={`fixed bg-white z-[60] flex flex-col transition-all duration-300 ease-out overflow-hidden
+          inset-0 w-full h-full
+          ${isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"}
+          
+          md:top-1/2 md:left-1/2 md:right-auto md:bottom-auto md:w-[540px] md:h-[85vh] md:max-h-[700px] md:rounded-2xl md:border md:border-gray-200 md:shadow-2xl
+          ${isOpen 
+            ? "md:-translate-x-1/2 md:-translate-y-1/2 md:scale-100 md:opacity-100" 
+            : "md:-translate-x-1/2 md:-translate-y-[40%] md:scale-95 md:opacity-0"
+          }
+        `}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
         }}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0 bg-white sticky top-0 z-[70]"
-          style={{
-            paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
-            minHeight: "calc(3rem + env(safe-area-inset-top, 0px))"
-          }}
+          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0 bg-white sticky top-0 z-[70] pt-[calc(1rem+env(safe-area-inset-top,0px))] min-h-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-4 md:min-h-0"
         >
           <button
             onClick={handleClose}

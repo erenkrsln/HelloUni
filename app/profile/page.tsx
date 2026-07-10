@@ -107,17 +107,7 @@ export default function ProfilePage() {
                         maxDisplay={3}
                     /> */}
 
-                    {/* Calendar Link - Only show on own profile */}
-                    {currentUser && (
-                        <div className="px-4 mb-4">
-                            <button
-                                onClick={() => router.push("/calendar")}
-                                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#f0f0f0] active:bg-[#e0e0e0] transition-colors"
-                            >
-                                <span className="text-[#000000] font-medium">Kalender öffnen</span>
-                            </button>
-                        </div>
-                    )}
+
 
 
                     {/* Posts section */}

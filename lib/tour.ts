@@ -24,16 +24,25 @@ export function startAppTour() {
         element: "#tour-profile-menu",
         popover: {
           title: "Die rechte Seitenleiste",
-          description: "Hier findest du alle wichtigen Bereiche wie dein Profil, die Infoseiten, Einstellungen und mehr.",
+          description: "Hier findest du dein Profil, die Infoseiten zu deinem Studiengang und dem Mensaplan, Einstellungen und mehr.",
           side: "bottom",
           align: "start"
+        }
+      },
+      {
+        element: "#tour-nav-notifications",
+        popover: {
+          title: "Benachrichtigungen",
+          description: "Hier siehst du neue Interaktionen mit deinen Beiträgen.",
+          side: "bottom",
+          align: "center"
         }
       },
       {
         element: "#tour-logo-menu",
         popover: {
           title: "Die linke Seitenleiste",
-          description: "Hier findest du Informationen über das Projekt und unser Team, sowie das Impressum und unsere Datenschutzrichtlinien.",
+          description: "Hier findest du Informationen über uns, sowie das Impressum und unsere Datenschutzrichtlinien.",
           side: "bottom",
           align: "end"
         }
@@ -51,25 +60,25 @@ export function startAppTour() {
         element: "#tour-nav-search",
         popover: {
           title: "Suche",
-          description: "Hier kannst du nach öffentlichen Gruppen, Profilen anderer Studierender oder nach bestimmten Posts suchen.",
+          description: "Hier kannst du die App durchsuchen und neue Leute finden.",
           side: "top",
           align: "center"
         }
       },
       {
-        element: "#tour-nav-create",
+        element: "#tour-nav-calendar",
         popover: {
-          title: "Post erstellen",
-          description: "Hier kannst du deine Gedanken, Fragen oder Umfragen mit deinen Kommilitonen teilen.",
+          title: "Kalender",
+          description: "Hier findest du deine privaten und allgemeinen Termine.",
           side: "top",
           align: "center"
         }
       },
       {
-        element: "#tour-nav-notifications",
+        element: "#tour-nav-workspace",
         popover: {
-          title: "Benachrichtigungen",
-          description: "Hier siehst du neue Likes, Kommentare und neue Follower.",
+          title: "Workspace",
+          description: "Hier findest du Gruppen, Aufgaben, Dateien und Events rund um dein Studium.",
           side: "top",
           align: "center"
         }
@@ -78,7 +87,7 @@ export function startAppTour() {
         element: "#tour-nav-chat",
         popover: {
           title: "Chats",
-          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen. <br/> Bei Fragen zum Studium kannst du auch mit dem Chatbot schreiben.",
+          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen.",
           side: "top",
           align: "center"
         }
@@ -86,7 +95,7 @@ export function startAppTour() {
       {
         popover: {
           title: "HelloUni installieren",
-          description: "Installiere HelloUni auf deinem Gerät, um das beste Erlebnis zu haben. <br/> Eine Anleitung dazu findest du in der rechten Seitenleiste."
+          description: "<img src='https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbjNuZ2k5YXVtanBzbHZyNnNma29vOGFoNWt0c2Rpa2I3MjB3cHN4cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/hENDkVRxKsctCpuAun/giphy.gif' style='height: 202.5px; width: 270px;' />Installiere HelloUni auf deinem Gerät, um das beste Erlebnis zu haben. <br/> Eine Anleitung dazu findest du in der rechten Seitenleiste."
         }
       }
     ]

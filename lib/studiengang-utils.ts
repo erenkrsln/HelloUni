@@ -1,21 +1,21 @@
 import studiengangLinks from './studiengang-links.json';
 
-const normalizeStudiengangName = (name: string) => 
+const normalizeStudiengangName = (name: string) =>
   name.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
 
 export function getStudiengangUrl(major: string): string {
   const normalized = normalizeStudiengangName(major);
-  
+
   // Direct match
   if (studiengangLinks[normalized as keyof typeof studiengangLinks]) {
     return studiengangLinks[normalized as keyof typeof studiengangLinks];
   }
-  
+
   // Case-insensitive fallback
   const match = Object.entries(studiengangLinks).find(
     ([key]) => normalizeStudiengangName(key).toLowerCase() === normalized.toLowerCase()
   );
-  
+
   return match?.[1] || generateThUrlFallback(major);
 }
 
@@ -34,7 +34,7 @@ function generateThUrlFallback(major: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
-  
+
   return `https://www.th-nuernberg.de/studiengang/${slug}/`;
 }
 

@@ -5,7 +5,7 @@ import { FollowButton } from "@/components/follow-button";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, Send, ArrowLeft } from "lucide-react";
+import { GraduationCap, Calendar, MoreHorizontal, MessageCircle, Camera, Pencil, Send, ArrowLeft, X } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useMutation } from "convex/react";
@@ -142,6 +142,8 @@ export function ProfileHeader({
     // State for crop modal
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isFollowsModalOpen, setIsFollowsModalOpen] = useState(false);
+    const [activeFollowsTab, setActiveFollowsTab] = useState<"followers" | "following">("followers");
     const [selectedImageSrc, setSelectedImageSrc] = useState<string>("");
     const [isUploading, setIsUploading] = useState(false);
 
@@ -401,7 +403,7 @@ export function ProfileHeader({
             </div>
 
             {/* Profile Information */}
-            <div className="px-4 pb-4 space-y-3 mt-2 sm:-mt-2">
+            <div className="px-4 pb-4 space-y-3 mt-[11px]">
                 {/* Name and Username */}
                 <div>
                     <div className="flex items-center gap-3 mb-1">
@@ -448,39 +450,41 @@ export function ProfileHeader({
                 </div>
 
                 {/* Stats - Follower, Following (Twitter/X Style) */}
-                <div className="flex items-center gap-4 -mt-1" style={{ marginLeft: "-15px" }}>
-                    {/* Follower Stat */}
-                    <button
-                        className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
-                        onClick={() => {
-                            // TODO: Open followers list modal/page
-                            console.log("Open followers list");
-                        }}
-                    >
-                        <span className="font-semibold inline-block min-w-[3ch] text-right">
-                            {followerCount ?? 0}
-                        </span>
-                        <span className="text-[#000000]/60">
-                            Follower
-                        </span>
-                    </button>
+                {isOwnProfile && (
+                    <div className="flex items-center gap-4 -mt-1" style={{ marginLeft: "-15px" }}>
+                        {/* Follower Stat */}
+                        <button
+                            className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
+                            onClick={() => {
+                                setActiveFollowsTab("followers");
+                                setIsFollowsModalOpen(true);
+                            }}
+                        >
+                            <span className="font-semibold inline-block min-w-[3ch] text-right">
+                                {followerCount ?? 0}
+                            </span>
+                            <span className="text-[#000000]/60">
+                                Follower
+                            </span>
+                        </button>
 
-                    {/* Following Stat */}
-                    <button
-                        className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
-                        onClick={() => {
-                            // TODO: Open following list modal/page
-                            console.log("Open following list");
-                        }}
-                    >
-                        <span className="font-semibold inline-block min-w-[3ch] text-right">
-                            {followingCount ?? 0}
-                        </span>
-                        <span className="text-[#000000]/60">
-                            Following
-                        </span>
-                    </button>
-                </div>
+                        {/* Following Stat */}
+                        <button
+                            className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
+                            onClick={() => {
+                                setActiveFollowsTab("following");
+                                setIsFollowsModalOpen(true);
+                            }}
+                        >
+                            <span className="font-semibold inline-block min-w-[3ch] text-right">
+                                {followingCount ?? 0}
+                            </span>
+                            <span className="text-[#000000]/60">
+                                Following
+                            </span>
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Header Image Crop Modal */}
@@ -503,6 +507,146 @@ export function ProfileHeader({
                     currentUserId={currentUserId}
                 />
             )}
+
+            {/* Follows List Modal */}
+            <FollowsModal
+                isOpen={isFollowsModalOpen}
+                onClose={() => setIsFollowsModalOpen(false)}
+                userId={userId}
+                currentUserId={currentUserId}
+                type={activeFollowsTab}
+            />
+        </div>
+    );
+}
+
+interface FollowsModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    userId: Id<"users">;
+    currentUserId: Id<"users"> | undefined;
+    type: "followers" | "following";
+}
+
+function FollowsModal({ isOpen, onClose, userId, currentUserId, type }: FollowsModalProps) {
+    const followers = useQuery(
+        api.queries.getFollowers,
+        isOpen ? { userId, currentUserId } : "skip"
+    );
+    const following = useQuery(
+        api.queries.getFollowing,
+        isOpen ? { userId, currentUserId } : "skip"
+    );
+
+    const conversations = useQuery(
+        api.queries.getConversations,
+        isOpen && currentUserId ? { userId: currentUserId } : "skip"
+    );
+
+    const createConversation = useMutation(api.mutations.createConversation);
+    const router = useRouter();
+
+    if (!isOpen) return null;
+
+    const list = type === "followers" ? followers : following;
+    const title = type === "followers" ? "Follower" : "Ich folge";
+
+    const handleMessageClick = async (targetUserId: Id<"users">) => {
+        if (!currentUserId) return;
+
+        const existingConversation = conversations?.find(conv => {
+            return !conv.isGroup &&
+                conv.participants.length === 2 &&
+                conv.participants.includes(currentUserId) &&
+                conv.participants.includes(targetUserId);
+        });
+
+        if (existingConversation) {
+            router.push(`/chat/${existingConversation._id}`);
+        } else {
+            try {
+                const conversationId = await createConversation({
+                    participants: [currentUserId, targetUserId],
+                });
+                router.push(`/chat/${conversationId}`);
+            } catch (error) {
+                console.error("Failed to create conversation:", error);
+            }
+        }
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-gray-100">
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
+                    <h2 className="font-semibold text-gray-900">{title}</h2>
+                    <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[200px]">
+                    {list === undefined ? (
+                        <div className="flex items-center justify-center py-12 text-sm text-gray-400">
+                            Laden...
+                        </div>
+                    ) : list.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-400 text-sm">
+                            Keine Einträge gefunden.
+                        </div>
+                    ) : (
+                        list.map((user: any) => (
+                            <div
+                                key={user._id}
+                                onClick={() => {
+                                    router.push(`/profile/${user.username}`);
+                                    onClose();
+                                }}
+                                className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                            >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
+                                        {user.image ? (
+                                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500 text-sm">
+                                                {user.name?.[0]?.toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-semibold text-sm text-gray-900 truncate">{user.name}</h3>
+                                        <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+                                    </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                    {currentUserId && currentUserId !== user._id && (
+                                        <>
+                                            <button
+                                                onClick={() => handleMessageClick(user._id)}
+                                                className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
+                                                aria-label="Nachricht senden"
+                                            >
+                                                <MessageCircle size={14} />
+                                            </button>
+                                            <FollowButton
+                                                currentUserId={currentUserId}
+                                                targetUserId={user._id}
+                                                preloadedIsFollowing={user.isFollowing}
+                                            />
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
