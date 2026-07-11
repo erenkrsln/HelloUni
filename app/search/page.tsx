@@ -413,9 +413,9 @@ export default function SearchPage() {
                     <LoadingScreen text="Seite wird geladen..." />
                 </div>
             ) : (
-                <div className="px-4 py-6">
+                <div className="px-4 py-4 md:py-6">
                     {/* Filters */}
-                    <div className="flex flex-col gap-2 mb-6">
+                    <div className="flex flex-col gap-1.5 md:gap-2 mb-4 md:mb-6">
                         <button
                             onClick={() => setFilterType("all")}
                             className={`w-full px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
@@ -457,7 +457,7 @@ export default function SearchPage() {
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative mb-4">
+                    <div className="relative mb-3 md:mb-4">
                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
                             <Search className="h-5 w-5" />
                         </div>
@@ -471,8 +471,10 @@ export default function SearchPage() {
                         />
                     </div>
 
+
                     {/* Sorting & Filter Controls */}
-                    <div className="mb-8">
+                    {filterType !== "all" && (
+                        <div className="mb-8">
                         {/* Primary Controls Row */}
                         <div className="flex items-center justify-between gap-3 mb-4 px-1">
                             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar flex-1">
@@ -499,7 +501,7 @@ export default function SearchPage() {
 
                             <button
                                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                                className={`p-2 rounded-full transition-colors flex-shrink-0 ${filterType === "groups" || filterType === "all" ? "invisible pointer-events-none" : ""
+                                className={`p-2 rounded-full transition-colors flex-shrink-0 ${filterType === "groups" ? "invisible pointer-events-none" : ""
                                     } ${showAdvancedFilters || userMajor || userInterests || postType || postAuthorMajor
                                         ? "bg-[#d08945] text-white"
                                         : "bg-gray-100 text-gray-500"
@@ -510,7 +512,7 @@ export default function SearchPage() {
                         </div>
 
                         {/* Advanced Filters Panel */}
-                        {showAdvancedFilters && filterType !== "groups" && filterType !== "all" && (
+                        {showAdvancedFilters && filterType !== "groups" && (
                             <div className="bg-gray-50 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-gray-100 shadow-sm">
                                 {filterType === "people" && (
                                     <>
@@ -715,6 +717,7 @@ export default function SearchPage() {
                             </div>
                         )}
                     </div>
+                    )}
 
                     {
                         // Calculate if we should show results based on query and active filters
@@ -733,8 +736,8 @@ export default function SearchPage() {
                             if (!shouldShowResults) {
                                 if (filterType === "all") {
                                     return (
-                                        <div className="mt-4 p-5 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 shadow-sm">
-                                            <div className="flex items-center gap-2.5 mb-4">
+                                        <div className="mt-2 md:mt-4 p-4 md:p-5 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 shadow-sm">
+                                            <div className="flex items-center gap-2.5 mb-3 md:mb-4">
 
                                                 <div>
                                                     <h3 className="font-semibold text-gray-900 text-base">Schnellsuche mit Präfixen</h3>
@@ -744,7 +747,7 @@ export default function SearchPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-3 mt-4">
+                                            <div className="grid grid-cols-2 gap-2.5 md:gap-3 mt-3 md:mt-4">
                                                 {[
                                                     {
                                                         prefix: "/",
@@ -778,9 +781,9 @@ export default function SearchPage() {
                                                     <button
                                                         key={item.prefix}
                                                         onClick={() => handlePrefixClick(item.prefix)}
-                                                        className="flex flex-col items-start p-3.5 rounded-xl border border-gray-100 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 text-left group"
+                                                        className="flex flex-col items-start p-2.5 md:p-3.5 rounded-xl border border-gray-100 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 text-left group"
                                                     >
-                                                        <div className="flex items-center justify-between w-full mb-2">
+                                                        <div className="flex items-center justify-between w-full mb-1.5 md:mb-2">
 
                                                             <span className=" font-bold text-base px-2 py-0.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-md shadow-sm group-hover:bg-[#D08945] group-hover:text-white group-hover:border-transparent transition-all duration-200">
                                                                 {item.prefix}
