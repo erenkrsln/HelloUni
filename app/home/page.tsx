@@ -226,10 +226,10 @@ export default function Home() {
 
       <div className="px-4 md:px-0 mb-4">
         {/* Feed Filter Links */}
-        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto no-scrollbar md:w-full">
+        <div className="flex items-center justify-center gap-2 mb-4 mt-4 flex-nowrap overflow-x-auto scrollbar-hide md:w-full">
           <button
             onClick={() => setFeedType("all")}
-            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "all"
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-1.5 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "all"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
               }`}
@@ -239,7 +239,7 @@ export default function Home() {
           <button
             onClick={() => setFeedType("major")}
             disabled={isMajorDisabled}
-            className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "major"
+            className={`text-sm font-medium transition-all px-3 py-1.5 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "major"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
               } ${isMajorDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
@@ -248,7 +248,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => setFeedType("following")}
-            className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "following"
+            className={`text-sm font-medium transition-all cursor-pointer px-3 py-1.5 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "following"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
               }`}
@@ -258,7 +258,7 @@ export default function Home() {
           <button
             onClick={() => setFeedType("interests")}
             disabled={isInterestsDisabled}
-            className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "interests"
+            className={`text-sm font-medium transition-all px-3 py-1.5 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "interests"
                 ? "bg-[#D08945] text-white"
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
               } ${isInterestsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
@@ -268,7 +268,7 @@ export default function Home() {
         </div>
 
         {/* Ranking Mode Selector */}
-        <div className="flex items-center justify-center gap-2 mb-4 flex-nowrap overflow-x-auto no-scrollbar">
+        <div className="flex items-center justify-center gap-2 mb-4 flex-nowrap overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setRankingMode("chronological")}
             className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rankingMode === "chronological"
@@ -285,9 +285,9 @@ export default function Home() {
                 ? "bg-slate-600 text-white"
                 : "bg-slate-100 text-slate-700 hover:opacity-80"
               }`}
-            title="Nach Engagement (Likes, Kommentare) sortiert"
+            title="Nach Relevanz und Engagement sortiert"
           >
-            🔥 Beliebt
+            🔥 Empfohlen
           </button>
         </div>
 
