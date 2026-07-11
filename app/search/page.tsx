@@ -8,7 +8,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, StickyNote, Hash, AtSign } from "lucide-react";
+import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, StickyNote, Hash, AtSign, RotateCcw } from "lucide-react";
 import { FeedCard } from "@/components/feed-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -155,6 +155,21 @@ export default function SearchPage() {
     const [postAuthorMajor, setPostAuthorMajor] = useState("");
 
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+    const hasActiveFiltersOrSorting =
+        sortBy !== "alphabetical" ||
+        userMajor !== "" ||
+        userInterests !== "" ||
+        postType !== "" ||
+        postAuthorMajor !== "";
+
+    const handleClearFilters = () => {
+        setUserMajor("");
+        setUserInterests("");
+        setPostType("");
+        setPostAuthorMajor("");
+        setSortBy("alphabetical");
+    };
 
     // Dropdown open states
     const [isUserMajorOpen, setIsUserMajorOpen] = useState(false);
@@ -727,6 +742,26 @@ export default function SearchPage() {
 
                                         </>
                                     )}
+
+                                    {/* Action Row */}
+                                    <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
+                                        <span className="text-xs text-gray-500">
+                                            {hasActiveFiltersOrSorting ? "Filter / Sortierung aktiv" : "Keine Filter aktiv"}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleClearFilters}
+                                            disabled={!hasActiveFiltersOrSorting}
+                                            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
+                                                hasActiveFiltersOrSorting
+                                                    ? "text-red-600 hover:bg-red-50 active:bg-red-100 cursor-pointer"
+                                                    : "text-gray-300 cursor-not-allowed"
+                                            }`}
+                                        >
+                                            <RotateCcw size={12} />
+                                            <span>Zurücksetzen</span>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
