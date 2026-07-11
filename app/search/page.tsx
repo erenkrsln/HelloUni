@@ -69,7 +69,7 @@ const STATIC_PAGES: StaticPageResult[] = [
         title: "Chats",
         description: "Unterhalte dich privat oder in Gruppen mit deinen Kommilitonen.",
         href: "/chat",
-        keywords: ["chats", "nachrichten", "chat", "mitteilungen", "unterhaltungen", "direktnachrichten", "messenger", "schreiben", "nachricht"],
+        keywords: ["chats", "nachrichten", "chat", "mitteilungen", "unterhaltungen", "direktnachrichten", "messenger", "schreiben", "nachricht", "jastell"],
         category: "Seite"
     },
     {
@@ -97,7 +97,7 @@ const STATIC_PAGES: StaticPageResult[] = [
         title: "Infoseite",
         description: "Wichtige Dokumente und Termine zu deinem Studiengang. Außerdem der Mensaplan.",
         href: "/info",
-        keywords: ["infopage", "informationen", "studiengang", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos", "modulhandbuch", "prüfungsordnung", "studienplan", "termine"],
+        keywords: ["infopage", "informationen", "studiengang", "chatbot", "frage", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos", "modulhandbuch", "prüfungsordnung", "studienplan", "termine"],
         category: "Seite"
     }
 ];

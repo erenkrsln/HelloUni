@@ -1735,7 +1735,7 @@ export const searchGlobal = query({
 
     const matchingUsers = await Promise.all(
       allUsers
-        .filter(user => (
+        .filter(user => !isAiAssistantUser(user) && (
           (user.name && user.name.toLowerCase().includes(searchLower)) ||
           (user.username && user.username.toLowerCase().includes(searchLower))
         ))
@@ -1812,7 +1812,7 @@ export const searchProfiles = query({
       .collect();
 
     // Filter users by name or username (case-insensitive)
-    let matchingUsers = allUsers;
+    let matchingUsers = allUsers.filter(user => !isAiAssistantUser(user));
     if (args.searchTerm && args.searchTerm.trim().length > 0) {
       const searchLow = args.searchTerm.toLowerCase().trim();
       matchingUsers = matchingUsers.filter((user) => matchesChatUserSearch(user, searchLow));
@@ -1884,7 +1884,8 @@ export const getCompatibleUsers = query({
         .query("users")
         .collect();
       
-      const sorted = allUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
+      const nonAiUsers = allUsers.filter(u => !isAiAssistantUser(u));
+      const sorted = nonAiUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
       const topN = sorted.slice(0, limit);
       
       return await Promise.all(
@@ -1912,9 +1913,9 @@ export const getCompatibleUsers = query({
       .query("users")
       .collect();
 
-    // Filter out current user and already followed users
+    // Filter out current user, already followed users, and the AI assistant
     const potentialUsers = allUsers.filter(
-      (u) => u._id !== args.userId && !followedUserIds.has(u._id)
+      (u) => u._id !== args.userId && !followedUserIds.has(u._id) && !isAiAssistantUser(u)
     );
 
     // Score users based on compatibility matching
