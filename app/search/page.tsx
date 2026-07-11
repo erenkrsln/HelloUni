@@ -325,6 +325,7 @@ export default function SearchPage() {
 
     const isRecommendationMode = filterType === "people" && activeSearchMode === "all" && !searchTargetTerm && !userMajor && !userInterests;
     const isPostRecommendationMode = filterType === "posts" && activeSearchMode === "all" && !searchTargetTerm && !postType && !postAuthorMajor;
+    const isGroupRecommendationMode = filterType === "groups" && activeSearchMode === "all" && !searchTargetTerm;
 
     // Queries - conditionally skip based on filter or prefix override
     const shouldSearchGroups =
@@ -773,8 +774,8 @@ export default function SearchPage() {
                                                 onClick={handleClearFilters}
                                                 disabled={!hasActiveFiltersOrSorting}
                                                 className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${hasActiveFiltersOrSorting
-                                                        ? "text-red-600 hover:bg-red-50 active:bg-red-100 cursor-pointer"
-                                                        : "text-gray-300 cursor-not-allowed"
+                                                    ? "text-red-600 hover:bg-red-50 active:bg-red-100 cursor-pointer"
+                                                    : "text-gray-300 cursor-not-allowed"
                                                     }`}
                                             >
                                                 <RotateCcw size={12} />
@@ -1077,11 +1078,15 @@ export default function SearchPage() {
                                             {/* Original tabs rendering */}
                                             {filterType === "groups" && (
                                                 <div>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">
+                                                        {isGroupRecommendationMode ? "Vorschläge für dich" : "Öffentliche Gruppen"}
+                                                    </h2>
                                                     {groupResults === undefined || !currentUserId ? (
                                                         <div className="py-4 text-center text-sm text-gray-400 font-normal">Laden...</div>
                                                     ) : groupResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500 font-normal">Keine öffentlichen Gruppen gefunden.</div>
+                                                        <div className="py-2 px-1 text-sm text-gray-500 font-normal">
+                                                            {isGroupRecommendationMode ? "Keine Vorschläge gefunden." : "Keine öffentlichen Gruppen gefunden."}
+                                                        </div>
                                                     ) : (
                                                         <div className="space-y-3">
                                                             {groupResults.map((group) => {
