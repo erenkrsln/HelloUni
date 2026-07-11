@@ -475,248 +475,253 @@ export default function SearchPage() {
                     {/* Sorting & Filter Controls */}
                     {filterType !== "all" && (
                         <div className="mb-8">
-                        {/* Primary Controls Row */}
-                        <div className="flex items-center justify-between gap-3 mb-4 px-1">
-                            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar flex-1">
-
+                            {/* Primary Controls Row */}
+                            <div className="flex items-center mb-4 px-1">
                                 <button
-                                    onClick={() => setSortBy("alphabetical")}
-                                    className={`text-sm px-3 py-1 rounded-full transition-colors whitespace-nowrap font-medium ${sortBy === "alphabetical"
-                                        ? "bg-gray-100 text-gray-700"
-                                        : "text-gray-500 hover:bg-gray-100"
-                                        }`}
-                                >
-                                    Alphabetisch
-                                </button>
-                                <button
-                                    onClick={() => setSortBy("recent")}
-                                    className={`text-sm px-3 py-1 rounded-full transition-colors whitespace-nowrap font-medium ${sortBy === "recent"
-                                        ? "bg-gray-100 text-gray-700"
-                                        : "text-gray-500 hover:bg-gray-100"
-                                        }`}
-                                >
-                                    Neueste
-                                </button>
-                            </div>
-
-                            <button
-                                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                                className={`p-2 rounded-full transition-colors flex-shrink-0 ${filterType === "groups" ? "invisible pointer-events-none" : ""
-                                    } ${showAdvancedFilters || userMajor || userInterests || postType || postAuthorMajor
+                                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                                    className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 justify-center ${showAdvancedFilters || userMajor || userInterests || postType || postAuthorMajor || sortBy !== "alphabetical"
                                         ? "bg-[#d08945] text-white"
-                                        : "bg-gray-100 text-gray-500"
-                                    }`}
-                            >
-                                <Filter size={18} />
-                            </button>
-                        </div>
-
-                        {/* Advanced Filters Panel */}
-                        {showAdvancedFilters && filterType !== "groups" && (
-                            <div className="bg-gray-50 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-gray-100 shadow-sm">
-                                {filterType === "people" && (
-                                    <>
-                                        <div className="space-y-1 user-major-dropdown relative">
-                                            <label className="text-xs font-medium text-gray-500 ml-1">Studiengang</label>
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsUserMajorOpen(!isUserMajorOpen)}
-                                                    className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
-                                                >
-                                                    <span className={userMajor ? "text-gray-900" : "text-gray-400"}>
-                                                        {userMajor || "Wähle einen Studiengang"}
-                                                    </span>
-                                                    {userMajor ? (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setUserMajor("");
-                                                            }}
-                                                            className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
-                                                        >
-                                                            <X size={14} />
-                                                        </div>
-                                                    ) : (
-                                                        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isUserMajorOpen ? "rotate-180" : ""}`} />
-                                                    )}
-                                                </button>
-
-                                                {isUserMajorOpen && (
-                                                    <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
-                                                        <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Studiengang suchen..."
-                                                                value={userMajorSearch}
-                                                                onChange={(e) => setUserMajorSearch(e.target.value)}
-                                                                className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                        <div className="overflow-y-auto py-1 max-h-48">
-                                                            {filteredUserMajors.length === 0 ? (
-                                                                <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Studiengänge gefunden</div>
-                                                            ) : (
-                                                                filteredUserMajors.map((program) => (
-                                                                    <button
-                                                                        key={program}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setUserMajor(program);
-                                                                            setIsUserMajorOpen(false);
-                                                                        }}
-                                                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${userMajor === program ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
-                                                                    >
-                                                                        {program}
-                                                                    </button>
-                                                                ))
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                    </>
-                                )}
-
-                                {filterType === "posts" && (
-                                    <>
-                                        <div className="space-y-1 post-author-major-dropdown relative">
-                                            <label className="text-xs font-medium text-gray-500 ml-1">Studiengang</label>
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPostAuthorMajorOpen(!isPostAuthorMajorOpen)}
-                                                    className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
-                                                >
-                                                    <span className={postAuthorMajor ? "text-gray-900" : "text-gray-400"}>
-                                                        {postAuthorMajor || "Wähle einen Studiengang"}
-                                                    </span>
-                                                    {postAuthorMajor ? (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setPostAuthorMajor("");
-                                                            }}
-                                                            className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
-                                                        >
-                                                            <X size={14} />
-                                                        </div>
-                                                    ) : (
-                                                        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isPostAuthorMajorOpen ? "rotate-180" : ""}`} />
-                                                    )}
-                                                </button>
-
-                                                {isPostAuthorMajorOpen && (
-                                                    <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
-                                                        <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Studiengang suchen..."
-                                                                value={postAuthorMajorSearch}
-                                                                onChange={(e) => setPostAuthorMajorSearch(e.target.value)}
-                                                                className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                        <div className="overflow-y-auto py-1 max-h-48">
-                                                            {filteredPostAuthorMajors.length === 0 ? (
-                                                                <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Studiengänge gefunden</div>
-                                                            ) : (
-                                                                filteredPostAuthorMajors.map((program) => (
-                                                                    <button
-                                                                        key={program}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setPostAuthorMajor(program);
-                                                                            setIsPostAuthorMajorOpen(false);
-                                                                        }}
-                                                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${postAuthorMajor === program ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
-                                                                    >
-                                                                        {program}
-                                                                    </button>
-                                                                ))
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1 post-type-dropdown relative">
-                                            <label className="text-xs font-medium text-gray-500 ml-1">Post Typ</label>
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPostTypeOpen(!isPostTypeOpen)}
-                                                    className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
-                                                >
-                                                    <div className="flex items-center gap-2 text-gray-900">
-                                                        {postType === "" && <span className="text-gray-400">Alle Typen</span>}
-                                                        {postType === "normal" && <>Beitrag</>}
-                                                        {postType === "spontaneous_meeting" && <>Spontanes Treffen</>}
-                                                        {postType === "recurring_meeting" && <>Regelmäßiges Treffen</>}
-                                                        {postType === "poll" && <>Umfrage</>}
-                                                        {postType === "announcement" && <>Ankündigung</>}
-                                                    </div>
-                                                    {postType ? (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setPostType("");
-                                                            }}
-                                                            className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
-                                                        >
-                                                            <X size={14} />
-                                                        </div>
-                                                    ) : (
-                                                        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`} />
-                                                    )}
-                                                </button>
-
-                                                {isPostTypeOpen && (
-                                                    <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
-                                                        <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Typ suchen..."
-                                                                value={postTypeSearch}
-                                                                onChange={(e) => setPostTypeSearch(e.target.value)}
-                                                                className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                        <div className="overflow-y-auto py-1 max-h-48">
-                                                            {filteredPostTypes.length === 0 ? (
-                                                                <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Typen gefunden</div>
-                                                            ) : (
-                                                                filteredPostTypes.map((type) => (
-                                                                    <button
-                                                                        key={type.value}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setPostType(type.value);
-                                                                            setIsPostTypeOpen(false);
-                                                                        }}
-                                                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${postType === type.value ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
-                                                                    >
-                                                                        {type.label}
-                                                                    </button>
-                                                                ))
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-
-                                    </>
-                                )}
+                                        : "bg-gray-100 text-gray-700"
+                                        }`}
+                                >
+                                    <Filter size={16} />
+                                    <span>Filtern und sortieren</span>
+                                </button>
                             </div>
-                        )}
-                    </div>
+
+                            {/* Advanced Filters Panel */}
+                            {showAdvancedFilters && (
+                                <div className="bg-gray-50 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-gray-100 shadow-sm">
+                                    {/* Sorting Section */}
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-gray-500 ml-1">Sortieren nach</label>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setSortBy("alphabetical")}
+                                                className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all border ${sortBy === "alphabetical"
+                                                    ? "bg-[#D08945] text-white border-transparent"
+                                                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                    }`}
+                                            >
+                                                Alphabetisch
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSortBy("recent")}
+                                                className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all border ${sortBy === "recent"
+                                                    ? "bg-[#D08945] text-white border-transparent"
+                                                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                    }`}
+                                            >
+                                                Neueste
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {filterType === "people" && (
+                                        <>
+                                            <div className="space-y-1 user-major-dropdown relative">
+                                                <label className="text-xs font-medium text-gray-500 ml-1">Studiengang</label>
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsUserMajorOpen(!isUserMajorOpen)}
+                                                        className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                    >
+                                                        <span className={userMajor ? "text-gray-900" : "text-gray-400"}>
+                                                            {userMajor || "Wähle einen Studiengang"}
+                                                        </span>
+                                                        {userMajor ? (
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setUserMajor("");
+                                                                }}
+                                                                className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
+                                                            >
+                                                                <X size={14} />
+                                                            </div>
+                                                        ) : (
+                                                            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isUserMajorOpen ? "rotate-180" : ""}`} />
+                                                        )}
+                                                    </button>
+
+                                                    {isUserMajorOpen && (
+                                                        <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
+                                                            <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Studiengang suchen..."
+                                                                    value={userMajorSearch}
+                                                                    onChange={(e) => setUserMajorSearch(e.target.value)}
+                                                                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
+                                                            <div className="overflow-y-auto py-1 max-h-48">
+                                                                {filteredUserMajors.length === 0 ? (
+                                                                    <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Studiengänge gefunden</div>
+                                                                ) : (
+                                                                    filteredUserMajors.map((program) => (
+                                                                        <button
+                                                                            key={program}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setUserMajor(program);
+                                                                                setIsUserMajorOpen(false);
+                                                                            }}
+                                                                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${userMajor === program ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
+                                                                        >
+                                                                            {program}
+                                                                        </button>
+                                                                    ))
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                        </>
+                                    )}
+
+                                    {filterType === "posts" && (
+                                        <>
+                                            <div className="space-y-1 post-author-major-dropdown relative">
+                                                <label className="text-xs font-medium text-gray-500 ml-1">Studiengang</label>
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsPostAuthorMajorOpen(!isPostAuthorMajorOpen)}
+                                                        className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                    >
+                                                        <span className={postAuthorMajor ? "text-gray-900" : "text-gray-400"}>
+                                                            {postAuthorMajor || "Wähle einen Studiengang"}
+                                                        </span>
+                                                        {postAuthorMajor ? (
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setPostAuthorMajor("");
+                                                                }}
+                                                                className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
+                                                            >
+                                                                <X size={14} />
+                                                            </div>
+                                                        ) : (
+                                                            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isPostAuthorMajorOpen ? "rotate-180" : ""}`} />
+                                                        )}
+                                                    </button>
+
+                                                    {isPostAuthorMajorOpen && (
+                                                        <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
+                                                            <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Studiengang suchen..."
+                                                                    value={postAuthorMajorSearch}
+                                                                    onChange={(e) => setPostAuthorMajorSearch(e.target.value)}
+                                                                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
+                                                            <div className="overflow-y-auto py-1 max-h-48">
+                                                                {filteredPostAuthorMajors.length === 0 ? (
+                                                                    <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Studiengänge gefunden</div>
+                                                                ) : (
+                                                                    filteredPostAuthorMajors.map((program) => (
+                                                                        <button
+                                                                            key={program}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setPostAuthorMajor(program);
+                                                                                setIsPostAuthorMajorOpen(false);
+                                                                            }}
+                                                                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${postAuthorMajor === program ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
+                                                                        >
+                                                                            {program}
+                                                                        </button>
+                                                                    ))
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1 post-type-dropdown relative">
+                                                <label className="text-xs font-medium text-gray-500 ml-1">Post Typ</label>
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsPostTypeOpen(!isPostTypeOpen)}
+                                                        className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                    >
+                                                        <div className="flex items-center gap-2 text-gray-900">
+                                                            {postType === "" && <span className="text-gray-400">Alle Typen</span>}
+                                                            {postType === "normal" && <>Beitrag</>}
+                                                            {postType === "spontaneous_meeting" && <>Spontanes Treffen</>}
+                                                            {postType === "recurring_meeting" && <>Regelmäßiges Treffen</>}
+                                                            {postType === "poll" && <>Umfrage</>}
+                                                            {postType === "announcement" && <>Ankündigung</>}
+                                                        </div>
+                                                        {postType ? (
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setPostType("");
+                                                                }}
+                                                                className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
+                                                            >
+                                                                <X size={14} />
+                                                            </div>
+                                                        ) : (
+                                                            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`} />
+                                                        )}
+                                                    </button>
+
+                                                    {isPostTypeOpen && (
+                                                        <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
+                                                            <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Typ suchen..."
+                                                                    value={postTypeSearch}
+                                                                    onChange={(e) => setPostTypeSearch(e.target.value)}
+                                                                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
+                                                            <div className="overflow-y-auto py-1 max-h-48">
+                                                                {filteredPostTypes.length === 0 ? (
+                                                                    <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Typen gefunden</div>
+                                                                ) : (
+                                                                    filteredPostTypes.map((type) => (
+                                                                        <button
+                                                                            key={type.value}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setPostType(type.value);
+                                                                                setIsPostTypeOpen(false);
+                                                                            }}
+                                                                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${postType === type.value ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
+                                                                        >
+                                                                            {type.label}
+                                                                        </button>
+                                                                    ))
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {
