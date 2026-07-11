@@ -144,6 +144,7 @@ export const getFeedWithRanking = query({
   args: {
     userId: v.optional(v.id("users")),
     rankBy: v.optional(v.string()), // "engagement", "trending", or "chronological" (default)
+    feedType: v.optional(v.string()), // "all", "major", "following", "interests"
   },
   handler: async (ctx, args) => {
     const posts = await ctx.db
@@ -254,16 +255,28 @@ export const getFeedWithRanking = query({
       })
     );
 
+    // Apply Feed Filters
+    let filteredPosts = postsWithScores;
+    const feedType = args.feedType || "all";
+
+    if (feedType === "following" && args.userId) {
+      filteredPosts = postsWithScores.filter(p => followingIds.includes(p.userId));
+    } else if (feedType === "major" && currentUser) {
+      filteredPosts = postsWithScores.filter(p => p.user && p.user.major === currentUser.major);
+    } else if (feedType === "interests" && currentUser && currentUser.interests) {
+      const userInterests = currentUser.interests;
+      filteredPosts = postsWithScores.filter(p =>
+        p.tags && Array.isArray(p.tags) && p.tags.some((tag: string) => userInterests.includes(tag))
+      );
+    }
+
     // Sort based on ranking strategy
-    if (args.rankBy === "engagement") {
+    if (args.rankBy === "engagement" || args.rankBy === "trending") {
       // Sort by ranking score (highest first)
-      return postsWithScores.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
-    } else if (args.rankBy === "trending") {
-      // For now, use same as engagement (real trending would require 24h engagement windows)
-      return postsWithScores.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+      return filteredPosts.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
     } else {
       // Default to chronological (newest first)
-      return postsWithScores;
+      return filteredPosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
   },
 });

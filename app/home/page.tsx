@@ -66,10 +66,10 @@ export default function Home() {
   // Globaler Posts Cache - bleibt über Unmounts erhalten
   const { setPosts: cachePosts, getPosts: getCachedPosts } = usePostsCache();
 
-  // Cache Key für diesen Feed-Typ
+  // Cache Key für diesen Feed-Typ und Ranking-Modus
   const cacheKey = useMemo(() => {
-    return `posts_${feedType}_${currentUserId || "anonymous"}`;
-  }, [feedType, currentUserId]);
+    return `posts_${feedType}_${rankingMode}_${currentUserId || "anonymous"}`;
+  }, [feedType, rankingMode, currentUserId]);
 
   // Get current user's major and interests for filtering
   // Nur als disabled markieren, wenn currentUser geladen ist und tatsächlich keine Daten hat
@@ -80,42 +80,15 @@ export default function Home() {
   const isMajorDisabled = currentUser !== undefined && !currentUserMajor;
   const isInterestsDisabled = currentUser !== undefined && (!currentUserInterests || currentUserInterests.length === 0);
 
-  // Cache für alle Feeds - lade alle parallel, damit sie gecached sind
-  const allPosts = useQuery(
-    api.queries.getFeed,
-    currentUserId ? { userId: currentUserId } : {}
-  );
-  const allPostsWithRanking = useQuery(
+  // Load feed using the unified getFeedWithRanking query supporting filters and ranking modes
+  const postsFromQuery = useQuery(
     api.queries.getFeedWithRanking,
-    rankingMode !== "chronological" && currentUserId ? { userId: currentUserId, rankBy: rankingMode } : "skip"
-  );
-  const filteredPostsByMajor = useQuery(
-    api.queries.getFilteredFeed,
-    currentUser && currentUserMajor ? {
-      major: currentUserMajor,
+    currentUserId ? {
       userId: currentUserId,
-    } : "skip"
+      feedType,
+      rankBy: rankingMode,
+    } : {}
   );
-  const filteredPostsByInterests = useQuery(
-    api.queries.getFilteredFeed,
-    currentUser && currentUserInterests && currentUserInterests.length > 0 ? {
-      interests: currentUserInterests,
-      userId: currentUserId,
-    } : "skip"
-  );
-  const followingPosts = useQuery(
-    api.queries.getFollowingFeed,
-    currentUserId ? { userId: currentUserId } : "skip"
-  );
-
-  // Verwende den entsprechenden Feed basierend auf feedType und rankingMode
-  const postsFromQuery = feedType === "all"
-    ? (rankingMode !== "chronological" ? allPostsWithRanking : allPosts)
-    : feedType === "major"
-      ? filteredPostsByMajor
-      : feedType === "interests"
-        ? filteredPostsByInterests
-        : followingPosts;
 
   // Aktualisiere Cache, wenn neue Posts geladen sind
   useEffect(() => {
@@ -280,7 +253,7 @@ export default function Home() {
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
               }`}
           >
-            Folge Ich
+            Folge ich
           </button>
           <button
             onClick={() => setFeedType("interests")}
@@ -290,35 +263,33 @@ export default function Home() {
                 : "bg-gray-100 text-gray-700 hover:opacity-80"
               } ${isInterestsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
-            Interesse
+            Interessen
           </button>
         </div>
 
         {/* Ranking Mode Selector */}
-        {feedType === "all" && (
-          <div className="flex items-center justify-center gap-2 mb-4 flex-nowrap overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => setRankingMode("chronological")}
-              className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rankingMode === "chronological"
-                  ? "bg-slate-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:opacity-80"
-                }`}
-              title="Neueste Beiträge zuerst"
-            >
-              🕐 Neueste
-            </button>
-            <button
-              onClick={() => setRankingMode("engagement")}
-              className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rankingMode === "engagement"
-                  ? "bg-slate-600 text-white"
-                  : "bg-slate-100 text-slate-700 hover:opacity-80"
-                }`}
-              title="Nach Engagement (Likes, Kommentare) sortiert"
-            >
-              🔥 Beliebt
-            </button>
-          </div>
-        )}
+        <div className="flex items-center justify-center gap-2 mb-4 flex-nowrap overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setRankingMode("chronological")}
+            className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rankingMode === "chronological"
+                ? "bg-slate-600 text-white"
+                : "bg-slate-100 text-slate-700 hover:opacity-80"
+              }`}
+            title="Neueste Beiträge zuerst"
+          >
+            🕐 Neueste
+          </button>
+          <button
+            onClick={() => setRankingMode("engagement")}
+            className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rankingMode === "engagement"
+                ? "bg-slate-600 text-white"
+                : "bg-slate-100 text-slate-700 hover:opacity-80"
+              }`}
+            title="Nach Engagement (Likes, Kommentare) sortiert"
+          >
+            🔥 Beliebt
+          </button>
+        </div>
 
         {/* Desktop Compose Box - Facebook/Twitter Style ("Was gibts neues?") */}
         {/* Lädt gemeinsam mit dem Feed: zeigt beim Laden/Refresh ein Skeleton wie die FeedCards */}
@@ -411,7 +382,16 @@ export default function Home() {
               />
             ))}
           </div>
-        ) : null}
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+            <p className="text-gray-500 font-semibold text-base mb-1">
+              {feedType === "all" ? "Keine Beiträge gefunden." : "Keine Beiträge für diesen Filter."}
+            </p>
+            <p className="text-gray-400 text-xs">
+              Erstelle einen neuen Beitrag, um die Community zu beleben!
+            </p>
+          </div>
+        )}
       </div>
       <BottomNavigation />
     </main>
