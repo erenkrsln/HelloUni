@@ -36,6 +36,19 @@ export default function CalendarPage() {
     const { currentUser, isLoading: isAuthLoading } = useCurrentUser();
     const [viewMode, setViewMode] = useState("my"); // "my" | "public"
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [activeFilters, setActiveFilters] = useState<Record<string, boolean>>({
+        personal: true,
+        group: true,
+        public: true,
+        termin: true,
+    });
+
+    const toggleFilter = (key: string) => {
+        setActiveFilters(prev => ({
+            ...prev,
+            [key]: !prev[key]
+        }));
+    };
 
     // Data Loading
     const myEvents = useQuery(
@@ -51,9 +64,12 @@ export default function CalendarPage() {
         if (!events) return [];
         return events.filter(e => {
             const ed = new Date(e.startTime);
+            const isGroupEvent = !!e.workspaceId;
+            const type = isGroupEvent ? "group" : e.isPrivate ? "personal" : "public";
+            if (!activeFilters[type]) return false;
             return ed.getMonth() === currentDate.getMonth() && ed.getFullYear() === currentDate.getFullYear();
         }).sort((a, b) => a.startTime - b.startTime);
-    }, [events, currentDate]);
+    }, [events, currentDate, activeFilters]);
 
 
     const isLoading = viewMode === "my"
@@ -138,20 +154,26 @@ export default function CalendarPage() {
                     title: t.description || "Semestertermin",
                     colorClass: "bg-[#F78D57]/10 text-[#b55018] border border-[#F78D57]/20",
                     isTermin: true,
+                    type: "termin" as const,
                     eventObj: null
                 })),
-                ...dayEvents.map(e => ({
-                    id: e._id,
-                    title: e.title || "Event",
-                    colorClass: e.workspaceId
-                        ? "bg-blue-50 text-blue-700 border border-blue-100/70"
-                        : e.isPrivate
-                            ? "bg-purple-50 text-purple-700 border border-purple-100/70"
-                            : "bg-amber-50 text-amber-700 border border-amber-100/70",
-                    isTermin: false,
-                    eventObj: e
-                }))
-            ];
+                ...dayEvents.map(e => {
+                    const isGroupEvent = !!e.workspaceId;
+                    const type = isGroupEvent ? ("group" as const) : e.isPrivate ? ("personal" as const) : ("public" as const);
+                    return {
+                        id: e._id,
+                        title: e.title || "Event",
+                        colorClass: isGroupEvent
+                            ? "bg-blue-50 text-blue-700 border border-blue-100/70"
+                            : e.isPrivate
+                                ? "bg-purple-50 text-purple-700 border border-purple-100/70"
+                                : "bg-amber-50 text-amber-700 border border-amber-100/70",
+                        isTermin: false,
+                        type,
+                        eventObj: e
+                    };
+                })
+            ].filter(item => activeFilters[item.type]);
 
             const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             const dateLabel = new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString("de-DE", {
@@ -167,8 +189,12 @@ export default function CalendarPage() {
                     setSelectedDayEvents({
                         dateLabel,
                         dateStr,
-                        events: dayEvents,
-                        termine: dayTermine
+                        events: dayEvents.filter(e => {
+                            const isGroupEvent = !!e.workspaceId;
+                            const type = isGroupEvent ? "group" : e.isPrivate ? "personal" : "public";
+                            return activeFilters[type];
+                        }),
+                        termine: dayTermine.filter(() => activeFilters.termin)
                     });
                 } else {
                     setIsCreateOpen(true);
@@ -224,6 +250,23 @@ export default function CalendarPage() {
         return days;
     };
 
+    const filterItems = [
+        { key: "personal", label: "Privat", dotColor: "bg-purple-400" },
+        { key: "group", label: "Gruppe", dotColor: "bg-blue-400" },
+        { key: "public", label: "Öffentlich", dotColor: "bg-amber-400" },
+        { key: "termin", label: "Semestertermin", dotColor: "bg-[#F78D57]" },
+    ];
+
+    const getFilterStyles = (key: string, isActive: boolean) => {
+        if (!isActive) return "bg-slate-50/70 border-slate-200 text-slate-400 opacity-60";
+        return {
+            personal: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100/50",
+            group: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100/50",
+            public: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/50",
+            termin: "bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100/50",
+        }[key as "personal" | "group" | "public" | "termin"];
+    };
+
 
     return (
         <main className="min-h-screen w-full max-w-md mx-auto md:max-w-3xl pb-32 header-spacing bg-white">
@@ -265,12 +308,27 @@ export default function CalendarPage() {
                                     </Button>
                                 </div>
                             </div>
-                            {/* Legend */}
-                            <div className="flex flex-wrap items-center gap-[17px] text-[11px] leading-normal text-slate-600 text-left pb-[8px] select-none">
-                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-purple-400" />Privat</span>
-                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-blue-400" />Gruppe</span>
-                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" />Öffentlich</span>
-                                <span className="flex justify-center items-center gap-[5px]"><span className="w-2.5 h-2.5 rounded-full bg-[#F78D57]" />Semestertermin</span>
+                            {/* Interactive Filters */}
+                            <div
+                                className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 select-none mb-3"
+                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                            >
+                                {filterItems.map(item => {
+                                    const isActive = activeFilters[item.key];
+                                    const styles = getFilterStyles(item.key, isActive);
+                                    return (
+                                        <button
+                                            key={item.key}
+                                            type="button"
+                                            onClick={() => toggleFilter(item.key)}
+                                            aria-pressed={isActive}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border flex-shrink-0 ${styles}`}
+                                        >
+                                            <span className={`w-2 h-2 rounded-full ${item.dotColor} ${!isActive ? 'opacity-40' : ''}`} />
+                                            {item.label}
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             {/* Month Grid */}
@@ -296,7 +354,11 @@ export default function CalendarPage() {
                                 {upcomingEvents.length === 0 ? (
                                     <div className="border-2 border-dashed border-gray-100 rounded-2xl p-8 text-center select-none">
                                         <CalendarIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-gray-400 text-sm font-semibold">Keine Events in diesem Monat</p>
+                                        <p className="text-gray-400 text-sm font-semibold">
+                                            {Object.values(activeFilters).some(v => v)
+                                                ? "Keine Events in diesem Monat"
+                                                : "Keine Events für die ausgewählten Filter"}
+                                        </p>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
@@ -378,7 +440,7 @@ export default function CalendarPage() {
             />
 
             <Dialog open={!!selectedDayEvents} onOpenChange={(open) => !open && setSelectedDayEvents(null)}>
-                <DialogContent className="w-[calc(100vw-24px)] md:max-w-[480px] max-h-[80vh] rounded-3xl p-6 flex flex-col gap-4 overflow-hidden border-none shadow-2xl">
+                <DialogContent className="w-[calc(100vw-24px)] md:max-w-[480px] max-h-[calc(100dvh-24px)] rounded-3xl p-5 md:p-6 flex flex-col gap-4 overflow-hidden border-none shadow-2xl">
                     <DialogHeader className="border-b border-slate-100 pb-3 flex flex-row items-center justify-between">
                         <div className="flex-1">
                             <DialogTitle className="text-lg font-bold text-slate-900 leading-tight">
@@ -390,48 +452,63 @@ export default function CalendarPage() {
                         </div>
                     </DialogHeader>
 
-                    {/* Scrollable List */}
-                    <div className="flex-1 overflow-y-auto pr-1 py-1 space-y-3 min-h-0">
-                        {/* Semester Termine */}
-                        {selectedDayEvents?.termine.map((t, idx) => (
-                            <div key={`term-${idx}`} className="p-3.5 rounded-2xl border border-[#F78D57]/20 bg-[#F78D57]/5 flex items-start gap-3 shadow-sm select-none">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#F78D57] shrink-0 mt-1" />
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-sm text-[#b55018] break-words">{t.description}</p>
-                                    <p className="text-[11px] font-medium text-slate-500 mt-0.5">Semestertermin · {t.date}</p>
-                                </div>
-                            </div>
-                        ))}
+                    {/* Scrollable List or Empty State */}
+                    {selectedDayEvents && selectedDayEvents.events.length === 0 && selectedDayEvents.termine.length === 0 ? (
+                        <div className="flex-1 flex flex-col items-center justify-center py-8 text-center select-none">
+                            <CalendarIcon className="w-8 h-8 text-slate-300 mb-2" />
+                            <p className="text-slate-400 text-xs font-semibold">Keine Events für die ausgewählten Filter</p>
+                        </div>
+                    ) : (
+                        <div className="flex-1 overflow-y-auto pr-1 py-0.5 space-y-3 min-h-0">
+                            {/* Semester Termine */}
+                            {selectedDayEvents?.termine.map((t, idx) => {
+                                const start = parseTerminStartDate(t.date);
+                                const end = parseTerminEndDate(t.date);
+                                const startTime = start ? start.getTime() : 0;
+                                const endTime = end && end.getFullYear() !== 9999 ? end.getTime() : startTime;
 
-                        {/* Real Events */}
-                        {selectedDayEvents?.events.map((e) => {
-                            const isGroupEvent = !!e.workspaceId;
-                            const badgeType = isGroupEvent ? "group" : e.isPrivate ? "personal" : "public";
-                            const badgeText = isGroupEvent
-                                ? (groupOptions.find(g => `group_${g._id}` === e.workspaceId)?.displayName || "Gruppe")
-                                : e.isPrivate ? "Privat" : "Öffentlich";
+                                return (
+                                    <EventCard
+                                        key={`term-${idx}`}
+                                        title={t.description}
+                                        startTime={startTime}
+                                        endTime={endTime}
+                                        badgeText="Semestertermin"
+                                        badgeType="termin"
+                                    />
+                                );
+                            })}
 
-                            return (
-                                <EventCard
-                                    key={e._id}
-                                    title={e.title}
-                                    startTime={e.startTime}
-                                    endTime={e.endTime}
-                                    location={e.location}
-                                    description={e.description}
-                                    badgeText={badgeText}
-                                    badgeType={badgeType}
-                                    onClick={() => {
-                                        setSelectedDayEvents(null);
-                                        openEdit(e);
-                                    }}
-                                    rightAction={
-                                        <ChevronRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                                    }
-                                />
-                            );
-                        })}
-                    </div>
+                            {/* Real Events */}
+                            {selectedDayEvents?.events.map((e) => {
+                                const isGroupEvent = !!e.workspaceId;
+                                const badgeType = isGroupEvent ? "group" : e.isPrivate ? "personal" : "public";
+                                const badgeText = isGroupEvent
+                                    ? (groupOptions.find(g => `group_${g._id}` === e.workspaceId)?.displayName || "Gruppe")
+                                    : e.isPrivate ? "Privat" : "Öffentlich";
+
+                                return (
+                                    <EventCard
+                                        key={e._id}
+                                        title={e.title}
+                                        startTime={e.startTime}
+                                        endTime={e.endTime}
+                                        location={e.location}
+                                        description={e.description}
+                                        badgeText={badgeText}
+                                        badgeType={badgeType}
+                                        onClick={() => {
+                                            setSelectedDayEvents(null);
+                                            openEdit(e);
+                                        }}
+                                        rightAction={
+                                            <ChevronRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                        }
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
 
                     {/* Actions Footer */}
                     <div className="flex-shrink-0 border-t border-slate-100 pt-4 flex gap-3">
@@ -439,7 +516,7 @@ export default function CalendarPage() {
                             type="button"
                             variant="outline"
                             onClick={() => setSelectedDayEvents(null)}
-                            className="flex-1 rounded-2xl h-11 text-slate-700 font-semibold"
+                            className="flex-1 rounded-2xl h-12 text-slate-700 font-bold transition-all active:scale-95 text-sm"
                         >
                             Schließen
                         </Button>
@@ -449,7 +526,7 @@ export default function CalendarPage() {
                                 setSelectedDayEvents(null);
                                 setIsCreateOpen(true);
                             }}
-                            className="flex-1 rounded-2xl h-11 bg-[#D08945] hover:bg-[#b07335] text-white font-bold"
+                            className="flex-1 rounded-2xl h-12 bg-[#D08945] hover:bg-[#b07335] text-white font-extrabold shadow-sm transition-all active:scale-95 text-sm"
                         >
                             Event hinzufügen
                         </Button>

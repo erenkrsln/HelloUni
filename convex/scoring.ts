@@ -21,9 +21,9 @@ export interface ScoringFactors {
  * Decay rate: 0.1 (post halves in value every ~7 hours)
  */
 function calculateTimeDecay(createdAt: number, currentTime: number): number {
-  const hoursSincePost = (currentTime - createdAt) / (1000 * 60 * 60);
-  // e^(-0.1 * hours) - posts decay gradually over time
-  return Math.exp(-0.1 * hoursSincePost);
+  const hoursSincePost = Math.max(0, (currentTime - createdAt) / (1000 * 60 * 60));
+  // e^(-0.05 * hours) - posts decay gradually over time (halves in value in ~14 hours)
+  return Math.exp(-0.05 * hoursSincePost);
 }
 
 /**
@@ -98,37 +98,42 @@ function calculateEventBonus(isEvent: boolean, eventDate?: number): number {
 export function calculateRankingScore(factors: ScoringFactors): number {
   const currentTime = Date.now();
 
-  // Base engagement score
-  const engagementScore = calculateEngagementScore(
-    factors.likesCount,
-    factors.commentsCount,
-    factors.participantsCount
-  );
+  // Safe fallbacks for missing/NaN values
+  const likes = Number.isFinite(factors.likesCount) ? factors.likesCount : 0;
+  const comments = Number.isFinite(factors.commentsCount) ? factors.commentsCount : 0;
+  const participants = Number.isFinite(factors.participantsCount) ? factors.participantsCount : 0;
+  const createdAt = Number.isFinite(factors.createdAt) ? factors.createdAt : currentTime;
+  const isFromFollowedUser = !!factors.isFromFollowedUser;
+  const matchesUserInterests = !!factors.matchesUserInterests;
+  const matchesUserMajor = !!factors.matchesUserMajor;
+  const isEvent = !!factors.isEvent;
+  const eventDate = factors.eventDate;
 
-  // If post has no engagement, give it minimal but non-zero score based on recency
-  if (engagementScore === 0) {
-    // New posts with no engagement: very low score but higher than old posts with no engagement
-    const timeDecay = calculateTimeDecay(factors.createdAt, currentTime);
-    return timeDecay * 0.1; // Minimal score for unengaged posts
-  }
+  // Base engagement score
+  const engagementScore = calculateEngagementScore(likes, comments, participants);
+
+  // Use a baseline engagement score of at least 1.0 so personalization boosts & event bonuses
+  // are still fully active even for posts with zero engagement.
+  const baselineScore = engagementScore + 1.0;
 
   // Time decay: older posts need more engagement to compete
-  const timeDecay = calculateTimeDecay(factors.createdAt, currentTime);
+  const timeDecay = calculateTimeDecay(createdAt, currentTime);
 
   // Personalization: boost for user's network and interests
   const personalizationBoost = calculatePersonalizationBoost(
-    factors.isFromFollowedUser,
-    factors.matchesUserInterests,
-    factors.matchesUserMajor
+    isFromFollowedUser,
+    matchesUserInterests,
+    matchesUserMajor
   );
 
   // Event bonus: prioritize upcoming events
-  const eventBonus = calculateEventBonus(factors.isEvent ?? false, factors.eventDate);
+  const eventBonus = calculateEventBonus(isEvent, eventDate);
 
-  // Final score: engagement × recency × personalization × event_bonus
-  const score = (engagementScore * timeDecay) * personalizationBoost * eventBonus;
+  // Final score: baselineScore × recency × personalization × event_bonus
+  const score = (baselineScore * timeDecay) * personalizationBoost * eventBonus;
 
-  return Math.max(0, score); // Ensure non-negative
+  // Prevent NaN and ensure non-negative
+  return Number.isFinite(score) ? Math.max(0, score) : 0;
 }
 
 /**
