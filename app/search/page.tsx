@@ -337,6 +337,14 @@ export default function SearchPage() {
         } : "skip"
     );
 
+    const prevCompatibleUsersRef = useRef<any[] | undefined>(undefined);
+    if (!isRecommendationMode) {
+        prevCompatibleUsersRef.current = undefined;
+    } else if (compatibleUsers !== undefined) {
+        prevCompatibleUsersRef.current = compatibleUsers;
+    }
+    const displayedUsers = isRecommendationMode ? (compatibleUsers ?? prevCompatibleUsersRef.current) : undefined;
+
     const hasMoreSuggestions = compatibleUsers !== undefined && compatibleUsers.length >= suggestionsLimit;
 
     useEffect(() => {
@@ -1082,13 +1090,13 @@ export default function SearchPage() {
                                                     {isRecommendationMode ? (
                                                         <>
                                                             <h2 className="text-lg font-semibold mb-4 px-1">Vorschläge für dich</h2>
-                                                            {compatibleUsers === undefined ? (
+                                                            {compatibleUsers === undefined && displayedUsers === undefined ? (
                                                                 <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
-                                                            ) : compatibleUsers.length === 0 ? (
+                                                            ) : (displayedUsers || []).length === 0 ? (
                                                                 <div className="py-2 px-1 text-sm text-gray-500">Keine Vorschläge gefunden.</div>
                                                             ) : (
                                                                 <div className="space-y-3">
-                                                                    {compatibleUsers.map((user) => (
+                                                                    {(displayedUsers || []).map((user) => (
                                                                         <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
                                                                             <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
                                                                                 {user.image ? (
@@ -1117,6 +1125,11 @@ export default function SearchPage() {
                                                                             </div>
                                                                         </Link>
                                                                     ))}
+                                                                    {compatibleUsers === undefined && (
+                                                                        <div className="h-12 flex items-center justify-center text-xs text-gray-400 italic">
+                                                                            Mehr Vorschläge werden geladen...
+                                                                        </div>
+                                                                    )}
                                                                     {hasMoreSuggestions && (
                                                                         <div ref={observerRef} className="h-12 flex items-center justify-center text-xs text-gray-400 italic">
                                                                             Mehr Vorschläge werden geladen...
