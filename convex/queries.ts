@@ -281,6 +281,152 @@ export const getFeedWithRanking = query({
   },
 });
 
+// Get default recommended posts on the search page (5 latest same-major posts or 5 top-ranked posts)
+export const getSearchDefaultPosts = query({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    // 1. Get current user's major if logged in
+    let major: string | undefined = undefined;
+    let currentUser = null;
+    if (args.userId) {
+      currentUser = await ctx.db.get(args.userId);
+      major = currentUser?.major;
+    }
+
+    let postsToShow: any[] = [];
+
+    // Fetch all posts ordered by date descending
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    // Batch-query all likes for current user if userId exists
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const postIds = posts.map((p) => p._id);
+      const allLikes = await ctx.db
+        .query("likes")
+        .collect();
+
+      const userLikes = allLikes.filter(
+        (like) => like.userId === args.userId && postIds.includes(like.postId)
+      );
+
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
+    // Resolve user follows for score calculation
+    let followingIds: Id<"users">[] = [];
+    if (args.userId) {
+      const follows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q: any) => q.eq("followerId", args.userId))
+        .collect();
+      followingIds = follows.map((f: any) => f.followingId);
+    }
+
+    // Helper to enrich a post
+    const enrichPost = async (post: any) => {
+      const user: any = await ctx.db.get(post.userId);
+      const imageUrl = await getImageUrl(ctx, post.imageUrl);
+      const userImageUrl = await getUserImageUrl(ctx, user?.image);
+
+      let actualParticipantsCount = post.participantsCount || 0;
+      if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+        const participants = await ctx.db
+          .query("participants")
+          .withIndex("by_post", (q) => q.eq("postId", post._id))
+          .collect();
+        actualParticipantsCount = participants.length;
+      }
+
+      const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+      // Determine ranking score for engagement ranking
+      let rankingScore = 0;
+      let matchesUserInterests = false;
+      let matchesUserMajor = false;
+      if (currentUser && user) {
+        if (currentUser.interests && Array.isArray(currentUser.interests)) {
+          matchesUserInterests = currentUser.interests.some((interest: string) =>
+            post.tags && Array.isArray(post.tags) && post.tags.includes(interest)
+          );
+        }
+        if (currentUser.major && user.major === currentUser.major) {
+          matchesUserMajor = true;
+        }
+      }
+
+      const scoringFactors: ScoringFactors = {
+        likesCount: post.likesCount || 0,
+        commentsCount: actualCommentsCount,
+        participantsCount: actualParticipantsCount,
+        createdAt: post.createdAt,
+        isFromFollowedUser: followingIds.includes(post.userId),
+        matchesUserInterests,
+        matchesUserMajor,
+        isEvent: post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting",
+        eventDate: post.eventDate,
+      };
+      rankingScore = calculateRankingScore(scoringFactors);
+
+      return {
+        ...post,
+        participantsCount: actualParticipantsCount,
+        commentsCount: actualCommentsCount,
+        imageUrl,
+        isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+        rankingScore,
+        user: user ? {
+          ...user,
+          image: userImageUrl,
+        } : null,
+      };
+    };
+
+    // If user has a major, try to find latest posts from people of the same major
+    if (major) {
+      const sameMajorPosts: any[] = [];
+      for (const post of posts) {
+        if (args.userId && post.userId === args.userId) {
+          continue;
+        }
+        const author = await ctx.db.get(post.userId);
+        if (author && author.major === major) {
+          sameMajorPosts.push(post);
+          if (sameMajorPosts.length === 5) {
+            break;
+          }
+        }
+      }
+
+      if (sameMajorPosts.length > 0) {
+        // Enrich and return the same-major posts (up to 5)
+        postsToShow = await Promise.all(sameMajorPosts.map(enrichPost));
+      }
+    }
+
+    // If no posts from same major were found (or user has no major), get the last 5 posts in all and empfohlen
+    if (postsToShow.length === 0) {
+      const otherPosts = args.userId
+        ? posts.filter(p => p.userId !== args.userId)
+        : posts;
+      const enrichedAllPosts = await Promise.all(otherPosts.map(enrichPost));
+      // Sort by rankingScore descending (empfohlen on home feed)
+      enrichedAllPosts.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+      postsToShow = enrichedAllPosts.slice(0, 5);
+    }
+
+    return postsToShow;
+  }
+});
+
 export const getPost = query({
   args: {
     postId: v.id("posts"),

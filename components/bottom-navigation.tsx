@@ -131,6 +131,23 @@ export function BottomNavigation() {
             />
           </Link>
 
+
+
+          {/* Workspace */}
+          <Link
+            id="tour-nav-workspace"
+            href="/workspace"
+            prefetch={true}
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+            style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+          >
+            <WorkspaceIcon
+              isActive={isActive("/workspace")}
+              size={28}
+              color="#000000"
+            />
+          </Link>
+
           {/* Calendar */}
           <Link
             id="tour-nav-calendar"
@@ -149,21 +166,6 @@ export function BottomNavigation() {
                 transform: "translateZ(0)",
                 backfaceVisibility: "hidden"
               }}
-            />
-          </Link>
-
-          {/* Workspace */}
-          <Link
-            id="tour-nav-workspace"
-            href="/workspace"
-            prefetch={true}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
-            style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
-          >
-            <WorkspaceIcon
-              isActive={isActive("/workspace")}
-              size={28}
-              color="#000000"
             />
           </Link>
 

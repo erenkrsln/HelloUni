@@ -196,7 +196,7 @@ export default function WorkspaceHubPage({
   };
 
   return (
-    <main className="flex flex-col h-screen w-full max-w-[428px] mx-auto bg-white relative">
+    <main className="flex flex-col h-screen w-full max-w-[428px] md:max-w-full mx-auto bg-white relative">
       {/* Header */}
       <div
         className="flex flex-col gap-1 px-4 py-3 bg-white border-b border-gray-100 z-10 sticky top-0"

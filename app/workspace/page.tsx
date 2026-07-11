@@ -136,7 +136,7 @@ export default function WorkspacePage() {
   };
 
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 header-spacing overflow-x-hidden bg-white">
+    <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 header-spacing overflow-x-hidden bg-white">
       <Header onMenuClick={() => setIsSidebarOpen(true)} title="Workspace" />
       <MobileSidebar
         isOpen={isSidebarOpen}
@@ -235,11 +235,10 @@ export default function WorkspacePage() {
               <button
                 key={chip.id}
                 onClick={() => setTaskFilter(chip.id)}
-                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${
-                  taskFilter === chip.id
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${taskFilter === chip.id
                     ? "bg-[#D08945] text-white shadow-sm"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
+                  }`}
               >
                 {chip.label}
               </button>
@@ -279,23 +278,21 @@ export default function WorkspacePage() {
                       <div className="flex gap-1.5 flex-wrap">
                         {task.priority && (
                           <span
-                            className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm ${
-                              task.priority === "high"
+                            className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm ${task.priority === "high"
                                 ? "bg-rose-50 text-rose-700 border border-rose-100"
                                 : task.priority === "medium"
                                   ? "bg-amber-50 text-amber-700 border border-amber-100"
                                   : "bg-green-50 text-green-700 border border-green-100"
-                            }`}
+                              }`}
                           >
                             {priorityLabels[task.priority as keyof typeof priorityLabels]}
                           </span>
                         )}
                         <span
-                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm truncate max-w-[140px] ${
-                            isPersonal
+                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm truncate max-w-[140px] ${isPersonal
                               ? "bg-purple-50 text-purple-700 border border-purple-100"
                               : "bg-blue-50 text-blue-700 border border-blue-100"
-                          }`}
+                            }`}
                         >
                           {isPersonal ? "Persönlich" : (task as any).groupName}
                         </span>
@@ -376,11 +373,10 @@ export default function WorkspacePage() {
               <button
                 key={chip.id}
                 onClick={() => setEventFilter(chip.id)}
-                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${
-                  eventFilter === chip.id
+                className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${eventFilter === chip.id
                     ? "bg-[#D08945] text-white shadow-sm"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
+                  }`}
               >
                 {chip.label}
               </button>
