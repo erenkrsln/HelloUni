@@ -290,6 +290,7 @@ export default function SearchPage() {
     const searchTargetTerm = filterType === "all" ? searchAnalysis.term : debouncedQuery;
 
     const isRecommendationMode = filterType === "people" && activeSearchMode === "all" && !searchTargetTerm && !userMajor && !userInterests;
+    const isPostRecommendationMode = filterType === "posts" && activeSearchMode === "all" && !searchTargetTerm && !postType && !postAuthorMajor;
 
     // Queries - conditionally skip based on filter or prefix override
     const shouldSearchGroups =
@@ -377,6 +378,13 @@ export default function SearchPage() {
             // Only apply post filters if specifically in "posts" tab
             postType: filterType === "posts" ? (postType || undefined) : undefined,
             major: filterType === "posts" ? (postAuthorMajor || undefined) : undefined
+        } : "skip"
+    );
+
+    const defaultPosts = useQuery(
+        api.queries.getSearchDefaultPosts,
+        isPostRecommendationMode ? {
+            userId: currentUserId || undefined
         } : "skip"
     );
 
@@ -736,7 +744,8 @@ export default function SearchPage() {
                                 hasQuery ||
                                 hasUserFilters ||
                                 hasPostFilters ||
-                                (filterType === "people");
+                                (filterType === "people") ||
+                                isPostRecommendationMode;
 
                             if (!shouldShowResults) {
                                 if (filterType === "all") {
@@ -1193,22 +1202,43 @@ export default function SearchPage() {
                                             )}
                                             {filterType === "posts" && (
                                                 <div>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
-                                                    {postResults === undefined ? (
-                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
-                                                    ) : postResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">
+                                                        {isPostRecommendationMode ? "Vorschläge für dich" : "Beiträge"}
+                                                    </h2>
+                                                    {isPostRecommendationMode ? (
+                                                        defaultPosts === undefined ? (
+                                                            <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                        ) : defaultPosts.length === 0 ? (
+                                                            <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                        ) : (
+                                                            <div className="space-y-0">
+                                                                {defaultPosts.map((post, index) => (
+                                                                    <FeedCard
+                                                                        key={post._id}
+                                                                        post={post}
+                                                                        currentUserId={currentUserId}
+                                                                        showDivider={index < defaultPosts.length - 1}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )
                                                     ) : (
-                                                        <div className="space-y-0">
-                                                            {postResults.map((post, index) => (
-                                                                <FeedCard
-                                                                    key={post._id}
-                                                                    post={post}
-                                                                    currentUserId={currentUserId}
-                                                                    showDivider={index < postResults.length - 1}
-                                                                />
-                                                            ))}
-                                                        </div>
+                                                        postResults === undefined ? (
+                                                            <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                        ) : postResults.length === 0 ? (
+                                                            <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                        ) : (
+                                                            <div className="space-y-0">
+                                                                {postResults.map((post, index) => (
+                                                                    <FeedCard
+                                                                        key={post._id}
+                                                                        post={post}
+                                                                        currentUserId={currentUserId}
+                                                                        showDivider={index < postResults.length - 1}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )
                                                     )}
                                                 </div>
                                             )}
