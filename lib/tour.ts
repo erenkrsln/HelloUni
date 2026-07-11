@@ -24,7 +24,7 @@ export function startAppTour() {
         element: "#tour-profile-menu",
         popover: {
           title: "Die rechte Seitenleiste",
-          description: "Hier findest du dein Profil, die Infoseiten zu deinem Studiengang und dem Mensaplan, Einstellungen und mehr.",
+          description: "Hier findest du dein Profil, die Infoseiten zu deinem Studiengang und dem Mensaplan und mehr.",
           side: "bottom",
           align: "start"
         }
