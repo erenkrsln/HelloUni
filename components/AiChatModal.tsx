@@ -176,7 +176,7 @@ const AiChatModal = () => {
   return (
     <>
       <div
-        className={`cursor-pointer fixed inset-0 bg-card bg-opacity-20 backdrop-blur-[4px] ${isClicked ? '' : 'opacity-0 pointer-events-none'} z-[9997] transition-opacity duration-300 ease-smooth ease-[cubic-bezier(0.44,0,0.56,1)]`}
+        className={`cursor-pointer fixed inset-0 bg-background/20 backdrop-blur-[4px] ${isClicked ? '' : 'opacity-0 pointer-events-none'} z-[9997] transition-opacity duration-300 ease-smooth ease-[cubic-bezier(0.44,0,0.56,1)]`}
         onClick={handleClick}
       />
       <div
@@ -224,7 +224,7 @@ const AiChatModal = () => {
         </div>
         <div
           ref={headerRef}
-          className={`absolute top-0 left-0 right-0 flex justify-between items-center bg-card ${isClicked ? 'px-[22px] py-[17px] bg-opacity-[0.65] backdrop-blur-[57px]' : 'bg-opacity-0'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}
+          className={`absolute top-0 left-0 right-0 flex justify-between items-center bg-card ${isClicked ? 'px-[22px] py-[17px] bg-card/65 backdrop-blur-[57px]' : 'bg-transparent'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}
         >
           <div className='flex justify-center items-center gap-[14px]'>
             <div

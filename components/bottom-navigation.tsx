@@ -109,7 +109,7 @@ export function BottomNavigation() {
             onClick={handleHomeClick}
             aria-label="Startseite"
             aria-current={isActive("/home") ? "page" : undefined}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <HomeIcon
@@ -126,7 +126,7 @@ export function BottomNavigation() {
             prefetch={true}
             aria-label="Suchen"
             aria-current={isActive("/search") ? "page" : undefined}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <SearchIcon
@@ -143,13 +143,13 @@ export function BottomNavigation() {
             prefetch={true}
             aria-label="Kalender"
             aria-current={isActive("/calendar") ? "page" : undefined}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <CalendarDays
               aria-hidden="true"
               strokeWidth={isActive("/calendar") ? 2.5 : 2}
-              className="text-white stroke-white"
+              className="text-black stroke-black"
               style={{
                 width: "27px",
                 height: "27px",
@@ -167,7 +167,7 @@ export function BottomNavigation() {
             prefetch={true}
             aria-label="Workspace"
             aria-current={isActive("/workspace") ? "page" : undefined}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <WorkspaceIcon
@@ -185,12 +185,12 @@ export function BottomNavigation() {
             prefetch={true}
             aria-label={unreadChatCount > 0 ? `Chat (${unreadChatCount} ungelesene Nachrichten)` : "Chat"}
             aria-current={isActive("/chat") ? "page" : undefined}
-            className={`flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg ${isActive("/chat") ? "fill-white" : ""}`}
+            className={`flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black rounded-lg ${isActive("/chat") ? "fill-black" : ""}`}
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <MessageCircle
               aria-hidden="true"
-              className="text-white"
+              className="text-black"
               style={{
                 width: "27px",
                 height: "27px",

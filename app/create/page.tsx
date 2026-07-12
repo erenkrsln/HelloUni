@@ -460,14 +460,12 @@ export default function CreatePage() {
                 <img
                     src="/logo_font.svg"
                     alt="HelloUni"
-                    className="dark:hidden"
-                    style={{ height: "80px", width: "auto", objectFit: "contain", display: "block" }}
+                    className="block h-20 w-auto object-contain dark:hidden"
                 />
                 <img
                     src="/logo_font_dark.svg"
                     alt="HelloUni"
-                    className="hidden dark:block"
-                    style={{ height: "80px", width: "auto", objectFit: "contain", display: "block" }}
+                    className="hidden h-20 w-auto object-contain dark:block"
                 />
             </button>
             <LogoSidebar isOpen={isLogoSidebarOpen} onClose={() => setIsLogoSidebarOpen(false)} />
