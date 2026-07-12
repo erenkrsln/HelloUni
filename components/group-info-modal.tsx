@@ -7,6 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ImageCropModal } from "@/components/image-crop-modal";
 import {
   Search,
   UserPlus,
@@ -45,6 +46,11 @@ export function GroupInfoModal({
   const [newDescription, setNewDescription] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Image Crop State
+  const [selectedCropImageSrc, setSelectedCropImageSrc] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   const members = useQuery(api.queries.getConversationMembers, {
     conversationId,
   });
@@ -74,6 +80,9 @@ export function GroupInfoModal({
   const toggleGroupPublic = useMutation(api.mutations.toggleGroupPublic);
   const toggleGroupJoinRequestRequired = useMutation(
     api.mutations.toggleGroupJoinRequestRequired,
+  );
+  const toggleOnlyAdminsCanMessage = useMutation(
+    api.mutations.toggleOnlyAdminsCanMessage,
   );
 
   const myself = members?.find((m) => m._id === currentUserId);
@@ -254,11 +263,26 @@ export function GroupInfoModal({
     }
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedCropImageSrc(reader.result as string);
+      setIsCropModalOpen(true);
+    };
+    reader.onerror = () => {
+      alert("Fehler beim Lesen der Datei");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsUploadingImage(true);
     try {
+      const file = new File([croppedBlob], "group-image.jpg", { type: "image/jpeg" });
+
       const { uploadUrl, publicUrl } = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -280,12 +304,23 @@ export function GroupInfoModal({
         imageId: publicUrl,
         userId: currentUserId,
       });
+
+      setIsCropModalOpen(false);
+      setSelectedCropImageSrc(null);
     } catch (error) {
       console.error("Failed to update group image:", error);
       alert("Fehler beim Aktualisieren des Gruppenbildes.");
     } finally {
+      setIsUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleCropCancel = () => {
+    if (isUploadingImage) return;
+    setIsCropModalOpen(false);
+    setSelectedCropImageSrc(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const hasAdmins = members?.some(
@@ -303,8 +338,9 @@ export function GroupInfoModal({
   if (!members || !conversation) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className="sm:w-[560px]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
           {view === "list" ? (
             <>
@@ -589,6 +625,49 @@ export function GroupInfoModal({
                       </button>
                     </div>
                   )}
+
+                  {/* Nur Admins schreiben Toggle */}
+                  <div className="flex items-center justify-between p-4 pt-0">
+                    <div className="flex flex-col pr-4">
+                      <span className="text-sm font-semibold text-gray-900">
+                        Nur Admins können schreiben
+                      </span>
+                      <span className="text-xs text-gray-500 font-normal">
+                        Erlaube nur Admins und dem Ersteller, Nachrichten zu senden
+                      </span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await toggleOnlyAdminsCanMessage({
+                            conversationId,
+                            onlyAdminsCanMessage: !conversation.onlyAdminsCanMessage,
+                            userId: currentUserId,
+                          });
+                        } catch (error) {
+                          console.error(
+                            "Failed to toggle onlyAdminsCanMessage setting:",
+                            error,
+                          );
+                          alert(
+                            "Fehler beim Ändern der Nachrichteneinschränkung.",
+                          );
+                        }
+                      }}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        conversation.onlyAdminsCanMessage ? "bg-[#D08945]" : "bg-gray-200"
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          conversation.onlyAdminsCanMessage
+                            ? "translate-x-5"
+                            : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </>
               )}
 
@@ -871,5 +950,20 @@ export function GroupInfoModal({
         )}
       </DialogContent>
     </Dialog>
-  );
+
+    {isCropModalOpen && selectedCropImageSrc && (
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        onClose={handleCropCancel}
+        imageSrc={selectedCropImageSrc}
+        onCropComplete={handleCropComplete}
+        isUploading={isUploadingImage}
+        aspect={1}
+        cropShape="rect"
+        title="Medien bearbeiten"
+        variant="twitter"
+      />
+    )}
+  </>
+);
 }

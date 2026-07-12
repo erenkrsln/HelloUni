@@ -208,57 +208,57 @@ export default function ChatPage() {
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0 flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
                           <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
-                              {formatChatTimestamp(conv.updatedAt)}
-                            </span>
-                            {conv.unreadCount > 0 && (
-                              <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
-                                {conv.unreadCount}
-                              </div>
-                            )}
-                            {isLeft && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault(); // Prevent navigation
-                                  e.stopPropagation();
-                                  if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
-                                    deleteConversationFromList({
-                                      conversationId: conv._id,
-                                      userId: currentUser!._id
-                                    });
-                                  }
-                                }}
-                                className="mt-1 p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
-                                title="Chat löschen"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-500 truncate flex items-center pl-0.5">
-                          {conv.lastMessage ? (
-                            (conv.lastMessage as any).type === "image" ? (
-                              <>
-                                <Image size={14} className="flex-shrink-0" />
-                                <span>Foto</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "pdf" ? (
-                              <>
-                                <FileIcon size={14} className="flex-shrink-0" />
-                                <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
-                              </>
+                          <p className="text-sm text-gray-500 flex items-center pl-0.5 mt-0.5 min-w-0">
+                            {conv.lastMessage ? (
+                              (conv.lastMessage as any).type === "image" ? (
+                                <>
+                                  <Image size={14} className="flex-shrink-0 mr-1" />
+                                  <span>Foto</span>
+                                </>
+                              ) : (conv.lastMessage as any).type === "pdf" ? (
+                                <>
+                                  <FileIcon size={14} className="flex-shrink-0 mr-1" />
+                                  <span className="truncate">{(conv.lastMessage as any).fileName || "Dokument"}</span>
+                                </>
+                              ) : (
+                                <span className="truncate">{conv.lastMessage.content}</span>
+                              )
                             ) : (
-                              conv.lastMessage.content
-                            )
-                          ) : (
-                            "Noch keine Nachrichten"
+                              <span>Noch keine Nachrichten</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end flex-shrink-0">
+                          <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
+                            {formatChatTimestamp(conv.updatedAt)}
+                          </span>
+                          {conv.unreadCount > 0 && (
+                            <div className="bg-[#f78d57] text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full">
+                              {conv.unreadCount}
+                            </div>
                           )}
-                        </p>
+                          {isLeft && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault(); // Prevent navigation
+                                e.stopPropagation();
+                                if (confirm("Möchtest du diesen Chat wirklich löschen?")) {
+                                  deleteConversationFromList({
+                                    conversationId: conv._id,
+                                    userId: currentUser!._id
+                                  });
+                                }
+                              }}
+                              className="mt-1 p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
+                              title="Chat löschen"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </Link>
 

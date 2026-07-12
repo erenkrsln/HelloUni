@@ -265,6 +265,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         conversation.adminIds?.includes(currentUser._id)
     );
 
+    const isRestrictedFromMessaging =
+        conversation?.isGroup &&
+        conversation?.onlyAdminsCanMessage &&
+        !isGroupAdmin;
+
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
         if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTo({
@@ -495,7 +500,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {conversation && (
                     <div className="flex items-center gap-0.5">
                         {/* Call-Buttons: Voice & Video - nicht im Chatbot-Chat, erst wenn geklärt */}
-                        {!isLeft && showChatActionButtons && (
+                        {!isLeft && !isRestrictedFromMessaging && showChatActionButtons && (
                             <ChatHeaderCallButtons conversationId={conversationId} />
                         )}
                         {/* Datei-Button - nicht im Chatbot-Chat, erst wenn geklärt */}
@@ -1089,7 +1094,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Input */}
-            {!isLeft ? (
+            {!isLeft && !isRestrictedFromMessaging ? (
                 <div
                     className="bg-[#FDFBF7]"
                     style={{ paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))` }}
@@ -1223,7 +1228,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
                     }}
                 >
-                    Du bist kein Mitglied dieser Gruppe mehr.
+                    {isLeft
+                        ? "Du bist kein Mitglied dieser Gruppe mehr."
+                        : "Nur Admins können Nachrichten in dieser Gruppe schreiben."}
                 </div>
             )}
 
