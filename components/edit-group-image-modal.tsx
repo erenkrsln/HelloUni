@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ImageCropModal } from "@/components/image-crop-modal";
 import { Camera, X } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -39,18 +40,55 @@ export function EditGroupImageModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Image Crop State
+  const [selectedCropImageSrc, setSelectedCropImageSrc] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [isImageProcessing, setIsImageProcessing] = useState(false);
+
   const updateGroupImage = useMutation(api.mutations.updateGroupImage);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedImage(file);
-      setIsImageRemoved(false);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedCropImageSrc(reader.result as string);
+        setIsCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsImageProcessing(true);
+    try {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(croppedBlob);
+
+      const file = new File([croppedBlob], "group-image.jpg", { type: "image/jpeg" });
+      setSelectedImage(file);
+      setIsImageRemoved(false);
+      setIsCropModalOpen(false);
+      setSelectedCropImageSrc(null);
+    } catch (error) {
+      console.error("Fehler beim Verarbeiten des Gruppenbilds:", error);
+    } finally {
+      setIsImageProcessing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleCropCancel = () => {
+    if (isImageProcessing) return;
+    setIsCropModalOpen(false);
+    setSelectedCropImageSrc(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -121,13 +159,17 @@ export function EditGroupImageModal({
       setSelectedImage(null);
       setImagePreview(currentImage || null);
       setIsImageRemoved(false);
+      setSelectedCropImageSrc(null);
+      setIsCropModalOpen(false);
+      setIsImageProcessing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }, 100); // Small delay to avoid flickering during close animation
     onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
         aria-describedby={undefined}
         hideCloseButton
@@ -234,7 +276,22 @@ export function EditGroupImageModal({
             </span>
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {isCropModalOpen && selectedCropImageSrc && (
+        <ImageCropModal
+          isOpen={isCropModalOpen}
+          onClose={handleCropCancel}
+          imageSrc={selectedCropImageSrc}
+          onCropComplete={handleCropComplete}
+          isUploading={isImageProcessing}
+          aspect={1}
+          cropShape="rect"
+          title="Medien bearbeiten"
+          variant="twitter"
+        />
+      )}
+    </>
   );
 }

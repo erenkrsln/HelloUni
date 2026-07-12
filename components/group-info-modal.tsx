@@ -7,6 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ImageCropModal } from "@/components/image-crop-modal";
 import {
   Search,
   UserPlus,
@@ -44,6 +45,11 @@ export function GroupInfoModal({
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [newDescription, setNewDescription] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Image Crop State
+  const [selectedCropImageSrc, setSelectedCropImageSrc] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const members = useQuery(api.queries.getConversationMembers, {
     conversationId,
@@ -254,11 +260,26 @@ export function GroupInfoModal({
     }
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedCropImageSrc(reader.result as string);
+      setIsCropModalOpen(true);
+    };
+    reader.onerror = () => {
+      alert("Fehler beim Lesen der Datei");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsUploadingImage(true);
     try {
+      const file = new File([croppedBlob], "group-image.jpg", { type: "image/jpeg" });
+
       const { uploadUrl, publicUrl } = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -280,12 +301,23 @@ export function GroupInfoModal({
         imageId: publicUrl,
         userId: currentUserId,
       });
+
+      setIsCropModalOpen(false);
+      setSelectedCropImageSrc(null);
     } catch (error) {
       console.error("Failed to update group image:", error);
       alert("Fehler beim Aktualisieren des Gruppenbildes.");
     } finally {
+      setIsUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleCropCancel = () => {
+    if (isUploadingImage) return;
+    setIsCropModalOpen(false);
+    setSelectedCropImageSrc(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const hasAdmins = members?.some(
@@ -303,7 +335,8 @@ export function GroupInfoModal({
   if (!members || !conversation) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation>
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
           {view === "list" ? (
@@ -871,5 +904,20 @@ export function GroupInfoModal({
         )}
       </DialogContent>
     </Dialog>
-  );
+
+    {isCropModalOpen && selectedCropImageSrc && (
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        onClose={handleCropCancel}
+        imageSrc={selectedCropImageSrc}
+        onCropComplete={handleCropComplete}
+        isUploading={isUploadingImage}
+        aspect={1}
+        cropShape="rect"
+        title="Medien bearbeiten"
+        variant="twitter"
+      />
+    )}
+  </>
+);
 }
