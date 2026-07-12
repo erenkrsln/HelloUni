@@ -108,6 +108,16 @@ svg {
   }
 }
 
+/* Fix: Kein Layout-Shift des Hintergrunds beim Öffnen von Radix-Dialogen.
+   react-remove-scroll (Radix Dialog) fügt am Body zusätzlich margin-/padding-right
+   in Scrollbar-Breite hinzu, obwohl der Platz bereits über `scrollbar-gutter: stable`
+   reserviert ist. Die höhere Spezifität (html body ...) schlägt das !important der Library.
+   `overflow: hidden` (der eigentliche Scroll-Lock) bleibt erhalten. */
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
 /* Auth-Registrierung: eigenes Select-Chevron (kein Tailwind bg-[url(...)] — sonst Turbopack/Resolve-Fehler) */
 @layer components {
   .auth-major-select {

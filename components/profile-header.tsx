@@ -267,10 +267,11 @@ export function ProfileHeader({
                     transition: extractedColor ? 'background-color 0.3s ease-in-out' : undefined, // Sanfter Übergang wenn Farbe extrahiert wird
                 }}
             >
-                {/* Back Button */}
+                {/* Back Button - Mobile & Desktop. Auf Desktop über dem globalen Header (z-[70]),
+                    damit der Klick nicht vom Header abgefangen wird. */}
                 <button
                     onClick={() => router.back()}
-                    className="absolute left-4 z-20 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 active:scale-95 transition-all shadow-md"
+                    className="absolute left-4 z-20 md:z-[80] w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 active:scale-95 transition-all shadow-md"
                     style={{
                         top: `calc(1rem + env(safe-area-inset-top, 0px))`,
                     }}
@@ -449,9 +450,8 @@ export function ProfileHeader({
                     )}
                 </div>
 
-                {/* Stats - Follower, Following (Twitter/X Style) */}
-                {isOwnProfile && (
-                    <div className="flex items-center gap-4 -mt-1" style={{ marginLeft: "-15px" }}>
+                {/* Stats - Follower, Following (Twitter/X Style) - für alle Profile sichtbar */}
+                <div className="flex items-center gap-4 -mt-1" style={{ marginLeft: "-15px" }}>
                         {/* Follower Stat */}
                         <button
                             className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
@@ -484,7 +484,6 @@ export function ProfileHeader({
                             </span>
                         </button>
                     </div>
-                )}
             </div>
 
             {/* Header Image Crop Modal */}

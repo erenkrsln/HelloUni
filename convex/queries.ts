@@ -79,31 +79,41 @@ export const getFeed = query({
       .order("desc")
       .collect();
 
-    // Batch-Abfrage aller Likes für diesen User
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
     }
 
+    // Autoren einmalig laden + Bild-URL einmalig auflösen (viele Posts teilen denselben Autor)
+    const uniqueUserIds = Array.from(new Set(posts.map((p) => p.userId as string)));
+    const usersById = new Map<string, any>();
+    await Promise.all(
+      uniqueUserIds.map(async (uid) => {
+        const u = await ctx.db.get(uid as Id<"users">);
+        if (u) {
+          const resolvedImage = await getUserImageUrl(ctx, u.image);
+          usersById.set(uid, { ...u, image: resolvedImage });
+        } else {
+          usersById.set(uid, null);
+        }
+      })
+    );
+
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
+        const user = usersById.get(post.userId as string) || null;
         let imageUrl = post.imageUrl;
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -115,8 +125,8 @@ export const getFeed = query({
           actualParticipantsCount = participants.length;
         }
 
-        // Calculate actual comments count (only top-level comments)
-        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+        // Kommentaranzahl aus gespeichertem Zähler (in Mutationen gepflegt, Top-Level)
+        const actualCommentsCount = post.commentsCount ?? 0;
 
         return {
           ...post,
@@ -124,10 +134,7 @@ export const getFeed = query({
           commentsCount: actualCommentsCount,
           imageUrl,
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
-          user: user ? {
-            ...user,
-            image: userImageUrl,
-          } : null,
+          user: user || null,
         };
       })
     );
@@ -163,17 +170,13 @@ export const getFeedWithRanking = query({
       followingIds = follows.map((f: any) => f.followingId);
     }
 
-    // Batch-query all likes for current user
+    // Likes des aktuellen Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -186,15 +189,29 @@ export const getFeedWithRanking = query({
       currentUser = await ctx.db.get(args.userId);
     }
 
+    // Autoren einmalig laden + Bild-URL einmalig auflösen (viele Posts teilen denselben Autor)
+    const uniqueUserIds = Array.from(new Set(posts.map((p) => p.userId as string)));
+    const usersById = new Map<string, any>();
+    await Promise.all(
+      uniqueUserIds.map(async (uid) => {
+        const u = await ctx.db.get(uid as Id<"users">);
+        if (u) {
+          const resolvedImage = await getUserImageUrl(ctx, u.image);
+          usersById.set(uid, { ...u, image: resolvedImage });
+        } else {
+          usersById.set(uid, null);
+        }
+      })
+    );
+
     // Enrich posts with rankings
     const postsWithScores = await Promise.all(
       posts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
+        const user = usersById.get(post.userId as string) || null;
         let imageUrl = post.imageUrl;
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -206,8 +223,9 @@ export const getFeedWithRanking = query({
           actualParticipantsCount = participants.length;
         }
 
-        // Calculate actual comments count (only top-level comments)
-        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+        // Kommentaranzahl: gespeicherten Zähler nutzen (wird in den Mutationen gepflegt,
+        // Top-Level-Kommentare) statt pro Post die Kommentare neu zu scannen
+        const actualCommentsCount = post.commentsCount ?? 0;
 
         // Determine if post matches user interests/major
         let matchesUserInterests = false;
@@ -247,10 +265,7 @@ export const getFeedWithRanking = query({
           imageUrl,
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
           rankingScore, // Include score for sorting
-          user: user ? {
-            ...user,
-            image: userImageUrl,
-          } : null,
+          user: user || null,
         };
       })
     );
@@ -304,17 +319,13 @@ export const getSearchDefaultPosts = query({
       .order("desc")
       .collect();
 
-    // Batch-query all likes for current user if userId exists
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -522,15 +533,16 @@ export const getUserLikesBatch = query({
     }
 
     try {
-      // Hole alle Likes und filtere nach userId und postIds
-      // Da der zusammengesetzte Index nicht nur mit userId funktioniert, holen wir alle Likes
-      const allLikes = await ctx.db
+      // Likes des Users gezielt über Index by_user_post (Prefix nur userId) laden
+      // und auf die relevanten Posts filtern – kein Full-Scan der likes-Tabelle
+      const postIdSet = new Set(args.postIds.map((id) => id as string));
+      const allUserLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
 
-      // Filtere Likes für diesen User und die relevanten Posts
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && args.postIds.includes(like.postId)
+      const userLikes = allUserLikes.filter((like) =>
+        postIdSet.has(like.postId as string)
       );
 
       // Erstelle eine Map: postId -> isLiked (als String-Keys für Record)
@@ -597,17 +609,13 @@ export const getUserPosts = query({
       .order("desc")
       .collect();
 
-    // Batch-Abfrage aller Likes für diesen User
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -808,14 +816,10 @@ export const getFollowingFeed = query({
     // Batch-Abfrage aller Likes für diesen User
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = followingPosts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -1115,17 +1119,13 @@ export const getFilteredFeed = query({
       });
     }
 
-    // Batch-Abfrage aller Likes für diesen User
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -2056,14 +2056,10 @@ export const searchPosts = query({
     // Batch-Abfrage aller Likes fÃ¼r diesen User (Reuse logic from getFeed/getFilteredFeed)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = matchingPosts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;

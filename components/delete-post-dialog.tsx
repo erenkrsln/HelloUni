@@ -13,6 +13,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { usePostsCache } from "@/lib/contexts/posts-context";
 
 interface DeletePostDialogProps {
   postId: Id<"posts">;
@@ -28,6 +29,7 @@ export function DeletePostDialog({
   onOpenChange,
 }: DeletePostDialogProps) {
   const deletePost = useMutation(api.mutations.deletePost);
+  const { removePost } = usePostsCache();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -35,6 +37,10 @@ export function DeletePostDialog({
     setIsDeleting(true);
     try {
       await deletePost({ postId, userId });
+
+      // Gelöschten Beitrag aus allen Feed-Caches entfernen, damit er beim
+      // Feed-Typ-Wechsel nicht erst sichtbar verschwindet ("Herauspoppen").
+      removePost(postId as string);
       // Warte kurz, bevor der Dialog geschlossen wird, um Flackern zu vermeiden
       setTimeout(() => {
         onOpenChange(false);
@@ -49,8 +55,8 @@ export function DeletePostDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 gap-0 overflow-hidden max-w-[460px]">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent hideCloseButton className="p-0 gap-0 overflow-hidden max-w-[460px]">
+        <DialogHeader className="flex-col items-center justify-start gap-0 pr-0 px-6 pt-6 pb-4">
           <DialogTitle className="text-xl font-semibold text-gray-900 m-0 mb-2 text-center">
             Beitrag löschen
           </DialogTitle>

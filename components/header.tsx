@@ -19,9 +19,11 @@ interface HeaderProps {
   onMenuClick?: () => void;
   onEditClick?: () => void;
   title?: string;
+  /** Wenn true: kein weißer Blur-Hintergrund – nur Logo, Glocke und Profilbild sind sichtbar. */
+  transparent?: boolean;
 }
 
-export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
+export function Header({ onMenuClick, onEditClick, title, transparent }: HeaderProps = {}) {
   const [isProfileHovered, setIsProfileHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const [isLogoSidebarOpen, setIsLogoSidebarOpen] = useState(false);
@@ -109,7 +111,9 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
         minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
       }}
     >
-      <div className="absolute inset-0 bg-white bg-opacity-[0.65] backdrop-blur-[57px]" />
+      {!transparent && (
+        <div className="absolute inset-0 bg-white bg-opacity-[0.65] backdrop-blur-[57px]" />
+      )}
       <div className="relative w-full h-[80px]">
         {/* Clickable area for logo sidebar - left third of header */}
         <button

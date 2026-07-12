@@ -43,7 +43,7 @@ export function ParticipantsDialog({
         </button>
       </DialogTrigger>
       <DialogContent className="flex flex-col p-6 sm:p-8 max-w-[560px]">
-        <DialogHeader className="mb-4">
+        <DialogHeader className="flex-col items-start gap-0 mb-4">
           <DialogTitle className="text-xl font-semibold">
             Teilnehmerliste
           </DialogTitle>

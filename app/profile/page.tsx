@@ -8,6 +8,7 @@ import { ProfileGroupsSection } from "@/components/profile-groups-section";
 import { FeedCard } from "@/components/feed-card";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
+import { Header } from "@/components/header";
 import { LoadingScreen, Spinner } from "@/components/ui/spinner";
 import { EditProfileModal } from "@/components/edit-profile-modal";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
@@ -57,6 +58,10 @@ export default function ProfilePage() {
 
     return (
         <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden">
+            {/* Globaler Header nur auf Desktop: Logo links, Glocke + Profilbild rechts */}
+            <div className="hidden md:block">
+                <Header onMenuClick={() => setIsSidebarOpen(true)} transparent />
+            </div>
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 

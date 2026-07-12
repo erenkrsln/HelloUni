@@ -237,6 +237,22 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
     const conversation = allConversations?.find(c => c._id === conversationId);
 
+    // KI-/Chatbot-Konversation erkennen (1:1-Chat mit dem Bot-User "jastell")
+    const isAiConversation =
+        !conversation?.isGroup &&
+        !!aiUserId &&
+        !!members?.some((m) => m._id === aiUserId);
+
+    // Beim Öffnen eines Chatbot-Chats das Eingabefeld mit "Jastell: " vorbelegen,
+    // da der Bot nur auf Nachrichten mit diesem Präfix reagiert.
+    const aiPrefilledConvRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (isAiConversation && aiPrefilledConvRef.current !== conversationId) {
+            aiPrefilledConvRef.current = conversationId;
+            setNewMessage((prev) => (prev.trim() === "" ? "Jastell: " : prev));
+        }
+    }, [isAiConversation, conversationId]);
+
     const isGroupAdmin = conversation?.isGroup && currentUser && (
         conversation.creatorId === currentUser._id ||
         conversation.adminIds?.includes(currentUser._id)
@@ -471,17 +487,20 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {/* Right side */}
                 {conversation && (
                     <div className="flex items-center gap-0.5">
-                        {/* Call-Buttons: Voice & Video */}
-                        {!isLeft && (
+                        {/* Call-Buttons: Voice & Video - nicht im Chatbot-Chat */}
+                        {!isLeft && !isAiConversation && (
                             <ChatHeaderCallButtons conversationId={conversationId} />
                         )}
-                        <button
-                            className="p-2 text-[#D08945]"
-                            onClick={() => setIsFilesModalOpen(true)}
-                            title="Geteilte Dateien"
-                        >
-                            <Folder size={20} />
-                        </button>
+                        {/* Datei-Button - nicht im Chatbot-Chat */}
+                        {!isAiConversation && (
+                            <button
+                                className="p-2 text-[#D08945]"
+                                onClick={() => setIsFilesModalOpen(true)}
+                                title="Geteilte Dateien"
+                            >
+                                <Folder size={20} />
+                            </button>
+                        )}
                         <div className="relative">
                             <button
                                 className="p-2 text-[#D08945] hover:bg-gray-50 rounded-full transition-colors"

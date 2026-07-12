@@ -6,6 +6,35 @@ interface PostsCacheContextType {
   setPosts: (key: string, posts: any[]) => void;
   getPosts: (key: string) => any[] | undefined;
   clearCache: () => void;
+  /**
+   * Fügt einen neuen Beitrag oben in alle gecachten Feeds der angegebenen Feed-Typen ein.
+   * So erscheint ein frisch erstellter Beitrag beim Feed-Typ-Wechsel sofort (ohne Skeleton
+   * und ohne "Hereinpoppen"), aber nur in Feeds, in denen er auch wirklich vorkommt.
+   */
+  prependPost: (post: any, feedTypes: string[]) => void;
+  /**
+   * Entfernt einen Beitrag aus allen gecachten Feeds. So verschwindet ein gelöschter
+   * Beitrag beim Feed-Typ-Wechsel nicht erst sichtbar (kein "Herauspoppen").
+   */
+  removePost: (postId: string) => void;
+  /**
+   * Aktualisiert Like-Status und -Anzahl eines Beitrags in allen gecachten Feeds.
+   * So ist ein Like beim Feed-Typ-Wechsel sofort korrekt (Herz + Zahl), ohne Umspringen.
+   */
+  updatePostLike: (postId: string, isLiked: boolean, likesDelta: number) => void;
+  /**
+   * Aktualisiert die Kommentaranzahl eines Beitrags in allen gecachten Feeds.
+   * So stimmt die Kommentarzahl beim Feed-Typ-Wechsel sofort, ohne Umspringen.
+   */
+  updatePostCommentCount: (postId: string, delta: number) => void;
+  /**
+   * In-Memory-Marker (überlebt SPA-Navigation, wird bei vollständigem Reload zurückgesetzt):
+   * Ob ein Feed-Typ in dieser Laufzeit-Session bereits geladen wurde.
+   * -> Nach echtem Reload erscheint beim ersten Öffnen wieder ein Skeleton,
+   *    beim Zurückkehren via In-App-Navigation dagegen nicht.
+   */
+  hasLoadedThisSession: (key: string) => boolean;
+  markLoadedThisSession: (key: string) => void;
 }
 
 const PostsCacheContext = createContext<PostsCacheContextType | undefined>(undefined);
@@ -46,6 +75,15 @@ export function PostsCacheProvider({ children }: { children: React.ReactNode }) 
 
   // In-Memory Cache für schnellen Zugriff - synchron geladen
   const postsCacheRef = useRef<Map<string, { posts: any[]; timestamp: number }>>(loadCacheFromStorage());
+
+  // In-Memory Marker "in dieser Laufzeit schon geladen" – NICHT persistiert.
+  // Überlebt SPA-Navigation (Provider bleibt gemountet), wird bei echtem Reload zurückgesetzt.
+  const loadedKeysRef = useRef<Set<string>>(new Set());
+
+  const hasLoadedThisSession = useCallback((key: string) => loadedKeysRef.current.has(key), []);
+  const markLoadedThisSession = useCallback((key: string) => {
+    loadedKeysRef.current.add(key);
+  }, []);
 
   const setPosts = useCallback((key: string, posts: any[]) => {
     const cacheEntry = {
@@ -101,8 +139,58 @@ export function PostsCacheProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
+  const prependPost = useCallback((post: any, feedTypes: string[]) => {
+    if (!post || !post._id) return;
+    // Cache-Key-Format: posts_${feedType}_${rankingMode}_${userId}
+    postsCacheRef.current.forEach((entry, key) => {
+      const matches = feedTypes.some((ft) => key.startsWith(`posts_${ft}_`));
+      if (!matches) return;
+      // Doppelte vermeiden
+      if (entry.posts.some((p: any) => p._id === post._id)) return;
+      setPosts(key, [post, ...entry.posts]);
+    });
+  }, [setPosts]);
+
+  const removePost = useCallback((postId: string) => {
+    if (!postId) return;
+    postsCacheRef.current.forEach((entry, key) => {
+      if (!entry.posts.some((p: any) => p._id === postId)) return;
+      setPosts(key, entry.posts.filter((p: any) => p._id !== postId));
+    });
+  }, [setPosts]);
+
+  const updatePostLike = useCallback((postId: string, isLiked: boolean, likesDelta: number) => {
+    if (!postId) return;
+    postsCacheRef.current.forEach((entry, key) => {
+      let changed = false;
+      const updated = entry.posts.map((p: any) => {
+        if (p._id !== postId) return p;
+        changed = true;
+        return {
+          ...p,
+          isLiked,
+          likesCount: Math.max(0, (p.likesCount ?? 0) + likesDelta),
+        };
+      });
+      if (changed) setPosts(key, updated);
+    });
+  }, [setPosts]);
+
+  const updatePostCommentCount = useCallback((postId: string, delta: number) => {
+    if (!postId) return;
+    postsCacheRef.current.forEach((entry, key) => {
+      let changed = false;
+      const updated = entry.posts.map((p: any) => {
+        if (p._id !== postId) return p;
+        changed = true;
+        return { ...p, commentsCount: Math.max(0, (p.commentsCount ?? 0) + delta) };
+      });
+      if (changed) setPosts(key, updated);
+    });
+  }, [setPosts]);
+
   return (
-    <PostsCacheContext.Provider value={{ setPosts, getPosts, clearCache }}>
+    <PostsCacheContext.Provider value={{ setPosts, getPosts, clearCache, prependPost, removePost, updatePostLike, updatePostCommentCount, hasLoadedThisSession, markLoadedThisSession }}>
       {children}
     </PostsCacheContext.Provider>
   );
