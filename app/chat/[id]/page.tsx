@@ -22,24 +22,8 @@ import { ChatEventMessage } from "@/components/chat-event-message";
 import { ChatLocationModal } from "@/components/chat-location-modal";
 import { ChatLocationMessage } from "@/components/chat-location-message";
 import { MessageLinkPreview } from "@/components/LinkPreview";
-
-type ParsedAiContent = {
-    summary: string;
-    details?: string;
-};
-
-function parseAiStructuredContent(text: string): ParsedAiContent | null {
-    const summaryMatch = text.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/i);
-    if (!summaryMatch) return null;
-
-    const summary = summaryMatch[1].trim();
-    if (!summary) return null;
-
-    const detailsMatch = text.match(/\[DETAILS\]([\s\S]*?)\[\/DETAILS\]/i);
-    const details = detailsMatch?.[1]?.trim();
-
-    return details ? { summary, details } : { summary };
-}
+import { linkifyText } from "@/lib/utils/linkify";
+import { parseAiStructuredContent, cleanAiText } from "@/lib/utils/ai-message";
 
 const AI_HISTORY_LIMIT = 6;
 
@@ -385,29 +369,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     };
 
     const getMember = (userId: string) => members?.find(m => m._id === userId);
-
-    const linkifyText = (text: string) => {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        const parts = text.split(urlRegex);
-
-        return parts.map((part, index) => {
-            if (part.match(urlRegex)) {
-                return (
-                    <a
-                        key={index}
-                        href={part}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#8C531E] underline break-all"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {part}
-                    </a>
-                );
-            }
-            return part;
-        });
-    };
 
     const toggleAiDetails = (messageId: string) => {
         setExpandedAiMessages((prev) => ({
@@ -974,7 +935,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                     return null;
                                                                 })()}
                                                                 <div>
-                                                                    {linkifyText(msg.content)}
+                                                                    {linkifyText(isAiMessage ? cleanAiText(msg.content) : msg.content)}
                                                                 </div>
                                                             </div>
                                                         )}
