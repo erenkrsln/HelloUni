@@ -369,6 +369,7 @@ export function ChatSidebar() {
                                 öffentlich
                               </span>
                             )}
+
                           </div>
                           <p className="text-xs text-gray-500 flex items-center pl-0.5 mt-0.5 font-normal min-w-0">
                             {liveCall ? (
@@ -441,6 +442,7 @@ export function ChatSidebar() {
                               {conv.unreadCount}
                             </div>
                           )}
+
                         </div>
                       </div>
                     </Link>
@@ -474,11 +476,10 @@ export function ChatSidebar() {
 
         {/* Drawer / Centered Modal on Desktop */}
         <div
-          className={`fixed inset-x-0 bottom-0 z-[80] flex flex-col bg-white rounded-t-3xl transition-all duration-300 ease-out h-[85vh] md:h-[80vh] md:max-h-[700px] md:w-[500px] md:rounded-3xl md:left-1/2 md:bottom-auto md:shadow-2xl ${
-            isNewChatOpen
-              ? "translate-y-0 opacity-100 md:top-1/2 md:-translate-y-1/2 md:-translate-x-1/2"
-              : "translate-y-full opacity-0 md:top-[55%] md:-translate-y-1/2 md:-translate-x-1/2 pointer-events-none"
-          }`}
+          className={`fixed inset-x-0 bottom-0 z-[80] flex flex-col bg-white rounded-t-3xl transition-all duration-300 ease-out h-[85vh] md:h-[80vh] md:max-h-[700px] md:w-[500px] md:rounded-3xl md:left-1/2 md:bottom-auto md:shadow-2xl ${isNewChatOpen
+            ? "translate-y-0 opacity-100 md:top-1/2 md:-translate-y-1/2 md:-translate-x-1/2"
+            : "translate-y-full opacity-0 md:top-[55%] md:-translate-y-1/2 md:-translate-x-1/2 pointer-events-none"
+            }`}
           style={{
             pointerEvents: isNewChatOpen ? "auto" : "none"
           }}
@@ -504,7 +505,7 @@ export function ChatSidebar() {
 
           {/* Scrollable Container for the entire modal body */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            
+
             {/* Search & Group Settings Area */}
             <div className="space-y-4">
               {/* Selected People Preview */}
@@ -544,7 +545,7 @@ export function ChatSidebar() {
               {/* Group Configuration options */}
               {selectedUsers.length > 1 && (
                 <div className="space-y-3.5 animate-in slide-in-from-top-2 duration-200">
-                  
+
                   {/* Group Name Input */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">

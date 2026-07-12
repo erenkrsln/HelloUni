@@ -210,7 +210,14 @@ export default function ChatPage() {
                       </div>
                       <div className="flex-1 min-w-0 flex justify-between items-start gap-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
+                            {isLeft && (
+                              <span className="bg-gray-100 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0">
+                                Verlassen
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-500 flex items-center pl-0.5 mt-0.5 min-w-0">
                             {conv.lastMessage ? (
                               (conv.lastMessage as any).type === "image" ? (

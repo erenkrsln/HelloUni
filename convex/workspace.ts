@@ -405,8 +405,19 @@ export const addMember = mutation({
 
     const participants = conv.participants || [];
     if (!participants.includes(args.userId)) {
+      const leftParticipants = conv.leftParticipants || [];
+      const newLeftParticipants = leftParticipants.filter(
+        (id) => id !== args.userId,
+      );
+      const leftMetadata = conv.leftMetadata || [];
+      const newMetadata = leftMetadata.filter(
+        (m) => m.userId !== args.userId,
+      );
+
       await ctx.db.patch(args.conversationId, {
         participants: [...participants, args.userId],
+        leftParticipants: newLeftParticipants,
+        leftMetadata: newMetadata,
       });
     }
 
@@ -446,9 +457,43 @@ export const removeMember = mutation({
 
     const participants = group.participants || [];
     if (participants.includes(args.userId)) {
+      const newParticipants = participants.filter((p: any) => p !== args.userId);
+      const newAdmins = (group.adminIds || []).filter((id: any) => id !== args.userId);
+
+      // Ensure uniqueness in leftParticipants
+      const currentLeft = group.leftParticipants || [];
+      const newLeftParticipants = currentLeft.includes(args.userId)
+        ? currentLeft
+        : [...currentLeft, args.userId];
+
+      // Update leftMetadata
+      const currentMetadata = group.leftMetadata || [];
+      const newMetadata = [
+        ...currentMetadata.filter((m: any) => m.userId !== args.userId),
+        { userId: args.userId, leftAt: Date.now() },
+      ];
+
       await ctx.db.patch(args.conversationId, {
-        participants: participants.filter((p: any) => p !== args.userId),
+        participants: newParticipants,
+        adminIds: newAdmins,
+        leftParticipants: newLeftParticipants,
+        leftMetadata: newMetadata,
       });
+
+      // System message
+      const adminUser = await ctx.db.get(args.actorId);
+      const removedMember = await ctx.db.get(args.userId);
+
+      if (adminUser && removedMember) {
+        await ctx.db.insert("messages", {
+          conversationId: args.conversationId,
+          senderId: args.actorId,
+          content: `${adminUser.name} hat ${removedMember.name} entfernt`,
+          type: "system",
+          visibleTo: [...newParticipants, args.userId], // Visible to remaining members + removed user (as final msg)
+          createdAt: Date.now(),
+        });
+      }
     }
 
     await ctx.db.insert("workspace_activity", {

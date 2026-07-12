@@ -104,7 +104,7 @@ export function ChatFilesModal({
         className={
           selectedMedia
             ? "duration-0 p-0 border-0 rounded-none max-w-none w-screen h-screen bg-transparent"
-            : "duration-0 flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white max-w-[560px]"
+            : "duration-0 flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white w-[90vw] max-w-[400px] h-[520px] max-h-[85vh] sm:w-[640px] sm:h-[680px] sm:max-w-none sm:max-h-[90vh]"
         }
       >
         {selectedMedia ? (
