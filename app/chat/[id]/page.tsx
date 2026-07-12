@@ -1230,7 +1230,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 >
                     {isLeft
                         ? "Du bist kein Mitglied dieser Gruppe mehr."
-                        : "Du bist nicht berechtigt Nachrichten in dieser Gruppe zu schreiben."}
+                        : "Nur Admins können Nachrichten in dieser Gruppe schreiben."}
                 </div>
             )}
 
