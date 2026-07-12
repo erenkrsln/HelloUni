@@ -53,7 +53,7 @@ export default function ImprintPage() {
                 <section className="mb-8 bg-background p-6 input-card">
                     <h2 className="text-2xl font-semibold mb-4 text-foreground ">Anschrift</h2>
                     <p className="text-foreground leading-relaxed mb-4 font-semibold ">
-                        Katharina Schröder-Thurner
+                        Franziska Winkler
                     </p>
                     <p className="text-foreground leading-relaxed mb-4 ">
                         Gebäudeteile WB, WD und WE <br />
@@ -65,7 +65,7 @@ export default function ImprintPage() {
                 <section className="mb-8 bg-background p-6 input-card">
                     <h2 className="text-2xl font-semibold mb-4 text-foreground ">Kontakt</h2>
                     <p className="text-foreground leading-relaxed mb-4 ">
-                        E-Mail: k.schroeder-thurner@hello-uni.de <br />
+                        E-Mail: f.winkler@hello-uni.de <br />
                         Telefon: 0123/0123456 <br />
                         Fax: 0123/0123458 <br />
                     </p>

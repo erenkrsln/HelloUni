@@ -9,6 +9,7 @@ import { X, Heart, MessageCircle, SlidersHorizontal, Check, ThumbsDown } from "l
 import { formatTimeAgo } from "@/lib/utils";
 import { renderContentWithMentions } from "@/lib/mentions";
 import { Spinner } from "@/components/ui/spinner";
+import { usePostsCache } from "@/lib/contexts/posts-context";
 
 interface Comment {
   _id: Id<"comments">;
@@ -37,6 +38,10 @@ interface CommentDrawerProps {
   currentUserId?: Id<"users">;
   commentsCount: number;
   highlightCommentId?: string;
+  /** Eingebettete FeedCard, die auf Desktop oben im Modal angezeigt wird */
+  postCard?: React.ReactNode;
+  /** Name des Beitrags-Autors - wird im Desktop-Header als Titel angezeigt */
+  authorName?: string;
 }
 
 export function CommentDrawer({
@@ -46,6 +51,8 @@ export function CommentDrawer({
   currentUserId,
   commentsCount,
   highlightCommentId,
+  postCard,
+  authorName,
 }: CommentDrawerProps) {
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<Id<"comments"> | null>(null);
@@ -76,6 +83,7 @@ export function CommentDrawer({
   const createComment = useMutation(api.mutations.createComment);
   const likeComment = useMutation(api.mutations.likeComment);
   const dislikeComment = useMutation(api.mutations.dislikeComment);
+  const { updatePostCommentCount } = usePostsCache();
 
   // Always query comments (even when drawer is closed) to keep cache fresh
   // This prevents flickering when reopening the drawer
@@ -295,7 +303,15 @@ export function CommentDrawer({
   // Close drawer on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Ist ein Radix-Dialog (z.B. die Teilnehmerliste) über dem Drawer geöffnet,
+      // gehören Klicks (Schließen-Button/Overlay) zu diesem Dialog -> Drawer nicht schließen.
+      // Radix (react-remove-scroll) setzt beim Öffnen `data-scroll-locked` am body.
+      const radixDialogOpen =
+        typeof document !== "undefined" &&
+        document.body.hasAttribute("data-scroll-locked");
+
       if (
+        !radixDialogOpen &&
         drawerRef.current &&
         !drawerRef.current.contains(event.target as Node) &&
         isOpen
@@ -507,6 +523,12 @@ export function CommentDrawer({
         parentCommentId: replyToId || undefined,
         content: textToSubmit || "",
       });
+
+      // Nur Top-Level-Kommentare zählen zu post.commentsCount. Anzahl in allen
+      // Feed-Caches erhöhen, damit die Kommentarzahl beim Feed-Typ-Wechsel sofort stimmt.
+      if (!replyToId) {
+        updatePostCommentCount(postId as string, 1);
+      }
 
       // If this was a reply, automatically expand all parent comments in the hierarchy
       // This ensures nested replies are visible immediately
@@ -845,22 +867,29 @@ export function CommentDrawer({
         onClick={onClose}
       />
 
-      {/* Drawer */}
+      {/* Drawer (Mobile: Bottom-Sheet, Desktop: zentriertes Modal) */}
       <div
         ref={drawerRef}
-        className={`fixed bottom-0 left-0 right-0 bg-card text-card-foreground rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"
-          } h-[75dvh] overflow-hidden`}
+        className={`fixed z-[60] bg-card text-card-foreground flex flex-col overflow-hidden transition-transform duration-300 ease-out md:transition-none bottom-0 left-0 right-0 h-[75dvh] rounded-t-3xl md:inset-0 md:m-auto md:h-[85vh] md:max-h-[720px] md:w-[600px] md:max-w-[calc(100vw-2rem)] md:rounded-3xl md:shadow-2xl ${isOpen
+          ? "translate-y-0"
+          : "translate-y-full md:hidden"
+          }`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
           overscrollBehavior: 'none', // Verhindert Hüpfen auf iOS
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-          <h2 className="text-base font-semibold text-foreground">
-            {commentsCount} {commentsCount === 1 ? "Kommentar" : "Kommentare"}
+        <div className="relative flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
+          <h2 className="min-w-0 text-base font-semibold text-foreground truncate md:absolute md:inset-x-0 md:px-14 md:text-center md:pointer-events-none">
+            <span className="md:hidden">
+              {commentsCount} {commentsCount === 1 ? "Kommentar" : "Kommentare"}
+            </span>
+            <span className="hidden md:inline">
+              {authorName ? `${authorName}'s Beitrag` : "Beitrag"}
+            </span>
           </h2>
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center gap-2 relative ml-auto">
             {/* Filter Icon */}
             {commentsCount > 0 && (
               <div ref={filterRef} className="relative">
@@ -924,6 +953,14 @@ export function CommentDrawer({
             WebkitOverflowScrolling: 'touch',
           }}
         >
+          {/* Eingebettete FeedCard - nur auf Desktop im Modal sichtbar.
+              Wird erst beim Öffnen gemountet, damit sie den aktuellen Poll-/Like-Zustand
+              (z.B. bereits abgegebene Stimme inkl. Prozentzahlen) frisch übernimmt. */}
+          {isOpen && postCard && (
+            <div className="hidden md:block border-b border-border">
+              {postCard}
+            </div>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner size="md" />

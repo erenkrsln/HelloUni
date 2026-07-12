@@ -20,6 +20,17 @@ import { SharePostModal } from "./share-post-modal";
 import { ShareMenuModal } from "./share-menu-modal";
 // Importiere den gemeinsamen globalen Bild-Cache
 import { globalLoadedImagesCache, isImageLoaded, markImageAsLoaded } from "@/lib/cache/imageCache";
+import { usePostsCache } from "@/lib/contexts/posts-context";
+
+// Synchronisiert Poll-Stimmen zwischen mehreren FeedCard-Instanzen desselben Posts
+// (z.B. der Karte im Feed und der eingebetteten Karte im Kommentar-Modal) innerhalb desselben Tabs.
+const POLL_VOTE_SYNC_EVENT = "pollVoteSync";
+function broadcastPollVote(postId: string, vote: number | null, results: number[]) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(POLL_VOTE_SYNC_EVENT, { detail: { postId, vote, results } })
+  );
+}
 
 interface FeedCardProps {
   post: {
@@ -56,14 +67,16 @@ interface FeedCardProps {
   isFirst?: boolean; // Wenn true, erhält das Beitragsbild priority (wichtig für LCP)
   autoOpenCommentId?: string; // Auto-open drawer and highlight this comment
   hideActions?: boolean;
+  isEmbedded?: boolean; // Wenn true: FeedCard wird im Kommentar-Modal (Desktop) eingebettet und rendert keine eigenen Modals/Drawer
 }
 
-export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId, hideActions = false }: FeedCardProps) {
+export function FeedCard({ post, currentUserId, showDivider = true, isFirst = false, autoOpenCommentId, hideActions = false, isEmbedded = false }: FeedCardProps) {
   const likePost = useMutation(api.mutations.likePost);
   const isOwnPost = currentUserId && post.userId === currentUserId;
   const joinEvent = useMutation(api.mutations.joinEvent);
   const leaveEvent = useMutation(api.mutations.leaveEvent);
   const votePoll = useMutation(api.mutations.votePoll);
+  const { updatePostLike } = usePostsCache();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -254,6 +267,22 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
     }
   }, [optimisticPollVote, pollVoteFromQuery, pollVoteStorageKey]);
 
+  // Auf Poll-Stimmen aus anderen Instanzen desselben Posts hören (gleicher Tab).
+  // So wird eine Stimme aus dem Kommentar-Modal sofort in der Feed-Karte übernommen und umgekehrt.
+  useEffect(() => {
+    if (post.postType !== "poll") return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { postId?: string; vote?: number | null; results?: number[] }
+        | undefined;
+      if (!detail || detail.postId !== post._id) return;
+      if (detail.vote !== undefined) setOptimisticPollVote(detail.vote);
+      if (Array.isArray(detail.results)) setOptimisticPollResults(detail.results);
+    };
+    window.addEventListener(POLL_VOTE_SYNC_EVENT, handler);
+    return () => window.removeEventListener(POLL_VOTE_SYNC_EVENT, handler);
+  }, [post._id, post.postType]);
+
   const [isJoining, setIsJoining] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
 
@@ -392,6 +421,10 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
     setOptimisticLiked(newLikedState);
     setIsLiking(true);
 
+    // Like-Status + Anzahl in allen gecachten Feeds aktualisieren, damit es beim
+    // Feed-Typ-Wechsel sofort korrekt ist (Herz + Zahl), ohne Umspringen.
+    updatePostLike(post._id, newLikedState, newLikedState ? 1 : -1);
+
     try {
       await likePost({ userId: currentUserId, postId: post._id });
       // Update lastKnownState after successful like
@@ -399,6 +432,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
     } catch (error) {
       // Revert on error
       setOptimisticLiked(wasLiked);
+      updatePostLike(post._id, wasLiked, newLikedState ? -1 : 1);
       console.error("Error liking post:", error);
     } finally {
       setIsLiking(false);
@@ -475,12 +509,17 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
     setOptimisticPollVote(optionIndex);
     setOptimisticPollResults(newResults);
 
+    // Andere Instanzen dieses Posts (Feed-Karte <-> eingebettete Karte im Kommentar-Modal)
+    // sofort synchronisieren, damit die Auswahl inkl. Prozentzahlen überall gleich ist
+    broadcastPollVote(post._id, optionIndex, newResults);
+
     try {
       await votePoll({ userId: currentUserId, postId: post._id, optionIndex });
     } catch (error) {
       // Revert optimistic updates on error
       setOptimisticPollVote(previousVote);
       setOptimisticPollResults(normalizedResults);
+      broadcastPollVote(post._id, previousVote, normalizedResults);
       console.error("Error voting:", error);
     } finally {
       setIsVoting(false);
@@ -504,7 +543,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
   return (
     <>
       <article
-        className="relative px-4 py-3 desktop-feed-card"
+        className={`relative px-4 py-3 ${isEmbedded ? "" : "desktop-feed-card"}`}
         style={{
           marginBottom: "0",
           borderBottom: showDivider ? "1px solid rgba(0, 0, 0, 0.1)" : "none"
@@ -850,34 +889,50 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
         </div>
       </article>
 
-      {/* Share Menu Modal (External platforms & Internal) */}
-      <ShareMenuModal 
-        isOpen={isExternalShareMenuOpen}
-        onClose={() => setIsExternalShareMenuOpen(false)}
-        postId={post._id}
-        postTitle={post.title}
-        onInternalShare={() => setIsShareModalOpen(true)}
-      />
+      {/* Modals / Drawer werden bei eingebetteten Karten (im Kommentar-Modal) nicht gerendert,
+          um Rekursion und doppelte Overlays zu vermeiden */}
+      {!isEmbedded && (
+        <>
+          {/* Share Menu Modal (External platforms & Internal) */}
+          <ShareMenuModal
+            isOpen={isExternalShareMenuOpen}
+            onClose={() => setIsExternalShareMenuOpen(false)}
+            postId={post._id}
+            postTitle={post.title}
+            onInternalShare={() => setIsShareModalOpen(true)}
+          />
 
-      {/* Share Post Modal - used for internal sharing (In HelloUni senden) */}
-      {currentUserId && (
-        <SharePostModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          postId={post._id}
-          currentUserId={currentUserId}
-        />
+          {/* Share Post Modal - used for internal sharing (In HelloUni senden) */}
+          {currentUserId && (
+            <SharePostModal
+              isOpen={isShareModalOpen}
+              onClose={() => setIsShareModalOpen(false)}
+              postId={post._id}
+              currentUserId={currentUserId}
+            />
+          )}
+
+          {/* Comment Drawer */}
+          <CommentDrawer
+            isOpen={isDrawerOpen}
+            onClose={() => setIsDrawerOpen(false)}
+            postId={post._id}
+            currentUserId={currentUserId}
+            commentsCount={post.commentsCount}
+            highlightCommentId={autoOpenCommentId}
+            authorName={post.user.name}
+            postCard={
+              <FeedCard
+                post={post}
+                currentUserId={currentUserId}
+                showDivider={false}
+                hideActions
+                isEmbedded
+              />
+            }
+          />
+        </>
       )}
-
-      {/* Comment Drawer */}
-      <CommentDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        postId={post._id}
-        currentUserId={currentUserId}
-        commentsCount={post.commentsCount}
-        highlightCommentId={autoOpenCommentId}
-      />
     </>
   );
 }

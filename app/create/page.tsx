@@ -10,6 +10,7 @@ import { LoadingScreen } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { ImagePlus, X, ChevronDown, MapPin } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { usePostsCache } from "@/lib/contexts/posts-context";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { LocationDisplay } from "@/components/location-display";
@@ -161,6 +162,7 @@ export default function CreatePage() {
 
     // Mutations werden sofort initialisiert, blockieren nicht
     const createPost = useMutation(api.mutations.createPost);
+    const { prependPost } = usePostsCache();
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -184,11 +186,13 @@ export default function CreatePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Erlaube Posts ohne Text, wenn ein Bild vorhanden ist
+        // Erlaube Posts ohne Text, wenn ein Bild vorhanden ist.
+        // Umfragen dürfen ganz ohne Text/Bild gepostet werden (Options-Validierung unten).
         const hasContent = content.trim().length > 0;
         const hasImage = selectedImage !== null;
 
-        if (!currentUser || (!hasContent && !hasImage) || isSubmitting) return;
+        if (!currentUser || isSubmitting) return;
+        if (postType !== "poll" && !hasContent && !hasImage) return;
 
         // Validierung je nach Post-Typ
         if ((postType === "spontaneous_meeting" || postType === "recurring_meeting") && !eventDate) {
@@ -268,7 +272,7 @@ export default function CreatePage() {
                 }
 
                 // Post erstellen
-                await createPost({
+                const newPostId = await createPost({
                     userId: currentUser._id,
                     postType,
                     title: title.trim() || undefined,
@@ -285,6 +289,52 @@ export default function CreatePage() {
                     longitude: longitude ?? undefined,
                     locationName: locationName ?? undefined,
                 });
+
+                // Neuen Beitrag optimistisch in die passenden Feed-Caches einfügen,
+                // damit er beim Feed-Typ-Wechsel sofort da ist (ohne Skeleton / Pop-in).
+                // Nur in Feeds, in denen er auch wirklich vorkommt:
+                //  - "all"/"major": eigener Beitrag ist immer enthalten
+                //  - "interests": nur wenn die Tags zu den eigenen Interessen passen
+                //  - "following": NICHT (man folgt sich nicht selbst)
+                const cu = currentUser as any;
+                const optimisticPost = {
+                    _id: newPostId,
+                    userId: currentUser._id,
+                    postType,
+                    title: title.trim() || undefined,
+                    content: content.trim() || "",
+                    imageUrl,
+                    eventDate: eventDateTimestamp,
+                    eventTime: eventTime || undefined,
+                    participantLimit: participantLimit || undefined,
+                    recurrencePattern: recurrencePattern || undefined,
+                    pollOptions: validPollOptions,
+                    tags: validTags,
+                    mentions: validMentions,
+                    latitude: latitude ?? undefined,
+                    longitude: longitude ?? undefined,
+                    locationName: locationName ?? undefined,
+                    likesCount: 0,
+                    commentsCount: 0,
+                    participantsCount: 0,
+                    createdAt: Date.now(),
+                    isLiked: false,
+                    user: {
+                        _id: currentUser._id,
+                        name: cu.name,
+                        username: cu.username,
+                        image: cu.image,
+                        uni_name: cu.uni_name,
+                        major: cu.major,
+                        semester: cu.semester,
+                    },
+                };
+                const eligibleFeeds = ["all", "major"];
+                const userInterests = cu.interests as string[] | undefined;
+                if (validTags && userInterests && validTags.some((t) => userInterests.includes(t))) {
+                    eligibleFeeds.push("interests");
+                }
+                prependPost(optimisticPost, eligibleFeeds);
 
                 if (selectedImage) {
                     sessionStorage.setItem("uploadProgress", "100");
@@ -488,7 +538,11 @@ export default function CreatePage() {
                     <button
                         type="submit"
                         form="create-post-form"
-                        disabled={!content.trim() && !selectedImage}
+                        disabled={
+                            postType === "poll"
+                                ? pollOptions.filter((opt) => opt.trim() !== "").length < 2
+                                : !content.trim() && !selectedImage
+                        }
                         className="text-base font-medium text-[#D08945] hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
                     >
                         Posten

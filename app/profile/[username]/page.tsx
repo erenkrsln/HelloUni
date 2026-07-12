@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ProfileHeader } from "@/components/profile-header";
+import { ProfileGroupsSection } from "@/components/profile-groups-section";
 import { FeedCard } from "@/components/feed-card";
 import { Header } from "@/components/header";
 import { BottomNavigation } from "@/components/bottom-navigation";
@@ -74,6 +75,10 @@ export default function UserProfilePage() {
 
     return (
         <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden">
+            {/* Globaler Header nur auf Desktop: Logo links, Glocke + Profilbild rechts */}
+            <div className="hidden md:block">
+                <Header onMenuClick={() => setIsSidebarOpen(true)} transparent />
+            </div>
             {/* Mobile Sidebar */}
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
             {isLoading ? (
@@ -105,6 +110,13 @@ export default function UserProfilePage() {
                         isFollowing={profileData.isFollowing}
                         onEditClick={isOwnProfile ? () => setIsEditModalOpen(true) : undefined}
                     />
+
+                    {/* TODO: Re-enable Groups Section once Convex regenerates types for getUserGroupsForProfile */}
+                    {/* <ProfileGroupsSection
+                        userId={profileData.user._id}
+                        showOnlyPublic={true}
+                        maxDisplay={3}
+                    /> */}
 
                     {/* Posts section */}
                     <div data-posts-section>

@@ -2,6 +2,7 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { getImageUrl, getUserImageUrl, getGroupImageUrl } from "./helpers";
+import { calculateRankingScore, ScoringFactors } from "./scoring";
 
 const AI_ASSISTANT_USERNAME = "jastell";
 const AI_ASSISTANT_DISPLAY_NAME = "Jastell (HelloUni-KI)";
@@ -78,31 +79,41 @@ export const getFeed = query({
       .order("desc")
       .collect();
 
-    // Batch-Abfrage aller Likes für diesen User
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
       });
     }
 
+    // Autoren einmalig laden + Bild-URL einmalig auflösen (viele Posts teilen denselben Autor)
+    const uniqueUserIds = Array.from(new Set(posts.map((p) => p.userId as string)));
+    const usersById = new Map<string, any>();
+    await Promise.all(
+      uniqueUserIds.map(async (uid) => {
+        const u = await ctx.db.get(uid as Id<"users">);
+        if (u) {
+          const resolvedImage = await getUserImageUrl(ctx, u.image);
+          usersById.set(uid, { ...u, image: resolvedImage });
+        } else {
+          usersById.set(uid, null);
+        }
+      })
+    );
+
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
+        const user = usersById.get(post.userId as string) || null;
         let imageUrl = post.imageUrl;
 
         // Convert storage ID to URL if it exists
         imageUrl = await getImageUrl(ctx, imageUrl);
-        const userImageUrl = await getUserImageUrl(ctx, user?.image);
 
         // Calculate actual participants count for events
         let actualParticipantsCount = post.participantsCount || 0;
@@ -114,8 +125,8 @@ export const getFeed = query({
           actualParticipantsCount = participants.length;
         }
 
-        // Calculate actual comments count (only top-level comments)
-        const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+        // Kommentaranzahl aus gespeichertem Zähler (in Mutationen gepflegt, Top-Level)
+        const actualCommentsCount = post.commentsCount ?? 0;
 
         return {
           ...post,
@@ -123,16 +134,308 @@ export const getFeed = query({
           commentsCount: actualCommentsCount,
           imageUrl,
           isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
-          user: user ? {
-            ...user,
-            image: userImageUrl,
-          } : null,
+          user: user || null,
         };
       })
     );
 
     return postsWithUsers;
   },
+});
+
+/**
+ * Get feed with engagement-based ranking algorithm
+ * Combines engagement metrics, recency, and personalization
+ */
+export const getFeedWithRanking = query({
+  args: {
+    userId: v.optional(v.id("users")),
+    rankBy: v.optional(v.string()), // "engagement", "trending", or "chronological" (default)
+    feedType: v.optional(v.string()), // "all", "major", "following", "interests"
+  },
+  handler: async (ctx, args) => {
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    // Get current user's follows for personalization
+    let followingIds: Id<"users">[] = [];
+    if (args.userId) {
+      const follows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q: any) => q.eq("followerId", args.userId))
+        .collect();
+      followingIds = follows.map((f: any) => f.followingId);
+    }
+
+    // Likes des aktuellen Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const userLikes = await ctx.db
+        .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
+        .collect();
+
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
+    // Get current user for interest/major matching
+    let currentUser: any = null;
+    if (args.userId) {
+      currentUser = await ctx.db.get(args.userId);
+    }
+
+    // Autoren einmalig laden + Bild-URL einmalig auflösen (viele Posts teilen denselben Autor)
+    const uniqueUserIds = Array.from(new Set(posts.map((p) => p.userId as string)));
+    const usersById = new Map<string, any>();
+    await Promise.all(
+      uniqueUserIds.map(async (uid) => {
+        const u = await ctx.db.get(uid as Id<"users">);
+        if (u) {
+          const resolvedImage = await getUserImageUrl(ctx, u.image);
+          usersById.set(uid, { ...u, image: resolvedImage });
+        } else {
+          usersById.set(uid, null);
+        }
+      })
+    );
+
+    // Enrich posts with rankings
+    const postsWithScores = await Promise.all(
+      posts.map(async (post) => {
+        const user = usersById.get(post.userId as string) || null;
+        let imageUrl = post.imageUrl;
+
+        // Convert storage ID to URL if it exists
+        imageUrl = await getImageUrl(ctx, imageUrl);
+
+        // Calculate actual participants count for events
+        let actualParticipantsCount = post.participantsCount || 0;
+        if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+          const participants = await ctx.db
+            .query("participants")
+            .withIndex("by_post", (q) => q.eq("postId", post._id))
+            .collect();
+          actualParticipantsCount = participants.length;
+        }
+
+        // Kommentaranzahl: gespeicherten Zähler nutzen (wird in den Mutationen gepflegt,
+        // Top-Level-Kommentare) statt pro Post die Kommentare neu zu scannen
+        const actualCommentsCount = post.commentsCount ?? 0;
+
+        // Determine if post matches user interests/major
+        let matchesUserInterests = false;
+        let matchesUserMajor = false;
+        if (currentUser && user) {
+          if (currentUser.interests && Array.isArray(currentUser.interests)) {
+            matchesUserInterests = currentUser.interests.some((interest: string) =>
+              post.tags && Array.isArray(post.tags) && post.tags.includes(interest)
+            );
+          }
+          if (currentUser.major && user.major === currentUser.major) {
+            matchesUserMajor = true;
+          }
+        }
+
+        // Calculate ranking score if ranking is enabled
+        let rankingScore = 0;
+        if (args.rankBy && args.rankBy !== "chronological") {
+          const scoringFactors: ScoringFactors = {
+            likesCount: post.likesCount || 0,
+            commentsCount: actualCommentsCount,
+            participantsCount: actualParticipantsCount,
+            createdAt: post.createdAt,
+            isFromFollowedUser: followingIds.includes(post.userId),
+            matchesUserInterests,
+            matchesUserMajor,
+            isEvent: post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting",
+            eventDate: post.eventDate,
+          };
+          rankingScore = calculateRankingScore(scoringFactors);
+        }
+
+        return {
+          ...post,
+          participantsCount: actualParticipantsCount,
+          commentsCount: actualCommentsCount,
+          imageUrl,
+          isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+          rankingScore, // Include score for sorting
+          user: user || null,
+        };
+      })
+    );
+
+    // Apply Feed Filters
+    let filteredPosts = postsWithScores;
+    const feedType = args.feedType || "all";
+
+    if (feedType === "following" && args.userId) {
+      filteredPosts = postsWithScores.filter(p => followingIds.includes(p.userId));
+    } else if (feedType === "major" && currentUser) {
+      filteredPosts = postsWithScores.filter(p => p.user && p.user.major === currentUser.major);
+    } else if (feedType === "interests" && currentUser && currentUser.interests) {
+      const userInterests = currentUser.interests;
+      filteredPosts = postsWithScores.filter(p =>
+        p.tags && Array.isArray(p.tags) && p.tags.some((tag: string) => userInterests.includes(tag))
+      );
+    }
+
+    // Sort based on ranking strategy
+    if (args.rankBy === "engagement" || args.rankBy === "trending") {
+      // Sort by ranking score (highest first)
+      return filteredPosts.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+    } else {
+      // Default to chronological (newest first)
+      return filteredPosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    }
+  },
+});
+
+// Get default recommended posts on the search page (5 latest same-major posts or 5 top-ranked posts)
+export const getSearchDefaultPosts = query({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    // 1. Get current user's major if logged in
+    let major: string | undefined = undefined;
+    let currentUser = null;
+    if (args.userId) {
+      currentUser = await ctx.db.get(args.userId);
+      major = currentUser?.major;
+    }
+
+    let postsToShow: any[] = [];
+
+    // Fetch all posts ordered by date descending
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_created")
+      .order("desc")
+      .collect();
+
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
+    let userLikesMap: Record<string, boolean> = {};
+    if (args.userId) {
+      const userLikes = await ctx.db
+        .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
+        .collect();
+
+      userLikes.forEach((like) => {
+        userLikesMap[like.postId as string] = true;
+      });
+    }
+
+    // Resolve user follows for score calculation
+    let followingIds: Id<"users">[] = [];
+    if (args.userId) {
+      const follows = await ctx.db
+        .query("follows")
+        .withIndex("by_follower", (q: any) => q.eq("followerId", args.userId))
+        .collect();
+      followingIds = follows.map((f: any) => f.followingId);
+    }
+
+    // Helper to enrich a post
+    const enrichPost = async (post: any) => {
+      const user: any = await ctx.db.get(post.userId);
+      const imageUrl = await getImageUrl(ctx, post.imageUrl);
+      const userImageUrl = await getUserImageUrl(ctx, user?.image);
+
+      let actualParticipantsCount = post.participantsCount || 0;
+      if (post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting") {
+        const participants = await ctx.db
+          .query("participants")
+          .withIndex("by_post", (q) => q.eq("postId", post._id))
+          .collect();
+        actualParticipantsCount = participants.length;
+      }
+
+      const actualCommentsCount = await calculateCommentsCount(ctx, post._id);
+
+      // Determine ranking score for engagement ranking
+      let rankingScore = 0;
+      let matchesUserInterests = false;
+      let matchesUserMajor = false;
+      if (currentUser && user) {
+        if (currentUser.interests && Array.isArray(currentUser.interests)) {
+          matchesUserInterests = currentUser.interests.some((interest: string) =>
+            post.tags && Array.isArray(post.tags) && post.tags.includes(interest)
+          );
+        }
+        if (currentUser.major && user.major === currentUser.major) {
+          matchesUserMajor = true;
+        }
+      }
+
+      const scoringFactors: ScoringFactors = {
+        likesCount: post.likesCount || 0,
+        commentsCount: actualCommentsCount,
+        participantsCount: actualParticipantsCount,
+        createdAt: post.createdAt,
+        isFromFollowedUser: followingIds.includes(post.userId),
+        matchesUserInterests,
+        matchesUserMajor,
+        isEvent: post.postType === "spontaneous_meeting" || post.postType === "recurring_meeting",
+        eventDate: post.eventDate,
+      };
+      rankingScore = calculateRankingScore(scoringFactors);
+
+      return {
+        ...post,
+        participantsCount: actualParticipantsCount,
+        commentsCount: actualCommentsCount,
+        imageUrl,
+        isLiked: args.userId ? (userLikesMap[post._id as string] ?? false) : undefined,
+        rankingScore,
+        user: user ? {
+          ...user,
+          image: userImageUrl,
+        } : null,
+      };
+    };
+
+    // If user has a major, try to find latest posts from people of the same major
+    if (major) {
+      const sameMajorPosts: any[] = [];
+      for (const post of posts) {
+        if (args.userId && post.userId === args.userId) {
+          continue;
+        }
+        const author = await ctx.db.get(post.userId);
+        if (author && author.major === major) {
+          sameMajorPosts.push(post);
+          if (sameMajorPosts.length === 5) {
+            break;
+          }
+        }
+      }
+
+      if (sameMajorPosts.length > 0) {
+        // Enrich and return the same-major posts (up to 5)
+        postsToShow = await Promise.all(sameMajorPosts.map(enrichPost));
+      }
+    }
+
+    // If no posts from same major were found (or user has no major), get the last 5 posts in all and empfohlen
+    if (postsToShow.length === 0) {
+      const otherPosts = args.userId
+        ? posts.filter(p => p.userId !== args.userId)
+        : posts;
+      const enrichedAllPosts = await Promise.all(otherPosts.map(enrichPost));
+      // Sort by rankingScore descending (empfohlen on home feed)
+      enrichedAllPosts.sort((a, b) => (b.rankingScore || 0) - (a.rankingScore || 0));
+      postsToShow = enrichedAllPosts.slice(0, 5);
+    }
+
+    return postsToShow;
+  }
 });
 
 export const getPost = query({
@@ -230,15 +533,16 @@ export const getUserLikesBatch = query({
     }
 
     try {
-      // Hole alle Likes und filtere nach userId und postIds
-      // Da der zusammengesetzte Index nicht nur mit userId funktioniert, holen wir alle Likes
-      const allLikes = await ctx.db
+      // Likes des Users gezielt über Index by_user_post (Prefix nur userId) laden
+      // und auf die relevanten Posts filtern – kein Full-Scan der likes-Tabelle
+      const postIdSet = new Set(args.postIds.map((id) => id as string));
+      const allUserLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
 
-      // Filtere Likes für diesen User und die relevanten Posts
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && args.postIds.includes(like.postId)
+      const userLikes = allUserLikes.filter((like) =>
+        postIdSet.has(like.postId as string)
       );
 
       // Erstelle eine Map: postId -> isLiked (als String-Keys für Record)
@@ -305,17 +609,13 @@ export const getUserPosts = query({
       .order("desc")
       .collect();
 
-    // Batch-Abfrage aller Likes für diesen User
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -516,14 +816,10 @@ export const getFollowingFeed = query({
     // Batch-Abfrage aller Likes für diesen User
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = followingPosts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -823,17 +1119,13 @@ export const getFilteredFeed = query({
       });
     }
 
-    // Batch-Abfrage aller Likes für diesen User
+    // Likes des Users gezielt über Index laden (kein Full-Scan der likes-Tabelle)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = posts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -1129,6 +1421,52 @@ export const getConversationDisplay = query({
   },
 });
 
+export const getGroupById = query({
+  args: { groupId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const group = await ctx.db.get(args.groupId);
+    if (!group) return null;
+
+    return {
+      _id: group._id,
+      name: group.name,
+      description: group.description,
+      icon: group.icon,
+      creatorId: group.creatorId,
+      adminIds: group.adminIds || [],
+      participants: group.participants || [],
+      isGroup: group.isGroup,
+    };
+  },
+});
+
+export const getWorkspaceGroup = query({
+  args: { groupId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    // Get workspace group metadata from workspace_groups table
+    const workspaceGroup = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.groupId))
+      .first();
+
+    if (!workspaceGroup) return null;
+
+    return {
+      _id: workspaceGroup._id,
+      conversationId: workspaceGroup.conversationId,
+      title: workspaceGroup.title,
+      description: workspaceGroup.description,
+      groupType: workspaceGroup.groupType,
+      customGroupType: workspaceGroup.customGroupType,
+      currentGoal: workspaceGroup.currentGoal,
+      visibility: workspaceGroup.visibility,
+      createdAt: workspaceGroup.createdAt,
+      ownerId: workspaceGroup.ownerId,
+      adminIds: workspaceGroup.adminIds || [],
+    };
+  },
+});
+
 export const getConversationMembers = query({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
@@ -1397,7 +1735,7 @@ export const searchGlobal = query({
 
     const matchingUsers = await Promise.all(
       allUsers
-        .filter(user => (
+        .filter(user => !isAiAssistantUser(user) && (
           (user.name && user.name.toLowerCase().includes(searchLower)) ||
           (user.username && user.username.toLowerCase().includes(searchLower))
         ))
@@ -1474,7 +1812,7 @@ export const searchProfiles = query({
       .collect();
 
     // Filter users by name or username (case-insensitive)
-    let matchingUsers = allUsers;
+    let matchingUsers = allUsers.filter(user => !isAiAssistantUser(user));
     if (args.searchTerm && args.searchTerm.trim().length > 0) {
       const searchLow = args.searchTerm.toLowerCase().trim();
       matchingUsers = matchingUsers.filter((user) => matchesChatUserSearch(user, searchLow));
@@ -1546,7 +1884,8 @@ export const getCompatibleUsers = query({
         .query("users")
         .collect();
       
-      const sorted = allUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
+      const nonAiUsers = allUsers.filter(u => !isAiAssistantUser(u));
+      const sorted = nonAiUsers.sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
       const topN = sorted.slice(0, limit);
       
       return await Promise.all(
@@ -1574,9 +1913,9 @@ export const getCompatibleUsers = query({
       .query("users")
       .collect();
 
-    // Filter out current user and already followed users
+    // Filter out current user, already followed users, and the AI assistant
     const potentialUsers = allUsers.filter(
-      (u) => u._id !== args.userId && !followedUserIds.has(u._id)
+      (u) => u._id !== args.userId && !followedUserIds.has(u._id) && !isAiAssistantUser(u)
     );
 
     // Score users based on compatibility matching
@@ -1717,14 +2056,10 @@ export const searchPosts = query({
     // Batch-Abfrage aller Likes fÃ¼r diesen User (Reuse logic from getFeed/getFilteredFeed)
     let userLikesMap: Record<string, boolean> = {};
     if (args.userId) {
-      const postIds = matchingPosts.map((p) => p._id);
-      const allLikes = await ctx.db
+      const userLikes = await ctx.db
         .query("likes")
+        .withIndex("by_user_post", (q: any) => q.eq("userId", args.userId))
         .collect();
-
-      const userLikes = allLikes.filter(
-        (like) => like.userId === args.userId && postIds.includes(like.postId)
-      );
 
       userLikes.forEach((like) => {
         userLikesMap[like.postId as string] = true;
@@ -1954,6 +2289,130 @@ export const searchPublicGroups = query({
     }
 
     return enrichedGroups;
+  },
+});
+
+/**
+ * Get groups for a user's profile
+ * Used on profile pages to display groups a user belongs to
+ * Can filter to show only public groups (for viewing other users' profiles)
+ */
+export const getUserGroupsForProfile = query({
+  args: {
+    userId: v.id("users"),
+    showOnlyPublic: v.optional(v.boolean()),
+  },
+  handler: async (ctx: any, args: any) => {
+    // Get all conversations where the user is a participant and isGroup is true
+    const allConversations = await ctx.db
+      .query("conversations")
+      .collect();
+
+    // Filter for groups where user is a participant
+    const userGroups = allConversations.filter((conv: any) => {
+      const isGroup = conv.isGroup === true;
+      const isParticipant = conv.participants && conv.participants.includes(args.userId);
+      const isActive = !conv.leftParticipants || !conv.leftParticipants.includes(args.userId);
+      
+      return isGroup && isParticipant && isActive;
+    });
+
+    // Filter by visibility if requested (for other users' profiles)
+    let groupsToDisplay = userGroups;
+    if (args.showOnlyPublic === true) {
+      groupsToDisplay = userGroups.filter((conv: any) => conv.isPublic === true);
+    }
+
+    // Sort by most recently updated first
+    groupsToDisplay.sort((a: any, b: any) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    // Enrich groups with converted image URLs and member count
+    const enrichedGroups = await Promise.all(
+      groupsToDisplay.map(async (group: any) => {
+        const displayImage = await getGroupImageUrl(ctx, group.image);
+        const memberCount = group.participants ? group.participants.length : 0;
+
+        return {
+          _id: group._id,
+          name: group.name || "Unnamed Group",
+          displayImage,
+          memberCount,
+          isPublic: group.isPublic,
+          updatedAt: group.updatedAt,
+        };
+      })
+    );
+
+    return enrichedGroups;
+  },
+});
+
+// Get group tasks assigned to the current user
+export const getAssignedGroupTasks = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    // Get all tasks assigned to the user
+    const assignedTasks = await ctx.db
+      .query("workspace_tasks")
+      .withIndex("by_assignee", (q) => q.eq("assigneeId", args.userId))
+      .collect();
+
+    // Filter to include only tasks from groups where user is a member
+    // and status is not "done"
+    const userConversations = await ctx.db
+      .query("conversations")
+      .collect();
+
+    const userGroups = new Set(
+      userConversations
+        .filter((conv: any) => {
+          const isGroup = conv.isGroup === true;
+          const isParticipant = conv.participants && conv.participants.includes(args.userId);
+          const isActive = !conv.leftParticipants || !conv.leftParticipants.includes(args.userId);
+          return isGroup && isParticipant && isActive;
+        })
+        .map((conv: any) => conv._id.toString())
+    );
+
+    // Filter assigned tasks to only those in user's groups and not done
+    const relevantTasks = assignedTasks.filter((task: any) => {
+      const groupId = task.workspaceId.replace("group_", "");
+      return userGroups.has(groupId) && task.status !== "done";
+    });
+
+    // Enrich tasks with group names and sort by due date
+    const enrichedTasks = await Promise.all(
+      relevantTasks.map(async (task: any) => {
+        const groupId = task.workspaceId.replace("group_", "");
+        const group = await ctx.db.get(groupId as any);
+        const groupName = (group && "name" in group) ? (group.name as string) : "Unknown Group";
+        
+        return {
+          _id: task._id,
+          title: task.title,
+          description: task.description,
+          dueDate: task.deadline,
+          priority: task.priority || "medium",
+          status: task.status || "todo",
+          visibility: task.visibility,
+          groupId: groupId,
+          groupName: groupName,
+          workspaceId: task.workspaceId,
+          createdAt: task.createdAt,
+          isGroupTask: true,
+        };
+      })
+    );
+
+    // Sort by due date (soonest first)
+    enrichedTasks.sort((a: any, b: any) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+
+    return enrichedTasks;
   },
 });
 

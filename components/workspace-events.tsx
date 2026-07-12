@@ -1,80 +1,127 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import { CalendarDays, MapPin, Clock, Plus } from "lucide-react";
+import { CalendarDays, Plus, Edit2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { EventFormModal } from "@/components/event-form-modal";
+import { EventCard } from "@/components/event-card";
+import { SectionHeader } from "@/components/section-header";
 
-export function WorkspaceEvents({ workspaceId }: { workspaceId: string }) {
+export function WorkspaceEvents({
+  workspaceId,
+  onBackToOverview,
+}: {
+  workspaceId: string;
+  onBackToOverview?: () => void;
+}) {
   const router = useRouter();
   const { currentUser } = useCurrentUser();
-  const events = useQuery(api.events.listByUser, currentUser ? { userId: currentUser._id } : "skip");
-  const groupEvents = events?.filter((event) => event.workspaceId === workspaceId) || [];
+  const events = useQuery(
+    api.events.listByUser,
+    currentUser ? { userId: currentUser._id } : "skip",
+  );
+  const groupEvents =
+    events?.filter((event) => event.workspaceId === workspaceId) || [];
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const handleCreateGroupEvent = () => {
     router.push(`/calendar?workspace=${workspaceId}`);
   };
 
+  const editingEvent = editingEventId
+    ? groupEvents.find((e) => e._id.toString() === editingEventId)
+    : null;
+
   return (
-    <div className="p-4 animate-in fade-in slide-in-from-bottom-2">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Group Events</h2>
-          <p className="text-sm text-muted-foreground">Upcoming events created for this group workspace.</p>
+    <div className="flex-1 overflow-y-auto bg-background px-4 py-6">
+      <div className="max-w-lg mx-auto space-y-4">
+        {onBackToOverview && (
+          <SectionHeader
+            title="Events"
+            subtitle="Gruppenevents und Treffen"
+            onBackClick={onBackToOverview}
+          />
+        )}
+
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
+          <div>
+            {!onBackToOverview && (
+              <>
+                <h2 className="text-xl font-bold text-foreground">
+                  Gruppenevents
+                </h2>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Bevorstehende Events für diesen Gruppen-Workspace.
+                </p>
+              </>
+            )}
+          </div>
+          <button
+            onClick={handleCreateGroupEvent}
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#D08945] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] transition-all active:scale-95"
+          >
+            <Plus size={16} /> Neues Gruppenevent
+          </button>
         </div>
-        <button
-          onClick={handleCreateGroupEvent}
-          className="inline-flex items-center gap-2 rounded-full bg-[#D08945] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] transition-colors"
-        >
-          <Plus size={16} /> New group event
-        </button>
+
+        {events === undefined ? (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm font-medium">
+            Events werden geladen…
+          </div>
+        ) : groupEvents.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
+            <CalendarDays size={34} className="mx-auto mb-3 text-[#D08945]" />
+            <p className="text-sm font-bold text-foreground">Noch keine Gruppenevents vorhanden.</p>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              Erstelle ein Gruppenevent, damit die Mitglieder informiert bleiben und am nächsten Treffen teilnehmen können.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {groupEvents.map((event) => {
+              const editButton = currentUser && event.createdBy === currentUser._id ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingEventId(event._id.toString());
+                  }}
+                  className="p-2 rounded-xl hover:bg-accent transition-colors border border-transparent hover:border-border"
+                  title="Event bearbeiten"
+                >
+                  <Edit2 size={16} className="text-[#D08945]" />
+                </button>
+              ) : undefined;
+
+              return (
+                <EventCard
+                  key={event._id.toString()}
+                  title={event.title}
+                  startTime={event.startTime}
+                  endTime={event.endTime}
+                  location={event.location}
+                  description={event.description}
+                  badgeText="Gruppe"
+                  badgeType="group"
+                  href={`/workspace/event_${event._id}`}
+                  rightAction={editButton}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {events === undefined ? (
-        <div className="rounded-3xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm">Loading events…</div>
-      ) : groupEvents.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
-          <CalendarDays size={34} className="mx-auto mb-3 text-[#D08945]" />
-          <p className="text-sm font-medium">No group events yet.</p>
-          <p className="text-sm text-muted-foreground mt-2">Create a group event so members can stay aligned and join the next study session.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {groupEvents.map((event) => (
-            <Link
-              key={event._id.toString()}
-              href={`/workspace/event_${event._id}`}
-              className="group block rounded-3xl border border-border bg-card p-4 shadow-sm transition hover:border-accent hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="text-base font-semibold text-foreground truncate">{event.title}</h3>
-                  <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
-                      <Clock size={12} />
-                      {new Date(event.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      {' - '}
-                      {new Date(event.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
-                      <CalendarDays size={12} />
-                      {new Date(event.startTime).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D08945] bg-[#FEE3C1] rounded-full px-2 py-1">Group event</span>
-              </div>
-              {event.location && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin size={14} />
-                  <span className="truncate">{event.location}</span>
-                </div>
-              )}
-            </Link>
-          ))}
-        </div>
+      {editingEvent && currentUser && (
+        <EventFormModal
+          event={editingEvent}
+          isOpen={!!editingEventId}
+          onClose={() => setEditingEventId(null)}
+          mode="edit"
+          userId={currentUser._id}
+        />
       )}
     </div>
   );

@@ -136,6 +136,25 @@ export function BottomNavigation() {
             />
           </Link>
 
+
+
+          {/* Workspace */}
+          <Link
+            id="tour-nav-workspace"
+            href="/workspace"
+            prefetch={true}
+            aria-label="Workspace"
+            aria-current={isActive("/workspace") ? "page" : undefined}
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black rounded-lg"
+            style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
+          >
+            <WorkspaceIcon
+              isActive={isActive("/workspace")}
+              size={28}
+              color="currentColor"
+            />
+          </Link>
+
           {/* Calendar */}
           <Link
             id="tour-nav-calendar"
@@ -159,24 +178,6 @@ export function BottomNavigation() {
               }}
             />
           </Link>
-
-          {/* Workspace */}
-          <Link
-            id="tour-nav-workspace"
-            href="/workspace"
-            prefetch={true}
-            aria-label="Workspace"
-            aria-current={isActive("/workspace") ? "page" : undefined}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-black rounded-lg"
-            style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
-          >
-            <WorkspaceIcon
-              isActive={isActive("/workspace")}
-              size={28}
-              color="currentColor"
-            />
-          </Link>
-
 
           {/* Chat */}
           <Link

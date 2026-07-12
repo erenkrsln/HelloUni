@@ -27,12 +27,20 @@ export const registerMagicLinkUser = mutation({
     username: v.string(),
     email: v.string(),
     major: v.string(),
+    semester: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const normalizedEmail = args.email.trim().toLowerCase();
     const normalizedUsername = args.username.trim();
     const normalizedName = args.name.trim();
     const normalizedMajor = args.major.trim();
+    // Semester nur übernehmen, wenn gültig (1-10)
+    const normalizedSemester =
+      typeof args.semester === "number" &&
+      args.semester >= 1 &&
+      args.semester <= 10
+        ? args.semester
+        : undefined;
 
     if (!normalizedEmail.endsWith(ALLOWED_DOMAIN)) {
       throw new Error(`Nur E-Mails mit ${ALLOWED_DOMAIN} sind erlaubt.`);
@@ -59,6 +67,7 @@ export const registerMagicLinkUser = mutation({
       username: normalizedUsername,
       email: normalizedEmail,
       major: normalizedMajor,
+      semester: normalizedSemester,
       uni_name: "TH Nürnberg",
       createdAt: Date.now(),
     });

@@ -13,6 +13,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { usePostsCache } from "@/lib/contexts/posts-context";
 
 interface DeletePostDialogProps {
   postId: Id<"posts">;
@@ -21,8 +22,14 @@ interface DeletePostDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: DeletePostDialogProps) {
+export function DeletePostDialog({
+  postId,
+  userId,
+  isOpen,
+  onOpenChange,
+}: DeletePostDialogProps) {
   const deletePost = useMutation(api.mutations.deletePost);
+  const { removePost } = usePostsCache();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -30,6 +37,10 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
     setIsDeleting(true);
     try {
       await deletePost({ postId, userId });
+
+      // Gelöschten Beitrag aus allen Feed-Caches entfernen, damit er beim
+      // Feed-Typ-Wechsel nicht erst sichtbar verschwindet ("Herauspoppen").
+      removePost(postId as string);
       // Warte kurz, bevor der Dialog geschlossen wird, um Flackern zu vermeiden
       setTimeout(() => {
         onOpenChange(false);
@@ -44,8 +55,8 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[420px] p-0 gap-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent hideCloseButton className="p-0 gap-0 overflow-hidden max-w-[460px]">
+        <DialogHeader className="flex-col items-center justify-start gap-0 pr-0 px-6 pt-6 pb-4">
           <DialogTitle className="text-xl font-semibold text-foreground m-0 mb-2 text-center">
             Beitrag löschen
           </DialogTitle>
@@ -55,15 +66,15 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
         </DialogHeader>
         <div className="px-6 pb-6 pt-4 flex-row gap-3 justify-center border-t border-border flex">
           <DialogClose asChild>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               disabled={isDeleting}
               className="min-w-[100px]"
               style={{
                 willChange: "transform",
                 transform: "translateZ(0)",
                 backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden"
+                WebkitBackfaceVisibility: "hidden",
               }}
             >
               Abbrechen
@@ -78,14 +89,16 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
               willChange: "transform",
               transform: "translateZ(0)",
               backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden"
+              WebkitBackfaceVisibility: "hidden",
             }}
           >
-            <span style={{ 
-              display: "inline-block",
-              minWidth: "80px",
-              textAlign: "center"
-            }}>
+            <span
+              style={{
+                display: "inline-block",
+                minWidth: "80px",
+                textAlign: "center",
+              }}
+            >
               {isDeleting ? "Wird gelöscht..." : "Löschen"}
             </span>
           </Button>
@@ -94,15 +107,3 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
+import { usePostsCache } from "@/lib/contexts/posts-context";
 import { ImagePlus, Smile, MapPin, Calendar } from "lucide-react";
 
 interface ComposeInputProps {
@@ -15,8 +16,9 @@ export function ComposeInput({ onPostCreated }: ComposeInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { currentUserId } = useCurrentUser();
+  const { currentUserId, currentUser } = useCurrentUser();
   const createPost = useMutation(api.mutations.createPost);
+  const { prependPost } = usePostsCache();
 
   // VisualViewport API für dynamische Tastatur-Höhe (iOS Standalone)
   useEffect(() => {
@@ -85,11 +87,39 @@ export function ComposeInput({ onPostCreated }: ComposeInputProps) {
     if (!content.trim() || !currentUserId) return;
 
     try {
-      await createPost({
+      const newPostId = await createPost({
         userId: currentUserId,
         postType: "normal",
         content: content.trim(),
       });
+
+      // Neuen Beitrag optimistisch in die Feed-Caches einfügen, damit er beim
+      // Feed-Typ-Wechsel sofort da ist (ohne Skeleton / Pop-in). Ein reiner Text-Post
+      // hat keine Tags -> erscheint nur in "all" und "major".
+      if (currentUser) {
+        const cu = currentUser as any;
+        const optimisticPost = {
+          _id: newPostId,
+          userId: currentUserId,
+          postType: "normal",
+          content: content.trim(),
+          likesCount: 0,
+          commentsCount: 0,
+          participantsCount: 0,
+          createdAt: Date.now(),
+          isLiked: false,
+          user: {
+            _id: currentUserId,
+            name: cu.name,
+            username: cu.username,
+            image: cu.image,
+            uni_name: cu.uni_name,
+            major: cu.major,
+            semester: cu.semester,
+          },
+        };
+        prependPost(optimisticPost, ["all", "major"]);
+      }
 
       // Reset
       setContent("");

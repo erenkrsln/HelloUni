@@ -8,7 +8,7 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, StickyNote, Hash, AtSign } from "lucide-react";
+import { Search, MapPin, X, ChevronDown, Filter, UserPlus, MessageCircle, FileText, StickyNote, Hash, AtSign, RotateCcw, ArrowUp } from "lucide-react";
 import { FeedCard } from "@/components/feed-card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -69,7 +69,7 @@ const STATIC_PAGES: StaticPageResult[] = [
         title: "Chats",
         description: "Unterhalte dich privat oder in Gruppen mit deinen Kommilitonen.",
         href: "/chat",
-        keywords: ["chats", "nachrichten", "chat", "mitteilungen", "unterhaltungen", "direktnachrichten", "messenger", "schreiben", "nachricht"],
+        keywords: ["chats", "nachrichten", "chat", "mitteilungen", "unterhaltungen", "direktnachrichten", "messenger", "schreiben", "nachricht", "jastell"],
         category: "Seite"
     },
     {
@@ -97,7 +97,7 @@ const STATIC_PAGES: StaticPageResult[] = [
         title: "Infoseite",
         description: "Wichtige Dokumente und Termine zu deinem Studiengang. Außerdem der Mensaplan.",
         href: "/info",
-        keywords: ["infopage", "informationen", "studiengang", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos", "modulhandbuch", "prüfungsordnung", "studienplan", "termine"],
+        keywords: ["infopage", "informationen", "studiengang", "chatbot", "frage", "mensa", "mensaplan", "dokumente", "pdf", "links", "essen", "hilfe", "uni-infos", "modulhandbuch", "prüfungsordnung", "studienplan", "termine"],
         category: "Seite"
     }
 ];
@@ -142,6 +142,8 @@ export default function SearchPage() {
     const [isFirstVisit, setIsFirstVisit] = useState(true);
     const [suggestionsLimit, setSuggestionsLimit] = useState(10);
     const observerRef = useRef<HTMLDivElement | null>(null);
+    const filtersRef = useRef<HTMLDivElement | null>(null);
+    const [showScrollTop, setShowScrollTop] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -155,6 +157,21 @@ export default function SearchPage() {
     const [postAuthorMajor, setPostAuthorMajor] = useState("");
 
     const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+    const hasActiveFiltersOrSorting =
+        sortBy !== "alphabetical" ||
+        userMajor !== "" ||
+        userInterests !== "" ||
+        postType !== "" ||
+        postAuthorMajor !== "";
+
+    const handleClearFilters = () => {
+        setUserMajor("");
+        setUserInterests("");
+        setPostType("");
+        setPostAuthorMajor("");
+        setSortBy("alphabetical");
+    };
 
     // Dropdown open states
     const [isUserMajorOpen, setIsUserMajorOpen] = useState(false);
@@ -210,6 +227,23 @@ export default function SearchPage() {
     useEffect(() => {
         if (!isPostTypeOpen) setPostTypeSearch("");
     }, [isPostTypeOpen]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!filtersRef.current) return;
+            const rect = filtersRef.current.getBoundingClientRect();
+            setShowScrollTop(rect.bottom < 0);
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        window.addEventListener("resize", handleScroll, { passive: true });
+        handleScroll();
+
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            window.removeEventListener("resize", handleScroll);
+        };
+    }, [filterType, showAdvancedFilters]);
 
     // Liste der Studiengänge (alphabetisch sortiert)
     const STUDY_PROGRAMS = [
@@ -290,6 +324,8 @@ export default function SearchPage() {
     const searchTargetTerm = filterType === "all" ? searchAnalysis.term : debouncedQuery;
 
     const isRecommendationMode = filterType === "people" && activeSearchMode === "all" && !searchTargetTerm && !userMajor && !userInterests;
+    const isPostRecommendationMode = filterType === "posts" && activeSearchMode === "all" && !searchTargetTerm && !postType && !postAuthorMajor;
+    const isGroupRecommendationMode = filterType === "groups" && activeSearchMode === "all" && !searchTargetTerm;
 
     // Queries - conditionally skip based on filter or prefix override
     const shouldSearchGroups =
@@ -337,6 +373,14 @@ export default function SearchPage() {
         } : "skip"
     );
 
+    const prevCompatibleUsersRef = useRef<any[] | undefined>(undefined);
+    if (!isRecommendationMode) {
+        prevCompatibleUsersRef.current = undefined;
+    } else if (compatibleUsers !== undefined) {
+        prevCompatibleUsersRef.current = compatibleUsers;
+    }
+    const displayedUsers = isRecommendationMode ? (compatibleUsers ?? prevCompatibleUsersRef.current) : undefined;
+
     const hasMoreSuggestions = compatibleUsers !== undefined && compatibleUsers.length >= suggestionsLimit;
 
     useEffect(() => {
@@ -369,6 +413,13 @@ export default function SearchPage() {
             // Only apply post filters if specifically in "posts" tab
             postType: filterType === "posts" ? (postType || undefined) : undefined,
             major: filterType === "posts" ? (postAuthorMajor || undefined) : undefined
+        } : "skip"
+    );
+
+    const defaultPosts = useQuery(
+        api.queries.getSearchDefaultPosts,
+        isPostRecommendationMode ? {
+            userId: currentUserId || undefined
         } : "skip"
     );
 
@@ -405,304 +456,333 @@ export default function SearchPage() {
                     <LoadingScreen text="Seite wird geladen..." />
                 </div>
             ) : (
-                <div className="px-4 py-6">
-                    {/* Filters */}
-                    <div className="flex flex-col gap-2 mb-6">
-                        <button
-                            onClick={() => setFilterType("all")}
-                            className={`w-full px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
-                                ? "bg-[#d08945] text-white"
-                                : "bg-muted text-foreground"
-                                }`}
-                        >
-                            Gesamte App
-                        </button>
-                        <div className="flex items-center justify-center gap-2">
+                <div className="px-4 py-4 md:py-6">
+                    <div ref={filtersRef}>
+                        {/* Filters */}
+                        <div className="flex flex-col gap-1.5 md:gap-2 mb-4 md:mb-6">
                             <button
-                                onClick={() => setFilterType("groups")}
-                                className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "groups"
+                                onClick={() => setFilterType("all")}
+                                className={`w-full px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
                                     ? "bg-[#d08945] text-white"
                                     : "bg-muted text-foreground"
                                     }`}
                             >
-                                Gruppen
+                                Gesamte App
                             </button>
-                            <button
-                                onClick={() => setFilterType("people")}
-                                className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "people"
-                                    ? "bg-[#d08945] text-white"
-                                    : "bg-muted text-foreground"
-                                    }`}
-                            >
-                                Personen
-                            </button>
-                            <button
-                                onClick={() => setFilterType("posts")}
-                                className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "posts"
-                                    ? "bg-[#d08945] text-white"
-                                    : "bg-muted text-foreground"
-                                    }`}
-                            >
-                                Posts
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Search Bar */}
-                    <div className="relative mb-4">
-                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
-                            <Search className="h-5 w-5" />
-                        </div>
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors"
-                            placeholder="Suchen..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    {/* Sorting & Filter Controls */}
-                    <div className="mb-8">
-                        {/* Primary Controls Row */}
-                        <div className="flex items-center justify-between gap-3 mb-4 px-1">
-                            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar flex-1">
-
+                            <div className="flex items-center justify-center gap-2">
                                 <button
-                                    onClick={() => setSortBy("alphabetical")}
-                                    className={`text-sm px-3 py-1 rounded-full transition-colors whitespace-nowrap font-medium ${sortBy === "alphabetical"
-                                        ? "bg-muted text-foreground"
-                                        : "text-muted-foreground hover:bg-muted"
+                                    onClick={() => setFilterType("groups")}
+                                    className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "groups"
+                                        ? "bg-[#d08945] text-white"
+                                        : "bg-muted text-foreground"
                                         }`}
                                 >
-                                    Alphabetisch
+                                    Gruppen
                                 </button>
                                 <button
-                                    onClick={() => setSortBy("recent")}
-                                    className={`text-sm px-3 py-1 rounded-full transition-colors whitespace-nowrap font-medium ${sortBy === "recent"
-                                        ? "bg-muted text-foreground"
-                                        : "text-muted-foreground hover:bg-muted"
+                                    onClick={() => setFilterType("people")}
+                                    className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "people"
+                                        ? "bg-[#d08945] text-white"
+                                        : "bg-muted text-foreground"
                                         }`}
                                 >
-                                    Neueste
+                                    Personen
+                                </button>
+                                <button
+                                    onClick={() => setFilterType("posts")}
+                                    className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "posts"
+                                        ? "bg-[#d08945] text-white"
+                                        : "bg-muted text-foreground"
+                                        }`}
+                                >
+                                    Posts
                                 </button>
                             </div>
-
-                            <button
-                                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                                className={`p-2 rounded-full transition-colors flex-shrink-0 ${filterType === "groups" || filterType === "all" ? "invisible pointer-events-none" : ""
-                                    } ${showAdvancedFilters || userMajor || userInterests || postType || postAuthorMajor
-                                        ? "bg-[#d08945] text-white"
-                                        : "bg-muted text-muted-foreground"
-                                    }`}
-                            >
-                                <Filter size={18} />
-                            </button>
                         </div>
 
-                        {/* Advanced Filters Panel */}
-                        {showAdvancedFilters && filterType !== "groups" && filterType !== "all" && (
-                            <div className="bg-muted rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-border shadow-sm">
-                                {filterType === "people" && (
-                                    <>
-                                        <div className="space-y-1 user-major-dropdown relative">
-                                            <label className="text-xs font-medium text-muted-foreground ml-1">Studiengang</label>
-                                            <div className="relative">
+                        {/* Search Bar */}
+                        <div className="relative mb-3 md:mb-4">
+                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+                                <Search className="h-5 w-5" />
+                            </div>
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors"
+                                placeholder="Suchen..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+
+
+                        {/* Sorting & Filter Controls */}
+                        {filterType !== "all" && (
+                            <div className="mb-8">
+                                {/* Primary Controls Row */}
+                                <div className="flex items-center mb-4 px-1">
+                                    <button
+                                        onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                                        className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 justify-center ${showAdvancedFilters || userMajor || userInterests || postType || postAuthorMajor || sortBy !== "alphabetical"
+                                            ? "bg-[#d08945] text-white"
+                                            : "bg-muted text-foreground"
+                                            }`}
+                                    >
+                                        <Filter size={16} />
+                                        <span>Filtern und sortieren</span>
+                                    </button>
+                                </div>
+
+                                {/* Advanced Filters Panel */}
+                                {showAdvancedFilters && (
+                                    <div className="bg-muted rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-border shadow-sm">
+                                        {/* Sorting Section */}
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-medium text-muted-foreground ml-1">Sortieren nach</label>
+                                            <div className="flex gap-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setIsUserMajorOpen(!isUserMajorOpen)}
-                                                    className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                    onClick={() => setSortBy("alphabetical")}
+                                                    className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all border ${sortBy === "alphabetical"
+                                                        ? "bg-[#D08945] text-white border-transparent"
+                                                        : "bg-background text-foreground border-border hover:bg-muted"
+                                                        }`}
                                                 >
-                                                    <span className={userMajor ? "text-foreground" : "text-muted-foreground"}>
-                                                        {userMajor || "Wähle einen Studiengang"}
-                                                    </span>
-                                                    {userMajor ? (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setUserMajor("");
-                                                            }}
-                                                            className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
-                                                        >
-                                                            <X size={14} />
-                                                        </div>
-                                                    ) : (
-                                                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isUserMajorOpen ? "rotate-180" : ""}`} />
-                                                    )}
+                                                    Alphabetisch
                                                 </button>
-
-                                                {isUserMajorOpen && (
-                                                    <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
-                                                        <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Studiengang suchen..."
-                                                                value={userMajorSearch}
-                                                                onChange={(e) => setUserMajorSearch(e.target.value)}
-                                                                className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                        <div className="overflow-y-auto py-1 max-h-48">
-                                                            {filteredUserMajors.length === 0 ? (
-                                                                <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Studiengänge gefunden</div>
-                                                            ) : (
-                                                                filteredUserMajors.map((program) => (
-                                                                    <button
-                                                                        key={program}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setUserMajor(program);
-                                                                            setIsUserMajorOpen(false);
-                                                                        }}
-                                                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${userMajor === program ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
-                                                                    >
-                                                                        {program}
-                                                                    </button>
-                                                                ))
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSortBy("recent")}
+                                                    className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all border ${sortBy === "recent"
+                                                        ? "bg-[#D08945] text-white border-transparent"
+                                                        : "bg-background text-foreground border-border hover:bg-muted"
+                                                        }`}
+                                                >
+                                                    Neueste
+                                                </button>
                                             </div>
                                         </div>
 
-                                    </>
-                                )}
-
-                                {filterType === "posts" && (
-                                    <>
-                                        <div className="space-y-1 post-author-major-dropdown relative">
-                                            <label className="text-xs font-medium text-muted-foreground ml-1">Studiengang</label>
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPostAuthorMajorOpen(!isPostAuthorMajorOpen)}
-                                                    className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
-                                                >
-                                                    <span className={postAuthorMajor ? "text-foreground" : "text-muted-foreground"}>
-                                                        {postAuthorMajor || "Wähle einen Studiengang"}
-                                                    </span>
-                                                    {postAuthorMajor ? (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setPostAuthorMajor("");
-                                                            }}
-                                                            className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
+                                        {filterType === "people" && (
+                                            <>
+                                                <div className="space-y-1 user-major-dropdown relative">
+                                                    <label className="text-xs font-medium text-muted-foreground ml-1">Studiengang</label>
+                                                    <div className="relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsUserMajorOpen(!isUserMajorOpen)}
+                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                                         >
-                                                            <X size={14} />
-                                                        </div>
-                                                    ) : (
-                                                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isPostAuthorMajorOpen ? "rotate-180" : ""}`} />
-                                                    )}
-                                                </button>
-
-                                                {isPostAuthorMajorOpen && (
-                                                    <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
-                                                        <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Studiengang suchen..."
-                                                                value={postAuthorMajorSearch}
-                                                                onChange={(e) => setPostAuthorMajorSearch(e.target.value)}
-                                                                className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                        <div className="overflow-y-auto py-1 max-h-48">
-                                                            {filteredPostAuthorMajors.length === 0 ? (
-                                                                <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Studiengänge gefunden</div>
+                                                            <span className={userMajor ? "text-foreground" : "text-muted-foreground"}>
+                                                                {userMajor || "Wähle einen Studiengang"}
+                                                            </span>
+                                                            {userMajor ? (
+                                                                <div
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setUserMajor("");
+                                                                    }}
+                                                                    className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
+                                                                >
+                                                                    <X size={14} />
+                                                                </div>
                                                             ) : (
-                                                                filteredPostAuthorMajors.map((program) => (
-                                                                    <button
-                                                                        key={program}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setPostAuthorMajor(program);
-                                                                            setIsPostAuthorMajorOpen(false);
-                                                                        }}
-                                                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${postAuthorMajor === program ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
-                                                                    >
-                                                                        {program}
-                                                                    </button>
-                                                                ))
+                                                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isUserMajorOpen ? "rotate-180" : ""}`} />
                                                             )}
-                                                        </div>
+                                                        </button>
+
+                                                        {isUserMajorOpen && (
+                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
+                                                                <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Studiengang suchen..."
+                                                                        value={userMajorSearch}
+                                                                        onChange={(e) => setUserMajorSearch(e.target.value)}
+                                                                        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
+                                                                <div className="overflow-y-auto py-1 max-h-48">
+                                                                    {filteredUserMajors.length === 0 ? (
+                                                                        <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Studiengänge gefunden</div>
+                                                                    ) : (
+                                                                        filteredUserMajors.map((program) => (
+                                                                            <button
+                                                                                key={program}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setUserMajor(program);
+                                                                                    setIsUserMajorOpen(false);
+                                                                                }}
+                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${userMajor === program ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
+                                                                            >
+                                                                                {program}
+                                                                            </button>
+                                                                        ))
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1 post-type-dropdown relative">
-                                            <label className="text-xs font-medium text-muted-foreground ml-1">Post Typ</label>
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPostTypeOpen(!isPostTypeOpen)}
-                                                    className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
-                                                >
-                                                    <div className="flex items-center gap-2 text-foreground">
-                                                        {postType === "" && <span className="text-muted-foreground">Alle Typen</span>}
-                                                        {postType === "normal" && <>Beitrag</>}
-                                                        {postType === "spontaneous_meeting" && <>Spontanes Treffen</>}
-                                                        {postType === "recurring_meeting" && <>Regelmäßiges Treffen</>}
-                                                        {postType === "poll" && <>Umfrage</>}
-                                                        {postType === "announcement" && <>Ankündigung</>}
-                                                    </div>
-                                                    {postType ? (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setPostType("");
-                                                            }}
-                                                            className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
+                                                </div>
+
+                                            </>
+                                        )}
+
+                                        {filterType === "posts" && (
+                                            <>
+                                                <div className="space-y-1 post-author-major-dropdown relative">
+                                                    <label className="text-xs font-medium text-muted-foreground ml-1">Studiengang</label>
+                                                    <div className="relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsPostAuthorMajorOpen(!isPostAuthorMajorOpen)}
+                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                                         >
-                                                            <X size={14} />
-                                                        </div>
-                                                    ) : (
-                                                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`} />
-                                                    )}
-                                                </button>
-
-                                                {isPostTypeOpen && (
-                                                    <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
-                                                        <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Typ suchen..."
-                                                                value={postTypeSearch}
-                                                                onChange={(e) => setPostTypeSearch(e.target.value)}
-                                                                className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                        <div className="overflow-y-auto py-1 max-h-48">
-                                                            {filteredPostTypes.length === 0 ? (
-                                                                <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Typen gefunden</div>
+                                                            <span className={postAuthorMajor ? "text-foreground" : "text-muted-foreground"}>
+                                                                {postAuthorMajor || "Wähle einen Studiengang"}
+                                                            </span>
+                                                            {postAuthorMajor ? (
+                                                                <div
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPostAuthorMajor("");
+                                                                    }}
+                                                                    className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
+                                                                >
+                                                                    <X size={14} />
+                                                                </div>
                                                             ) : (
-                                                                filteredPostTypes.map((type) => (
-                                                                    <button
-                                                                        key={type.value}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setPostType(type.value);
-                                                                            setIsPostTypeOpen(false);
-                                                                        }}
-                                                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2 ${postType === type.value ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
-                                                                    >
-                                                                        {type.label}
-                                                                    </button>
-                                                                ))
+                                                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isPostAuthorMajorOpen ? "rotate-180" : ""}`} />
                                                             )}
-                                                        </div>
+                                                        </button>
+
+                                                        {isPostAuthorMajorOpen && (
+                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
+                                                                <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Studiengang suchen..."
+                                                                        value={postAuthorMajorSearch}
+                                                                        onChange={(e) => setPostAuthorMajorSearch(e.target.value)}
+                                                                        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
+                                                                <div className="overflow-y-auto py-1 max-h-48">
+                                                                    {filteredPostAuthorMajors.length === 0 ? (
+                                                                        <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Studiengänge gefunden</div>
+                                                                    ) : (
+                                                                        filteredPostAuthorMajors.map((program) => (
+                                                                            <button
+                                                                                key={program}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setPostAuthorMajor(program);
+                                                                                    setIsPostAuthorMajorOpen(false);
+                                                                                }}
+                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${postAuthorMajor === program ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
+                                                                            >
+                                                                                {program}
+                                                                            </button>
+                                                                        ))
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
+                                                </div>
+                                                <div className="space-y-1 post-type-dropdown relative">
+                                                    <label className="text-xs font-medium text-muted-foreground ml-1">Post Typ</label>
+                                                    <div className="relative">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsPostTypeOpen(!isPostTypeOpen)}
+                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                        >
+                                                            <div className="flex items-center gap-2 text-foreground">
+                                                                {postType === "" && <span className="text-muted-foreground">Alle Typen</span>}
+                                                                {postType === "normal" && <>Beitrag</>}
+                                                                {postType === "spontaneous_meeting" && <>Spontanes Treffen</>}
+                                                                {postType === "recurring_meeting" && <>Regelmäßiges Treffen</>}
+                                                                {postType === "poll" && <>Umfrage</>}
+                                                                {postType === "announcement" && <>Ankündigung</>}
+                                                            </div>
+                                                            {postType ? (
+                                                                <div
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPostType("");
+                                                                    }}
+                                                                    className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
+                                                                >
+                                                                    <X size={14} />
+                                                                </div>
+                                                            ) : (
+                                                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`} />
+                                                            )}
+                                                        </button>
+
+                                                        {isPostTypeOpen && (
+                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
+                                                                <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Typ suchen..."
+                                                                        value={postTypeSearch}
+                                                                        onChange={(e) => setPostTypeSearch(e.target.value)}
+                                                                        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
+                                                                <div className="overflow-y-auto py-1 max-h-48">
+                                                                    {filteredPostTypes.length === 0 ? (
+                                                                        <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Typen gefunden</div>
+                                                                    ) : (
+                                                                        filteredPostTypes.map((type) => (
+                                                                            <button
+                                                                                key={type.value}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setPostType(type.value);
+                                                                                    setIsPostTypeOpen(false);
+                                                                                }}
+                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2 ${postType === type.value ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
+                                                                            >
+                                                                                {type.label}
+                                                                            </button>
+                                                                        ))
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+
+                                            </>
+                                        )}
+
+                                        {/* Action Row */}
+                                        <div className="pt-3 border-t border-border flex items-center justify-between">
+                                            <span className="text-xs text-muted-foreground">
+                                                {hasActiveFiltersOrSorting ? "Filter / Sortierung aktiv" : "Keine Filter aktiv"}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={handleClearFilters}
+                                                disabled={!hasActiveFiltersOrSorting}
+                                                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${hasActiveFiltersOrSorting
+                                                    ? "text-red-600 hover:bg-red-50 active:bg-red-100 cursor-pointer"
+                                                    : "text-muted-foreground cursor-not-allowed"
+                                                    }`}
+                                            >
+                                                <RotateCcw size={12} />
+                                                <span>Zurücksetzen</span>
+                                            </button>
                                         </div>
-
-
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -720,13 +800,14 @@ export default function SearchPage() {
                                 hasQuery ||
                                 hasUserFilters ||
                                 hasPostFilters ||
-                                (filterType === "people");
+                                (filterType === "people") ||
+                                isPostRecommendationMode;
 
                             if (!shouldShowResults) {
                                 if (filterType === "all") {
                                     return (
-                                        <div className="mt-4 p-5 rounded-2xl bg-card border border-border shadow-sm">
-                                            <div className="flex items-center gap-2.5 mb-4">
+                                        <div className="mt-2 md:mt-4 p-4 md:p-5 rounded-2xl bg-card border border-border shadow-sm">
+                                            <div className="flex items-center gap-2.5 mb-3 md:mb-4">
 
                                                 <div>
                                                     <h3 className="font-semibold text-foreground text-base">Schnellsuche mit Präfixen</h3>
@@ -736,43 +817,43 @@ export default function SearchPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-3 mt-4">
+                                            <div className="grid grid-cols-2 gap-2.5 md:gap-3 mt-3 md:mt-4">
                                                 {[
                                                     {
                                                         prefix: "/",
                                                         label: "Seiten & Bereiche",
                                                         example: "/kalender",
-                                                        color: "text-white bg-gradient-to-br from-[#d08945] to-[#f78d57] border-transparent dark:text-[#D08945] dark:bg-muted dark:border-border",
+                                                        color: "text-purple-600 bg-purple-50 border-purple-100",
                                                         icon: FileText
                                                     },
                                                     {
                                                         prefix: "#",
                                                         label: "Öffentliche Gruppen",
                                                         example: "#sport",
-                                                        color: "text-white bg-gradient-to-br from-[#d08945] to-[#f78d57] border-transparent dark:text-[#D08945] dark:bg-muted dark:border-border",
+                                                        color: "text-emerald-600 bg-emerald-50 border-emerald-100",
                                                         icon: Hash
                                                     },
                                                     {
                                                         prefix: "@",
                                                         label: "Personen",
                                                         example: "@liesbeth",
-                                                        color: "text-white bg-gradient-to-br from-[#d08945] to-[#f78d57] border-transparent dark:text-[#D08945] dark:bg-muted dark:border-border",
+                                                        color: "text-blue-600 bg-blue-50 border-blue-100",
                                                         icon: AtSign
                                                     },
                                                     {
                                                         prefix: "!",
                                                         label: "Posts",
                                                         example: "!klausur",
-                                                        color: "text-white bg-gradient-to-br from-[#d08945] to-[#f78d57] border-transparent dark:text-[#D08945] dark:bg-muted dark:border-border",
+                                                        color: "text-rose-600 bg-rose-50 border-rose-100",
                                                         icon: MessageCircle
                                                     }
                                                 ].map((item) => (
                                                     <button
                                                         key={item.prefix}
                                                         onClick={() => handlePrefixClick(item.prefix)}
-                                                        className="flex flex-col items-start p-3.5 rounded-xl border border-border bg-background hover:border-border hover:shadow-md transition-all duration-200 text-left group"
+                                                        className="flex flex-col items-start p-2.5 md:p-3.5 rounded-xl border border-border bg-background hover:border-border hover:shadow-md transition-all duration-200 text-left group"
                                                     >
-                                                        <div className="flex items-center justify-between w-full mb-2">
+                                                        <div className="flex items-center justify-between w-full mb-1.5 md:mb-2">
 
                                                             <span className=" font-bold text-base px-2 py-0.5 bg-muted border border-border text-foreground rounded-md shadow-sm group-hover:bg-[#D08945] group-hover:text-white group-hover:border-transparent transition-all duration-200">
                                                                 {item.prefix}
@@ -997,11 +1078,15 @@ export default function SearchPage() {
                                             {/* Original tabs rendering */}
                                             {filterType === "groups" && (
                                                 <div>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">
+                                                        {isGroupRecommendationMode ? "Vorschläge für dich" : "Öffentliche Gruppen"}
+                                                    </h2>
                                                     {groupResults === undefined || !currentUserId ? (
                                                         <div className="py-4 text-center text-sm text-muted-foreground font-normal">Laden...</div>
                                                     ) : groupResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-muted-foreground font-normal">Keine öffentlichen Gruppen gefunden.</div>
+                                                        <div className="py-2 px-1 text-sm text-muted-foreground font-normal">
+                                                            {isGroupRecommendationMode ? "Keine Vorschläge gefunden." : "Keine öffentlichen Gruppen gefunden."}
+                                                        </div>
                                                     ) : (
                                                         <div className="space-y-3">
                                                             {groupResults.map((group) => {
@@ -1082,13 +1167,13 @@ export default function SearchPage() {
                                                     {isRecommendationMode ? (
                                                         <>
                                                             <h2 className="text-lg font-semibold mb-4 px-1">Vorschläge für dich</h2>
-                                                            {compatibleUsers === undefined ? (
+                                                            {compatibleUsers === undefined && displayedUsers === undefined ? (
                                                                 <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
-                                                            ) : compatibleUsers.length === 0 ? (
+                                                            ) : (displayedUsers || []).length === 0 ? (
                                                                 <div className="py-2 px-1 text-sm text-muted-foreground">Keine Vorschläge gefunden.</div>
                                                             ) : (
                                                                 <div className="space-y-3">
-                                                                    {compatibleUsers.map((user) => (
+                                                                    {(displayedUsers || []).map((user) => (
                                                                         <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors">
                                                                             <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                                 {user.image ? (
@@ -1117,6 +1202,11 @@ export default function SearchPage() {
                                                                             </div>
                                                                         </Link>
                                                                     ))}
+                                                                    {compatibleUsers === undefined && (
+                                                                        <div className="h-12 flex items-center justify-center text-xs text-muted-foreground italic">
+                                                                            Mehr Vorschläge werden geladen...
+                                                                        </div>
+                                                                    )}
                                                                     {hasMoreSuggestions && (
                                                                         <div ref={observerRef} className="h-12 flex items-center justify-center text-xs text-muted-foreground italic">
                                                                             Mehr Vorschläge werden geladen...
@@ -1172,22 +1262,43 @@ export default function SearchPage() {
                                             )}
                                             {filterType === "posts" && (
                                                 <div>
-                                                    <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
-                                                    {postResults === undefined ? (
-                                                        <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
-                                                    ) : postResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-muted-foreground">Keine Beiträge gefunden.</div>
+                                                    <h2 className="text-lg font-semibold mb-4 px-1">
+                                                        {isPostRecommendationMode ? "Vorschläge für dich" : "Beiträge"}
+                                                    </h2>
+                                                    {isPostRecommendationMode ? (
+                                                        defaultPosts === undefined ? (
+                                                            <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
+                                                        ) : defaultPosts.length === 0 ? (
+                                                            <div className="py-2 px-1 text-sm text-muted-foreground">Keine Beiträge gefunden.</div>
+                                                        ) : (
+                                                            <div className="space-y-0">
+                                                                {defaultPosts.map((post, index) => (
+                                                                    <FeedCard
+                                                                        key={post._id}
+                                                                        post={post}
+                                                                        currentUserId={currentUserId}
+                                                                        showDivider={index < defaultPosts.length - 1}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )
                                                     ) : (
-                                                        <div className="space-y-0">
-                                                            {postResults.map((post, index) => (
-                                                                <FeedCard
-                                                                    key={post._id}
-                                                                    post={post}
-                                                                    currentUserId={currentUserId}
-                                                                    showDivider={index < postResults.length - 1}
-                                                                />
-                                                            ))}
-                                                        </div>
+                                                        postResults === undefined ? (
+                                                            <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
+                                                        ) : postResults.length === 0 ? (
+                                                            <div className="py-2 px-1 text-sm text-muted-foreground">Keine Beiträge gefunden.</div>
+                                                        ) : (
+                                                            <div className="space-y-0">
+                                                                {postResults.map((post, index) => (
+                                                                    <FeedCard
+                                                                        key={post._id}
+                                                                        post={post}
+                                                                        currentUserId={currentUserId}
+                                                                        showDivider={index < postResults.length - 1}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )
                                                     )}
                                                 </div>
                                             )}
@@ -1386,6 +1497,15 @@ export default function SearchPage() {
                 </div>
             )}
             <BottomNavigation />
+            {showScrollTop && (
+                <button
+                    onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                    className="fixed right-4 md:right-8 bottom-[calc(94px+env(safe-area-inset-bottom,0px))] md:bottom-8 z-50 flex items-center justify-center w-12 h-12 rounded-full shadow-lg bg-[#D08945] text-white hover:bg-[#b0733a] hover:scale-105 active:scale-95 focus:outline-none cursor-pointer transition-all duration-300 animate-in fade-in zoom-in-75"
+                    aria-label="Nach oben scrollen"
+                >
+                    <ArrowUp className="w-6 h-6" />
+                </button>
+            )}
         </main>
     );
 }

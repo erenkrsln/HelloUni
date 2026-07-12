@@ -45,6 +45,7 @@ export function ChatSidebar() {
 
   const [isGroupPublic, setIsGroupPublic] = useState(false);
   const [needsRequestToJoin, setNeedsRequestToJoin] = useState(false);
+  const [onlyAdminsCanMessage, setOnlyAdminsCanMessage] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -57,6 +58,7 @@ export function ChatSidebar() {
       setUserSearchQuery("");
       setIsGroupPublic(false);
       setNeedsRequestToJoin(false);
+      setOnlyAdminsCanMessage(false);
     }, 300);
   };
 
@@ -134,6 +136,7 @@ export function ChatSidebar() {
         creatorId: currentUser._id,
         isPublic: selectedUsers.length > 1 ? isGroupPublic : undefined,
         needsRequestToJoin: selectedUsers.length > 1 ? needsRequestToJoin : undefined,
+        onlyAdminsCanMessage: selectedUsers.length > 1 ? onlyAdminsCanMessage : undefined,
       });
       setIsNewChatOpen(false);
       setSelectedUsers([]);
@@ -141,6 +144,7 @@ export function ChatSidebar() {
       setUserSearchQuery("");
       setIsGroupPublic(false);
       setNeedsRequestToJoin(false);
+      setOnlyAdminsCanMessage(false);
       router.push(`/chat/${conversationId}`);
     } catch (error) {
       console.error("Failed to create conversation:", error);
@@ -356,8 +360,8 @@ export function ChatSidebar() {
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0 flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <h3 className="font-semibold text-sm truncate text-foreground">{conv.displayName}</h3>
                             {conv.isGroup && conv.isPublic && (
@@ -365,77 +369,80 @@ export function ChatSidebar() {
                                 öffentlich
                               </span>
                             )}
+
                           </div>
-                          <div className="flex flex-col items-end flex-shrink-0">
-                            {conv.lastMessage && (
-                              <span className="text-[10px] text-muted-foreground font-medium mb-1">
-                                {formatLastMessageTime((conv.lastMessage as any).createdAt)}
+                          <p className="text-xs text-muted-foreground flex items-center pl-0.5 mt-0.5 font-normal min-w-0">
+                            {liveCall ? (
+                              <span className="flex items-center gap-1.5 text-[#D08945] font-medium min-w-0">
+                                {liveCall.type === "video" ? (
+                                  <Video size={12} className="flex-shrink-0" />
+                                ) : (
+                                  <Phone size={12} className="flex-shrink-0" />
+                                )}
+                                <span className="truncate">
+                                  {inThisCall
+                                    ? "Du bist im Anruf"
+                                    : liveCall.type === "video"
+                                      ? "Gruppen-Videoanruf läuft"
+                                      : "Gruppenanruf läuft"}
+                                </span>
                               </span>
-                            )}
-                            {conv.unreadCount > 0 && (
-                              <div className="bg-[#f78d57] text-white text-[9px] font-bold px-1.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full">
-                                {conv.unreadCount}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate flex items-center pl-0.5 mt-0.5 font-normal">
-                          {liveCall ? (
-                            <span className="flex items-center gap-1.5 text-[#D08945] font-medium">
-                              {liveCall.type === "video" ? (
-                                <Video size={12} className="flex-shrink-0" />
+                            ) : conv.lastMessage ? (
+                              (conv.lastMessage as any).type === "image" ? (
+                                <>
+                                  <Image size={12} className="flex-shrink-0 mr-1" />
+                                  <span>Foto</span>
+                                </>
+                              ) : (conv.lastMessage as any).type === "video" ? (
+                                <>
+                                  <CirclePlay size={12} className="flex-shrink-0 mr-1" />
+                                  <span>Video</span>
+                                </>
+                              ) : (conv.lastMessage as any).type === "pdf" ? (
+                                <>
+                                  <FileIcon size={12} className="flex-shrink-0 mr-1" />
+                                  <span className="truncate">{(conv.lastMessage as any).fileName || "Dokument"}</span>
+                                </>
+                              ) : (conv.lastMessage as any).type === "post" ? (
+                                <>
+                                  <StickyNote size={12} className="flex-shrink-0 mr-1" />
+                                  <span>Geteilter Beitrag</span>
+                                </>
+                              ) : (conv.lastMessage as any).type === "poll" ? (
+                                <>
+                                  <BarChart2 size={12} className="flex-shrink-0 mr-1" />
+                                  <span>Umfrage</span>
+                                </>
+                              ) : (conv.lastMessage as any).type === "profile" ? (
+                                <>
+                                  <User size={12} className="flex-shrink-0 mr-1" />
+                                  <span>Geteiltes Profil</span>
+                                </>
+                              ) : (conv.lastMessage as any).type === "event_invite" ? (
+                                <>
+                                  <CalendarDays size={12} className="flex-shrink-0 mr-1" />
+                                  <span className="truncate">{conv.lastMessage.content || "Termin"}</span>
+                                </>
                               ) : (
-                                <Phone size={12} className="flex-shrink-0" />
-                              )}
-                              {inThisCall
-                                ? "Du bist im Anruf"
-                                : liveCall.type === "video"
-                                  ? "Gruppen-Videoanruf läuft"
-                                  : "Gruppenanruf läuft"}
-                            </span>
-                          ) : conv.lastMessage ? (
-                            (conv.lastMessage as any).type === "image" ? (
-                              <>
-                                <Image size={12} className="flex-shrink-0 mr-1" />
-                                <span>Foto</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "video" ? (
-                              <>
-                                <CirclePlay size={12} className="flex-shrink-0 mr-1" />
-                                <span>Video</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "pdf" ? (
-                              <>
-                                <FileIcon size={12} className="flex-shrink-0 mr-1" />
-                                <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "post" ? (
-                              <>
-                                <StickyNote size={12} className="flex-shrink-0 mr-1" />
-                                <span>Geteilter Beitrag</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "poll" ? (
-                              <>
-                                <BarChart2 size={12} className="flex-shrink-0 mr-1" />
-                                <span>Umfrage</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "profile" ? (
-                              <>
-                                <User size={12} className="flex-shrink-0 mr-1" />
-                                <span>Geteiltes Profil</span>
-                              </>
-                            ) : (conv.lastMessage as any).type === "event_invite" ? (
-                              <>
-                                <CalendarDays size={12} className="flex-shrink-0 mr-1" />
-                                <span>{conv.lastMessage.content || "Termin"}</span>
-                              </>
+                                <span className="truncate">{conv.lastMessage.content}</span>
+                              )
                             ) : (
-                              conv.lastMessage.content
-                            )
-                          ) : (
-                            "Noch keine Nachrichten"
+                              <span>Noch keine Nachrichten</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end flex-shrink-0">
+                          {conv.lastMessage && (
+                            <span className="text-[10px] text-muted-foreground font-medium mb-1 whitespace-nowrap">
+                              {formatLastMessageTime((conv.lastMessage as any).createdAt)}
+                            </span>
                           )}
-                        </p>
+                          {conv.unreadCount > 0 && (
+                            <div className="bg-[#f78d57] text-white text-[9px] font-bold px-1.5 min-w-[16px] h-[16px] flex items-center justify-center rounded-full">
+                              {conv.unreadCount}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </Link>
                     {liveCall && !inThisCall && !isLeft && (
@@ -498,7 +505,7 @@ export function ChatSidebar() {
 
           {/* Scrollable Container for the entire modal body */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            
+
             {/* Search & Group Settings Area */}
             <div className="space-y-4">
               {/* Selected People Preview */}
@@ -538,7 +545,7 @@ export function ChatSidebar() {
               {/* Group Configuration options */}
               {selectedUsers.length > 1 && (
                 <div className="space-y-3.5 animate-in slide-in-from-top-2 duration-200">
-                  
+
                   {/* Group Name Input */}
                   <div>
                     <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
@@ -593,6 +600,25 @@ export function ChatSidebar() {
                       >
                         <span
                           className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-card shadow ring-0 transition duration-200 ease-in-out ${needsRequestToJoin ? "translate-x-4" : "translate-x-0"
+                            }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Nur Admins schreiben Toggle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200/50">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-black">Nur Admins können schreiben</span>
+                        <span className="text-[10px] text-gray-400">Nur Admins & Ersteller dürfen Nachrichten senden</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOnlyAdminsCanMessage(!onlyAdminsCanMessage)}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${onlyAdminsCanMessage ? "bg-[#d08945]" : "bg-gray-200"
+                          }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${onlyAdminsCanMessage ? "translate-x-4" : "translate-x-0"
                             }`}
                         />
                       </button>

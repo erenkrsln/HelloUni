@@ -24,7 +24,7 @@ export function startAppTour() {
         element: "#tour-profile-menu",
         popover: {
           title: "Die rechte Seitenleiste",
-          description: "Hier findest du dein Profil, die Infoseiten zu deinem Studiengang und dem Mensaplan, Einstellungen und mehr.",
+          description: "Hier findest du dein Profil, die Infoseiten zu deinem Studiengang und dem Mensaplan und mehr.",
           side: "bottom",
           align: "start"
         }
@@ -65,20 +65,21 @@ export function startAppTour() {
           align: "center"
         }
       },
+
       {
-        element: "#tour-nav-calendar",
+        element: "#tour-nav-workspace",
         popover: {
-          title: "Kalender",
-          description: "Hier findest du deine privaten und allgemeinen Termine.",
+          title: "Workspace",
+          description: "Hier verwaltest du Gruppen, Aufgaben und Events rund um dein Studium.",
           side: "top",
           align: "center"
         }
       },
       {
-        element: "#tour-nav-workspace",
+        element: "#tour-nav-calendar",
         popover: {
-          title: "Workspace",
-          description: "Hier findest du Gruppen, Aufgaben, Dateien und Events rund um dein Studium.",
+          title: "Kalender",
+          description: "Hier findest du deine Termine. Die wichtigesten Hochschul-Termine sind bereits für dich eingetragen.",
           side: "top",
           align: "center"
         }
@@ -87,7 +88,7 @@ export function startAppTour() {
         element: "#tour-nav-chat",
         popover: {
           title: "Chats",
-          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen.",
+          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen. <br/> Wenn du Fragen rund ums Studium hast, starte einen Chat mit Jastell, dem HelloUni Chatbot. Du erreichst ihn indem du 'jastell' vor deiner Frage in einem Chat mit ihm eingibst. In Direktchats kannst du auch ohne direkt loschreiben",
           side: "top",
           align: "center"
         }

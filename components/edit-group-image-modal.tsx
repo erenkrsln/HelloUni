@@ -3,215 +3,295 @@
 import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ImageCropModal } from "@/components/image-crop-modal";
 import { Camera, X } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 
 interface EditGroupImageModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    conversationId: Id<"conversations">;
-    groupName: string;
-    currentImage?: string;
-    currentUserId: Id<"users">;
+  isOpen: boolean;
+  onClose: () => void;
+  conversationId: Id<"conversations">;
+  groupName: string;
+  currentImage?: string;
+  currentUserId: Id<"users">;
 }
 
 export function EditGroupImageModal({
-    isOpen,
-    onClose,
-    conversationId,
-    groupName,
-    currentImage,
-    currentUserId,
+  isOpen,
+  onClose,
+  conversationId,
+  groupName,
+  currentImage,
+  currentUserId,
 }: EditGroupImageModalProps) {
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(currentImage || null);
-    const [isImageRemoved, setIsImageRemoved] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    currentImage || null,
+  );
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const updateGroupImage = useMutation(api.mutations.updateGroupImage);
+  // Image Crop State
+  const [selectedCropImageSrc, setSelectedCropImageSrc] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [isImageProcessing, setIsImageProcessing] = useState(false);
 
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedImage(file);
-            setIsImageRemoved(false);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+  const updateGroupImage = useMutation(api.mutations.updateGroupImage);
 
-    const removeImage = () => {
-        setSelectedImage(null);
-        setImagePreview(null);
-        setIsImageRemoved(true);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    };
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedCropImageSrc(reader.result as string);
+        setIsCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-    const handleSubmit = async () => {
-        if (isSubmitting) return;
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsImageProcessing(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(croppedBlob);
 
-        // Check if anything changed
-        const hasChanged = selectedImage !== null || isImageRemoved;
-        if (!hasChanged) {
-            onClose();
-            return;
-        }
+      const file = new File([croppedBlob], "group-image.jpg", { type: "image/jpeg" });
+      setSelectedImage(file);
+      setIsImageRemoved(false);
+      setIsCropModalOpen(false);
+      setSelectedCropImageSrc(null);
+    } catch (error) {
+      console.error("Fehler beim Verarbeiten des Gruppenbilds:", error);
+    } finally {
+      setIsImageProcessing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
-        setIsSubmitting(true);
-        try {
-            let imageUrl: string | undefined = undefined;
+  const handleCropCancel = () => {
+    if (isImageProcessing) return;
+    setIsCropModalOpen(false);
+    setSelectedCropImageSrc(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
-            if (selectedImage) {
-                const { uploadUrl, publicUrl } = await fetch("/api/upload", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        filename: selectedImage.name,
-                        contentType: selectedImage.type,
-                        fileSize: selectedImage.size,
-                    }),
-                }).then(r => r.json());
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setIsImageRemoved(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
-                await fetch(uploadUrl, {
-                    method: "PUT",
-                    headers: { "Content-Type": selectedImage.type },
-                    body: selectedImage,
-                });
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
 
-                imageUrl = publicUrl;
-            } else if (isImageRemoved) {
-                imageUrl = "";
-            }
+    // Check if anything changed
+    const hasChanged = selectedImage !== null || isImageRemoved;
+    if (!hasChanged) {
+      onClose();
+      return;
+    }
 
-            if (imageUrl !== undefined) {
-                await updateGroupImage({
-                    conversationId,
-                    imageId: imageUrl,
-                    userId: currentUserId,
-                });
-            }
+    setIsSubmitting(true);
+    try {
+      let imageUrl: string | undefined = undefined;
 
-            onClose();
-        } catch (error) {
-            console.error("Failed to update group image:", error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+      if (selectedImage) {
+        const { uploadUrl, publicUrl } = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: selectedImage.name,
+            contentType: selectedImage.type,
+            fileSize: selectedImage.size,
+          }),
+        }).then((r) => r.json());
 
-    const handleClose = () => {
-        // Reset state on close
-        setTimeout(() => {
-            setSelectedImage(null);
-            setImagePreview(currentImage || null);
-            setIsImageRemoved(false);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }, 100); // Small delay to avoid flickering during close animation
-        onClose();
-    };
+        await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": selectedImage.type },
+          body: selectedImage,
+        });
 
-    return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent aria-describedby={undefined} hideCloseButton withoutExitAnimation className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-0 rounded-2xl gap-0 bg-card text-card-foreground">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <DialogTitle className="text-lg font-semibold">Gruppenbild bearbeiten</DialogTitle>
-                    <button
-                        onClick={handleClose}
-                        className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent transition-colors"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
+        imageUrl = publicUrl;
+      } else if (isImageRemoved) {
+        imageUrl = "";
+      }
 
-                <div className="flex flex-col items-center gap-6 p-6">
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                        className="hidden"
-                    />
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="relative group cursor-pointer active:scale-95 transition-transform"
-                        disabled={isSubmitting}
-                    >
-                        <Avatar className="w-32 h-32">
-                            <AvatarImage src={imagePreview || undefined} alt={groupName} className="object-cover" />
-                            <AvatarFallback className="bg-muted text-muted-foreground">
-                                {groupName.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute bottom-0 right-0 w-10 h-10 bg-[#D08945] rounded-full flex items-center justify-center shadow-md group-hover:bg-[#C07835] transition-colors">
-                            <Camera className="w-5 h-5 text-white" />
-                        </div>
-                    </button>
+      if (imageUrl !== undefined) {
+        await updateGroupImage({
+          conversationId,
+          imageId: imageUrl,
+          userId: currentUserId,
+        });
+      }
 
-                    <div className="flex gap-2 w-full justify-center">
-                        {(imagePreview || currentImage) && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={isImageRemoved ? () => {
-                                    setIsImageRemoved(false);
-                                    setImagePreview(currentImage || null);
-                                } : removeImage}
+      onClose();
+    } catch (error) {
+      console.error("Failed to update group image:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-                                disabled={isSubmitting}
-                            >
-                                {isImageRemoved ? "Wiederherstellen" : "Entfernen"}
-                            </Button>
-                        )}
-                    </div>
-                </div>
+  const handleClose = () => {
+    // Reset state on close
+    setTimeout(() => {
+      setSelectedImage(null);
+      setImagePreview(currentImage || null);
+      setIsImageRemoved(false);
+      setSelectedCropImageSrc(null);
+      setIsCropModalOpen(false);
+      setIsImageProcessing(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }, 100); // Small delay to avoid flickering during close animation
+    onClose();
+  };
 
-                <div className="flex gap-3 justify-center px-6 pb-6 pt-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleClose}
-                        disabled={isSubmitting}
-                        className="min-w-[100px]"
-                        style={{
-                            willChange: "transform",
-                            transform: "translateZ(0)",
-                            backfaceVisibility: "hidden",
-                            WebkitBackfaceVisibility: "hidden"
-                        }}
-                    >
-                        Abbrechen
-                    </Button>
-                    <Button
-                        type="submit"
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                        className="min-w-[100px]"
-                        style={{
-                            willChange: "transform",
-                            transform: "translateZ(0)",
-                            backfaceVisibility: "hidden",
-                            WebkitBackfaceVisibility: "hidden"
-                        }}
-                    >
-                        <span style={{
-                            display: "inline-block",
-                            minWidth: "80px",
-                            textAlign: "center"
-                        }}>
-                            {isSubmitting ? "Wird gespeichert..." : "Speichern"}
-                        </span>
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
+  return (
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent
+        aria-describedby={undefined}
+        hideCloseButton
+        withoutExitAnimation
+        className="flex flex-col p-0 rounded-2xl gap-0 bg-card text-card-foreground max-w-[460px]"
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <DialogTitle className="text-lg font-semibold">
+            Gruppenbild bearbeiten
+          </DialogTitle>
+          <button
+            onClick={handleClose}
+            className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center gap-6 p-6">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="relative group cursor-pointer active:scale-95 transition-transform"
+            disabled={isSubmitting}
+          >
+            <Avatar className="w-32 h-32">
+              <AvatarImage
+                src={imagePreview || undefined}
+                alt={groupName}
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-muted text-muted-foreground">
+                {groupName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute bottom-0 right-0 w-10 h-10 bg-[#D08945] rounded-full flex items-center justify-center shadow-md group-hover:bg-[#C07835] transition-colors">
+              <Camera className="w-5 h-5 text-white" />
+            </div>
+          </button>
+
+          <div className="flex gap-2 w-full justify-center">
+            {(imagePreview || currentImage) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={
+                  isImageRemoved
+                    ? () => {
+                        setIsImageRemoved(false);
+                        setImagePreview(currentImage || null);
+                      }
+                    : removeImage
+                }
+                disabled={isSubmitting}
+              >
+                {isImageRemoved ? "Wiederherstellen" : "Entfernen"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3 justify-center px-6 pb-6 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="min-w-[100px]"
+            style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+            }}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="min-w-[100px]"
+            style={{
+              willChange: "transform",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                minWidth: "80px",
+                textAlign: "center",
+              }}
+            >
+              {isSubmitting ? "Wird gespeichert..." : "Speichern"}
+            </span>
+          </Button>
+        </div>
+        </DialogContent>
+      </Dialog>
+
+      {isCropModalOpen && selectedCropImageSrc && (
+        <ImageCropModal
+          isOpen={isCropModalOpen}
+          onClose={handleCropCancel}
+          imageSrc={selectedCropImageSrc}
+          onCropComplete={handleCropComplete}
+          isUploading={isImageProcessing}
+          aspect={1}
+          cropShape="rect"
+          title="Medien bearbeiten"
+          variant="twitter"
+        />
+      )}
+    </>
+  );
 }

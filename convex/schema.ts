@@ -23,13 +23,15 @@ export default defineSchema({
 
   posts: defineTable({
     userId: v.id("users"),
-    postType: v.optional(v.union(
-      v.literal("normal"),
-      v.literal("spontaneous_meeting"),
-      v.literal("recurring_meeting"),
-      v.literal("announcement"),
-      v.literal("poll")
-    )),
+    postType: v.optional(
+      v.union(
+        v.literal("normal"),
+        v.literal("spontaneous_meeting"),
+        v.literal("recurring_meeting"),
+        v.literal("announcement"),
+        v.literal("poll"),
+      ),
+    ),
     title: v.optional(v.string()),
     content: v.string(),
     imageUrl: v.optional(v.string()),
@@ -121,15 +123,22 @@ export default defineSchema({
   conversations: defineTable({
     participants: v.array(v.id("users")), // Array von User IDs
     leftParticipants: v.optional(v.array(v.id("users"))), // Ehemalige Teilnehmer (Read-Only)
-    leftMetadata: v.optional(v.array(v.object({
-      userId: v.id("users"),
-      leftAt: v.number()
-    }))), // Metadaten wann User die Gruppe verlassen haben
+    leftMetadata: v.optional(
+      v.array(
+        v.object({
+          userId: v.id("users"),
+          leftAt: v.number(),
+        }),
+      ),
+    ), // Metadaten wann User die Gruppe verlassen haben
     name: v.optional(v.string()), // Optionaler Gruppenname
+    description: v.optional(v.string()), // Gruppenbeschreibung
     image: v.optional(v.string()), // Storage ID für Gruppenbild
+    icon: v.optional(v.string()), // Emoji or icon for group identity
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
     isPublic: v.optional(v.boolean()), // Flag für öffentliche Gruppen
     needsRequestToJoin: v.optional(v.boolean()), // Flag, ob ein Beitritt erst genehmigt werden muss
+    onlyAdminsCanMessage: v.optional(v.boolean()), // Flag, ob nur Admins und der Ersteller Nachrichten schreiben dürfen
     adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
     creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),
@@ -141,7 +150,21 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     senderId: v.id("users"),
     content: v.string(),
-    type: v.optional(v.union(v.literal("text"), v.literal("system"), v.literal("image"), v.literal("video"), v.literal("pdf"), v.literal("poll"), v.literal("post"), v.literal("profile"), v.literal("event_invite"), v.literal("location"), v.literal("live_location"))),
+    type: v.optional(
+      v.union(
+        v.literal("text"),
+        v.literal("system"),
+        v.literal("image"),
+        v.literal("video"),
+        v.literal("pdf"),
+        v.literal("poll"),
+        v.literal("post"),
+        v.literal("profile"),
+        v.literal("event_invite"),
+        v.literal("location"),
+        v.literal("live_location"),
+      ),
+    ),
     storageId: v.optional(v.string()),
     fileName: v.optional(v.string()),
     contentType: v.optional(v.string()),
@@ -156,10 +179,14 @@ export default defineSchema({
     liveExpiresAt: v.optional(v.number()),
     isLiveActive: v.optional(v.boolean()),
     visibleTo: v.optional(v.array(v.id("users"))),
-    reactions: v.optional(v.array(v.object({
-      emoji: v.string(),
-      userId: v.id("users")
-    }))),
+    reactions: v.optional(
+      v.array(
+        v.object({
+          emoji: v.string(),
+          userId: v.id("users"),
+        }),
+      ),
+    ),
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])
@@ -173,8 +200,7 @@ export default defineSchema({
     allowMultiple: v.boolean(),
     closeAt: v.optional(v.number()), // timestamp when poll closes, optional
     createdAt: v.number(),
-  })
-    .index("by_conversation", ["conversationId"]),
+  }).index("by_conversation", ["conversationId"]),
 
   chatPollVotes: defineTable({
     chatPollId: v.id("chatPolls"),
@@ -190,10 +216,12 @@ export default defineSchema({
     creatorId: v.id("users"),
     title: v.string(),
     description: v.optional(v.string()),
-    timeSlots: v.array(v.object({
-      startTime: v.number(),
-      endTime: v.number()
-    })),
+    timeSlots: v.array(
+      v.object({
+        startTime: v.number(),
+        endTime: v.number(),
+      }),
+    ),
     confirmedTimeSlotIndex: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_conversation", ["conversationId"]),
@@ -229,15 +257,17 @@ export default defineSchema({
       v.literal("event_join"),
       v.literal("group_join_request"),
       v.literal("group_join_accept"),
-      v.literal("group_join_reject")
+      v.literal("group_join_reject"),
     ),
     targetId: v.optional(v.string()), // ID of post, comment, event, or joinRequest
-    eventMetadata: v.optional(v.object({
-      eventType: v.union(
-        v.literal("spontaneous_meeting"),
-        v.literal("recurring_meeting")
-      ),
-    })),
+    eventMetadata: v.optional(
+      v.object({
+        eventType: v.union(
+          v.literal("spontaneous_meeting"),
+          v.literal("recurring_meeting"),
+        ),
+      }),
+    ),
     isRead: v.boolean(),
     createdAt: v.number(),
   })
@@ -258,7 +288,11 @@ export default defineSchema({
   joinRequests: defineTable({
     conversationId: v.id("conversations"),
     userId: v.id("users"),
-    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected"),
+    ),
     createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])
@@ -289,9 +323,13 @@ export default defineSchema({
     createdBy: v.id("users"),
     // Task enhancements
     assigneeId: v.optional(v.id("users")),
-    priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    priority: v.optional(
+      v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    ),
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
-    status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
+    status: v.optional(
+      v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done")),
+    ),
     isCompleted: v.boolean(),
     createdAt: v.number(),
   })
@@ -300,13 +338,12 @@ export default defineSchema({
 
   workspace_files: defineTable({
     workspaceId: v.string(),
-    storageId: v.id("_storage"),
+    storageId: v.union(v.id("_storage"), v.string()),
     fileName: v.string(),
     fileType: v.string(),
     uploaderId: v.id("users"),
     createdAt: v.number(),
-  })
-    .index("by_workspace", ["workspaceId"]),
+  }).index("by_workspace", ["workspaceId"]),
 
   workspace_polls: defineTable({
     workspaceId: v.string(),
@@ -314,8 +351,7 @@ export default defineSchema({
     options: v.array(v.string()),
     createdBy: v.id("users"),
     createdAt: v.number(),
-  })
-    .index("by_workspace", ["workspaceId"]),
+  }).index("by_workspace", ["workspaceId"]),
 
   workspace_poll_votes: defineTable({
     pollId: v.id("workspace_polls"),
@@ -331,6 +367,17 @@ export default defineSchema({
     conversationId: v.id("conversations"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
+    groupType: v.optional(
+      v.union(
+        v.literal("Study Group"),
+        v.literal("Project Team"),
+        v.literal("Course Group"),
+        v.literal("Event Team"),
+        v.literal("Other"),
+      ),
+    ),
+    customGroupType: v.optional(v.string()), // Custom type when groupType is "Other"
+    currentGoal: v.optional(v.string()),
     ownerId: v.id("users"),
     adminIds: v.optional(v.array(v.id("users"))),
     createdAt: v.number(),
@@ -339,6 +386,19 @@ export default defineSchema({
     .index("by_conversation", ["conversationId"])
     .index("by_owner", ["ownerId"]),
 
+  // Pinned items for group workspaces
+  workspace_pinned_items: defineTable({
+    workspaceId: v.string(),
+    itemType: v.union(
+      v.literal("task"),
+      v.literal("event"),
+      v.literal("file"),
+      v.literal("poll"),
+    ),
+    itemId: v.string(), // References task, event, file, or poll ID
+    pinnedBy: v.id("users"),
+    createdAt: v.number(),
+  }).index("by_workspace", ["workspaceId"]),
   // Activity feed for group workspaces
   workspace_activity: defineTable({
     workspaceId: v.string(),
@@ -351,7 +411,7 @@ export default defineSchema({
       v.literal("event_created"),
       v.literal("member_joined"),
       v.literal("member_left"),
-      v.literal("file_uploaded")
+      v.literal("file_uploaded"),
     ),
     data: v.optional(
       v.union(
@@ -364,7 +424,7 @@ export default defineSchema({
           status: v.union(
             v.literal("todo"),
             v.literal("in_progress"),
-            v.literal("done")
+            v.literal("done"),
           ),
         }),
         v.object({
@@ -374,18 +434,37 @@ export default defineSchema({
             description: v.optional(v.string()),
             deadline: v.optional(v.string()),
             assigneeId: v.optional(v.id("users")),
-            priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
-            visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
-            status: v.optional(v.union(v.literal("todo"), v.literal("in_progress"), v.literal("done"))),
+            priority: v.optional(
+              v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+            ),
+            visibility: v.optional(
+              v.union(v.literal("public"), v.literal("private")),
+            ),
+            status: v.optional(
+              v.union(
+                v.literal("todo"),
+                v.literal("in_progress"),
+                v.literal("done"),
+              ),
+            ),
           }),
         }),
         v.object({ userId: v.id("users") }),
-        v.object({})
-      )
+        v.object({}),
+      ),
     ),
     createdAt: v.number(),
-  })
-    .index("by_workspace_created", ["workspaceId", "createdAt"]),
+  }).index("by_workspace_created", ["workspaceId", "createdAt"]),
+
+  // Milestones for group workspaces
+  workspace_milestones: defineTable({
+    workspaceId: v.string(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    targetDate: v.number(), // timestamp
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  }).index("by_workspace", ["workspaceId"]),
 
   liveLocations: defineTable({
     messageId: v.id("messages"),
@@ -402,11 +481,15 @@ export default defineSchema({
     major: v.string(),
     fullContent: v.string(),
     pdfLinks: v.array(v.object({ text: v.string(), href: v.string() })),
-    pdfContents: v.optional(v.array(v.object({
-      text: v.string(),
-      href: v.string(),
-      content: v.string(),
-    }))),
+    pdfContents: v.optional(
+      v.array(
+        v.object({
+          text: v.string(),
+          href: v.string(),
+          content: v.string(),
+        }),
+      ),
+    ),
     scrapedAt: v.number(),
   }).index("by_major", ["major"]),
 
@@ -475,4 +558,20 @@ export default defineSchema({
   })
     .index("by_call", ["callId"])
     .index("by_created", ["createdAt"]),
+  personal_todos: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    dueDate: v.optional(v.number()), // timestamp
+    priority: v.optional(
+      v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    ),
+    status: v.optional(v.union(v.literal("pending"), v.literal("completed"))),
+    completed: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_completed", ["userId", "completed"])
+    .index("by_user_created", ["userId", "createdAt"]),
 });

@@ -22,24 +22,8 @@ import { ChatEventMessage } from "@/components/chat-event-message";
 import { ChatLocationModal } from "@/components/chat-location-modal";
 import { ChatLocationMessage } from "@/components/chat-location-message";
 import { MessageLinkPreview } from "@/components/LinkPreview";
-
-type ParsedAiContent = {
-    summary: string;
-    details?: string;
-};
-
-function parseAiStructuredContent(text: string): ParsedAiContent | null {
-    const summaryMatch = text.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/i);
-    if (!summaryMatch) return null;
-
-    const summary = summaryMatch[1].trim();
-    if (!summary) return null;
-
-    const detailsMatch = text.match(/\[DETAILS\]([\s\S]*?)\[\/DETAILS\]/i);
-    const details = detailsMatch?.[1]?.trim();
-
-    return details ? { summary, details } : { summary };
-}
+import { linkifyText } from "@/lib/utils/linkify";
+import { parseAiStructuredContent, cleanAiText } from "@/lib/utils/ai-message";
 
 const AI_HISTORY_LIMIT = 6;
 
@@ -72,10 +56,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const EMOJIS = ["👍", "👎", "❤️", "😹", "🙀", "😿", "🙏", "🦫"];
 
-    const aiUserId = useQuery(
+    const aiUser = useQuery(
         api.queries.getUserByUsername,
         { username: "jastell" }
-    ) ?._id;
+    );
+    const aiUserId = aiUser?._id;
     const followerCount = useQuery(
         api.queries.getFollowerCount,
         currentUser?._id ? { userId: currentUser._id } : "skip",
@@ -237,10 +222,27 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
     const conversation = allConversations?.find(c => c._id === conversationId);
 
+    // KI-/Chatbot-Konversation erkennen (1:1-Chat mit dem Bot-User "jastell")
+    const isAiConversation =
+        !conversation?.isGroup &&
+        !!aiUserId &&
+        !!members?.some((m) => m._id === aiUserId);
+
+    // Die KI-Erkennung ist erst zuverlässig, wenn members UND der jastell-User geladen sind.
+    // Anruf-/Video-/Datei-Icons erst zeigen, wenn feststeht, dass es KEIN KI-Chat ist –
+    // verhindert das kurze Aufblitzen der Icons beim Öffnen eines Jastell-Chats.
+    const chatActionsReady = members !== undefined && aiUser !== undefined;
+    const showChatActionButtons = chatActionsReady && !isAiConversation;
+
     const isGroupAdmin = conversation?.isGroup && currentUser && (
         conversation.creatorId === currentUser._id ||
         conversation.adminIds?.includes(currentUser._id)
     );
+
+    const isRestrictedFromMessaging =
+        conversation?.isGroup &&
+        conversation?.onlyAdminsCanMessage &&
+        !isGroupAdmin;
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
         if (scrollContainerRef.current) {
@@ -319,6 +321,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
         const trimmedMessage = newMessage.trim();
         const aiTriggerMatch = trimmedMessage.match(/^jastell\b(?::\s*|\s+)?/i);
+        const shouldTriggerAi = isAiConversation || !!aiTriggerMatch;
+        const aiPrompt = isAiConversation
+            ? (aiTriggerMatch ? trimmedMessage.slice(aiTriggerMatch[0].length).trim() : trimmedMessage)
+            : trimmedMessage.slice(aiTriggerMatch?.[0].length ?? 0).trim();
 
         try {
             await sendMessage({
@@ -326,8 +332,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 senderId: currentUser._id,
                 content: trimmedMessage,
             });
-            if (aiTriggerMatch) {
-                const prompt = trimmedMessage.slice(aiTriggerMatch[0].length).trim();
+            if (shouldTriggerAi) {
                 const recentHistory = (messages ?? [])
                     .slice(-AI_HISTORY_LIMIT)
                     .map((message) => ({
@@ -335,7 +340,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         content: message.content,
                     }));
                 const msg = await handleAi(
-                    prompt,
+                    aiPrompt,
                     currentUser.major || undefined,
                     currentUser.semester,
                     recentHistory,
@@ -364,29 +369,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     };
 
     const getMember = (userId: string) => members?.find(m => m._id === userId);
-
-    const linkifyText = (text: string) => {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        const parts = text.split(urlRegex);
-
-        return parts.map((part, index) => {
-            if (part.match(urlRegex)) {
-                return (
-                    <a
-                        key={index}
-                        href={part}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#8C531E] dark:text-[#D08945] underline break-all"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {part}
-                    </a>
-                );
-            }
-            return part;
-        });
-    };
 
     const toggleAiDetails = (messageId: string) => {
         setExpandedAiMessages((prev) => ({
@@ -439,7 +421,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     </button>
 
                     {conversation ? (
-                        <div className="flex items-center min-w-0">
+                        <div className="flex items-center min-w-0 flex-1">
                             <div
                                 className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && !isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
@@ -455,7 +437,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
 
                             <span
-                                className={`font-semibold truncate inline-block max-w-[100px] sm:max-w-[200px] transition-opacity ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
+                                className={`font-semibold truncate transition-opacity ${isAiConversation ? "flex-1 min-w-0" : "inline-block max-w-[100px] sm:max-w-[200px]"} ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 onClick={handleHeaderClick}
                             >
                                 {conversation.displayName}
@@ -471,17 +453,20 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {/* Right side */}
                 {conversation && (
                     <div className="flex items-center gap-0.5">
-                        {/* Call-Buttons: Voice & Video */}
-                        {!isLeft && (
+                        {/* Call-Buttons: Voice & Video - nicht im Chatbot-Chat, erst wenn geklärt */}
+                        {!isLeft && !isRestrictedFromMessaging && showChatActionButtons && (
                             <ChatHeaderCallButtons conversationId={conversationId} />
                         )}
-                        <button
-                            className="p-2 text-[#D08945]"
-                            onClick={() => setIsFilesModalOpen(true)}
-                            title="Geteilte Dateien"
-                        >
-                            <Folder size={20} />
-                        </button>
+                        {/* Datei-Button - nicht im Chatbot-Chat, erst wenn geklärt */}
+                        {showChatActionButtons && (
+                            <button
+                                className="p-2 text-[#D08945]"
+                                onClick={() => setIsFilesModalOpen(true)}
+                                title="Geteilte Dateien"
+                            >
+                                <Folder size={20} />
+                            </button>
+                        )}
                         <div className="relative">
                             <button
                                 className="p-2 text-[#D08945] hover:bg-muted rounded-full transition-colors"
@@ -950,7 +935,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                     return null;
                                                                 })()}
                                                                 <div>
-                                                                    {linkifyText(msg.content)}
+                                                                    {linkifyText(isAiMessage ? cleanAiText(msg.content) : msg.content)}
                                                                 </div>
                                                             </div>
                                                         )}
@@ -1063,7 +1048,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* Input */}
-            {!isLeft ? (
+            {!isLeft && !isRestrictedFromMessaging ? (
                 <div
                     className="bg-[#FDFBF7] dark:bg-background"
                     style={{ paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))` }}
@@ -1163,8 +1148,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         }
                                     }
                                 }}
-                                aria-label="Schreibe eine Nachricht..."
-                                placeholder="Schreibe eine Nachricht..."
+                                aria-label={isAiConversation ? "Schreibe Jastell direkt..." : "Schreibe eine Nachricht..."}
+                                placeholder={isAiConversation ? "Schreibe Jastell direkt..." : "Schreibe eine Nachricht..."}
                                 className="flex-1 bg-transparent outline-none min-w-0 text-foreground placeholder:text-muted-foreground resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
                                 rows={1}
                                 style={{ minHeight: '24px' }}
@@ -1200,7 +1185,9 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
                     }}
                 >
-                    Du bist kein Mitglied dieser Gruppe mehr.
+                    {isLeft
+                        ? "Du bist kein Mitglied dieser Gruppe mehr."
+                        : "Nur Admins können Nachrichten in dieser Gruppe schreiben."}
                 </div>
             )}
 
