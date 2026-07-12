@@ -759,6 +759,7 @@ export const createConversation = mutation({
     visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
     isPublic: v.optional(v.boolean()),
     needsRequestToJoin: v.optional(v.boolean()),
+    onlyAdminsCanMessage: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const isGroup = args.participants.length > 2 || !!args.name;
@@ -792,6 +793,7 @@ export const createConversation = mutation({
       isGroup,
       isPublic: isGroup ? (args.isPublic ?? false) : undefined,
       needsRequestToJoin: isGroup ? (args.needsRequestToJoin ?? false) : undefined,
+      onlyAdminsCanMessage: isGroup ? (args.onlyAdminsCanMessage ?? false) : undefined,
       creatorId: args.creatorId,
       adminIds: args.creatorId ? [args.creatorId] : undefined, // Creator is initially the only admin
       updatedAt: Date.now(),
@@ -1052,6 +1054,16 @@ export const sendMessage = mutation({
       throw new Error("User is not a participant of this conversation");
     }
 
+    // Check if message posting is restricted to admins/creators
+    if (conversation.onlyAdminsCanMessage && args.type !== "system") {
+      const isAdminOrCreator =
+        conversation.creatorId === args.senderId ||
+        conversation.adminIds?.includes(args.senderId);
+      if (!isAdminOrCreator) {
+        throw new Error("Only admins and creators can send messages in this group");
+      }
+    }
+
     const messageId = await ctx.db.insert("messages", {
       conversationId: args.conversationId,
       senderId: args.senderId,
@@ -1171,6 +1183,17 @@ export const sendChatPoll = mutation({
     if (!conversation.participants.includes(args.senderId)) {
       throw new Error("User is not a participant of this conversation");
     }
+
+    // Check if message posting is restricted to admins/creators
+    if (conversation.onlyAdminsCanMessage) {
+      const isAdminOrCreator =
+        conversation.creatorId === args.senderId ||
+        conversation.adminIds?.includes(args.senderId);
+      if (!isAdminOrCreator) {
+        throw new Error("Only admins and creators can create polls in this group");
+      }
+    }
+
     if (args.options.length < 2)
       throw new Error("Poll must have at least 2 options");
     if (args.question.trim() === "")
@@ -2011,6 +2034,46 @@ export const toggleGroupPublic = mutation({
         content: args.isPublic
           ? `${user.name} hat die Gruppe öffentlich gemacht`
           : `${user.name} hat die Gruppe privat gemacht`,
+        type: "system",
+        createdAt: Date.now(),
+      });
+    }
+    return { success: true };
+  },
+});
+
+export const toggleOnlyAdminsCanMessage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    onlyAdminsCanMessage: v.boolean(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    if (!conversation.isGroup)
+      throw new Error("Can only toggle messaging setting for groups");
+
+    // Check admin permissions
+    const isAdmin =
+      conversation.adminIds?.includes(args.userId) ||
+      conversation.creatorId === args.userId;
+    if (!isAdmin)
+      throw new Error("Only admins can change group messaging settings");
+
+    await ctx.db.patch(args.conversationId, {
+      onlyAdminsCanMessage: args.onlyAdminsCanMessage,
+    });
+
+    // Create system message
+    const user = await ctx.db.get(args.userId);
+    if (user) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        senderId: args.userId,
+        content: args.onlyAdminsCanMessage
+          ? `${user.name} hat eingestellt, dass nur Admins Nachrichten senden können`
+          : `${user.name} hat eingestellt, dass alle Mitglieder Nachrichten senden können`,
         type: "system",
         createdAt: Date.now(),
       });

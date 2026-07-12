@@ -44,6 +44,16 @@ export const createChatEvent = mutation({
       throw new Error("User is not a participant of this conversation");
     }
 
+    // Check if message posting is restricted to admins/creators
+    if (conversation.onlyAdminsCanMessage) {
+      const isAdminOrCreator =
+        conversation.creatorId === args.creatorId ||
+        conversation.adminIds?.includes(args.creatorId);
+      if (!isAdminOrCreator) {
+        throw new Error("Only admins and creators can create events in this group");
+      }
+    }
+
     const chatEventId = await ctx.db.insert("chatEvents", {
       conversationId: args.conversationId,
       creatorId: args.creatorId,

@@ -45,6 +45,7 @@ export function ChatSidebar() {
 
   const [isGroupPublic, setIsGroupPublic] = useState(false);
   const [needsRequestToJoin, setNeedsRequestToJoin] = useState(false);
+  const [onlyAdminsCanMessage, setOnlyAdminsCanMessage] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -57,6 +58,7 @@ export function ChatSidebar() {
       setUserSearchQuery("");
       setIsGroupPublic(false);
       setNeedsRequestToJoin(false);
+      setOnlyAdminsCanMessage(false);
     }, 300);
   };
 
@@ -134,6 +136,7 @@ export function ChatSidebar() {
         creatorId: currentUser._id,
         isPublic: selectedUsers.length > 1 ? isGroupPublic : undefined,
         needsRequestToJoin: selectedUsers.length > 1 ? needsRequestToJoin : undefined,
+        onlyAdminsCanMessage: selectedUsers.length > 1 ? onlyAdminsCanMessage : undefined,
       });
       setIsNewChatOpen(false);
       setSelectedUsers([]);
@@ -141,6 +144,7 @@ export function ChatSidebar() {
       setUserSearchQuery("");
       setIsGroupPublic(false);
       setNeedsRequestToJoin(false);
+      setOnlyAdminsCanMessage(false);
       router.push(`/chat/${conversationId}`);
     } catch (error) {
       console.error("Failed to create conversation:", error);
@@ -593,6 +597,25 @@ export function ChatSidebar() {
                       >
                         <span
                           className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${needsRequestToJoin ? "translate-x-4" : "translate-x-0"
+                            }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Nur Admins schreiben Toggle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200/50">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-black">Nur Admins können schreiben</span>
+                        <span className="text-[10px] text-gray-400">Nur Admins & Ersteller dürfen Nachrichten senden</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOnlyAdminsCanMessage(!onlyAdminsCanMessage)}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${onlyAdminsCanMessage ? "bg-[#d08945]" : "bg-gray-200"
+                          }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${onlyAdminsCanMessage ? "translate-x-4" : "translate-x-0"
                             }`}
                         />
                       </button>

@@ -136,6 +136,7 @@ export default defineSchema({
     isGroup: v.optional(v.boolean()), // Flag für Gruppenchat
     isPublic: v.optional(v.boolean()), // Flag für öffentliche Gruppen
     needsRequestToJoin: v.optional(v.boolean()), // Flag, ob ein Beitritt erst genehmigt werden muss
+    onlyAdminsCanMessage: v.optional(v.boolean()), // Flag, ob nur Admins und der Ersteller Nachrichten schreiben dürfen
     adminIds: v.optional(v.array(v.id("users"))), // Array von User IDs die Admins sind
     creatorId: v.optional(v.id("users")), // Ersteller der Gruppe (kann nicht entmachtet werden)
     lastMessageId: v.optional(v.id("messages")),

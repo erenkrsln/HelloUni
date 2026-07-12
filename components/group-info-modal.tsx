@@ -81,6 +81,9 @@ export function GroupInfoModal({
   const toggleGroupJoinRequestRequired = useMutation(
     api.mutations.toggleGroupJoinRequestRequired,
   );
+  const toggleOnlyAdminsCanMessage = useMutation(
+    api.mutations.toggleOnlyAdminsCanMessage,
+  );
 
   const myself = members?.find((m) => m._id === currentUserId);
   const iAmCreator = myself?.role === "creator";
@@ -622,6 +625,49 @@ export function GroupInfoModal({
                       </button>
                     </div>
                   )}
+
+                  {/* Nur Admins schreiben Toggle */}
+                  <div className="flex items-center justify-between p-4 pt-0">
+                    <div className="flex flex-col pr-4">
+                      <span className="text-sm font-semibold text-gray-900">
+                        Nur Admins können schreiben
+                      </span>
+                      <span className="text-xs text-gray-500 font-normal">
+                        Erlaube nur Admins und dem Ersteller, Nachrichten zu senden
+                      </span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await toggleOnlyAdminsCanMessage({
+                            conversationId,
+                            onlyAdminsCanMessage: !conversation.onlyAdminsCanMessage,
+                            userId: currentUserId,
+                          });
+                        } catch (error) {
+                          console.error(
+                            "Failed to toggle onlyAdminsCanMessage setting:",
+                            error,
+                          );
+                          alert(
+                            "Fehler beim Ändern der Nachrichteneinschränkung.",
+                          );
+                        }
+                      }}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        conversation.onlyAdminsCanMessage ? "bg-[#D08945]" : "bg-gray-200"
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          conversation.onlyAdminsCanMessage
+                            ? "translate-x-5"
+                            : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </>
               )}
 
