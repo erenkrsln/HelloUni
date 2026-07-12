@@ -340,7 +340,7 @@ export function GroupInfoModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation>
+      <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className="sm:w-[560px]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
           {view === "list" ? (
             <>
