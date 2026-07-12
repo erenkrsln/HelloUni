@@ -576,7 +576,7 @@ function FollowsModal({ isOpen, onClose, userId, currentUserId, type }: FollowsM
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-gray-100">
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">

@@ -72,10 +72,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
     const EMOJIS = ["👍", "👎", "❤️", "😹", "🙀", "😿", "🙏", "🦫"];
 
-    const aiUserId = useQuery(
+    const aiUser = useQuery(
         api.queries.getUserByUsername,
         { username: "jastell" }
-    ) ?._id;
+    );
+    const aiUserId = aiUser?._id;
     const followerCount = useQuery(
         api.queries.getFollowerCount,
         currentUser?._id ? { userId: currentUser._id } : "skip",
@@ -242,6 +243,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
         !conversation?.isGroup &&
         !!aiUserId &&
         !!members?.some((m) => m._id === aiUserId);
+
+    // Die KI-Erkennung ist erst zuverlässig, wenn members UND der jastell-User geladen sind.
+    // Anruf-/Video-/Datei-Icons erst zeigen, wenn feststeht, dass es KEIN KI-Chat ist –
+    // verhindert das kurze Aufblitzen der Icons beim Öffnen eines Jastell-Chats.
+    const chatActionsReady = members !== undefined && aiUser !== undefined;
+    const showChatActionButtons = chatActionsReady && !isAiConversation;
 
     // Beim Öffnen eines Chatbot-Chats das Eingabefeld mit "Jastell: " vorbelegen,
     // da der Bot nur auf Nachrichten mit diesem Präfix reagiert.
@@ -455,7 +462,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     </button>
 
                     {conversation ? (
-                        <div className="flex items-center min-w-0">
+                        <div className="flex items-center min-w-0 flex-1">
                             <div
                                 className={`w-8 h-8 rounded-full overflow-hidden mr-3 flex-shrink-0 ${conversation.isGroup && !isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
@@ -471,7 +478,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
 
                             <span
-                                className={`font-semibold truncate inline-block max-w-[100px] sm:max-w-[200px] transition-opacity ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
+                                className={`font-semibold truncate transition-opacity ${isAiConversation ? "flex-1 min-w-0" : "inline-block max-w-[100px] sm:max-w-[200px]"} ${!isLeft ? "cursor-pointer hover:opacity-80" : ""}`}
                                 onClick={handleHeaderClick}
                             >
                                 {conversation.displayName}
@@ -487,12 +494,12 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 {/* Right side */}
                 {conversation && (
                     <div className="flex items-center gap-0.5">
-                        {/* Call-Buttons: Voice & Video - nicht im Chatbot-Chat */}
-                        {!isLeft && !isAiConversation && (
+                        {/* Call-Buttons: Voice & Video - nicht im Chatbot-Chat, erst wenn geklärt */}
+                        {!isLeft && showChatActionButtons && (
                             <ChatHeaderCallButtons conversationId={conversationId} />
                         )}
-                        {/* Datei-Button - nicht im Chatbot-Chat */}
-                        {!isAiConversation && (
+                        {/* Datei-Button - nicht im Chatbot-Chat, erst wenn geklärt */}
+                        {showChatActionButtons && (
                             <button
                                 className="p-2 text-[#D08945]"
                                 onClick={() => setIsFilesModalOpen(true)}
