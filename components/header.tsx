@@ -109,7 +109,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
         minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
       }}
     >
-      <div className="absolute inset-0 bg-white bg-opacity-[0.65] backdrop-blur-[57px]" />
+      <div className="absolute inset-0 bg-background/65 dark:bg-neutral-900/65 backdrop-blur-[57px]" />
       <div className="relative w-full h-[80px]">
         {/* Clickable area for logo sidebar - left third of header */}
         <button
@@ -119,12 +119,15 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
             width: "33.33%",
             zIndex: 1,
           }}
-          aria-label="Open menu"
+          aria-label="Hauptmenü öffnen"
+          tabIndex={-1}
+          aria-hidden="true"
         />
 
         <button
           id="tour-logo-menu"
           onClick={() => setIsLogoSidebarOpen(true)}
+          aria-label="Hauptmenü öffnen"
           className="absolute flex items-center justify-center md:justify-start cursor-pointer active:scale-95 transition-transform left-5 top-[18px] w-11 h-11 md:w-auto md:left-12"
           style={{
             willChange: "transform",
@@ -133,11 +136,12 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
             zIndex: 2,
           }}
         >
-          <picture>
+          <picture className="dark:hidden">
             <source media="(min-width: 768px)" srcSet="/logo_font.svg" />
             <img
               src="/logo2.svg"
               alt="Logo"
+              className="dark:hidden"
               style={{
                 height: "80px",
                 width: "auto",
@@ -150,7 +154,31 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 const fallback = document.createElement("span");
-                fallback.className = "text-xl font-bold text-black";
+                fallback.className = "text-xl font-bold text-foreground";
+                fallback.innerText = "HelloUni";
+                target.replaceWith(fallback);
+              }}
+            />
+          </picture>
+          <picture className="hidden dark:block">
+            <source media="(min-width: 768px)" srcSet="/logo_font_dark.svg" />
+            <img
+              src="/logo2.svg"
+              alt="Logo"
+              className="hidden dark:block"
+              style={{
+                height: "80px",
+                width: "auto",
+                objectFit: "contain",
+                display: "block",
+                willChange: "transform",
+                transform: "translateZ(0)",
+                backfaceVisibility: "hidden"
+              }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                const fallback = document.createElement("span");
+                fallback.className = "text-xl font-bold text-foreground";
                 fallback.innerText = "HelloUni";
                 target.replaceWith(fallback);
               }}
@@ -161,7 +189,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
           !pathname.startsWith("/profile/") &&
           pathname !== "/create" && (
             <h1
-              className="absolute font-bold"
+              className="absolute font-bold text-foreground"
               style={{
                 position: "absolute",
                 left: "50%",
@@ -170,7 +198,6 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
                 fontSize: "24px",
                 lineHeight: "1",
                 textAlign: "center",
-                color: "#000000",
                 whiteSpace: "nowrap"
               }}
             >
@@ -261,7 +288,10 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
             href="/notifications"
             onClick={handleBellClick}
             prefetch={true}
-            aria-label="Benachrichtigungen"
+            aria-label={unreadNotificationCount > 0 ? `Benachrichtigungen (${unreadNotificationCount} ungelesene)` : "Benachrichtigungen"}
+            aria-expanded={isNotificationsOpen}
+            aria-controls="notifications-popup"
+            aria-haspopup="dialog"
             className="bell-button absolute flex items-center justify-center transition-transform hover:scale-105 active:scale-95 right-[76px] top-[18px] w-11 h-11 md:right-[104px]"
             style={{
               willChange: "transform",
@@ -271,11 +301,12 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
             }}
           >
             <Bell
+              aria-hidden="true"
               style={{
                 width: "28px",
                 height: "28px",
-                color: "#000000",
-                fill: pathname === "/notifications" || isNotificationsOpen ? "#000000" : "none",
+                color: "var(--color-text-foreground)",
+                fill: pathname === "/notifications" || isNotificationsOpen ? "var(--color-text-foreground)" : "none",
               }}
             />
             {unreadNotificationCount > 0 && (
@@ -286,10 +317,10 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
 
         {/* Notifications Popup */}
         {isNotificationsOpen && currentUser && (
-          <div className="notifications-popup hidden md:flex absolute right-5 md:right-[104px] top-[70px] w-[380px] max-w-[calc(100vw-40px)] bg-white border border-gray-200 rounded-2xl shadow-2xl z-[80] flex-col">
+          <div id="notifications-popup" role="dialog" aria-label="Benachrichtigungen" aria-modal="false" className="notifications-popup hidden md:flex absolute right-5 md:right-[104px] top-[70px] w-[380px] max-w-[calc(100vw-40px)] bg-popover border border-border rounded-2xl shadow-2xl z-[80] flex-col">
             {/* Header of popup */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
-              <span className="font-bold text-gray-900 text-sm">Benachrichtigungen</span>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/50 rounded-t-2xl">
+              <span className="font-bold text-foreground text-sm">Benachrichtigungen</span>
               <div className="flex items-center gap-2">
                 <NotificationSettingsMenu userId={currentUser._id} />
 
@@ -297,7 +328,7 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
             </div>
             {/* Scrollable feed list */}
             <div
-              className="overflow-y-auto flex-1 relative bg-white min-h-[150px] max-h-[400px] rounded-b-2xl"
+              className="overflow-y-auto flex-1 relative bg-popover min-h-[150px] max-h-[400px] rounded-b-2xl"
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 if (!target.closest("button")) {
@@ -322,19 +353,19 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
             }}
-            aria-label="Menü öffnen"
+            aria-label="Benutzermenü öffnen"
           >
             {/* Feste Größe für Layout-Stabilität (kein Layout Shift) - 44x44px */}
-            <div className="relative w-11 h-11 rounded-full border-2 border-gray-200 shadow-sm overflow-hidden flex items-center justify-center">
+            <div className="relative w-11 h-11 rounded-full border-2 border-border shadow-sm overflow-hidden flex items-center justify-center">
               {/* Zustand 1: User lädt noch → Grauer pulsierender Platzhalter */}
               {currentUser === undefined ? (
-                <div className="w-full h-full rounded-full bg-gray-200 animate-pulse" />
+                <div className="w-full h-full rounded-full bg-muted animate-pulse" />
               ) : currentUser?.image ? (
                 /* Zustand 3: User geladen UND hat Bild → Zeige Profilbild */
                 <>
                   {/* Shimmer während Bild lädt */}
                   {!imageLoaded && (
-                    <div className="absolute inset-0 rounded-full bg-gray-200 animate-pulse z-10" />
+                    <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
                   )}
                   <Image
                     src={currentUser.image}
@@ -358,9 +389,9 @@ export function Header({ onMenuClick, onEditClick, title }: HeaderProps = {}) {
               ) : (
                 /* Zustand 2: User geladen aber KEIN Bild → Fallback-Icon */
                 <div
-                  className="w-full h-full flex items-center justify-center bg-gray-200"
+                  className="w-full h-full flex items-center justify-center bg-muted"
                 >
-                  <User className="w-6 h-6 text-gray-500" />
+                  <User aria-hidden="true" className="w-6 h-6 text-muted-foreground" />
                 </div>
               )}
             </div>

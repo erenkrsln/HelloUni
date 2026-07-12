@@ -198,26 +198,26 @@ export default function AuthPage() {
   };
 
   const fieldClassName =
-    "w-full h-12 px-4 rounded-full bg-white border border-gray-300 text-black outline-none transition-colors focus:border-black focus:ring-0 disabled:opacity-50";
+    "w-full h-12 px-4 rounded-full bg-background border border-border text-foreground outline-none transition-colors focus:border-black focus:ring-0 disabled:opacity-50";
 
   const majorSelectClassName = `${fieldClassName} auth-major-select !pr-12 cursor-pointer disabled:cursor-not-allowed`;
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center bg-white px-4 pb-4">
+    <div className="min-h-screen w-full flex flex-col items-center bg-background px-4 pb-4">
       <div className="w-full max-w-md flex flex-col items-center">
         <div className="flex items-center justify-center mt-0 sm:mt-4 w-full">
           <img src="/hellouni.svg" alt="Hello Uni Logo" className="w-56 h-56 object-contain ml-24" />
         </div>
 
-        <h1 className="text-4xl font-semibold text-black text-center -mt-16 w-full" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
+        <h1 className="text-4xl font-semibold text-foreground text-center -mt-16 w-full" style={{ fontFamily: "var(--font-poppins), sans-serif" }}>
           HelloUni
         </h1>
 
         <div className="rounded-3xl p-8 shadow-lg w-full" style={{ backgroundColor: "rgba(220, 198, 161)", marginTop: "40px" }}>
-          <h2 className="text-2xl font-bold text-black mb-2 text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
             {isDevMode ? "Dev Login" : isSignUp ? "Registrieren" : "Anmelden"}
           </h2>
-          <p className="text-sm text-gray-700 mb-6 text-center">
+          <p className="text-sm text-foreground mb-6 text-center">
             {isDevMode
               ? ""
               : isSignUp
@@ -335,7 +335,7 @@ export default function AuthPage() {
                 setError("");
                 setSuccess("");
               }}
-              className="text-sm text-gray-700 hover:text-black underline transition-colors"
+              className="text-sm text-foreground hover:text-foreground underline transition-colors"
             >
               {isSignUp ? "Bereits ein Konto? Anmelden" : "Noch kein Konto? Registrieren"}
             </button>
@@ -346,7 +346,7 @@ export default function AuthPage() {
                 setError("");
                 setSuccess("");
               }}
-              className="text-sm text-gray-700 hover:text-black underline transition-colors"
+              className="text-sm text-foreground hover:text-foreground underline transition-colors"
             >
               Dev Login
             </button>
@@ -354,13 +354,13 @@ export default function AuthPage() {
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-6 text-s">
-          <Link href="/about" className="text-gray-500 hover:text-gray-800 underline transition-colors">
+          <Link href="/about" className="text-muted-foreground hover:text-foreground underline transition-colors">
             Über Uns
           </Link>
-          <Link href="/imprint" className="text-gray-500 hover:text-gray-800 underline transition-colors">
+          <Link href="/imprint" className="text-muted-foreground hover:text-foreground underline transition-colors">
             Impressum
           </Link>
-          <Link href="/privacy" className="text-gray-500 hover:text-gray-800 underline transition-colors">
+          <Link href="/privacy" className="text-muted-foreground hover:text-foreground underline transition-colors">
             Datenschutz
           </Link>
         </div>

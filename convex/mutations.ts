@@ -2087,3 +2087,483 @@ export const handleJoinRequest = mutation({
     return { success: true };
   },
 });
+
+// ─── Account-Löschung ──────────────────────────────────────────────────────────
+
+/**
+ * Löscht den gesamten Account eines Nutzers und alle zugehörigen Daten.
+ * Die Identität wird über die E-Mail der aktuellen Session verifiziert.
+ * 
+ * SICHERHEIT: Diese Mutation akzeptiert nur eine E-Mail (aus der Session),
+ * niemals eine User-ID vom Frontend.
+ */
+export const deleteUserAccount = mutation({
+  args: {
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // 1. Nutzer über E-Mail verifizieren
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
+      .first();
+
+    if (!user) {
+      throw new ConvexError("Benutzer nicht gefunden.");
+    }
+
+    const userId = user._id;
+
+    // 2. Posts des Users und alle abhängigen Daten löschen
+    const userPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    for (const post of userPosts) {
+      // Likes für diesen Post
+      const postLikes = await ctx.db
+        .query("likes")
+        .withIndex("by_post", (q) => q.eq("postId", post._id))
+        .collect();
+      for (const like of postLikes) {
+        await ctx.db.delete(like._id);
+      }
+
+      // Kommentare für diesen Post + deren Likes/Dislikes
+      const postComments = await ctx.db
+        .query("comments")
+        .withIndex("by_post", (q) => q.eq("postId", post._id))
+        .collect();
+      for (const comment of postComments) {
+        const cLikes = await ctx.db
+          .query("commentLikes")
+          .withIndex("by_comment", (q) => q.eq("commentId", comment._id))
+          .collect();
+        for (const cl of cLikes) await ctx.db.delete(cl._id);
+
+        const cDislikes = await ctx.db
+          .query("commentDislikes")
+          .withIndex("by_comment", (q) => q.eq("commentId", comment._id))
+          .collect();
+        for (const cd of cDislikes) await ctx.db.delete(cd._id);
+
+        await ctx.db.delete(comment._id);
+      }
+
+      // Teilnehmer für diesen Post
+      const postParticipants = await ctx.db
+        .query("participants")
+        .withIndex("by_post", (q) => q.eq("postId", post._id))
+        .collect();
+      for (const p of postParticipants) await ctx.db.delete(p._id);
+
+      // Umfrage-Stimmen für diesen Post
+      const postPollVotes = await ctx.db
+        .query("pollVotes")
+        .withIndex("by_post", (q) => q.eq("postId", post._id))
+        .collect();
+      for (const pv of postPollVotes) await ctx.db.delete(pv._id);
+
+      // Post selbst löschen
+      await ctx.db.delete(post._id);
+    }
+
+    // 3. Likes des Users auf ANDERE Posts entfernen + Zähler dekrementieren
+    const allUserLikes = await ctx.db
+      .query("likes")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const like of allUserLikes) {
+      const post = await ctx.db.get(like.postId);
+      if (post) {
+        await ctx.db.patch(post._id, {
+          likesCount: Math.max(0, post.likesCount - 1),
+        });
+      }
+      await ctx.db.delete(like._id);
+    }
+
+    // 4. Kommentare des Users auf ANDERE Posts entfernen + Zähler dekrementieren
+    const allUserComments = await ctx.db
+      .query("comments")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const comment of allUserComments) {
+      // CommentLikes/-Dislikes für diesen Kommentar löschen
+      const cLikes = await ctx.db
+        .query("commentLikes")
+        .withIndex("by_comment", (q) => q.eq("commentId", comment._id))
+        .collect();
+      for (const cl of cLikes) await ctx.db.delete(cl._id);
+
+      const cDislikes = await ctx.db
+        .query("commentDislikes")
+        .withIndex("by_comment", (q) => q.eq("commentId", comment._id))
+        .collect();
+      for (const cd of cDislikes) await ctx.db.delete(cd._id);
+
+      // Post-Kommentarzähler dekrementieren
+      const post = await ctx.db.get(comment.postId);
+      if (post) {
+        await ctx.db.patch(post._id, {
+          commentsCount: Math.max(0, post.commentsCount - 1),
+        });
+      }
+
+      await ctx.db.delete(comment._id);
+    }
+
+    // 5. CommentLikes/CommentDislikes des Users löschen
+    const userCommentLikes = await ctx.db
+      .query("commentLikes")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const cl of userCommentLikes) await ctx.db.delete(cl._id);
+
+    const userCommentDislikes = await ctx.db
+      .query("commentDislikes")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const cd of userCommentDislikes) await ctx.db.delete(cd._id);
+
+    // 6. Follows löschen (als Follower und als Followed)
+    const followsAsFollower = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", userId))
+      .collect();
+    for (const f of followsAsFollower) await ctx.db.delete(f._id);
+
+    const followsAsFollowing = await ctx.db
+      .query("follows")
+      .withIndex("by_following", (q) => q.eq("followingId", userId))
+      .collect();
+    for (const f of followsAsFollowing) await ctx.db.delete(f._id);
+
+    // 7. PollVotes des Users löschen
+    const userPollVotes = await ctx.db
+      .query("pollVotes")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const pv of userPollVotes) await ctx.db.delete(pv._id);
+
+    // 8. Participants des Users löschen + Zähler dekrementieren
+    const userParticipants = await ctx.db
+      .query("participants")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const p of userParticipants) {
+      const post = await ctx.db.get(p.postId);
+      if (post && post.participantsCount !== undefined) {
+        await ctx.db.patch(post._id, {
+          participantsCount: Math.max(0, (post.participantsCount || 0) - 1),
+        });
+      }
+      await ctx.db.delete(p._id);
+    }
+
+    // 9. Notifications löschen (als Empfänger und als Auslöser)
+    const notificationsAsRecipient = await ctx.db
+      .query("notifications")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const n of notificationsAsRecipient) await ctx.db.delete(n._id);
+
+    const notificationsAsIssuer = await ctx.db
+      .query("notifications")
+      .filter((q) => q.eq(q.field("issuerId"), userId))
+      .collect();
+    for (const n of notificationsAsIssuer) await ctx.db.delete(n._id);
+
+    // 10. PushSubscriptions löschen
+    const pushSubs = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const ps of pushSubs) await ctx.db.delete(ps._id);
+
+    // 11. Conversations: User aus Teilnehmerlisten entfernen
+    const allConversations = await ctx.db.query("conversations").collect();
+    for (const conv of allConversations) {
+      const isParticipant = conv.participants.includes(userId);
+      const isLeftParticipant = conv.leftParticipants?.includes(userId);
+
+      if (!isParticipant && !isLeftParticipant) continue;
+
+      const isDirectMessage = !conv.isGroup && conv.participants.length <= 2;
+
+      if (isDirectMessage) {
+        // DM: Alle Nachrichten und die Konversation löschen
+        const messages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .collect();
+        for (const msg of messages) {
+          // Storage-Dateien löschen falls vorhanden
+          if (msg.storageId) {
+            try { await ctx.storage.delete(msg.storageId as any); } catch { /* best-effort */ }
+          }
+          await ctx.db.delete(msg._id);
+        }
+
+        // LastReads für diese Konversation löschen
+        const lastReads = await ctx.db
+          .query("last_reads")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .collect();
+        for (const lr of lastReads) await ctx.db.delete(lr._id);
+
+        // ChatPolls und ChatPollVotes für diese Konversation
+        const chatPolls = await ctx.db
+          .query("chatPolls")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .collect();
+        for (const cp of chatPolls) {
+          const cpVotes = await ctx.db
+            .query("chatPollVotes")
+            .withIndex("by_poll", (q) => q.eq("chatPollId", cp._id))
+            .collect();
+          for (const cpv of cpVotes) await ctx.db.delete(cpv._id);
+          await ctx.db.delete(cp._id);
+        }
+
+        // ChatEvents und ChatEventVotes für diese Konversation
+        const chatEvents = await ctx.db
+          .query("chatEvents")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .collect();
+        for (const ce of chatEvents) {
+          const ceVotes = await ctx.db
+            .query("chatEventVotes")
+            .withIndex("by_event", (q) => q.eq("chatEventId", ce._id))
+            .collect();
+          for (const cev of ceVotes) await ctx.db.delete(cev._id);
+          await ctx.db.delete(ce._id);
+        }
+
+        // JoinRequests für diese Konversation
+        const joinRequests = await ctx.db
+          .query("joinRequests")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .collect();
+        for (const jr of joinRequests) await ctx.db.delete(jr._id);
+
+        // Konversation selbst löschen
+        await ctx.db.delete(conv._id);
+      } else {
+        // Gruppenchat: User aus Teilnehmern entfernen, Nachrichten anonymisieren
+        const updatedParticipants = conv.participants.filter((p) => p !== userId);
+        const updatedLeftParticipants = (conv.leftParticipants || []).filter((p) => p !== userId);
+        const updatedAdminIds = (conv.adminIds || []).filter((a) => a !== userId);
+        const updatedDeletedBy = (conv.deletedBy || []).filter((d) => d !== userId);
+
+        // Patch: Remove user from all arrays
+        const patch: Record<string, any> = {
+          participants: updatedParticipants,
+          leftParticipants: updatedLeftParticipants,
+          updatedAt: Date.now(),
+        };
+
+        if (conv.adminIds) patch.adminIds = updatedAdminIds;
+        if (conv.deletedBy) patch.deletedBy = updatedDeletedBy;
+
+        // Falls creatorId der gelöschte User war, auf den ersten Admin oder Teilnehmer setzen
+        if (conv.creatorId === userId) {
+          patch.creatorId = updatedAdminIds[0] || updatedParticipants[0] || undefined;
+        }
+
+        await ctx.db.patch(conv._id, patch);
+
+        // Nachrichten des Users in Gruppenchats anonymisieren
+        const userMessages = await ctx.db
+          .query("messages")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .collect();
+        
+        for (const msg of userMessages) {
+          if (msg.senderId === userId) {
+            // Storage-Dateien für Medien-Nachrichten löschen
+            if (msg.storageId) {
+              try { await ctx.storage.delete(msg.storageId as any); } catch { /* best-effort */ }
+            }
+
+            // Nachricht anonymisieren – Content und Medien entfernen
+            await ctx.db.patch(msg._id, {
+              content: "[Gelöschter Nutzer]",
+              storageId: undefined,
+              fileName: undefined,
+              contentType: undefined,
+              type: "text" as const,
+            });
+          }
+
+          // Reaktionen des Users aus allen Nachrichten entfernen
+          if (msg.reactions?.some((r) => r.userId === userId)) {
+            await ctx.db.patch(msg._id, {
+              reactions: msg.reactions.filter((r) => r.userId !== userId),
+            });
+          }
+        }
+
+        // System-Nachricht hinterlassen
+        await ctx.db.insert("messages", {
+          conversationId: conv._id,
+          senderId: userId, // Wird als system-Nachricht angezeigt
+          content: `${user.name || "Ein Nutzer"} hat den Account gelöscht.`,
+          type: "system",
+          createdAt: Date.now(),
+        });
+      }
+    }
+
+    // 12. LastReads des Users löschen (verbleibende)
+    const userLastReads = await ctx.db
+      .query("last_reads")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const lr of userLastReads) await ctx.db.delete(lr._id);
+
+    // 13. ChatPollVotes des Users löschen (verbleibende)
+    const userChatPollVotes = await ctx.db
+      .query("chatPollVotes")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const cpv of userChatPollVotes) await ctx.db.delete(cpv._id);
+
+    // 14. ChatEventVotes des Users löschen (verbleibende)
+    const userChatEventVotes = await ctx.db
+      .query("chatEventVotes")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const cev of userChatEventVotes) await ctx.db.delete(cev._id);
+
+    // 15. JoinRequests des Users löschen (verbleibende)
+    const userJoinRequests = await ctx.db
+      .query("joinRequests")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const jr of userJoinRequests) await ctx.db.delete(jr._id);
+
+    // 16. Events des Users löschen
+    const userEvents = await ctx.db
+      .query("events")
+      .withIndex("by_user", (q) => q.eq("createdBy", userId))
+      .collect();
+    for (const event of userEvents) await ctx.db.delete(event._id);
+
+    // 17. Workspace-Daten bereinigen
+    // workspace_tasks (erstellt oder zugewiesen)
+    const assignedTasks = await ctx.db
+      .query("workspace_tasks")
+      .withIndex("by_assignee", (q) => q.eq("assigneeId", userId))
+      .collect();
+    for (const task of assignedTasks) {
+      await ctx.db.patch(task._id, { assigneeId: undefined });
+    }
+    const createdTasks = await ctx.db
+      .query("workspace_tasks")
+      .filter((q) => q.eq(q.field("createdBy"), userId))
+      .collect();
+    for (const task of createdTasks) await ctx.db.delete(task._id);
+
+    // workspace_files
+    const userFiles = await ctx.db
+      .query("workspace_files")
+      .filter((q) => q.eq(q.field("uploaderId"), userId))
+      .collect();
+    for (const file of userFiles) {
+      try { await ctx.storage.delete(file.storageId); } catch { /* best-effort */ }
+      await ctx.db.delete(file._id);
+    }
+
+    // workspace_polls + votes
+    const userWPolls = await ctx.db
+      .query("workspace_polls")
+      .filter((q) => q.eq(q.field("createdBy"), userId))
+      .collect();
+    for (const poll of userWPolls) {
+      const votes = await ctx.db
+        .query("workspace_poll_votes")
+        .withIndex("by_poll", (q) => q.eq("pollId", poll._id))
+        .collect();
+      for (const v of votes) await ctx.db.delete(v._id);
+      await ctx.db.delete(poll._id);
+    }
+
+    // workspace_poll_votes des Users (verbleibende)
+    const userWPollVotes = await ctx.db
+      .query("workspace_poll_votes")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const wpv of userWPollVotes) await ctx.db.delete(wpv._id);
+
+    // workspace_groups
+    const userWorkspaceGroups = await ctx.db
+      .query("workspace_groups")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+    for (const wg of userWorkspaceGroups) {
+      // Eigentümerschaft übertragen an ersten Admin, sonst löschen
+      const newOwner = wg.adminIds?.find((a) => a !== userId);
+      if (newOwner) {
+        await ctx.db.patch(wg._id, {
+          ownerId: newOwner,
+          adminIds: (wg.adminIds || []).filter((a) => a !== userId),
+        });
+      } else {
+        await ctx.db.delete(wg._id);
+      }
+    }
+
+    // workspace_activity: User-Aktivitäten löschen
+    const userActivities = await ctx.db
+      .query("workspace_activity")
+      .filter((q) => q.eq(q.field("actorId"), userId))
+      .collect();
+    for (const act of userActivities) await ctx.db.delete(act._id);
+
+    // 18. LiveLocations löschen
+    const userLiveLocations = await ctx.db
+      .query("liveLocations")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const ll of userLiveLocations) await ctx.db.delete(ll._id);
+
+    // 19. Calls/CallParticipants/CallSignals bereinigen
+    const userCallParticipants = await ctx.db
+      .query("callParticipants")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const cp of userCallParticipants) await ctx.db.delete(cp._id);
+
+    const userCallSignals = await ctx.db
+      .query("callSignals")
+      .filter((q) => q.eq(q.field("fromUserId"), userId))
+      .collect();
+    for (const cs of userCallSignals) await ctx.db.delete(cs._id);
+
+    // Calls des Users beenden
+    const userCalls = await ctx.db
+      .query("calls")
+      .filter((q) => q.eq(q.field("createdBy"), userId))
+      .collect();
+    for (const call of userCalls) {
+      if (call.status === "ringing" || call.status === "active") {
+        await ctx.db.patch(call._id, { status: "ended", endedAt: Date.now() });
+      }
+    }
+
+    // 20. Profilbild und Headerbild aus Storage löschen
+    if (user.image && !user.image.startsWith("http")) {
+      try { await ctx.storage.delete(user.image as any); } catch { /* best-effort */ }
+    }
+    if (user.headerImage && !user.headerImage.startsWith("http")) {
+      try { await ctx.storage.delete(user.headerImage as any); } catch { /* best-effort */ }
+    }
+
+    // 21. User-Dokument löschen
+    await ctx.db.delete(userId);
+
+    return { success: true };
+  },
+});

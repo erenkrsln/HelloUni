@@ -179,8 +179,8 @@ function InfoPageContent() {
                 <div className='w-full flex flex-col items-center justify-center'>
                   <div className='relative flex w-full items-center justify-center gap-[11px] px-[22px] py-[11px]'>
                     <div className='absolute bg-[#F78D57] inset-y-0 -inset-x-[22px] tablet:inset-x-0 tablet:rounded-[8px]' />
-                    <InfoIcon className='w-[28px] fill-current text-black shrink-0 z-[1]' />
-                    <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-black desktop:text-center z-[1]'>
+                    <InfoIcon className='w-[28px] fill-current text-foreground shrink-0 z-[1]' />
+                    <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-foreground desktop:text-center z-[1]'>
                       Dein Studiengang: {userMajor || 'Kein Studiengang ausgewählt'}
                     </h1>
                   </div>
@@ -188,8 +188,8 @@ function InfoPageContent() {
                 {pdfDocuments.length > 0 && (
                   <div ref={el => { sectionRefs.current[visibleIdx('dokumente')] = el }} className='w-full flex flex-col items-start justify-center gap-[32px]'>
                     <div className='flex w-full flex-col items-start justify-center gap-[8px]'>
-                      <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-black'>Wichtige Dokumente</h1>
-                      <p className='w-full text-[14px] font-normal leading-normal text-black'>
+                      <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-foreground'>Wichtige Dokumente</h1>
+                      <p className='w-full text-[14px] font-normal leading-normal text-foreground'>
                         Hier findest du alle relevanten PDF-Dokumente zu deinem Studiengang.
                       </p>
                     </div>
@@ -206,8 +206,8 @@ function InfoPageContent() {
                 )}
                 <div ref={el => { sectionRefs.current[visibleIdx('info')] = el }} className='w-full flex flex-col items-start justify-center gap-[32px]'>
                   <div className='flex w-full flex-col items-start justify-center gap-[8px]'>
-                    <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-black'>Weitere Informationen</h1>
-                    <p className='w-full text-[14px] font-normal leading-normal text-black'>
+                    <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-foreground'>Weitere Informationen</h1>
+                    <p className='w-full text-[14px] font-normal leading-normal text-foreground'>
                       Hier findest du zusätzliche Informationen, weiterführende Hinweise und hilfreiche Ressourcen rund um deinen Studiengang.
                     </p>
                   </div>
@@ -222,7 +222,7 @@ function InfoPageContent() {
               <div className='flex flex-col w-full justify-center items-center gap-[22px]'>
                 <div className='flex w-full justify-center items-center gap-[17px]'>
                   <div className='flex-1 h-[2px] bg-black opacity-20 rounded-[42px]' />
-                  <span className='text-[14px] font-normal leading-normal text-black opacity-[0.42]'>
+                  <span className='text-[14px] font-normal leading-normal text-foreground opacity-[0.42]'>
                     Allgemeine Informationen
                   </span>
                   <div className='flex-1 h-[2px] bg-black opacity-20 rounded-[42px]' />
@@ -231,8 +231,8 @@ function InfoPageContent() {
                   {semesterTermine.length > 0 && (
                     <div ref={el => { sectionRefs.current[visibleIdx('termine')] = el }} className='w-full flex flex-col items-start justify-center gap-[32px]'>
                       <div className='flex w-full flex-col items-start justify-center gap-[8px]'>
-                        <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-black'>Terminüberblick</h1>
-                        <p className='w-full text-[14px] font-normal leading-normal text-black'>
+                        <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-foreground'>Terminüberblick</h1>
+                        <p className='w-full text-[14px] font-normal leading-normal text-foreground'>
                           Hier findest du eine Übersicht über alle wichtigen Termine im {semesterLabel}.
                         </p>
                       </div>
@@ -260,13 +260,13 @@ function InfoPageContent() {
                           className={`absolute h-full aspect-square left-0 bg-gradient-to-r from-white to-transparent transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${!isScrolledToLeft ? '' : 'opacity-0 pointer-events-none'} flex justify-start items-center cursor-pointer group`}
                           onClick={() => { const el = termineScrollRef.current; if (!el) return; const c = el.scrollLeft + el.offsetWidth / 2; const prev = Array.from(el.children as HTMLCollectionOf<HTMLElement>).reverse().find(card => card.offsetLeft + card.offsetWidth / 2 < c - 1); if (prev) el.scrollTo({ left: prev.offsetLeft + prev.offsetWidth / 2 - el.offsetWidth / 2, behavior: 'smooth' }) }}
                         >
-                          <OpenedTriangleArrow className='w-[25px] fill-current text-black rotate-90 opacity-[0.42] tablet:group-hover:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]' />
+                          <OpenedTriangleArrow className='w-[25px] fill-current text-foreground rotate-90 opacity-[0.42] tablet:group-hover:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]' />
                         </div>
                         <div
                           className={`absolute h-full aspect-square right-0 bg-gradient-to-l from-white to-transparent transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${!isScrolledToRight ? '' : 'opacity-0 pointer-events-none'} flex justify-end items-center cursor-pointer group`}
                           onClick={() => { const el = termineScrollRef.current; if (!el) return; const c = el.scrollLeft + el.offsetWidth / 2; const next = Array.from(el.children as HTMLCollectionOf<HTMLElement>).find(card => card.offsetLeft + card.offsetWidth / 2 > c + 1); if (next) el.scrollTo({ left: next.offsetLeft + next.offsetWidth / 2 - el.offsetWidth / 2, behavior: 'smooth' }) }}
                         >
-                          <OpenedTriangleArrow className='w-[25px] fill-current text-black rotate-[270deg] opacity-[0.42] tablet:group-hover:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]' />
+                          <OpenedTriangleArrow className='w-[25px] fill-current text-foreground rotate-[270deg] opacity-[0.42] tablet:group-hover:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]' />
                         </div>
 
                       </div>
@@ -276,8 +276,8 @@ function InfoPageContent() {
                   {mensaMeals.length > 0 && (
                     <div ref={el => { sectionRefs.current[visibleIdx('mensa')] = el }} className='w-full flex flex-col items-start justify-center gap-[32px]'>
                       <div className='flex w-full flex-col items-start justify-center gap-[8px]'>
-                        <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-black'>Speisekarte</h1>
-                        <p className='w-full text-[14px] font-normal leading-normal text-black'>
+                        <h1 className='text-[25px] desktop:text-[28px] font-bold leading-normal text-foreground'>Speisekarte</h1>
+                        <p className='w-full text-[14px] font-normal leading-normal text-foreground'>
                           Das gibt es heute in der Mensateria Ohm (Wollentorstr. 4, 90489 Nürnberg).
                         </p>
                       </div>

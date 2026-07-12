@@ -41,7 +41,7 @@ export default function NotificationsPage() {
     }
 
     return (
-        <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
+        <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-background">
             {/* Desktop: HelloUni Logo oben links */}
             <button
                 onClick={() => setIsLogoSidebarOpen(true)}
@@ -51,21 +51,28 @@ export default function NotificationsPage() {
                 <img
                     src="/logo_font.svg"
                     alt="HelloUni"
+                    className="dark:hidden"
+                    style={{ height: "80px", width: "auto", objectFit: "contain", display: "block" }}
+                />
+                <img
+                    src="/logo_font_dark.svg"
+                    alt="HelloUni"
+                    className="hidden dark:block"
                     style={{ height: "80px", width: "auto", objectFit: "contain", display: "block" }}
                 />
             </button>
             <LogoSidebar isOpen={isLogoSidebarOpen} onClose={() => setIsLogoSidebarOpen(false)} />
 
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
+            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border pt-safe-top">
                 <div className="relative px-4 h-14 flex items-center justify-center">
                     <button
                         onClick={() => router.back()}
-                        className="absolute left-4 p-1 text-black hover:opacity-70 transition-opacity"
+                        className="absolute left-4 p-1 text-foreground hover:opacity-70 transition-opacity"
                     >
                         <ArrowLeft className="w-6 h-6" />
                     </button>
-                    <h1 className="text-lg font-bold text-black tracking-tight">Benachrichtigungen</h1>
+                    <h1 className="text-lg font-bold text-foreground tracking-tight">Benachrichtigungen</h1>
                     <div className="absolute right-4">
                         <NotificationSettingsMenu userId={currentUser._id} />
                     </div>

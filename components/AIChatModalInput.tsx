@@ -35,7 +35,7 @@ const AIChatModalInput = ({ value, onChange, placeholder, onKeyDown }: AIChatMod
             placeholder={placeholder}
             rows={1}
             maxLength={420}
-            className={`w-full px-[11px] py-[8px] bg-black bg-opacity-[0.11] placeholder:text-[15px] placeholder:font-normal placeholder:leading-normal placeholder:text-black placeholder:opacity-[0.65] ${isMultiline ? 'rounded-[17px]' : 'rounded-[42px]'} outline-none hover:bg-opacity-[0.22] focus:bg-opacity-[0.22] focus:placeholder:opacity-100 transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] resize-none`}
+            className={`w-full px-[11px] py-[8px] bg-black bg-opacity-[0.11] placeholder:text-[15px] placeholder:font-normal placeholder:leading-normal placeholder:text-foreground placeholder:opacity-[0.65] ${isMultiline ? 'rounded-[17px]' : 'rounded-[42px]'} outline-none hover:bg-opacity-[0.22] focus:bg-opacity-[0.22] focus:placeholder:opacity-100 transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] resize-none`}
         />
     )
 }

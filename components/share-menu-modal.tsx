@@ -81,18 +81,22 @@ export function ShareMenuModal({ isOpen, onClose, postId, postTitle, onInternalS
         onClick={onClose}
       />
       <div 
-        className={`fixed inset-x-0 bottom-0 z-[80] flex flex-col bg-white rounded-t-3xl transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-menu-title"
+        className={`fixed inset-x-0 bottom-0 z-[80] flex flex-col bg-card text-card-foreground rounded-t-3xl transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"}`}
         style={{
           paddingBottom: "max(env(safe-area-inset-bottom), 1rem)"
         }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Beitrag teilen</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 id="share-menu-title" className="text-lg font-bold text-foreground">Beitrag teilen</h2>
           <button 
             onClick={onClose}
-            className="p-2 -mr-2 text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-colors rounded-full"
+            aria-label="Schließen"
+            className="p-2 -mr-2 text-muted-foreground hover:text-foreground bg-muted hover:bg-accent transition-colors rounded-full"
           >
-            <X size={20} />
+            <X aria-hidden="true" size={20} />
           </button>
         </div>
 
@@ -106,9 +110,9 @@ export function ShareMenuModal({ isOpen, onClose, postId, postTitle, onInternalS
               className="flex flex-col items-center gap-2 group w-full"
             >
               <div className="w-14 h-14 rounded-full bg-[#D08945] text-white flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-                <img src="/logo-white.svg" alt="HelloUni" className="w-7 h-7 object-contain" />
+                <img src="/logo-white.svg" alt="" aria-hidden="true" className="w-7 h-7 object-contain" />
               </div>
-              <span className="text-[11px] sm:text-xs font-medium text-gray-700 text-center leading-tight">In HelloUni</span>
+              <span className="text-[11px] sm:text-xs font-medium text-foreground text-center leading-tight">In HelloUni</span>
             </button>
           )}
 
@@ -117,9 +121,9 @@ export function ShareMenuModal({ isOpen, onClose, postId, postTitle, onInternalS
             className="flex flex-col items-center gap-2 group w-full"
           >
             <div className="w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-              <FaWhatsapp size={28} />
+              <FaWhatsapp aria-hidden="true" size={28} />
             </div>
-            <span className="text-[11px] sm:text-xs font-medium text-gray-700 text-center leading-tight">WhatsApp</span>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground text-center leading-tight">WhatsApp</span>
           </button>
           
           <button 
@@ -127,29 +131,29 @@ export function ShareMenuModal({ isOpen, onClose, postId, postTitle, onInternalS
             className="flex flex-col items-center gap-2 group w-full"
           >
             <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#f09433] via-[#e6683c] to-[#bc1888] text-white flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-              <FaInstagram size={28} />
+              <FaInstagram aria-hidden="true" size={28} />
             </div>
-            <span className="text-[11px] sm:text-xs font-medium text-gray-700 text-center leading-tight">Instagram</span>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground text-center leading-tight">Instagram</span>
           </button>
           
           <button 
             onClick={handleCopyLink}
             className="flex flex-col items-center gap-2 group w-full"
           >
-            <div className="w-14 h-14 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-              <LinkIcon size={24} />
+            <div className="w-14 h-14 rounded-full bg-gray-100 text-gray-700 dark:bg-muted dark:text-foreground flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
+              <LinkIcon aria-hidden="true" size={24} />
             </div>
-            <span className="text-[11px] sm:text-xs font-medium text-gray-700 text-center leading-tight">Kopieren</span>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground text-center leading-tight">Kopieren</span>
           </button>
           
           <button 
             onClick={handleSystemShare}
             className="flex flex-col items-center gap-2 group w-full"
           >
-            <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-              <Share2 size={24} />
+            <div className="w-14 h-14 rounded-full bg-gray-100 text-gray-700 dark:bg-muted dark:text-foreground flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
+              <Share2 aria-hidden="true" size={24} />
             </div>
-            <span className="text-[11px] sm:text-xs font-medium text-gray-700 text-center leading-tight">Mehr</span>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground text-center leading-tight">Mehr</span>
           </button>
         </div>
       </div>

@@ -176,7 +176,7 @@ const AiChatModal = () => {
   return (
     <>
       <div
-        className={`cursor-pointer fixed inset-0 bg-white bg-opacity-20 backdrop-blur-[4px] ${isClicked ? '' : 'opacity-0 pointer-events-none'} z-[9997] transition-opacity duration-300 ease-smooth ease-[cubic-bezier(0.44,0,0.56,1)]`}
+        className={`cursor-pointer fixed inset-0 bg-card bg-opacity-20 backdrop-blur-[4px] ${isClicked ? '' : 'opacity-0 pointer-events-none'} z-[9997] transition-opacity duration-300 ease-smooth ease-[cubic-bezier(0.44,0,0.56,1)]`}
         onClick={handleClick}
       />
       <div
@@ -201,7 +201,7 @@ const AiChatModal = () => {
               ))}
             </div>
             {isLoading && (
-              <div className='w-full text-[14px] font-normal leading-normal text-black text-left opacity-[0.65]'>
+              <div className='w-full text-[14px] font-normal leading-normal text-foreground text-left opacity-[0.65]'>
                 überlegt{dots}
               </div>
             )}
@@ -209,7 +209,7 @@ const AiChatModal = () => {
         </div>
         <div
           ref={footerRef}
-          className={`absolute bottom-0 left-0 right-0 flex gap-[14px] justify-center items-center px-[22px] py-[17px] bg-white ${isClicked ? '' : 'opacity-0 translate-y-full'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}>
+          className={`absolute bottom-0 left-0 right-0 flex gap-[14px] justify-center items-center px-[22px] py-[17px] bg-card ${isClicked ? '' : 'opacity-0 translate-y-full'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}>
           <AIChatModalInput
             value={inputText}
             onChange={setInputText}
@@ -224,7 +224,7 @@ const AiChatModal = () => {
         </div>
         <div
           ref={headerRef}
-          className={`absolute top-0 left-0 right-0 flex justify-between items-center bg-white ${isClicked ? 'px-[22px] py-[17px] bg-opacity-[0.65] backdrop-blur-[57px]' : 'bg-opacity-0'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}
+          className={`absolute top-0 left-0 right-0 flex justify-between items-center bg-card ${isClicked ? 'px-[22px] py-[17px] bg-opacity-[0.65] backdrop-blur-[57px]' : 'bg-opacity-0'} transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]`}
         >
           <div className='flex justify-center items-center gap-[14px]'>
             <div
@@ -234,10 +234,10 @@ const AiChatModal = () => {
               <div
                 ref={iconRef}
                 className='flex justify-center items-center'>
-                <KIIcon className={`fill-current transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? 'h-[33px] text-black' : 'h-[32px] tablet:h-[38px] text-white'}`} />
+                <KIIcon className={`fill-current transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? 'h-[33px] text-foreground' : 'h-[32px] tablet:h-[38px] text-white'}`} />
               </div>
             </div>
-            <span className={`text-[17px] font-bold leading-normal text-black text-left whitespace-nowrap transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? '' : 'opacity-0'}`}>
+            <span className={`text-[17px] font-bold leading-normal text-foreground text-left whitespace-nowrap transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] ${isClicked ? '' : 'opacity-0'}`}>
               Jastell (HelloUni-KI)
             </span>
           </div>
@@ -245,7 +245,7 @@ const AiChatModal = () => {
             className='flex w-[37px] h-[37px] shrink-0 justify-center items-center rounded-[42px] border-[2px] border-black border-opacity-20 tablet:hover:border-opacity-0 tablet:hover:shadow-[0px_0px_42px_0px_rgba(0,0,0,0.20)] transition-all duration-300 ease-[cubic-bezier(0.44,0,0.56,1)] group/button'
             onClick={isClicked ? handleClick : undefined}
           >
-            <XIcon className='w-[14px] fill-current text-black opacity-[0.65] group-hover/button:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]' />
+            <XIcon className='w-[14px] fill-current text-foreground opacity-[0.65] group-hover/button:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.44,0,0.56,1)]' />
           </button>
         </div>
       </div >

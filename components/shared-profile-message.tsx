@@ -21,16 +21,16 @@ export function SharedProfileMessage({ profileId, currentUserId, isMe }: SharedP
 
   if (user === undefined) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-2xl w-full min-h-[100px] border border-gray-100">
-        <span className="text-sm text-gray-500">Lade Profil...</span>
+      <div className="flex flex-col items-center justify-center p-4 bg-muted rounded-2xl w-full min-h-[100px] border border-border">
+        <span className="text-sm text-muted-foreground">Lade Profil...</span>
       </div>
     );
   }
 
   if (user === null) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-2xl w-full border border-gray-100">
-        <span className="text-sm text-gray-500 italic">Dieses Profil ist nicht mehr verfügbar.</span>
+      <div className="flex flex-col items-center justify-center p-4 bg-muted rounded-2xl w-full border border-border">
+        <span className="text-sm text-muted-foreground italic">Dieses Profil ist nicht mehr verfügbar.</span>
       </div>
     );
   }
@@ -44,7 +44,7 @@ export function SharedProfileMessage({ profileId, currentUserId, isMe }: SharedP
           router.push(`/profile/${profileId}`);
         }
       }}
-      className="flex flex-col w-full max-w-[320px] sm:max-w-[360px] bg-white rounded-2xl overflow-hidden mt-1 cursor-pointer"
+      className="flex flex-col w-full max-w-[320px] sm:max-w-[360px] bg-card rounded-2xl overflow-hidden mt-1 cursor-pointer"
     >
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
@@ -56,9 +56,9 @@ export function SharedProfileMessage({ profileId, currentUserId, isMe }: SharedP
       <div className="pointer-events-none pb-2 px-3 pt-1">
         <div className="flex items-start gap-3 w-full relative">
           {/* Use Avatar from ui/avatar for consistent rendering */}
-          <Avatar className="w-10 h-10 border border-gray-100/50 shadow-sm rounded-full overflow-hidden flex-shrink-0">
+          <Avatar className="w-10 h-10 border border-border/50 shadow-sm rounded-full overflow-hidden flex-shrink-0">
             {user.image && <AvatarImage src={user.image} alt={user.name} className="object-cover" />}
-            <AvatarFallback className="bg-gray-100/80 text-gray-600 font-medium">
+            <AvatarFallback className="bg-muted/80 text-muted-foreground font-medium">
               {user.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -67,13 +67,13 @@ export function SharedProfileMessage({ profileId, currentUserId, isMe }: SharedP
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             {/* Name */}
             <div className="flex items-center gap-1.5 w-full">
-              <span className="font-semibold text-[15px] truncate text-gray-900">
+              <span className="font-semibold text-[15px] truncate text-foreground">
                 {user.name}
               </span>
             </div>
 
             {/* Major and Semester (like FeedCard) */}
-            <div className="flex items-center gap-x-1.5 gap-y-0.5 text-[13px] text-gray-500 flex-wrap w-full mt-0.5">
+            <div className="flex items-center gap-x-1.5 gap-y-0.5 text-[13px] text-muted-foreground flex-wrap w-full mt-0.5">
               {user.major && (
                 <>
                   <span className="truncate max-w-[12rem]">{user.major}</span>

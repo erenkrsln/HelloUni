@@ -121,12 +121,12 @@ export function EditGroupImageModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent aria-describedby={undefined} hideCloseButton withoutExitAnimation className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-0 rounded-2xl gap-0 bg-white">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <DialogContent aria-describedby={undefined} hideCloseButton withoutExitAnimation className="w-[90vw] sm:w-[80vw] max-w-[400px] flex flex-col p-0 rounded-2xl gap-0 bg-card text-card-foreground">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <DialogTitle className="text-lg font-semibold">Gruppenbild bearbeiten</DialogTitle>
                     <button
                         onClick={handleClose}
-                        className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                        className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent transition-colors"
                     >
                         <X size={20} />
                     </button>
@@ -147,7 +147,7 @@ export function EditGroupImageModal({
                     >
                         <Avatar className="w-32 h-32">
                             <AvatarImage src={imagePreview || undefined} alt={groupName} className="object-cover" />
-                            <AvatarFallback className=" bg-gray-100 text-gray-400">
+                            <AvatarFallback className="bg-muted text-muted-foreground">
                                 {groupName.charAt(0).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>

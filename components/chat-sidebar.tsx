@@ -216,16 +216,16 @@ export function ChatSidebar() {
   });
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden relative border-r border-gray-100">
+    <div className="flex flex-col h-full bg-card overflow-hidden relative border-r border-border">
       {/* Desktop Local Header */}
-      <div className="hidden md:flex items-center justify-between bg-white flex-shrink-0">
+      <div className="hidden md:flex items-center justify-between bg-card flex-shrink-0">
 
       </div>
 
       {/* Container for Filters, Search, and Chat List */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Search & Filters Container */}
-        <div className="px-4 pt-4 pb-4 md:px-6 md:pt-6 border-b border-gray-100 flex-shrink-0">
+        <div className="px-4 pt-4 pb-4 md:px-6 md:pt-6 border-b border-border flex-shrink-0">
 
           {/* Filter Tabs */}
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -236,7 +236,7 @@ export function ChatSidebar() {
               }}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
                 ? "bg-[#d08945] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-muted text-foreground hover:bg-muted"
                 }`}
             >
               Alle
@@ -248,7 +248,7 @@ export function ChatSidebar() {
               }}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
                 ? "bg-[#d08945] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-muted text-foreground hover:bg-muted"
                 }`}
             >
               Direkt
@@ -260,7 +260,7 @@ export function ChatSidebar() {
               }}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
                 ? "bg-[#d08945] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-muted text-foreground hover:bg-muted"
                 }`}
             >
               Gruppen
@@ -274,7 +274,7 @@ export function ChatSidebar() {
                 onClick={() => setGroupFilterType("all")}
                 className={`px-3 py-1.5 rounded-full text-xs  transition-all ${groupFilterType === "all"
                   ? "bg-gray-500 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  : "bg-muted text-foreground hover:bg-muted"
                   }`}
               >
                 Alle
@@ -283,7 +283,7 @@ export function ChatSidebar() {
                 onClick={() => setGroupFilterType("public")}
                 className={`px-3 py-1.5 rounded-full text-xs  transition-all ${groupFilterType === "public"
                   ? "bg-gray-500 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  : "bg-muted text-foreground hover:bg-muted"
                   }`}
               >
                 Öffentlich
@@ -292,7 +292,7 @@ export function ChatSidebar() {
                 onClick={() => setGroupFilterType("private")}
                 className={`px-3 py-1.5 rounded-full text-xs  transition-all ${groupFilterType === "private"
                   ? "bg-gray-500 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  : "bg-muted text-foreground hover:bg-muted"
                   }`}
               >
                 Privat
@@ -302,12 +302,12 @@ export function ChatSidebar() {
 
           {/* Search Bar */}
           <div className="relative">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
               <Search className="h-4 w-4" />
             </div>
             <input
               type="text"
-              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm"
+              className="w-full pl-9 pr-4 py-2 bg-card border border-input rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors text-sm"
               placeholder="Suche in deinen Chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -322,7 +322,7 @@ export function ChatSidebar() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#d08945]" />
             </div>
           ) : filteredConversations?.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-muted-foreground">
               <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
               <p className="text-sm">Keine Chats gefunden.</p>
             </div>
@@ -344,7 +344,7 @@ export function ChatSidebar() {
                   <div key={conv._id} className="relative group flex items-center gap-1.5 pb-4">
                     <Link
                       href={`/chat/${conv._id}`}
-                      className={`flex items-center flex-1 min-w-0 p-2 rounded-xl transition-colors ${isSelected ? "bg-gray-100" : "hover:bg-gray-50/50"
+                      className={`flex items-center flex-1 min-w-0 p-2 rounded-xl transition-colors ${isSelected ? "bg-muted" : "hover:bg-muted/50"
                         } ${isLeft ? "opacity-50" : ""}`}
                     >
                       <div className="w-11 h-11 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
@@ -359,7 +359,7 @@ export function ChatSidebar() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <h3 className="font-semibold text-sm truncate text-black">{conv.displayName}</h3>
+                            <h3 className="font-semibold text-sm truncate text-foreground">{conv.displayName}</h3>
                             {conv.isGroup && conv.isPublic && (
                               <span className="bg-[#d08945]/10 text-[#d08945] text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0">
                                 öffentlich
@@ -368,7 +368,7 @@ export function ChatSidebar() {
                           </div>
                           <div className="flex flex-col items-end flex-shrink-0">
                             {conv.lastMessage && (
-                              <span className="text-[10px] text-gray-400 font-medium mb-1">
+                              <span className="text-[10px] text-muted-foreground font-medium mb-1">
                                 {formatLastMessageTime((conv.lastMessage as any).createdAt)}
                               </span>
                             )}
@@ -379,7 +379,7 @@ export function ChatSidebar() {
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-gray-500 truncate flex items-center pl-0.5 mt-0.5 font-normal">
+                        <p className="text-xs text-muted-foreground truncate flex items-center pl-0.5 mt-0.5 font-normal">
                           {liveCall ? (
                             <span className="flex items-center gap-1.5 text-[#D08945] font-medium">
                               {liveCall.type === "video" ? (
@@ -468,7 +468,7 @@ export function ChatSidebar() {
 
         {/* Drawer / Centered Modal on Desktop */}
         <div
-          className={`fixed inset-x-0 bottom-0 z-[80] flex flex-col bg-white rounded-t-3xl transition-all duration-300 ease-out h-[85vh] md:h-[80vh] md:max-h-[700px] md:w-[500px] md:rounded-3xl md:left-1/2 md:bottom-auto md:shadow-2xl ${
+          className={`fixed inset-x-0 bottom-0 z-[80] flex flex-col bg-card rounded-t-3xl transition-all duration-300 ease-out h-[85vh] md:h-[80vh] md:max-h-[700px] md:w-[500px] md:rounded-3xl md:left-1/2 md:bottom-auto md:shadow-2xl ${
             isNewChatOpen
               ? "translate-y-0 opacity-100 md:top-1/2 md:-translate-y-1/2 md:-translate-x-1/2"
               : "translate-y-full opacity-0 md:top-[55%] md:-translate-y-1/2 md:-translate-x-1/2 pointer-events-none"
@@ -478,15 +478,15 @@ export function ChatSidebar() {
           }}
         >
           <div
-            className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white rounded-t-3xl flex-shrink-0"
+            className="flex items-center justify-between px-6 py-4 border-b border-border bg-card rounded-t-3xl flex-shrink-0"
           >
             <button
               onClick={closeModal}
-              className="text-sm font-medium text-gray-500 hover:text-black transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Abbrechen
             </button>
-            <h2 className="text-base font-semibold text-black">Neuer Chat</h2>
+            <h2 className="text-base font-semibold text-foreground">Neuer Chat</h2>
             <button
               onClick={handleStartChat}
               disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName.trim())}
@@ -503,18 +503,18 @@ export function ChatSidebar() {
             <div className="space-y-4">
               {/* Selected People Preview */}
               {selectedUserObjects.length > 0 && (
-                <div className="space-y-1.5 border-b border-gray-100 pb-3 animate-in slide-in-from-top-2 duration-200">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="space-y-1.5 border-b border-border pb-3 animate-in slide-in-from-top-2 duration-200">
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Ausgewählte Personen ({selectedUserObjects.length})
                   </label>
                   <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-hide">
                     {selectedUserObjects.map((user) => (
                       <div key={user._id} className="relative flex flex-col items-center flex-shrink-0 w-12">
-                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200" style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}>
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-muted" style={{ backgroundColor: "rgba(0, 0, 0, 0.1)" }}>
                           {user.image ? (
                             <img src={user.image} alt={user.displayName || user.name} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center font-semibold text-sm text-black">
+                            <div className="w-full h-full flex items-center justify-center font-semibold text-sm text-foreground">
                               {(user.displayName || user.name)?.charAt(0).toUpperCase() || "?"}
                             </div>
                           )}
@@ -526,7 +526,7 @@ export function ChatSidebar() {
                         >
                           <Plus className="w-2.5 h-2.5 rotate-45" />
                         </button>
-                        <span className="text-[10px] text-gray-500 truncate w-full text-center mt-1">
+                        <span className="text-[10px] text-muted-foreground truncate w-full text-center mt-1">
                           {(user.displayName || user.name)?.split(" ")[0]}
                         </span>
                       </div>
@@ -541,11 +541,11 @@ export function ChatSidebar() {
                   
                   {/* Group Name Input */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                       Gruppenname
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
                         <Users className="h-4 w-4" />
                       </div>
                       <input
@@ -553,46 +553,46 @@ export function ChatSidebar() {
                         value={groupName}
                         onChange={(e) => setGroupName(e.target.value)}
                         placeholder="z.B. Lerngruppe"
-                        className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm text-black"
+                        className="w-full pl-9 pr-4 py-2.5 bg-muted border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors text-sm text-foreground"
                       />
                     </div>
                   </div>
 
                   {/* Group Settings Toggles */}
-                  <div className="space-y-2 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                  <div className="space-y-2 bg-muted p-3 rounded-2xl border border-border">
                     {/* Sichtbarkeit Toggle */}
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-black">Öffentliche Gruppe</span>
-                        <span className="text-[10px] text-gray-400">Jeder kann die Gruppe finden und beitreten</span>
+                        <span className="text-xs font-semibold text-foreground">Öffentliche Gruppe</span>
+                        <span className="text-[10px] text-muted-foreground">Jeder kann die Gruppe finden und beitreten</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsGroupPublic(!isGroupPublic)}
-                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isGroupPublic ? "bg-[#d08945]" : "bg-gray-200"
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isGroupPublic ? "bg-[#d08945]" : "bg-muted"
                           }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isGroupPublic ? "translate-x-4" : "translate-x-0"
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-card shadow ring-0 transition duration-200 ease-in-out ${isGroupPublic ? "translate-x-4" : "translate-x-0"
                             }`}
                         />
                       </button>
                     </div>
 
                     {/* Beitrittsmethode Toggle */}
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-200/50">
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
                       <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-black">Beitrittsanfrage erforderlich</span>
-                        <span className="text-[10px] text-gray-400">Beitritt muss von einem Admin genehmigt werden</span>
+                        <span className="text-xs font-semibold text-foreground">Beitrittsanfrage erforderlich</span>
+                        <span className="text-[10px] text-muted-foreground">Beitritt muss von einem Admin genehmigt werden</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => setNeedsRequestToJoin(!needsRequestToJoin)}
-                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${needsRequestToJoin ? "bg-[#d08945]" : "bg-gray-200"
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${needsRequestToJoin ? "bg-[#d08945]" : "bg-muted"
                           }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${needsRequestToJoin ? "translate-x-4" : "translate-x-0"
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-card shadow ring-0 transition duration-200 ease-in-out ${needsRequestToJoin ? "translate-x-4" : "translate-x-0"
                             }`}
                         />
                       </button>
@@ -603,7 +603,7 @@ export function ChatSidebar() {
 
               {/* User Search Input */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
                   <Search className="h-4 w-4" />
                 </div>
                 <input
@@ -611,14 +611,14 @@ export function ChatSidebar() {
                   placeholder="Nach Kontakten suchen..."
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors text-sm text-black"
+                  className="w-full pl-9 pr-4 py-2.5 bg-muted border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors text-sm text-foreground"
                 />
               </div>
             </div>
 
             {/* Suggestions / Results Header & List */}
             <div>
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 {userSearchQuery.trim() ? "Suchergebnisse" : "Vorschläge"}
               </div>
 
@@ -628,7 +628,7 @@ export function ChatSidebar() {
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#d08945]" />
                   </div>
                 ) : displayedUsers.length === 0 ? (
-                  <div className="flex justify-center items-center py-12 text-gray-400 text-sm text-center">
+                  <div className="flex justify-center items-center py-12 text-muted-foreground text-sm text-center">
                     {userSearchQuery.trim() ? "Keine Benutzer gefunden." : "Keine Vorschläge gefunden."}
                   </div>
                 ) : (
@@ -640,7 +640,7 @@ export function ChatSidebar() {
                         onClick={() => toggleUserSelection(user._id)}
                         className={`w-full flex items-center p-3 rounded-2xl text-left transition-all ${isSelected
                           ? "bg-[#d08945]/5 ring-2 ring-inset ring-[#d08945]"
-                          : "hover:bg-gray-50/50 bg-white border border-gray-100"
+                          : "hover:bg-muted/50 bg-card border border-border"
                           }`}
                       >
                         <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
@@ -653,14 +653,14 @@ export function ChatSidebar() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className={`font-semibold text-sm truncate ${isSelected ? "text-[#D08945]" : "text-black"}`}>
+                          <div className={`font-semibold text-sm truncate ${isSelected ? "text-[#D08945]" : "text-foreground"}`}>
                             {user.displayName || user.name}
                           </div>
-                          <div className="text-xs text-gray-500 truncate mt-0.5">
+                          <div className="text-xs text-muted-foreground truncate mt-0.5">
                             @{user.displayUsername || user.username}
                           </div>
                           {user.major && (
-                            <div className="text-xs text-gray-400 mt-0.5 truncate" title={user.major}>
+                            <div className="text-xs text-muted-foreground mt-0.5 truncate" title={user.major}>
                               {user.major}
                             </div>
                           )}

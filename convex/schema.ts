@@ -15,6 +15,8 @@ export default defineSchema({
     bio: v.optional(v.string()), // Biografie des Benutzers
     interests: v.optional(v.array(v.string())), // Interessen/Tags des Benutzers
     createdAt: v.optional(v.number()), // Erstellungsdatum für "Joined"
+    theme: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))), // Farbmodus-Einstellung
+    speechAssistanceEnabled: v.optional(v.boolean()), // Vorlesefunktion
   })
     .index("by_username", ["username"])
     .index("by_email", ["email"]), // Index für schnelle Suche nach E-Mail

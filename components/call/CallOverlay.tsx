@@ -743,7 +743,7 @@ export function CallOverlay() {
                       aria-label="Teilnehmerliste öffnen"
                       title="Wer ist im Anruf"
                       onClick={() => setShowParticipants((v) => !v)}
-                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white outline-none transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
+                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white outline-none transition-colors hover:bg-background/20 focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
                     >
                       <Users size={18} aria-hidden />
                     </button>
@@ -1019,7 +1019,7 @@ export function CallOverlay() {
                       aria-label="Teilnehmerliste öffnen"
                       title="Wer ist im Anruf"
                       onClick={() => setShowParticipants((v) => !v)}
-                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white outline-none transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
+                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white outline-none transition-colors hover:bg-background/20 focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
                     >
                       <Users size={18} aria-hidden />
                     </button>
@@ -1284,7 +1284,7 @@ export function CallOverlay() {
                     type="button"
                     onClick={() => setShowParticipants(false)}
                     aria-label="Schließen"
-                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/40"
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white/80 outline-none transition-colors hover:bg-background/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/40"
                   >
                     <X size={18} strokeWidth={2} />
                   </button>

@@ -377,7 +377,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         href={part}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#8C531E] underline break-all"
+                        className="text-[#8C531E] dark:text-[#D08945] underline break-all"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {part}
@@ -419,11 +419,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     if (!currentUser) return null;
 
     return (
-        <main className="flex flex-col h-full w-full max-w-[428px] md:max-w-none mx-auto bg-white relative">
+        <main className="flex flex-col h-full w-full max-w-[428px] md:max-w-none mx-auto bg-[#FDFBF7] dark:bg-background relative">
 
             {/* Header */}
             <div
-                className="flex items-center justify-between px-4 py-3 bg-white z-10 sticky top-0"
+                className="flex items-center justify-between px-4 py-3 bg-[#FDFBF7] dark:bg-background z-10 sticky top-0"
                 style={{
                     paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`,
                     top: 0
@@ -448,7 +448,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 {conversation.displayImage ? (
                                     <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center font-bold text-sm text-black">
+                                    <div className="w-full h-full flex items-center justify-center font-bold text-sm text-foreground">
                                         {conversation.displayName?.charAt(0).toUpperCase()}
                                     </div>
                                 )}
@@ -463,7 +463,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         </div>
                     ) : (
                         <div className="h-8 flex items-center">
-                            <span className="font-semibold text-gray-400">Lade...</span>
+                            <span className="font-semibold text-muted-foreground">Lade...</span>
                         </div>
                     )}
                 </div>
@@ -484,7 +484,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         </button>
                         <div className="relative">
                             <button
-                                className="p-2 text-[#D08945] hover:bg-gray-50 rounded-full transition-colors"
+                                className="p-2 text-[#D08945] hover:bg-muted rounded-full transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setIsHeaderMenuOpen(!isHeaderMenuOpen);
@@ -494,7 +494,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                 <MoreVertical size={20} />
                             </button>
                             {isHeaderMenuOpen && (
-                                <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-30">
+                                <div className="absolute right-0 mt-1 w-36 bg-background border border-border rounded-lg shadow-lg py-1 z-30">
                                     {(!conversation.isGroup || isLeft) ? (
                                         <button
                                             onClick={(e) => {
@@ -564,11 +564,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Messages */}
             <div
                 ref={scrollContainerRef}
-                className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7]"
+                className="flex-1 overflow-y-auto p-4 pb-0 bg-[#FDFBF7] dark:bg-background"
             >
-                <div ref={messagesInnerRef}>
+                <div ref={messagesInnerRef} role="log" aria-live="polite" aria-atomic="false">
                     {!messages ? (
-                        <div className="text-center text-[#8C531E] mt-10">Lade Nachrichten...</div>
+                        <div className="text-center text-[#8C531E] dark:text-muted-foreground mt-10">Lade Nachrichten...</div>
                     ) : messages.length === 0 ? (
                         <div className="text-center text-[#D08945] mt-10 text-sm">
                             Noch keine Nachrichten im Chat. <br /> Schreibe deine erste Nachricht!
@@ -618,7 +618,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
                                 dateDivider = (
                                     <div className="flex justify-center my-4 w-full">
-                                        <span className="text-[11px] bg-[#f2ebd9] text-[#8C531E] px-3 py-1 rounded-lg opacity-90 font-medium shadow-sm">
+                                        <span className="text-[11px] bg-[#f2ebd9] dark:bg-muted text-[#8C531E] dark:text-muted-foreground px-3 py-1 rounded-lg opacity-90 font-medium shadow-sm">
                                             {dateString}
                                         </span>
                                     </div>
@@ -631,7 +631,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     <Fragment key={msg._id}>
                                         {dateDivider}
                                         <div className="flex justify-center my-4">
-                                            <span className="flex items-center text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-lg shadow-sm text-center">
+                                            <span className="flex items-center text-xs bg-muted text-foreground px-3 py-1 rounded-lg shadow-sm text-center">
                                                 {(() => {
                                                     let content = msg.content;
                                                     if (currentUser) {
@@ -791,7 +791,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     >
 
                                         {conversation?.isGroup && !isMe && sender && !isPrevSameSender && (
-                                            <span className="text-[10px] text-[#8C531E] ml-12 mb-1">
+                                            <span className="text-[10px] text-[#8C531E] dark:text-[#D08945] ml-12 mb-1">
                                                 {sender.name}
                                             </span>
                                         )}
@@ -818,8 +818,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                     className={`
                                                 ${(msg.type === "image" || msg.type === "post") ? 'p-1' : 'px-4 py-2'} text-sm
                                                 ${isMe
-                                                            ? 'bg-[#dbc6a0] bg-opacity-75 text-black rounded-2xl shadow-sm'
-                                                            : 'text-black rounded-2xl bg-white shadow-sm'
+                                                            ? 'bg-[#dbc6a0] bg-opacity-75 text-foreground dark:bg-[#D08945]/30 dark:text-white rounded-2xl shadow-sm'
+                                                            : 'text-foreground rounded-2xl bg-white dark:bg-card shadow-sm'
                                                         }
                                                 ${!isNextSameSender
                                                             ? (isMe ? 'rounded-br-none' : 'rounded-bl-none')
@@ -911,7 +911,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                     <>
                                                                         <button
                                                                             type="button"
-                                                                            className="inline-flex items-center gap-1.5 text-xs text-[#8C531E] hover:text-[#6E3E16] transition-colors self-start"
+                                                                            className="inline-flex items-center gap-1.5 text-xs text-[#8C531E] dark:text-[#D08945] hover:text-[#6E3E16] dark:hover:text-[#E8D4B9] transition-colors self-start"
                                                                             onClick={(e) => {
                                                                                 e.preventDefault();
                                                                                 e.stopPropagation();
@@ -957,11 +957,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                         <div className="flex items-center justify-end mt-1 gap-1.5 opacity-70">
                                                             <Popover>
                                                                 <PopoverTrigger asChild>
-                                                                    <button className="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
-                                                                        <SmilePlus className="text-black w-3 h-3 md:w-4 md:h-4" />
+                                                                    <button aria-label="Emoji hinzufügen" className="flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+                                                                        <SmilePlus aria-hidden="true" className="text-foreground w-3 h-3 md:w-4 md:h-4" />
                                                                     </button>
                                                                 </PopoverTrigger>
-                                                                <PopoverContent side="top" align={isMe ? 'end' : 'start'} className="w-auto p-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_10px_20px_-2px_rgba(0,0,0,0.04)] rounded-full bg-white border border-gray-100 z-[60]">
+                                                                <PopoverContent side="top" align={isMe ? 'end' : 'start'} className="w-auto p-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_10px_20px_-2px_rgba(0,0,0,0.04)] rounded-full bg-background border border-border z-[60]">
                                                                     <div className="flex gap-1">
                                                                         {EMOJIS.map(emoji => (
                                                                             <button
@@ -970,7 +970,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                                                     e.preventDefault();
                                                                                     toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                                                 }}
-                                                                                className="hover:scale-125 transition-transform text-lg md:text-xl flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full hover:bg-gray-100"
+                                                                                className="hover:scale-125 transition-transform text-lg md:text-xl flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full hover:bg-muted"
                                                                             >
                                                                                 {emoji}
                                                                             </button>
@@ -995,7 +995,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                                             e.preventDefault();
                                                             toggleMessageReaction({ messageId: msg._id, userId: currentUser._id, emoji });
                                                         }}
-                                                        className={`flex items-center gap-1 md:gap-1.5 text-[11px] md:text-[13px] px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E]' : 'bg-white border-gray-200 text-gray-500'}`}
+                                                        className={`flex items-center gap-1 md:gap-1.5 text-[11px] md:text-[13px] px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-full border ${data.hasReacted ? 'bg-[#f78d57]/20 border-[#f78d57]/30 text-[#8C531E] dark:text-[#D08945]' : 'bg-background border-border text-muted-foreground'}`}
                                                     >
                                                         <span>{emoji}</span>
                                                         <span className="font-medium text-[10px] md:text-[11px]">{data.count}</span>
@@ -1065,7 +1065,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
             {/* Input */}
             {!isLeft ? (
                 <div
-                    className="bg-[#FDFBF7]"
+                    className="bg-[#FDFBF7] dark:bg-background"
                     style={{ paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))` }}
                 >
                     {/* Attachment tray — above the input bar */}
@@ -1085,10 +1085,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     }}
                                     className="flex flex-col items-center gap-1.5"
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
-                                        <FileText size={20} className="text-[#D08945]" />
+                                    <div className="w-12 h-12 rounded-full bg-background border border-border shadow-sm flex items-center justify-center">
+                                        <FileText aria-hidden="true" size={20} className="text-[#D08945]" />
                                     </div>
-                                    <span className="text-[11px] text-gray-600 font-medium">Datei</span>
+                                    <span className="text-[11px] text-muted-foreground font-medium">Datei</span>
                                 </button>
                                 <button
                                     type="button"
@@ -1098,10 +1098,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     }}
                                     className="flex flex-col items-center gap-1.5"
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
-                                        <BarChart2 size={20} className="text-[#D08945]" />
+                                    <div className="w-12 h-12 rounded-full bg-background border border-border shadow-sm flex items-center justify-center">
+                                        <BarChart2 aria-hidden="true" size={20} className="text-[#D08945]" />
                                     </div>
-                                    <span className="text-[11px] text-gray-600 font-medium">Umfrage</span>
+                                    <span className="text-[11px] text-muted-foreground font-medium">Umfrage</span>
                                 </button>
                                 <button
                                     type="button"
@@ -1111,10 +1111,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     }}
                                     className="flex flex-col items-center gap-1.5"
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
-                                        <CalendarDays size={20} className="text-[#D08945]" />
+                                    <div className="w-12 h-12 rounded-full bg-background border border-border shadow-sm flex items-center justify-center">
+                                        <CalendarDays aria-hidden="true" size={20} className="text-[#D08945]" />
                                     </div>
-                                    <span className="text-[11px] text-gray-600 font-medium">Termin</span>
+                                    <span className="text-[11px] text-muted-foreground font-medium">Termin</span>
                                 </button>
                                 <button
                                     type="button"
@@ -1124,10 +1124,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                     }}
                                     className="flex flex-col items-center gap-1.5"
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
-                                        <MapPin size={20} className="text-[#D08945]" />
+                                    <div className="w-12 h-12 rounded-full bg-background border border-border shadow-sm flex items-center justify-center">
+                                        <MapPin aria-hidden="true" size={20} className="text-[#D08945]" />
                                     </div>
-                                    <span className="text-[11px] text-gray-600 font-medium">Standort</span>
+                                    <span className="text-[11px] text-muted-foreground font-medium">Standort</span>
                                 </button>
                             </div>
                         </>
@@ -1136,7 +1136,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     <div className="p-3 pt-2">
                         <form
                             onSubmit={handleSend}
-                            className="flex items-end bg-white border border-gray-300 rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
+                            className="flex items-end bg-white dark:bg-muted border border-border rounded-3xl px-4 py-2 gap-3 transition-all duration-200 focus-within:outline-none focus-within:ring-2 focus-within:ring-[#D08945]"
                         >
                             <input
                                 type="file"
@@ -1163,36 +1163,39 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         }
                                     }
                                 }}
+                                aria-label="Schreibe eine Nachricht..."
                                 placeholder="Schreibe eine Nachricht..."
-                                className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
+                                className="flex-1 bg-transparent outline-none min-w-0 text-foreground placeholder:text-muted-foreground resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
                                 rows={1}
                                 style={{ minHeight: '24px' }}
                             />
 
                             <button
                                 type="button"
+                                aria-label="Anhang hinzufügen"
                                 onClick={() => setIsAttachMenuOpen(!isAttachMenuOpen)}
-                                className={`p-2 rounded-full transition-all flex-shrink-0 ${isAttachMenuOpen ? 'text-[#8C531E]' : 'text-[#D08945]'}`}
+                                className={`p-2 rounded-full transition-all flex-shrink-0 ${isAttachMenuOpen ? 'text-[#8C531E] dark:text-muted-foreground' : 'text-[#D08945]'}`}
                             >
-                                <Paperclip size={20} />
+                                <Paperclip aria-hidden="true" size={20} />
                             </button>
 
                             <button
                                 type="submit"
+                                aria-label="Nachricht senden"
                                 disabled={!newMessage.trim()}
                                 className={`p-2 rounded-full transition-all flex-shrink-0 ${newMessage.trim()
                                     ? 'text-[#D08945]'
-                                    : 'text-gray-400 cursor-not-allowed'
+                                    : 'text-muted-foreground cursor-not-allowed'
                                     }`}
                             >
-                                <Send size={20} />
+                                <Send aria-hidden="true" size={20} />
                             </button>
                         </form>
                     </div>
                 </div>
             ) : (
                 <div
-                    className="p-4 bg-gray-100 text-center text-gray-700 text-sm"
+                    className="p-4 bg-muted text-center text-foreground text-sm"
                     style={{
                         paddingBottom: `calc(1rem + env(safe-area-inset-bottom, 0px))`
                     }}
@@ -1208,10 +1211,11 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                     onClick={() => setSelectedMedia(null)}
                 >
                     <button
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[110]"
+                        className="absolute top-4 right-4 text-white hover:text-muted-foreground p-2 z-[110]"
+                        aria-label="Schließen"
                         onClick={() => setSelectedMedia(null)}
                     >
-                        <X size={32} />
+                        <X aria-hidden="true" size={32} />
                     </button>
                     {selectedMedia.type === 'video' ? (
                         <video

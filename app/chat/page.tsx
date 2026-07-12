@@ -119,7 +119,7 @@ export default function ChatPage() {
   });
 
   return (
-    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-white header-spacing">
+    <main className="min-h-screen w-full max-w-[428px] mx-auto pb-24 overflow-x-hidden bg-background header-spacing">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -130,35 +130,39 @@ export default function ChatPage() {
           <div className="flex items-center justify-center mb-6">
             <button
               onClick={() => setIsNewChatOpen(true)}
+              aria-label="Neuer Chat"
               className="w-10 h-10 rounded-full bg-[#d08945] text-white font-medium flex items-center justify-center active:scale-95 transition-transform"
             >
-              <Plus size={24} />
+              <Plus aria-hidden="true" size={24} />
             </button>
           </div>
           <div className="flex items-center justify-center gap-2 mb-6">
             <button
               onClick={() => setFilterType("all")}
+              aria-pressed={filterType === "all"}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
                 ? "bg-[#d08945] text-white"
-                : "bg-gray-100 text-gray-700"
+                : "bg-muted text-foreground"
                 }`}
             >
               Alle
             </button>
             <button
               onClick={() => setFilterType("direct")}
+              aria-pressed={filterType === "direct"}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "direct"
                 ? "bg-[#d08945] text-white"
-                : "bg-gray-100 text-gray-700"
+                : "bg-muted text-foreground"
                 }`}
             >
               Direkt
             </button>
             <button
               onClick={() => setFilterType("group")}
+              aria-pressed={filterType === "group"}
               className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "group"
                 ? "bg-[#d08945] text-white"
-                : "bg-gray-100 text-gray-700"
+                : "bg-muted text-foreground"
                 }`}
             >
               Gruppen
@@ -167,12 +171,13 @@ export default function ChatPage() {
 
           {/* Search Bar */}
           <div className="relative mb-6">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-              <Search className="h-5 w-5" />
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+              <Search aria-hidden="true" className="h-5 w-5" />
             </div>
             <input
               type="text"
-              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+              aria-label="Chats durchsuchen"
+              className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors"
               placeholder="Suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -182,8 +187,8 @@ export default function ChatPage() {
           {/* Chat List */}
           <div className="flex flex-col">
             {filteredConversations?.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
+              <div className="text-center py-12 text-muted-foreground">
+                <MessageCircle aria-hidden="true" className="w-12 h-12 mx-auto mb-2 opacity-20" />
                 <p>Keine Chats gefunden.</p>
               </div>
             ) : (
@@ -203,16 +208,16 @@ export default function ChatPage() {
                         {conv.displayImage ? (
                           <img src={conv.displayImage} alt={conv.displayName} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center font-semibold text-xl" style={{ color: "#000000" }}>
+                          <div className="w-full h-full flex items-center justify-center font-semibold text-xl text-black dark:text-white">
                             {conv.displayName?.charAt(0).toUpperCase() || "?"}
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold truncate pr-2 text-black">{conv.displayName}</h3>
+                          <h3 className="font-semibold truncate pr-2 text-foreground">{conv.displayName}</h3>
                           <div className="flex flex-col items-end">
-                            <span className="text-xs text-gray-400 whitespace-nowrap mb-0.5">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap mb-0.5">
                               {formatChatTimestamp(conv.updatedAt)}
                             </span>
                             {conv.unreadCount > 0 && (
@@ -234,22 +239,23 @@ export default function ChatPage() {
                                 }}
                                 className="mt-1 p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
                                 title="Chat löschen"
+                                aria-label="Chat löschen"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 aria-hidden="true" size={16} />
                               </button>
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-500 truncate flex items-center pl-0.5">
+                        <p className="text-sm text-muted-foreground truncate flex items-center pl-0.5">
                           {conv.lastMessage ? (
                             (conv.lastMessage as any).type === "image" ? (
                               <>
-                                <Image size={14} className="flex-shrink-0" />
+                                <Image aria-hidden="true" size={14} className="flex-shrink-0" />
                                 <span>Foto</span>
                               </>
                             ) : (conv.lastMessage as any).type === "pdf" ? (
                               <>
-                                <FileIcon size={14} className="flex-shrink-0" />
+                                <FileIcon aria-hidden="true" size={14} className="flex-shrink-0" />
                                 <span>{(conv.lastMessage as any).fileName || "Dokument"}</span>
                               </>
                             ) : (
@@ -288,19 +294,23 @@ export default function ChatPage() {
 
         {/* Drawer */}
         <div
-          className={`fixed inset-0 z-[80] flex flex-col bg-white transition-transform duration-300 ease-out ${isNewChatOpen ? "translate-y-0" : "translate-y-full"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="new-chat-title"
+          className={`fixed inset-0 z-[80] flex flex-col bg-background transition-transform duration-300 ease-out ${isNewChatOpen ? "translate-y-0" : "translate-y-full"
             }`}
           style={{
             pointerEvents: isNewChatOpen ? "auto" : "none"
           }}
         >
           <div
-            className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white"
+            className="flex items-center justify-between px-4 py-3 border-b border-border bg-background"
             style={{
               paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))`
             }}
           >
             <button
+              type="button"
               onClick={() => {
                 setIsNewChatOpen(false);
                 setTimeout(() => {
@@ -309,12 +319,13 @@ export default function ChatPage() {
                   setUserSearchQuery("");
                 }, 300);
               }}
-              className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
+              className="text-base font-medium text-foreground hover:opacity-70 transition-opacity"
             >
               Abbrechen
             </button>
-            <h2 className="text-lg font-semibold">Neuer Chat</h2>
+            <h2 id="new-chat-title" className="text-lg font-semibold">Neuer Chat</h2>
             <button
+              type="button"
               onClick={handleStartChat}
               disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName.trim())}
               className={`text-base font-medium hover:opacity-70 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-[#D08945]`}
@@ -327,32 +338,33 @@ export default function ChatPage() {
             {/* Group Name Input */}
             {selectedUsers.length > 1 && (
               <div className="mb-6 animate-in slide-in-from-top-2 fade-in">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Gruppenname</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Gruppenname</label>
                 <input
                   type="text"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   placeholder="z.B. Lerngruppe"
-                  className="w-full pl-4 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                  className="w-full pl-4 pr-4 py-3 bg-background border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors"
                 />
               </div>
             )}
 
             <div className="space-y-2">
               <div className="relative mb-4">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                  <Search className="h-4 w-4" />
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
+                  <Search aria-hidden="true" className="h-4 w-4" />
                 </div>
                 <input
                   type="text"
+                  aria-label="Nach Kontakten suchen"
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
                   placeholder="Nach Kontakten suchen..."
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors"
                 />
               </div>
 
-              <div className="text-sm font-semibold text-gray-500 mb-2">
+              <div className="text-sm font-semibold text-muted-foreground mb-2">
                 {userSearchQuery.trim() ? "Suchergebnisse" : "Vorschläge"}
               </div>
               {isModalUsersLoading ? (
@@ -360,7 +372,7 @@ export default function ChatPage() {
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#d08945]" />
                 </div>
               ) : displayedUsers.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
+                <div className="text-center py-12 text-muted-foreground">
                   {userSearchQuery.trim() ? "Keine Benutzer gefunden." : "Keine Vorschläge gefunden."}
                 </div>
               ) : displayedUsers.map(user => {
@@ -369,7 +381,7 @@ export default function ChatPage() {
                   <button
                     key={user._id}
                     onClick={() => toggleUserSelection(user._id)}
-                    className={`w-full flex items-center p-3 rounded-xl text-left transition-all ${isSelected ? "ring-2 ring-[#D08945]" : "bg-white"
+                    className={`w-full flex items-center p-3 rounded-xl text-left transition-all ${isSelected ? "ring-2 ring-[#D08945]" : "bg-background"
                       }`}
                   >
                     <div className="w-10 h-10 rounded-full overflow-hidden mr-3 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
@@ -380,17 +392,17 @@ export default function ChatPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center font-semibold" style={{ color: "#000000" }}>
+                        <div className="w-full h-full flex items-center justify-center font-semibold text-black dark:text-white">
                           {((user as { displayName?: string; name?: string }).displayName || user.name).charAt(0).toUpperCase()}
                         </div>
                       )}
 
                     </div>
                     <div className="flex-1">
-                      <div className={`font-medium ${isSelected ? "text-[#D08945]" : "text-black"}`}>
+                      <div className={`font-medium ${isSelected ? "text-[#D08945]" : "text-foreground"}`}>
                         {(user as { displayName?: string; name?: string }).displayName || user.name}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         @{(user as { displayUsername?: string; username?: string }).displayUsername || user.username}
                       </div>
                     </div>

@@ -253,7 +253,7 @@ export default function Home() {
             onClick={() => setFeedType("all")}
             className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "all"
                 ? "bg-[#D08945] text-white"
-                : "bg-gray-100 text-gray-700 hover:opacity-80"
+                : "bg-muted text-foreground hover:opacity-80"
               }`}
           >
             Alle
@@ -263,7 +263,7 @@ export default function Home() {
             disabled={isMajorDisabled}
             className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "major"
                 ? "bg-[#D08945] text-white"
-                : "bg-gray-100 text-gray-700 hover:opacity-80"
+                : "bg-muted text-foreground hover:opacity-80"
               } ${isMajorDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             Studiengang
@@ -272,7 +272,7 @@ export default function Home() {
             onClick={() => setFeedType("following")}
             className={`text-sm font-medium transition-all cursor-pointer px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "following"
                 ? "bg-[#D08945] text-white"
-                : "bg-gray-100 text-gray-700 hover:opacity-80"
+                : "bg-muted text-foreground hover:opacity-80"
               }`}
           >
             Folge Ich
@@ -282,7 +282,7 @@ export default function Home() {
             disabled={isInterestsDisabled}
             className={`text-sm font-medium transition-all px-3 py-2 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${feedType === "interests"
                 ? "bg-[#D08945] text-white"
-                : "bg-gray-100 text-gray-700 hover:opacity-80"
+                : "bg-muted text-foreground hover:opacity-80"
               } ${isInterestsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             Interesse
@@ -292,7 +292,7 @@ export default function Home() {
         {/* Desktop Compose Box - Facebook/Twitter Style ("Was gibts neues?") */}
         {/* Lädt gemeinsam mit dem Feed: zeigt beim Laden/Refresh ein Skeleton wie die FeedCards */}
         {postsFromQuery === undefined ? (
-          <div className="hidden md:flex items-center gap-3 px-5 py-4 bg-white rounded-3xl border-2 border-black/5">
+          <div className="hidden md:flex items-center gap-3 px-5 py-4 bg-background rounded-3xl border-2 border-black/5">
             <div className="w-12 h-12 rounded-full bg-muted animate-pulse flex-shrink-0" />
             <div className="flex-1 h-5 bg-muted animate-pulse rounded" />
             <div className="w-24 h-10 bg-muted animate-pulse rounded-full flex-shrink-0" />
@@ -308,9 +308,9 @@ export default function Home() {
                 router.push("/create");
               }
             }}
-            className="hidden md:flex items-center gap-3 px-5 py-4 bg-white rounded-3xl border-2 border-black/5 cursor-pointer transition-colors hover:border-black/10"
+            className="hidden md:flex items-center gap-3 px-5 py-4 bg-background dark:bg-card rounded-3xl border-2 border-black/5 hover:border-black/10 dark:border-border cursor-pointer transition-colors"
           >
-            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gray-100 flex-shrink-0">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-border flex items-center justify-center bg-muted flex-shrink-0">
               {currentUser?.image ? (
                 <>
                   {!composerAvatarLoaded && (
@@ -334,10 +334,10 @@ export default function Home() {
                   />
                 </>
               ) : (
-                <User className="w-6 h-6 text-gray-400" />
+                <User className="w-6 h-6 text-muted-foreground" />
               )}
             </div>
-            <div className="flex-1 text-left text-gray-400 text-lg">
+            <div className="flex-1 text-left text-muted-foreground text-lg">
               {currentUser?.name
                 ? `Was machst du gerade, ${currentUser.name.split(" ")[0]}?`
                 : "Was machst du gerade?"}
@@ -352,7 +352,7 @@ export default function Home() {
         {/* Upload Progress Bar - oberhalb der Posts, nur wenn Upload aktiv */}
         {uploadProgress !== null && uploadProgress >= 0 && (
           <div className="px-4 mb-4">
-            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-1 bg-accent rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] transition-all duration-300 ease-out"
                 style={{ width: `${uploadProgress}%` }}

@@ -515,6 +515,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
             <Link
               href={`/profile/${post.user.username}`}
               prefetch={true}
+              aria-label={`${post.user.name} Profil`}
               className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
               style={{
                 willChange: "transform",
@@ -556,7 +557,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                   </>
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center font-semibold text-black"
+                    className="w-full h-full flex items-center justify-center font-semibold text-foreground"
                     style={{
                       backgroundColor: "rgba(0, 0, 0, 0.2)",
                       willChange: "transform",
@@ -610,7 +611,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                   </>
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center font-semibold text-black"
+                    className="w-full h-full flex items-center justify-center font-semibold text-foreground"
                     style={{
                       backgroundColor: "rgba(0, 0, 0, 0.2)",
                       willChange: "transform",
@@ -634,23 +635,23 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                     prefetch={true}
                     className="cursor-pointer hover:opacity-80 transition-opacity flex items-center flex-shrink-0"
                   >
-                    <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
+                    <h3 className="font-bold text-[15px] text-foreground whitespace-nowrap">
                       {post.user.name}
                     </h3>
                   </Link>
-                  <span className="text-[15px] text-gray-500 font-normal whitespace-nowrap flex-shrink-0">
+                  <span className="text-[15px] text-muted-foreground font-normal whitespace-nowrap flex-shrink-0">
                     @{post.user.username}
                   </span>
                 </>
               ) : (
                 <div className="flex items-center flex-shrink-0">
-                  <h3 className="font-bold text-[15px] text-gray-900 whitespace-nowrap">
+                  <h3 className="font-bold text-[15px] text-foreground whitespace-nowrap">
                     {post.user?.name}
                   </h3>
                 </div>
               )}
-              <span className="text-gray-500 mx-0.5 text-[15px] flex-shrink-0">·</span>
-              <time className="whitespace-nowrap text-[15px] text-gray-500 font-normal flex-shrink-0">
+              <span className="text-muted-foreground mx-0.5 text-[15px] flex-shrink-0">·</span>
+              <time className="whitespace-nowrap text-[15px] text-muted-foreground font-normal flex-shrink-0">
                 {timeAgo}
               </time>
               <div className="ml-auto mr-2 w-8 h-8 flex items-center justify-center flex-shrink-0">
@@ -662,7 +663,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
 
             {/* Major & Semester */}
             {(post.user.major || post.user.semester) && (
-              <div className="text-[13px] text-gray-500 -mt-2 mb-3 truncate">
+              <div className="text-[13px] text-muted-foreground -mt-2 mb-3 truncate">
                 {post.user.major}
                 {post.user.major && post.user.semester && " · "}
                 {post.user.semester && `${post.user.semester}. Semester`}
@@ -672,7 +673,7 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
             {/* Post Type Badge */}
             {post.postType && getPostTypeLabel(post.postType) && (
               <div className="mb-2 -ml-1">
-                <span className="inline-block pl-1 pr-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                <span className="inline-block pl-1 pr-2 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
                   {getPostTypeLabel(post.postType)}
                 </span>
               </div>
@@ -680,14 +681,14 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
 
             {/* Title */}
             {post.title && (
-              <h4 className="font-semibold text-[16px] text-gray-900 mb-2">
+              <h4 className="font-semibold text-[16px] text-foreground mb-2">
                 {post.title}
               </h4>
             )}
 
             {/* Content - immer nach Title */}
             {post.content && post.content.trim() && (
-              <p className="text-[15px] text-gray-900 leading-normal whitespace-pre-wrap mb-3">
+              <p className="text-[15px] text-foreground leading-normal whitespace-pre-wrap mb-3">
                 {renderContentWithMentions(post.content)}
               </p>
             )}
@@ -710,9 +711,9 @@ export function FeedCard({ post, currentUserId, showDivider = true, isFirst = fa
                 {post.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-muted text-muted-foreground"
                   >
-                    <Tag className="w-3 h-3" />
+                    <Tag aria-hidden="true" className="w-3 h-3" />
                     {tag}
                   </span>
                 ))}

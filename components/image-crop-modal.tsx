@@ -138,7 +138,7 @@ export function ImageCropModal({
             <Dialog open={isOpen} onOpenChange={handleCancel}>
                 <DialogContent
                     hideCloseButton
-                    className={`max-w-lg w-[92vw] p-0 overflow-hidden rounded-2xl border border-gray-200 bg-white text-gray-900 ${className ?? ""}`}
+                    className={`max-w-lg w-[92vw] p-0 overflow-hidden rounded-2xl border border-border bg-background text-foreground ${className ?? ""}`}
                 >
                     {/* Kopfzeile */}
                     <div className="flex items-center justify-between gap-3 px-4 py-3">
@@ -148,11 +148,11 @@ export function ImageCropModal({
                                 onClick={handleCancel}
                                 disabled={isBusy}
                                 aria-label="Zurück"
-                                className="flex-shrink-0 text-gray-900 transition-opacity hover:opacity-70 disabled:opacity-50"
+                                className="flex-shrink-0 text-foreground transition-opacity hover:opacity-70 disabled:opacity-50"
                             >
                                 <ArrowLeft className="h-5 w-5" />
                             </button>
-                            <DialogTitle className="truncate text-lg font-bold text-gray-900">
+                            <DialogTitle className="truncate text-lg font-bold text-foreground">
                                 {title}
                             </DialogTitle>
                         </div>
@@ -169,7 +169,7 @@ export function ImageCropModal({
                     {/* Crop-Bereich */}
                     <div className="px-4">
                         <div
-                            className="relative w-full overflow-hidden rounded-xl bg-gray-100"
+                            className="relative w-full overflow-hidden rounded-xl bg-muted"
                             style={{ height: "min(70vw, 440px)", minHeight: "300px" }}
                         >
                             <Cropper
@@ -204,7 +204,7 @@ export function ImageCropModal({
 
                     {/* Zoom-Slider */}
                     <div className="flex items-center gap-4 px-6 py-5">
-                        <ZoomOut className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                        <ZoomOut className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                         <SliderPrimitive.Root
                             value={[zoom]}
                             onValueChange={(values: number[]) => setZoom(values[0])}
@@ -214,12 +214,12 @@ export function ImageCropModal({
                             disabled={isBusy}
                             className="relative flex w-full touch-none select-none items-center"
                         >
-                            <SliderPrimitive.Track className="relative h-1 w-full grow overflow-hidden rounded-full bg-gray-200">
+                            <SliderPrimitive.Track className="relative h-1 w-full grow overflow-hidden rounded-full bg-accent">
                                 <SliderPrimitive.Range className="absolute h-full bg-[#D08945]" />
                             </SliderPrimitive.Track>
                             <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full bg-[#D08945] shadow-md ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D08945] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
                         </SliderPrimitive.Root>
-                        <ZoomIn className="h-5 w-5 flex-shrink-0 text-gray-500" />
+                        <ZoomIn className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
                     </div>
                 </DialogContent>
             </Dialog>
@@ -273,7 +273,7 @@ export function ImageCropModal({
                 </div>
 
                 {/* Steuerung */}
-                <div className="p-4 space-y-3 bg-white">
+                <div className="p-4 space-y-3 bg-background">
                     {/* Zoom-Slider mit Buttons – nur Desktop */}
                     <div className="hidden sm:block">
                         <div className="flex items-center justify-between mb-2">
@@ -282,7 +282,7 @@ export function ImageCropModal({
                                 type="button"
                                 onClick={resetView}
                                 disabled={isProcessing || isUploading}
-                                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                             >
                                 <RotateCcw className="w-3.5 h-3.5" />
                                 Zurücksetzen
@@ -293,7 +293,7 @@ export function ImageCropModal({
                                 type="button"
                                 onClick={() => setZoom((z) => clampZoom(z - ZOOM_STEP))}
                                 disabled={isProcessing || isUploading || zoom <= MIN_ZOOM}
-                                className="flex-shrink-0 p-1.5 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                                className="flex-shrink-0 p-1.5 rounded-md text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                                 aria-label="Verkleinern"
                             >
                                 <ZoomOut className="w-4 h-4" />
@@ -310,19 +310,19 @@ export function ImageCropModal({
                                 type="button"
                                 onClick={() => setZoom((z) => clampZoom(z + ZOOM_STEP))}
                                 disabled={isProcessing || isUploading || zoom >= MAX_ZOOM}
-                                className="flex-shrink-0 p-1.5 rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                                className="flex-shrink-0 p-1.5 rounded-md text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
                                 aria-label="Vergrößern"
                             >
                                 <ZoomIn className="w-4 h-4" />
                             </button>
                         </div>
-                        <p className="mt-2 text-xs text-gray-500 text-center">
+                        <p className="mt-2 text-xs text-muted-foreground text-center">
                             Mit dem Mausrad zoomen · zum Verschieben ziehen
                         </p>
                     </div>
 
                     {/* Hinweis – nur Mobil */}
-                    <p className="sm:hidden text-xs text-gray-500 text-center">
+                    <p className="sm:hidden text-xs text-muted-foreground text-center">
                         Zum Zoomen zusammenziehen · zum Verschieben ziehen
                     </p>
 

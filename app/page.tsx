@@ -37,9 +37,9 @@ export default function LandingPage() {
   // Ladeindikator anzeigen, während Authentifizierung überprüft wird
   if (isPending && showLoading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
         <div className="text-center">
-          <p className="text-sm text-gray-600">Lädt...</p>
+          <p className="text-sm text-muted-foreground">Lädt...</p>
         </div>
       </div>
     );

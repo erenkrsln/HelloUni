@@ -122,7 +122,7 @@ export function DatePicker({
         <button
           key={`prev-${i}`}
           type="button"
-          className="h-8 w-8 text-xs text-gray-400 hover:bg-gray-100 active:bg-gray-200 rounded transition-colors touch-manipulation"
+          className="h-8 w-8 text-xs text-gray-400 hover:bg-muted active:bg-accent rounded transition-colors touch-manipulation"
           onClick={() => {
             handlePrevMonth();
             handleDateClick(prevMonthDays - i);
@@ -153,7 +153,7 @@ export function DatePicker({
           className={cn(
             "h-8 w-8 text-xs rounded transition-colors font-medium touch-manipulation",
             isSelected && "bg-[#D08945] text-white hover:bg-[#D08945] active:bg-[#C07835]",
-            !isSelected && "text-gray-900 hover:bg-gray-100 active:bg-gray-200"
+            !isSelected && "text-foreground hover:bg-muted active:bg-accent"
           )}
         >
           {day}
@@ -169,7 +169,7 @@ export function DatePicker({
     return (
       <div className="relative w-full flex justify-start">
         <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none z-10">
-          <CalendarIcon className="h-4 w-4 text-gray-500" />
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
         </div>
         <input
           type="date"
@@ -177,12 +177,12 @@ export function DatePicker({
           onChange={handleNativeDateChange}
           disabled={disabled}
           className={cn(
-            "block w-full max-w-full h-11 py-2 text-base rounded-lg border bg-white text-left",
-            "placeholder:text-gray-400",
-            "focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent",
+            "block w-full max-w-full h-11 py-2 text-base rounded-lg border border-input bg-background text-left",
+            "placeholder:text-muted-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
             "disabled:cursor-not-allowed disabled:opacity-50",
             "transition-all",
-            !value && "text-gray-500",
+            !value && "text-muted-foreground",
             // Native Icon verstecken - nur unser Icon links soll sichtbar sein
             "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer",
             "[&::-moz-calendar-picker-indicator]:hidden",
@@ -221,15 +221,15 @@ export function DatePicker({
       <PopoverTrigger asChild>
         <div className="relative">
           <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none z-10">
-            <CalendarIcon className="h-4 w-4 text-gray-500" />
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           </div>
           <Button
             type="button"
             variant="outline"
             disabled={disabled}
             className={cn(
-              "w-full justify-start text-left font-normal text-sm bg-white hover:bg-gray-50 focus-visible:ring-[#D08945] focus-visible:border-[#D08945] ps-8",
-              !value && "text-gray-500",
+              "w-full justify-start text-left font-normal text-sm bg-background border-input hover:bg-accent focus-visible:ring-ring focus-visible:border-ring ps-8",
+              !value && "text-muted-foreground",
               className
             )}
             style={{
@@ -241,7 +241,7 @@ export function DatePicker({
         </div>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-auto p-2 md:p-3 bg-white" 
+        className="w-auto p-2 md:p-3 bg-popover border-border" 
         align="center"
         collisionPadding={{ bottom: 80 }}
         sideOffset={5}
@@ -251,9 +251,9 @@ export function DatePicker({
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="h-7 w-7 md:h-7 md:w-7 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+            className="h-7 w-7 md:h-7 md:w-7 flex items-center justify-center rounded hover:bg-muted active:bg-accent transition-colors touch-manipulation"
           >
-            <ChevronLeft className="h-4 w-4 md:h-3.5 md:w-3.5 text-gray-600" />
+            <ChevronLeft className="h-4 w-4 md:h-3.5 md:w-3.5 text-muted-foreground" />
           </button>
           
           <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export function DatePicker({
             <select
               value={currentMonth}
               onChange={(e) => setCurrentMonth(Number(e.target.value))}
-              className="text-xs font-medium px-2 py-1 rounded-md bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors cursor-pointer"
+              className="text-xs font-medium px-2 py-1 rounded-md bg-background border border-input hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors cursor-pointer"
             >
               {MONTHS.map((month, index) => (
                 <option key={index} value={index}>
@@ -274,7 +274,7 @@ export function DatePicker({
             <select
               value={currentYear}
               onChange={(e) => setCurrentYear(Number(e.target.value))}
-              className="text-xs font-medium px-2 py-1 rounded-md bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors cursor-pointer"
+              className="text-xs font-medium px-2 py-1 rounded-md bg-background border border-input hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors cursor-pointer"
             >
               {Array.from({ length: 2028 - new Date().getFullYear() + 1 }, (_, i) => new Date().getFullYear() + i).map((year) => (
                 <option key={year} value={year}>
@@ -287,16 +287,16 @@ export function DatePicker({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="h-7 w-7 md:h-7 md:w-7 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+            className="h-7 w-7 md:h-7 md:w-7 flex items-center justify-center rounded hover:bg-muted active:bg-accent transition-colors touch-manipulation"
           >
-            <ChevronRight className="h-4 w-4 md:h-3.5 md:w-3.5 text-gray-600" />
+            <ChevronRight className="h-4 w-4 md:h-3.5 md:w-3.5 text-muted-foreground" />
           </button>
         </div>
         
         {/* Weekdays */}
         <div className="grid grid-cols-7 gap-1 mb-1.5">
           {WEEKDAYS.map((day) => (
-            <div key={day} className="h-8 w-8 flex items-center justify-center text-[11px] font-medium text-gray-600">
+            <div key={day} className="h-8 w-8 flex items-center justify-center text-[11px] font-medium text-muted-foreground">
               {day}
             </div>
           ))}

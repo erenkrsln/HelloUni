@@ -71,9 +71,9 @@ export default function InstallInstructionsPage() {
   const activePlatform = selectedPlatform || platform;
 
   return (
-    <div className="min-h-screen bg-white max-w-[428px] md:max-w-none mx-auto flex flex-col pb-safe">
+    <div className="min-h-screen bg-background max-w-[428px] md:max-w-none mx-auto flex flex-col pb-safe">
       <header
-        className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top border-b border-gray-100"
+        className="fixed top-0 left-0 right-0 w-full bg-background z-[70] pt-safe-top border-b border-border"
         style={{
           height: `calc(80px + env(safe-area-inset-top, 0px))`,
           minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
@@ -82,13 +82,13 @@ export default function InstallInstructionsPage() {
         <div className="relative flex h-full w-full items-center px-4">
           <button
             onClick={() => router.back()}
-            className="absolute left-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="absolute left-4 p-2 hover:bg-muted rounded-full transition-colors"
             aria-label="Zurück"
           >
-            <ArrowLeft className="w-6 h-6 text-black" />
+            <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
 
-          <h1 className="flex-1 text-center text-3xl font-bold text-black">
+          <h1 className="flex-1 text-center text-3xl font-bold text-foreground">
             Installationsguide
           </h1>
         </div>
@@ -97,34 +97,34 @@ export default function InstallInstructionsPage() {
       <main className="flex-1 px-6 py-20 overflow-y-auto md:max-w-3xl md:m-auto">
         <div className="flex flex-col items-center md:items-start mb-8 text-center md:text-left">
 
-          <p className="text-gray-600 text-m mt-10">
+          <p className="text-muted-foreground text-m mt-10">
             HelloUni ist eine Progressive Web App (PWA). Du kannst die Webseite direkt aus deinem Browser installieren, ohne einen App Store zu besuchen.
 
             Nach der Installation funktioniert HelloUni wie eine ganz normale App.
           </p>
-          <p className="text-gray-600 text-m mt-3">
+          <p className="text-muted-foreground text-m mt-3">
             Unten findest du eine Anleitung wie du HelloUni auf deinem Gerät installierst.
           </p>
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Zeige Anleitung für:
           </label>
           <div className="w-full max-w-full platform-dropdown relative">
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex h-12 w-full items-center justify-between rounded-full border border-gray-300 bg-white px-4 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+              className="flex h-12 w-full items-center justify-between rounded-full border border-border bg-background px-4 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
             >
-              <span className={activePlatform !== "unknown" ? "text-gray-900 truncate" : "text-gray-400 truncate"}>
+              <span className={activePlatform !== "unknown" ? "text-foreground truncate" : "text-muted-foreground truncate"}>
                 {PLATFORM_LABELS[activePlatform] || "Bitte wähle ein Gerät aus"}
               </span>
-              <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? "rotate-180" : ""}`} />
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform flex-shrink-0 ${isDropdownOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute z-30 mt-2 w-full rounded-2xl border border-gray-200 bg-white shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+              <div className="absolute z-30 mt-2 w-full rounded-2xl border border-border bg-background shadow-lg overflow-hidden max-h-60 overflow-y-auto">
                 <div className="py-1">
                   {Object.entries(PLATFORM_LABELS).map(([value, label]) => (
                     <button
@@ -134,7 +134,7 @@ export default function InstallInstructionsPage() {
                         setSelectedPlatform(value as Platform);
                         setIsDropdownOpen(false);
                       }}
-                      className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors ${activePlatform === value ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
+                      className={`w-full px-4 py-3 text-left text-sm hover:bg-muted transition-colors ${activePlatform === value ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
                     >
                       {label}
                     </button>
@@ -145,31 +145,31 @@ export default function InstallInstructionsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+        <div className="bg-muted rounded-2xl p-6 border border-border">
           {activePlatform === "mobile_safari" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Share className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Share className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Tippe auf das Teilen-Symbol in der Menüleiste</p>
+                  <p className="text-sm text-muted-foreground">Tippe auf das Teilen-Symbol in der Menüleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <PlusSquare className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <PlusSquare className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Scrolle nach unten und wähle "Zum Home-Bildschirm"</p>
+                  <p className="text-sm text-muted-foreground">Scrolle nach unten und wähle "Zum Home-Bildschirm"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Check className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Check className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Vergib einen Namen, stelle sicher, dass "Als Web-App öffnen" aktiviert ist und tippe dann auf "Hinzufügen"</p>
+                  <p className="text-sm text-muted-foreground">Vergib einen Namen, stelle sicher, dass "Als Web-App öffnen" aktiviert ist und tippe dann auf "Hinzufügen"</p>
                 </div>
               </div>
             </div>
@@ -178,27 +178,27 @@ export default function InstallInstructionsPage() {
           {activePlatform === "mobile_chrome" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <MoreVertical className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <MoreVertical className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Tippe auf das Menü-Symbol (drei Punkte) in der Browserleiste</p>
+                  <p className="text-sm text-muted-foreground">Tippe auf das Menü-Symbol (drei Punkte) in der Browserleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <MonitorDown className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <MonitorDown className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Wähle "Zum Startbildschirm hinzufügen" und tippe auf "Installieren"</p>
+                  <p className="text-sm text-muted-foreground">Wähle "Zum Startbildschirm hinzufügen" und tippe auf "Installieren"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Check className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Check className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Bestätige die Installation im Popup-Fenster mit Tippen auf "Installieren"</p>
+                  <p className="text-sm text-muted-foreground">Bestätige die Installation im Popup-Fenster mit Tippen auf "Installieren"</p>
                 </div>
               </div>
             </div>
@@ -207,29 +207,29 @@ export default function InstallInstructionsPage() {
           {activePlatform === "mobile_samsung" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Menu className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Menu className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Tippe auf das Menü-Symbol (drei Striche) in der Browserleiste</p>
+                  <p className="text-sm text-muted-foreground">Tippe auf das Menü-Symbol (drei Striche) in der Browserleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <CirclePlus className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <CirclePlus className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Wähle "Hinzufügen zu" und tippe auf "Startbildschirm"</p>
+                  <p className="text-sm text-muted-foreground">Wähle "Hinzufügen zu" und tippe auf "Startbildschirm"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Check className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Check className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Bestätige im Pop-up-Fenster mit Tippen auf "Hinzufügen"</p>
+                  <p className="text-sm text-muted-foreground">Bestätige im Pop-up-Fenster mit Tippen auf "Hinzufügen"</p>
                 </div>
               </div>
             </div>
@@ -238,29 +238,29 @@ export default function InstallInstructionsPage() {
           {activePlatform === "desktop_chrome" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <MoreVertical className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <MoreVertical className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte) ganz rechts neben der Adressleiste</p>
+                  <p className="text-sm text-muted-foreground">Klicke auf das Menü-Symbol (drei Punkte) ganz rechts neben der Adressleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <FileDown className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <FileDown className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Navigiere zum Punkt "Streamen, speichern und teilen" und wähle "Seite als App installieren"</p>
+                  <p className="text-sm text-muted-foreground">Navigiere zum Punkt "Streamen, speichern und teilen" und wähle "Seite als App installieren"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Check className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Check className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Vergib einen Namen und bestätige mit "Installieren". Die App erscheint nun auf deinem Desktop</p>
+                  <p className="text-sm text-muted-foreground">Vergib einen Namen und bestätige mit "Installieren". Die App erscheint nun auf deinem Desktop</p>
                 </div>
               </div>
             </div>
@@ -269,29 +269,29 @@ export default function InstallInstructionsPage() {
           {activePlatform === "desktop_edge" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <MoreHorizontal className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <MoreHorizontal className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Klicke auf das Menü-Symbol (drei Punkte) ganz rechts neben der Adressleiste</p>
+                  <p className="text-sm text-muted-foreground">Klicke auf das Menü-Symbol (drei Punkte) ganz rechts neben der Adressleiste</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Grid2x2 className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Grid2x2 className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Navigiere zum Punkt "Weitere Tools", wähle "Apps" und klicke "Diese Site als eine App öffnen"</p>
+                  <p className="text-sm text-muted-foreground">Navigiere zum Punkt "Weitere Tools", wähle "Apps" und klicke "Diese Site als eine App öffnen"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Check className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Check className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Vergib einen Namen und bestätige mit "Installieren". Die App erscheint nun auf deinem Desktop</p>
+                  <p className="text-sm text-muted-foreground">Vergib einen Namen und bestätige mit "Installieren". Die App erscheint nun auf deinem Desktop</p>
                 </div>
               </div>
             </div>
@@ -300,28 +300,28 @@ export default function InstallInstructionsPage() {
           {activePlatform === "desktop_safari" && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Share className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Share className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
 
-                  <p className="text-sm text-gray-600">Klicke oben rechts auf das Teilen-Symbol (Viereck mit Pfeil)</p>
+                  <p className="text-sm text-muted-foreground">Klicke oben rechts auf das Teilen-Symbol (Viereck mit Pfeil)</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Monitor className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Monitor className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Wähle "Zum Dock hinzufügen"</p>
+                  <p className="text-sm text-muted-foreground">Wähle "Zum Dock hinzufügen"</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="bg-white p-2 rounded-full shadow-sm border border-gray-200 mt-1">
-                  <Check className="w-5 h-5 text-gray-700" />
+                <div className="bg-background p-2 rounded-full shadow-sm border border-border mt-1">
+                  <Check className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Vergib einen Namen und bestätige mit "Hinzufügen"</p>
+                  <p className="text-sm text-muted-foreground">Vergib einen Namen und bestätige mit "Hinzufügen"</p>
                 </div>
               </div>
             </div>
@@ -329,11 +329,11 @@ export default function InstallInstructionsPage() {
 
           {activePlatform === "mobile_other" && (
             <div className="text-center md:text-left py-4">
-              <Smartphone className="w-12 h-12 text-gray-400 mx-auto md:mx-0 mb-3" />
+              <Smartphone className="w-12 h-12 text-muted-foreground mx-auto md:mx-0 mb-3" />
               <p className="font-medium mb-2">Browser nicht optimal</p>
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-muted-foreground mb-2">
                 Für die beste Erfahrung mit HelloUni
-                nutze bitte <strong>Google Chrome</strong> oder <strong>Safari</strong> (iOS). </p><p className="text-sm text-gray-600">
+                nutze bitte <strong>Google Chrome</strong> oder <strong>Safari</strong> (iOS). </p><p className="text-sm text-muted-foreground">
                 Falls du bei deinem momentan genutzten Browser bleiben möchtest, suche nach <strong>"PWA Installation + deinem verwendeten Browser"</strong>, um zu prüfen, ob und wie dieser die Installation von Progressive Web Apps unterstützt.
               </p>
             </div>
@@ -341,11 +341,11 @@ export default function InstallInstructionsPage() {
 
           {activePlatform === "desktop_other" && (
             <div className="text-center md:text-left py-4">
-              <Monitor className="w-12 h-12 text-gray-400 mx-auto md:mx-0 mb-3" />
+              <Monitor className="w-12 h-12 text-muted-foreground mx-auto md:mx-0 mb-3" />
               <p className="font-medium mb-2">Browser nicht optimal</p>
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-muted-foreground mb-2">
                 Für die beste Erfahrung mit HelloUni
-                nutze bitte <strong>Google Chrome</strong> oder <strong>Safari</strong>. </p><p className="text-sm text-gray-600">
+                nutze bitte <strong>Google Chrome</strong> oder <strong>Safari</strong>. </p><p className="text-sm text-muted-foreground">
                 Falls du bei deinem momentan genutzten Browser bleiben möchtest, suche nach <strong>"PWA Installation + deinem verwendeten Browser"</strong>, um zu prüfen, ob und wie dieser die Installation von Progressive Web Apps unterstützt.
               </p>
             </div>
@@ -353,7 +353,7 @@ export default function InstallInstructionsPage() {
 
           {activePlatform === "unknown" && (
             <div className="text-center md:text-left py-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Bitte wähle oben dein Gerät aus, um die passende Installationsanleitung zu sehen.
               </p>
             </div>

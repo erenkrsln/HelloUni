@@ -94,7 +94,7 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
   const renderFileIcon = (fileType: string) => {
     if (fileType.startsWith("image/")) return <ImageIcon size={24} className="text-blue-500" />;
     if (fileType.includes("pdf")) return <FileText size={24} className="text-red-500" />;
-    return <FileIcon size={24} className="text-gray-500" />;
+    return <FileIcon size={24} className="text-muted-foreground" />;
   };
 
   return (
@@ -118,9 +118,9 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
 
       <div className="grid grid-cols-2 gap-3">
         {!files ? (
-          <div className="col-span-2 text-center text-gray-500 p-8">Loading files...</div>
+          <div className="col-span-2 text-center text-muted-foreground p-8">Loading files...</div>
         ) : files.length === 0 ? (
-          <div className="col-span-2 text-center py-12 text-gray-400 bg-white rounded-xl border border-gray-100 border-dashed">
+          <div className="col-span-2 text-center py-12 text-muted-foreground bg-card rounded-xl border border-border border-dashed">
             <FolderPlusIcon className="w-12 h-12 mx-auto mb-2 opacity-20 text-[#D08945]" />
             <p>No files uploaded yet.</p>
           </div>
@@ -131,15 +131,15 @@ export function WorkspaceFiles({ workspaceId }: { workspaceId: string }) {
               href={file.url || file.url || "#"} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow"
+              className="bg-card border border-border p-4 rounded-xl shadow-sm flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow"
             >
-              <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
                 {renderFileIcon(file.fileType)}
               </div>
-              <span className="text-sm font-medium text-gray-800 line-clamp-1 w-full" title={file.fileName}>
+              <span className="text-sm font-medium text-foreground line-clamp-1 w-full" title={file.fileName}>
                 {file.fileName}
               </span>
-              <div className="flex items-center text-xs text-gray-500 mt-1">
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
                 <Download size={12} className="mr-1" /> View
               </div>
             </a>

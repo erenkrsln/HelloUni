@@ -12,6 +12,9 @@ import { CallOverlay } from "@/components/call/CallOverlay";
 import { IncomingCallModal } from "@/components/call/IncomingCallModal";
 import { getToken } from "@/lib/auth-server";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeSync } from "@/components/theme-sync";
+import { SpeechAssistanceProvider } from "@/lib/contexts/SpeechAssistanceContext";
 
 const inter = Inter({ subsets: ["latin"] });
 const gloock = Gloock({
@@ -69,7 +72,10 @@ export const viewport: Viewport = {
   userScalable: true,
   // iOS Safari: Unterstützung für Safe Area (Notch, Home Indicator)
   viewportFit: "cover",
-  themeColor: "#ffffff",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#171717" },
+  ],
 };
 
 export default async function RootLayout({
@@ -90,15 +96,27 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-title" content="HelloUni" />
       </head>
       <body className={`${inter.className} ${gloock.variable} ${poppins.variable}`} suppressHydrationWarning>
+        <a href="#main-content" className="fixed left-4 top-4 z-[9999] -translate-y-24 rounded-md bg-background px-4 py-2 text-foreground shadow-lg focus:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D08945] transition-transform">
+          Zum Hauptinhalt springen
+        </a>
         <ServiceWorkerRegister />
         <ConvexClientProvider initialToken={token}>
-          <CallProvider>
-            <ToastProvider>
-              <PostsCacheWrapper>{children}</PostsCacheWrapper>
-            </ToastProvider>
-            <CallOverlay />
-            <IncomingCallModal />
-          </CallProvider>
+          <ThemeProvider>
+            <ThemeSync />
+            <CallProvider>
+              <ToastProvider>
+                <SpeechAssistanceProvider>
+                  <PostsCacheWrapper>
+                    <div id="main-content" tabIndex={-1} className="outline-none flex-1 flex flex-col min-h-0">
+                      {children}
+                    </div>
+                  </PostsCacheWrapper>
+                </SpeechAssistanceProvider>
+              </ToastProvider>
+              <CallOverlay />
+              <IncomingCallModal />
+            </CallProvider>
+          </ThemeProvider>
         </ConvexClientProvider>
       </body>
     </html>

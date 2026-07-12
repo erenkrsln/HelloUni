@@ -105,7 +105,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
 
     if (!isOpen) return null;
 
-    const inputClass = "bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors cursor-pointer w-full";
+    const inputClass = "bg-background border border-gray-300 rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors cursor-pointer w-full";
 
     return (
         <>
@@ -117,7 +117,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
 
             {/* Modal */}
             <div
-                className="fixed bottom-0 left-1/2 -translate-x-1/2 z-[90] w-full max-w-[428px] bg-white rounded-t-3xl shadow-2xl"
+                className="fixed bottom-0 left-1/2 -translate-x-1/2 z-[90] w-full max-w-[428px] bg-background rounded-t-3xl shadow-2xl"
                 style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
             >
                 {/* Handle bar */}
@@ -126,13 +126,13 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                 </div>
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-border">
                     <button onClick={handleClose} className="text-[#D08945] text-sm font-medium">
                         Abbrechen
                     </button>
                     <div className="flex items-center gap-2">
                         <BarChart2 size={18} className="text-[#D08945]" />
-                        <h2 className="font-semibold text-base text-gray-900">Umfrage erstellen</h2>
+                        <h2 className="font-semibold text-base text-foreground">Umfrage erstellen</h2>
                     </div>
                     <button
                         onClick={handleSubmit}
@@ -148,26 +148,26 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
 
                     {/* Question */}
                     <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Frage</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Frage</label>
                         <textarea
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                             placeholder="Stell deine Frage..."
                             rows={2}
                             maxLength={200}
-                            className="mt-2 w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 focus:border-[#D08945] resize-none transition-all"
+                            className="mt-2 w-full bg-muted border border-border rounded-2xl px-4 py-3 text-sm text-foreground placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 focus:border-[#D08945] resize-none transition-all"
                         />
                     </div>
 
                     {/* Options */}
                     <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             Antwortmöglichkeiten
                         </label>
                         <div className="mt-2 space-y-2">
                             {options.map((option, index) => (
                                 <div key={index} className="flex items-center gap-2">
-                                    <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2 focus-within:ring-2 focus-within:ring-[#D08945]/30 focus-within:border-[#D08945] transition-all">
+                                    <div className="flex-1 flex items-center gap-2 bg-muted border border-border rounded-2xl px-4 py-2 focus-within:ring-2 focus-within:ring-[#D08945]/30 focus-within:border-[#D08945] transition-all">
                                         <span className="text-xs font-bold text-[#D08945] w-4 flex-shrink-0">{index + 1}</span>
                                         <input
                                             type="text"
@@ -175,7 +175,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                                             onChange={(e) => updateOption(index, e.target.value)}
                                             placeholder={`Option ${index + 1}`}
                                             maxLength={100}
-                                            className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
+                                            className="flex-1 bg-transparent text-sm text-foreground placeholder-gray-400 outline-none"
                                         />
                                     </div>
                                     {options.length > 2 && (
@@ -204,42 +204,42 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
 
                     {/* Settings */}
                     <div className="space-y-3">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Einstellungen</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Einstellungen</label>
 
                         {/* Multiple answers toggle */}
-                        <div className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3">
+                        <div className="flex items-center justify-between bg-muted rounded-2xl px-4 py-3">
                             <div>
-                                <p className="text-sm font-medium text-gray-900">Mehrere Antworten</p>
-                                <p className="text-xs text-gray-500 mt-0.5">Teilnehmer können mehrere Optionen wählen</p>
+                                <p className="text-sm font-medium text-foreground">Mehrere Antworten</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">Teilnehmer können mehrere Optionen wählen</p>
                             </div>
                             <button
                                 onClick={() => setAllowMultiple(!allowMultiple)}
                                 className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${allowMultiple ? "bg-[#D08945]" : "bg-gray-300"}`}
                             >
-                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${allowMultiple ? "translate-x-5" : "translate-x-0"}`} />
+                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${allowMultiple ? "translate-x-5" : "translate-x-0"}`} />
                             </button>
                         </div>
 
                         {/* Auto-close toggle + date/time picker */}
-                        <div className="bg-gray-50 rounded-2xl overflow-hidden">
+                        <div className="bg-muted rounded-2xl overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-3">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900">Automatisch schließen</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">Enddatum und -uhrzeit festlegen</p>
+                                    <p className="text-sm font-medium text-foreground">Automatisch schließen</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">Enddatum und -uhrzeit festlegen</p>
                                 </div>
                                 <button
                                     onClick={() => setEnableCloseAt(!enableCloseAt)}
                                     className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${enableCloseAt ? "bg-[#D08945]" : "bg-gray-300"}`}
                                 >
-                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${enableCloseAt ? "translate-x-5" : "translate-x-0"}`} />
+                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${enableCloseAt ? "translate-x-5" : "translate-x-0"}`} />
                                 </button>
                             </div>
 
                             {enableCloseAt && (
-                                <div className="border-t border-gray-200 px-4 py-3 space-y-3">
+                                <div className="border-t border-border px-4 py-3 space-y-3">
                                     {/* Date */}
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1.5">Datum</p>
+                                        <p className="text-xs text-muted-foreground mb-1.5">Datum</p>
                                         <input
                                             type="date"
                                             value={closeDate}
@@ -250,7 +250,7 @@ export function ChatPollModal({ isOpen, onClose, conversationId, senderId }: Cha
                                     </div>
                                     {/* Time */}
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1.5">Uhrzeit</p>
+                                        <p className="text-xs text-muted-foreground mb-1.5">Uhrzeit</p>
                                         <input
                                             type="time"
                                             value={closeTime}

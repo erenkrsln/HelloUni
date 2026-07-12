@@ -18,7 +18,7 @@ export default function AboutPage() {
 
     if (isLoading) {
         return (
-            <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto bg-white flex items-center justify-center">
+            <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto bg-background flex items-center justify-center">
                 <LoadingScreen text="" />
             </main>
         );
@@ -27,7 +27,7 @@ export default function AboutPage() {
     return (
         <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto ">
             <header
-                className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top border-b border-gray-100"
+                className="fixed top-0 left-0 right-0 w-full bg-background z-[70] pt-safe-top border-b border-border"
                 style={{
                     height: `calc(80px + env(safe-area-inset-top, 0px))`,
                     minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
@@ -36,37 +36,37 @@ export default function AboutPage() {
                 <div className="relative flex h-full w-full items-center px-4">
                     <button
                         onClick={() => router.back()}
-                        className="absolute left-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="absolute left-4 p-2 hover:bg-muted rounded-full transition-colors"
                         aria-label="Zurück"
                     >
-                        <ArrowLeft className="w-6 h-6 text-black" />
+                        <ArrowLeft className="w-6 h-6 text-foreground" />
                     </button>
 
-                    <h1 className="flex-1 text-center text-3xl font-bold text-black">
+                    <h1 className="flex-1 text-center text-3xl font-bold text-foreground">
                         Über Uns
                     </h1>
                 </div>
             </header>
 
             <div className="pt-[110px] px-5 pb-10">
-                <section className="mb-8 bg-white p-6 input-card">
-                    <h2 className="text-2xl font-semibold mb-4 text-black text-center">Unsere Idee</h2>
-                    <p className="text-gray-700 leading-relaxed mb-4 text-center md:text-left">
+                <section className="mb-8 bg-background p-6 input-card">
+                    <h2 className="text-2xl font-semibold mb-4 text-foreground text-center">Unsere Idee</h2>
+                    <p className="text-foreground leading-relaxed mb-4 text-center md:text-left">
                         Im digitalen Zeitalter sollte es leicht sein, neue Kontakte zu knüpfen und trotzdem fällt es vielen Studierenden überraschend schwer, wirklich im Studium anzukommen und neue Freundschaften zu finden.
                     </p>
-                    <p className="text-gray-700 leading-relaxed mb-4 text-center md:text-left">
+                    <p className="text-foreground leading-relaxed mb-4 text-center md:text-left">
                         Genau hier möchten wir mit unserem semesterübergreifenden Projekt HelloUni ansetzen: Wir bringen Studierende einer Hochschule gezielt zusammen, basierend auf Interessen, Studiengang und Hobbys.
                     </p>
-                    <p className="text-gray-700 leading-relaxed text-center md:text-left">
+                    <p className="text-foreground leading-relaxed text-center md:text-left">
                         Kein Chaos, keine Anonymität. <br />
                         Stattdessen ein übersichtlicher Raum für Lerngruppen, Events und Projekte oder einfach um neue Menschen kennenzulernen - denn ein gutes Studium lebt vor allem von den Menschen, die man dabei trifft!
                     </p>
                 </section>
 
-                <section className="bg-white p-6 input-card space-y-6">
-                    <h2 className="text-2xl font-semibold mb-6 text-black text-center">Unser Team</h2>
+                <section className="bg-background p-6 input-card space-y-6">
+                    <h2 className="text-2xl font-semibold mb-6 text-foreground text-center">Unser Team</h2>
                     <div>
-                        <p className="text-gray-700 leading-relaxed text-center md:text-left">
+                        <p className="text-foreground leading-relaxed text-center md:text-left">
                             Da wir ein relativ kleines Team aus Media Engineering-Studierenden der <a href="https://www.th-nuernberg.de" target="_blank" rel="noopener noreferrer" className="underline">
                                 TH Nürnberg
                             </a> sind, gibt es bei uns keine starren Zuständigkeiten. Wir helfen mit, wo es gerade nötig ist und bringen unsere Stärken ein. <br />

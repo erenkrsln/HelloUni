@@ -94,7 +94,7 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                 )}
             </div>
 
-            <p className="text-base font-bold leading-snug mb-1 text-gray-900">
+            <p className="text-base font-bold leading-snug mb-1 text-foreground">
                 {chatEvent.title}
             </p>
             {chatEvent.description && (
@@ -119,14 +119,14 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                     return (
                         <div
                             key={index}
-                            className={`rounded-xl border border-gray-200 overflow-hidden bg-white/70 transition-all ${(isWinningSlot || (myVote && !isConfirmed)) ? 'border-[#D08945]/30 shadow-sm' : ''}`}
+                            className={`rounded-xl border border-border overflow-hidden bg-background/70 transition-all ${(isWinningSlot || (myVote && !isConfirmed)) ? 'border-[#D08945]/30 shadow-sm' : ''}`}
                         >
-                            <div className={`p-3 ${isWinningSlot ? 'bg-gray-100' : 'bg-gray-50/50'} border-b border-gray-100 flex justify-between items-start`}>
+                            <div className={`p-3 ${isWinningSlot ? 'bg-muted' : 'bg-muted/50'} border-b border-border flex justify-between items-start`}>
                                 <div>
-                                    <p className="font-semibold text-gray-900 text-sm">
+                                    <p className="font-semibold text-foreground text-sm">
                                         {formatSlotDate(slot.startTime)}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         {formatSlotTime(slot.startTime, slot.endTime)}
                                     </p>
                                 </div>
@@ -147,28 +147,28 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                     <button
                                         onClick={() => handleVote(index, "yes")}
                                         disabled={isVoting || isClosed}
-                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'yes' ? 'bg-emerald-100 border-emerald-200 text-emerald-800' : `bg-white border-gray-100 text-gray-400 ${!(isVoting || isClosed) ? 'hover:bg-emerald-50 hover:text-emerald-600' : ''}`} ${isClosed ? 'opacity-50 cursor-default' : ''}`}
+                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'yes' ? 'bg-emerald-100 border-emerald-200 text-emerald-800' : `bg-background border-border text-gray-400 ${!(isVoting || isClosed) ? 'hover:bg-emerald-50 hover:text-emerald-600' : ''}`} ${isClosed ? 'opacity-50 cursor-default' : ''}`}
                                     >
                                         <Check size={16} />
                                     </button>
                                     <button
                                         onClick={() => handleVote(index, "maybe")}
                                         disabled={isVoting || isWinningSlot || isClosed}
-                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'maybe' ? 'bg-amber-100 border-amber-200 text-amber-800' : `bg-white border-gray-100 text-gray-400 ${!(isVoting || isWinningSlot || isClosed) ? 'hover:bg-amber-50 hover:text-amber-600' : ''}`} ${(isWinningSlot || isClosed) ? 'opacity-50 cursor-default' : ''}`}
+                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'maybe' ? 'bg-amber-100 border-amber-200 text-amber-800' : `bg-background border-border text-gray-400 ${!(isVoting || isWinningSlot || isClosed) ? 'hover:bg-amber-50 hover:text-amber-600' : ''}`} ${(isWinningSlot || isClosed) ? 'opacity-50 cursor-default' : ''}`}
                                     >
                                         <HelpCircle size={16} />
                                     </button>
                                     <button
                                         onClick={() => handleVote(index, "no")}
                                         disabled={isVoting || isClosed}
-                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'no' ? 'bg-red-100 border-red-200 text-red-800' : `bg-white border-gray-100 text-gray-400 ${!(isVoting || isClosed) ? 'hover:bg-red-50 hover:text-red-600' : ''}`} ${isClosed ? 'opacity-50 cursor-default' : ''}`}
+                                        className={`flex-1 flex justify-center items-center py-2 rounded-lg transition-all border ${myVote === 'no' ? 'bg-red-100 border-red-200 text-red-800' : `bg-background border-border text-gray-400 ${!(isVoting || isClosed) ? 'hover:bg-red-50 hover:text-red-600' : ''}`} ${isClosed ? 'opacity-50 cursor-default' : ''}`}
                                     >
                                         <XIcon size={16} />
                                     </button>
                                 </div>
 
                                 {/* Results */}
-                                <div className="flex justify-between px-1 text-[11px] font-medium text-gray-500 mt-2">
+                                <div className="flex justify-between px-1 text-[11px] font-medium text-muted-foreground mt-2">
                                     <button 
                                         onClick={() => setActiveSlotModal(index)}
                                         className="flex gap-2 text-left hover:underline w-full rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-[#D08945]"
@@ -180,7 +180,7 @@ export function ChatEventMessage({ chatEventId, currentUserId, isMe }: ChatEvent
                                                 {noVotes.length > 0 && <span className="text-red-500 font-semibold">{noVotes.length} Nein</span>}
                                             </>
                                         ) : (
-                                            <span className="opacity-60 text-gray-500 font-semibold">Noch keine Stimmen · Alle Teilnehmer</span>
+                                            <span className="opacity-60 text-muted-foreground font-semibold">Noch keine Stimmen · Alle Teilnehmer</span>
                                         )}
                                     </button>
                                 </div>

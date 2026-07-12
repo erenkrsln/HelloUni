@@ -13,6 +13,7 @@ export function SearchIcon({ isActive = false, size = 32, color = "#000000" }: S
       width={size}
       height={size}
       viewBox="0 0 24 24"
+      aria-hidden="true"
       style={{
         willChange: "transform",
         transform: "translateZ(0)",

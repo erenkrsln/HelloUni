@@ -116,7 +116,7 @@ export function ComposeInput({ onPostCreated }: ComposeInputProps) {
   return (
     <div
       ref={containerRef}
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+      className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50"
       style={{
         overscrollBehavior: "none",
         paddingBottom: `env(safe-area-inset-bottom, 0px)`,
@@ -133,7 +133,7 @@ export function ComposeInput({ onPostCreated }: ComposeInputProps) {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             type="button"
-            className="p-2 text-gray-500 hover:text-[#D08945] transition-colors"
+            className="p-2 text-muted-foreground hover:text-[#D08945] transition-colors"
             aria-label="Bild hinzufügen"
           >
             <ImagePlus className="w-5 h-5" />
@@ -149,7 +149,7 @@ export function ComposeInput({ onPostCreated }: ComposeInputProps) {
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           placeholder="Was möchtest du teilen?"
-          className="flex-1 bg-transparent outline-none resize-none text-gray-900 placeholder-gray-400 overflow-y-auto scrollbar-hide"
+          className="flex-1 bg-transparent outline-none resize-none text-foreground placeholder-gray-400 overflow-y-auto scrollbar-hide"
           style={{
             fontSize: "16px", // Verhindert automatisches Zoomen auf iOS
             minHeight: "24px",

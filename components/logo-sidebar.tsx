@@ -30,6 +30,7 @@ export function LogoSidebar({ isOpen, onClose }: LogoSidebarProps) {
             {/* Overlay - Full-bleed */}
             {isOpen && (
                 <div
+                    aria-hidden="true"
                     className="fixed inset-0 bg-black/50 z-[75] transition-opacity"
                     onClick={onClose}
                     style={{
@@ -41,7 +42,10 @@ export function LogoSidebar({ isOpen, onClose }: LogoSidebarProps) {
 
             {/* Sidebar Container - Slides from LEFT */}
             <div
-                className="fixed top-0 left-0 bottom-0 w-80 bg-white z-[80] shadow-2xl transition-transform duration-300 ease-in-out"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Hauptmenü"
+                className="fixed top-0 left-0 bottom-0 w-80 bg-background z-[80] shadow-2xl transition-transform duration-300 ease-in-out"
                 style={{
                     transform: isOpen ? "translateX(0)" : "translateX(-100%)",
                     willChange: "transform",
@@ -63,7 +67,7 @@ export function LogoSidebar({ isOpen, onClose }: LogoSidebarProps) {
                 >
 
                     {/* Branding Section */}
-                    <div className="flex items-center justify-between pb-6 border-b border-gray-200 mb-6">
+                    <div className="flex items-center justify-between pb-6 border-b border-border mb-6">
                         <div className="flex items-center gap-4 flex-1">
                             <div className="w-12 h-12 flex-shrink-0">
                                 <img
@@ -80,52 +84,52 @@ export function LogoSidebar({ isOpen, onClose }: LogoSidebarProps) {
                                 />
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
-                                <h2 className="text-lg font-semibold text-black truncate">
+                                <h2 className="text-lg font-semibold text-foreground truncate">
                                     HelloUni
                                 </h2>
-                                <p className="text-sm text-gray-600 truncate">
+                                <p className="text-sm text-muted-foreground truncate">
                                     Your Campus. Your People.
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors ml-2 flex-shrink-0"
+                            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-accent transition-colors ml-2 flex-shrink-0"
                             aria-label="Sidebar schließen"
                         >
-                            <X className="w-6 h-6 text-black" />
+                            <X className="w-6 h-6 text-foreground" />
                         </button>
                     </div>
 
                     {/* Menu Items */}
-                    <div className="flex-1 flex flex-col gap-2">
+                    <nav className="flex-1 flex flex-col gap-2" aria-label="Seitenmenü">
                         <Link
                             href="/about"
                             onClick={onClose}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#D08945]/10 active:bg-[#D08945]/20 focus:bg-[#D08945]/10 focus:outline-none focus:ring-2 focus:ring-[#D08945]/50 transition-colors text-foreground text-left"
                         >
-                            <Shell className="w-5 h-5 text-black flex-shrink-0" />
+                            <Shell aria-hidden="true" className="w-5 h-5 text-[#D08945] flex-shrink-0" />
                             <span>Über Uns</span>
                         </Link>
 
                         <Link
                             href="/imprint"
                             onClick={onClose}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#D08945]/10 active:bg-[#D08945]/20 focus:bg-[#D08945]/10 focus:outline-none focus:ring-2 focus:ring-[#D08945]/50 transition-colors text-foreground text-left"
                         >
-                            <FileText className="w-5 h-5 text-black flex-shrink-0" />
+                            <FileText aria-hidden="true" className="w-5 h-5 text-[#D08945] flex-shrink-0" />
                             <span>Impressum</span>
                         </Link>
 
                         <Link
                             href="/privacy"
                             onClick={onClose}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 active:bg-transparent focus:bg-transparent transition-colors text-black text-left"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#D08945]/10 active:bg-[#D08945]/20 focus:bg-[#D08945]/10 focus:outline-none focus:ring-2 focus:ring-[#D08945]/50 transition-colors text-foreground text-left"
                         >
-                            <Shield className="w-5 h-5 text-black flex-shrink-0" />
+                            <Shield aria-hidden="true" className="w-5 h-5 text-[#D08945] flex-shrink-0" />
                             <span>Datenschutz</span>
                         </Link>
-                    </div>
+                    </nav>
                 </div>
             </div>
         </>

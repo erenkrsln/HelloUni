@@ -25,9 +25,10 @@ export function PostMenu({ postId, userId }: PostMenuProps) {
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+            aria-label="Beitragsoptionen"
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted transition-colors flex-shrink-0"
           >
-            <MoreHorizontal className="w-4 h-4 text-gray-500" />
+            <MoreHorizontal aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
           </button>
         </PopoverTrigger>
         <PopoverContent
@@ -47,7 +48,7 @@ export function PostMenu({ postId, userId }: PostMenuProps) {
               setIsDeleteDialogOpen(true);
             }}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 aria-hidden="true" className="w-4 h-4" />
             <span>Löschen</span>
           </button>
         </PopoverContent>

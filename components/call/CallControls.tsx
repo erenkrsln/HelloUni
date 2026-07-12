@@ -35,8 +35,8 @@ function ControlButton({
   children: React.ReactNode;
 }) {
   const variantClass: Record<ButtonVariant, string> = {
-    normal:  "bg-white/15 hover:bg-white/28 text-white",
-    off:     "bg-white/90 hover:bg-white text-gray-900",
+    normal:  "bg-background/15 hover:bg-background/28 text-white",
+    off:     "bg-background/90 hover:bg-background text-foreground",
     active:  "bg-[#D08945]/80 hover:bg-[#D08945] text-white",
     danger:  "bg-red-500 hover:bg-red-600 text-white",
   };

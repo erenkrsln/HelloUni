@@ -18,7 +18,7 @@ export default function ImprintPage() {
 
     if (isLoading) {
         return (
-            <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto bg-white flex items-center justify-center">
+            <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto bg-background flex items-center justify-center">
                 <LoadingScreen text="" />
             </main>
         );
@@ -27,7 +27,7 @@ export default function ImprintPage() {
     return (
         <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto">
             <header
-                className="fixed top-0 left-0 right-0 w-full bg-white z-[70] pt-safe-top border-b border-gray-100"
+                className="fixed top-0 left-0 right-0 w-full bg-background z-[70] pt-safe-top border-b border-border"
                 style={{
                     height: `calc(80px + env(safe-area-inset-top, 0px))`,
                     minHeight: `calc(80px + env(safe-area-inset-top, 0px))`
@@ -36,13 +36,13 @@ export default function ImprintPage() {
                 <div className="relative flex h-full w-full items-center px-4">
                     <button
                         onClick={() => router.back()}
-                        className="absolute left-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="absolute left-4 p-2 hover:bg-muted rounded-full transition-colors"
                         aria-label="Zurück"
                     >
-                        <ArrowLeft className="w-6 h-6 text-black" />
+                        <ArrowLeft className="w-6 h-6 text-foreground" />
                     </button>
 
-                    <h1 className="flex-1 text-center text-3xl font-bold text-black">
+                    <h1 className="flex-1 text-center text-3xl font-bold text-foreground">
                         Impressum
                     </h1>
                 </div>
@@ -50,26 +50,26 @@ export default function ImprintPage() {
 
             {/* Content with padding for header */}
             <div className="pt-[110px] px-5 pb-10">
-                <section className="mb-8 bg-white p-6 input-card">
-                    <h2 className="text-2xl font-semibold mb-4 text-black ">Anschrift</h2>
-                    <p className="text-gray-700 leading-relaxed mb-4 font-semibold ">
+                <section className="mb-8 bg-background p-6 input-card">
+                    <h2 className="text-2xl font-semibold mb-4 text-foreground ">Anschrift</h2>
+                    <p className="text-foreground leading-relaxed mb-4 font-semibold ">
                         Katharina Schröder-Thurner
                     </p>
-                    <p className="text-gray-700 leading-relaxed mb-4 ">
+                    <p className="text-foreground leading-relaxed mb-4 ">
                         Gebäudeteile WB, WD und WE <br />
                         Wassertorstraße 10 <br />
                         90489 Nürnberg
                     </p>
                 </section>
 
-                <section className="mb-8 bg-white p-6 input-card">
-                    <h2 className="text-2xl font-semibold mb-4 text-black ">Kontakt</h2>
-                    <p className="text-gray-700 leading-relaxed mb-4 ">
+                <section className="mb-8 bg-background p-6 input-card">
+                    <h2 className="text-2xl font-semibold mb-4 text-foreground ">Kontakt</h2>
+                    <p className="text-foreground leading-relaxed mb-4 ">
                         E-Mail: k.schroeder-thurner@hello-uni.de <br />
                         Telefon: 0123/0123456 <br />
                         Fax: 0123/0123458 <br />
                     </p>
-                    <p className="text-gray-700 leading-relaxed mb-4 ">
+                    <p className="text-foreground leading-relaxed mb-4 ">
                         <a href="https://www.hello-uni.de" target="_blank" rel="noopener noreferrer" className="underline">
                             www.hello-uni.de
                         </a>

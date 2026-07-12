@@ -168,7 +168,7 @@ export function ChatLocationMessage({ messageId, senderName, isMe, currentUserId
       onClick={openMaps}
     >
       {/* Map thumbnail */}
-      <div className="relative w-full overflow-hidden bg-gray-100" style={{ height: 120 }}>
+      <div className="relative w-full overflow-hidden bg-muted" style={{ height: 120 }}>
         <div ref={mapContainerRef} className="w-full h-full pointer-events-none" />
         {/* click catcher */}
         <div className="absolute inset-0 z-20" />
@@ -176,25 +176,25 @@ export function ChatLocationMessage({ messageId, senderName, isMe, currentUserId
         {/* Live badge */}
         {isLive && isLiveActive && (
           <div className="absolute top-2 left-2 z-20 flex items-center gap-1 bg-[#D08945] text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse">
-            <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            <span className="w-1.5 h-1.5 rounded-full bg-background" />
             Live
           </div>
         )}
       </div>
 
       {/* Footer row */}
-      <div className={`flex items-center gap-2 px-2.5 py-2 ${isMe ? "bg-[#FFE4C8]" : "bg-white border border-gray-100"}`}>
+      <div className={`flex items-center gap-2 px-2.5 py-2 ${isMe ? "bg-[#FFE4C8]" : "bg-background border border-border"}`}>
         <MapPin size={14} className={`flex-shrink-0 ${isLive && isLiveActive ? "text-[#D08945]" : "text-gray-400"}`} />
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-semibold text-gray-900 leading-tight truncate">
+          <p className="text-[12px] font-semibold text-foreground leading-tight truncate">
             {isLive ? (isLiveActive ? `${senderName}s Standort` : "Live-Standort beendet") : "Standort"}
           </p>
           {(distanceText || timeLeftText) ? (
-            <p className="text-[10px] text-gray-500 leading-tight truncate">
+            <p className="text-[10px] text-muted-foreground leading-tight truncate">
               {distanceText ?? timeLeftText}
             </p>
           ) : (
-            <p className="text-[10px] text-gray-500 leading-tight truncate">
+            <p className="text-[10px] text-muted-foreground leading-tight truncate">
               {address || "Karte öffnen"}
             </p>
           )}
@@ -207,7 +207,7 @@ export function ChatLocationMessage({ messageId, senderName, isMe, currentUserId
         <button
           onClick={stopSharing}
           className={`w-full text-center text-[11px] font-bold py-1.5 border-t ${
-            isMe ? "bg-[#D08945]/10 text-[#D08945] border-[#D08945]/20" : "bg-gray-50 text-gray-500 border-gray-200"
+            isMe ? "bg-[#D08945]/10 text-[#D08945] border-[#D08945]/20" : "bg-muted text-muted-foreground border-border"
           } hover:opacity-80 transition-opacity`}
         >
           Teilen beenden

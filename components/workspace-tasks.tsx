@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
@@ -240,23 +240,23 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
     <div className="p-4 animate-in fade-in slide-in-from-bottom-2">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Tasks</h2>
-          <p className="text-sm text-slate-500">Manage your group work with richer task details and faster updates.</p>
+          <h2 className="text-xl font-semibold text-foreground">Tasks</h2>
+          <p className="text-sm text-muted-foreground">Manage your group work with richer task details and faster updates.</p>
         </div>
         <button onClick={openCreateModal} className="inline-flex items-center gap-2 rounded-full bg-[#D08945] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] transition-colors">
           <Plus size={16} /> New task
         </button>
       </div>
 
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
         <span>{taskCount} task{taskCount === 1 ? "" : "s"} total</span>
-        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
           <ShieldCheck size={14} /> {isGroup ? "Group workspace" : "Event workspace"}
         </span>
       </div>
 
       {taskCount === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+        <div className="rounded-3xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
           <p className="mb-2 text-sm">No tasks yet.</p>
           <button onClick={openCreateModal} className="text-sm font-semibold text-[#D08945] hover:text-[#b07335]">Create your first task</button>
         </div>
@@ -265,14 +265,14 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
           {statuses.map((status) => {
             const statusTasks = tasks.filter((task: any) => task.status === status.key);
             return (
-              <div key={status.key} className="rounded-3xl bg-slate-50 p-3 shadow-sm">
-                <div className="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
+              <div key={status.key} className="rounded-3xl bg-muted p-3 shadow-sm">
+                <div className="mb-3 flex items-center justify-between text-sm font-semibold text-foreground">
                   <span>{status.label}</span>
-                  <span className="rounded-full bg-white px-2 py-1 text-xs text-slate-500 shadow-sm">{statusTasks.length}</span>
+                  <span className="rounded-full bg-card px-2 py-1 text-xs text-muted-foreground shadow-sm">{statusTasks.length}</span>
                 </div>
                 <div className="space-y-3 min-h-[120px]">
                   {statusTasks.length === 0 ? (
-                    <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-xs text-slate-500">No tasks in this column yet.</div>
+                    <div className="rounded-3xl border border-dashed border-border bg-card p-4 text-xs text-muted-foreground">No tasks in this column yet.</div>
                   ) : (
                     statusTasks.map((task: any) => (
                       <TaskCard
@@ -299,40 +299,40 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
       <AnimatePresence>
         {showCreateModal && (
           <Modal onClose={() => setShowCreateModal(false)}>
-            <div className="rounded-3xl bg-white p-6 shadow-2xl w-full max-w-lg">
+            <div className="rounded-3xl bg-card p-6 shadow-2xl w-full max-w-lg">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Create Task</h3>
-                  <p className="text-sm text-slate-500">Add details and assign work before saving.</p>
+                  <h3 className="text-lg font-semibold text-foreground">Create Task</h3>
+                  <p className="text-sm text-muted-foreground">Add details and assign work before saving.</p>
                 </div>
-                <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+                <button onClick={() => setShowCreateModal(false)} className="text-muted-foreground hover:text-muted-foreground">✕</button>
               </div>
 
               <form onSubmit={handleCreateTask} className="space-y-4">
-                <label className="block text-sm font-medium text-slate-700">Title</label>
+                <label className="block text-sm font-medium text-foreground">Title</label>
                 <input
                   value={formState.title}
                   onChange={(e) => setFormState((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                  className="w-full rounded-3xl border border-border bg-muted px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                   placeholder="Enter task title"
                   required
                 />
 
-                <label className="block text-sm font-medium text-slate-700">Description</label>
+                <label className="block text-sm font-medium text-foreground">Description</label>
                 <textarea
                   value={formState.description}
                   onChange={(e) => setFormState((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full min-h-[92px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                  className="w-full min-h-[92px] rounded-3xl border border-border bg-muted px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                   placeholder="Add a short description"
                 />
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Assignee
                     <select
                       value={formState.assigneeId}
                       onChange={(e) => setFormState((prev) => ({ ...prev, assigneeId: e.target.value }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                      className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                     >
                       <option value="">Unassigned</option>
                       {assigneeOptions.map((member) => (
@@ -341,24 +341,24 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
                     </select>
                   </label>
 
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Due date
                     <input
                       type="date"
                       value={formState.deadline}
                       onChange={(e) => setFormState((prev) => ({ ...prev, deadline: e.target.value }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                      className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                     />
                   </label>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Priority
                     <select
                       value={formState.priority}
                       onChange={(e) => setFormState((prev) => ({ ...prev, priority: e.target.value as TaskFormState["priority"] }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                      className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -366,12 +366,12 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
                     </select>
                   </label>
 
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Visibility
                     <select
                       value={formState.visibility}
                       onChange={(e) => setFormState((prev) => ({ ...prev, visibility: e.target.value as TaskFormState["visibility"] }))}
-                      className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                      className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                     >
                       <option value="public">Public</option>
                       <option value="private">Private</option>
@@ -379,12 +379,12 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
                   </label>
                 </div>
 
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-foreground">
                   Initial status
                   <select
                     value={formState.status}
                     onChange={(e) => setFormState((prev) => ({ ...prev, status: e.target.value as TaskStatus }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                    className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                   >
                     <option value="todo">To Do</option>
                     <option value="in_progress">In Progress</option>
@@ -393,7 +393,7 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
                 </label>
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="rounded-full border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted">
                     Cancel
                   </button>
                   <button type="submit" disabled={isSaving} className="rounded-full bg-[#D08945] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#b07335] disabled:opacity-50">
@@ -409,36 +409,36 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
       <AnimatePresence>
         {selectedTask && (
           <Modal onClose={() => setSelectedTask(null)}>
-            <div className="rounded-3xl bg-white p-6 shadow-2xl w-full max-w-lg">
+            <div className="rounded-3xl bg-card p-6 shadow-2xl w-full max-w-lg">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Task details</h3>
-                  <p className="text-sm text-slate-500">Edit the selected task and save your changes.</p>
+                  <h3 className="text-lg font-semibold text-foreground">Task details</h3>
+                  <p className="text-sm text-muted-foreground">Edit the selected task and save your changes.</p>
                 </div>
-                <button onClick={() => setSelectedTask(null)} className="text-slate-400 hover:text-slate-600">✕</button>
+                <button onClick={() => setSelectedTask(null)} className="text-muted-foreground hover:text-muted-foreground">✕</button>
               </div>
 
               <div className="space-y-4">
-                <label className="block text-sm font-medium text-slate-700">Title</label>
+                <label className="block text-sm font-medium text-foreground">Title</label>
                 <input
                   value={editState.title}
                   onChange={(e) => setEditState((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                  className="w-full rounded-3xl border border-border bg-muted px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                 />
 
-                <label className="block text-sm font-medium text-slate-700">Description</label>
+                <label className="block text-sm font-medium text-foreground">Description</label>
                 <textarea
                   value={editState.description}
                   onChange={(e) => setEditState((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full min-h-[92px] rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                  className="w-full min-h-[92px] rounded-3xl border border-border bg-muted px-4 py-3 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                 />
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">Assignee</label>
+                  <label className="block text-sm font-medium text-foreground">Assignee</label>
                   <select
                     value={editState.assigneeId}
                     onChange={(e) => setEditState((prev) => ({ ...prev, assigneeId: e.target.value }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                    className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                   >
                     <option value="">Unassigned</option>
                     {assigneeOptions.map((member) => (
@@ -446,43 +446,43 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
                     ))}
                   </select>
 
-                  <label className="block text-sm font-medium text-slate-700">Due date</label>
+                  <label className="block text-sm font-medium text-foreground">Due date</label>
                   <input
                     type="date"
                     value={editState.deadline}
                     onChange={(e) => setEditState((prev) => ({ ...prev, deadline: e.target.value }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                    className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                   />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-medium text-slate-700">Priority</label>
+                  <label className="block text-sm font-medium text-foreground">Priority</label>
                   <select
                     value={editState.priority}
                     onChange={(e) => setEditState((prev) => ({ ...prev, priority: e.target.value as TaskFormState["priority"] }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                    className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                   </select>
 
-                  <label className="block text-sm font-medium text-slate-700">Visibility</label>
+                  <label className="block text-sm font-medium text-foreground">Visibility</label>
                   <select
                     value={editState.visibility}
                     onChange={(e) => setEditState((prev) => ({ ...prev, visibility: e.target.value as TaskFormState["visibility"] }))}
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                    className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                   >
                     <option value="public">Public</option>
                     <option value="private">Private</option>
                   </select>
                 </div>
 
-                <label className="block text-sm font-medium text-slate-700">Status</label>
+                <label className="block text-sm font-medium text-foreground">Status</label>
                 <select
                   value={editState.status}
                   onChange={(e) => setEditState((prev) => ({ ...prev, status: e.target.value as TaskStatus }))}
-                  className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                  className="mt-2 w-full rounded-3xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                 >
                   <option value="todo">To Do</option>
                   <option value="in_progress">In Progress</option>
@@ -490,7 +490,7 @@ export function WorkspaceTasks({ workspaceId }: { workspaceId: string }) {
                 </select>
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
-                  <button type="button" onClick={() => setSelectedTask(null)} className="rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  <button type="button" onClick={() => setSelectedTask(null)} className="rounded-full border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted">
                     Cancel
                   </button>
                   <div className="flex items-center gap-3">
@@ -515,12 +515,15 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Modal"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-3xl">
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-3xl cursor-default">
         {children}
       </div>
     </motion.div>
@@ -553,29 +556,37 @@ function TaskCard({
       draggable={!isPending}
       onDragStart={(e: any) => !isPending && onDragStart(e as any, task._id)}
       onClick={() => onEdit(task)}
-      className={`group bg-white p-4 rounded-3xl border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md transition-colors duration-150 ${isPending ? "opacity-70 cursor-wait" : "cursor-pointer"}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onEdit(task);
+        }
+      }}
+      className={`group bg-card p-4 rounded-3xl border border-border shadow-sm hover:border-accent hover:shadow-md transition-colors duration-150 text-left ${isPending ? "opacity-70 cursor-wait" : "cursor-pointer"}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-slate-900">{task.title || "Untitled task"}</h3>
-            <span className={`text-[11px] font-semibold uppercase tracking-[0.18em] rounded-full px-2 py-1 ${task.visibility === "private" ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-800"}`}>
+            <h3 className="text-sm font-semibold text-foreground">{task.title || "Untitled task"}</h3>
+            <span className={`text-[11px] font-semibold uppercase tracking-[0.18em] rounded-full px-2 py-1 ${task.visibility === "private" ? "bg-muted text-foreground" : "bg-emerald-100 text-emerald-800"}`}>
               {task.visibility === "private" ? "Private" : "Public"}
             </span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-slate-500 line-clamp-2">{task.description || "No description yet."}</p>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground line-clamp-2">{task.description || "No description yet."}</p>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(task); }} className="rounded-full border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600">
-          <Trash2 size={14} />
+        <button onClick={(e) => { e.stopPropagation(); onDelete(task); }} aria-label={`Task löschen: ${task.title || 'Ohne Titel'}`} className="rounded-full border border-border bg-muted p-2 text-muted-foreground hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+          <Trash2 aria-hidden="true" size={14} />
         </button>
       </div>
 
-      <div className="mt-4 grid gap-2 text-xs text-slate-500">
-        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
-          <Clock size={12} /> {task.deadline || "No deadline"}
+      <div className="mt-4 grid gap-2 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1">
+          <Clock aria-hidden="true" size={12} /> {task.deadline || "No deadline"}
         </span>
-        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
-          <User size={12} /> {task.assigneeName || "Unassigned"}
+        <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1">
+          <User aria-hidden="true" size={12} /> {task.assigneeName || "Unassigned"}
         </span>
       </div>
 
@@ -583,17 +594,17 @@ function TaskCard({
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${task.priority === "high" ? "bg-rose-100 text-rose-700" : task.priority === "low" ? "bg-sky-100 text-sky-700" : "bg-amber-100 text-amber-700"}`}>
           {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : "Medium"}
         </span>
-        {isPending && <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Saving…</span>}
+        {isPending && <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Saving…</span>}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+      <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
         {statusKey !== "todo" && (
-          <button onClick={(e) => { e.stopPropagation(); moveTask(task, statusKey === "in_progress" ? "todo" : "in_progress"); }} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200">
+          <button onClick={(e) => { e.stopPropagation(); moveTask(task, statusKey === "in_progress" ? "todo" : "in_progress"); }} className="rounded-full bg-muted px-3 py-1 hover:bg-accent">
             Back
           </button>
         )}
         {statusKey !== "done" && (
-          <button onClick={(e) => { e.stopPropagation(); moveTask(task, statusKey === "todo" ? "in_progress" : "done"); }} className="rounded-full bg-slate-100 px-3 py-1 hover:bg-slate-200">
+          <button onClick={(e) => { e.stopPropagation(); moveTask(task, statusKey === "todo" ? "in_progress" : "done"); }} className="rounded-full bg-muted px-3 py-1 hover:bg-accent">
             Advance
           </button>
         )}

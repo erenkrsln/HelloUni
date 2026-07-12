@@ -16,15 +16,15 @@ export default function AuthCallbackSplashPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-4 bg-white">
+    <main className="min-h-screen w-full flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4 bg-background">
         <Image
           src="/logo_background.png"
           alt="HelloUni Splash Screen"
           width={170}
           height={170}
           priority
-          className="w-[170px] h-[170px] object-contain bg-white"
+          className="w-[170px] h-[170px] object-contain bg-background"
         />
       </div>
     </main>

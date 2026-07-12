@@ -54,8 +54,8 @@ export function ChatEventParticipantsModal({ isOpen, onClose, chatEventId, slotI
                 </div>
                 <div className="space-y-3">
                     {users.map(user => (
-                        <div key={user._id} className="flex items-center gap-3 bg-gray-50 border border-gray-100 p-2.5 rounded-xl">
-                            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-white shadow-sm flex items-center justify-center">
+                        <div key={user._id} className="flex items-center gap-3 bg-muted border border-border p-2.5 rounded-xl">
+                            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-background shadow-sm flex items-center justify-center">
                                 {user.image ? (
                                     <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                 ) : (
@@ -64,7 +64,7 @@ export function ChatEventParticipantsModal({ isOpen, onClose, chatEventId, slotI
                                     </div>
                                 )}
                             </div>
-                            <span className="text-sm font-medium text-gray-800">{user.name}</span>
+                            <span className="text-sm font-medium text-foreground">{user.name}</span>
                         </div>
                     ))}
                 </div>
@@ -74,9 +74,9 @@ export function ChatEventParticipantsModal({ isOpen, onClose, chatEventId, slotI
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-[400px] w-[95vw] bg-white rounded-3xl p-5 border-0 shadow-2xl">
+            <DialogContent className="max-w-[400px] w-[95vw] bg-background rounded-3xl p-5 border-0 shadow-2xl">
                 <DialogHeader className="mb-4">
-                    <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                         <CalendarDays className="text-[#D08945]" size={20} />
                         Teilnehmer
                     </DialogTitle>

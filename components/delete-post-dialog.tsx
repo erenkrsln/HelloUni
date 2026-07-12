@@ -46,14 +46,14 @@ export function DeletePostDialog({ postId, userId, isOpen, onOpenChange }: Delet
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[420px] p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle className="text-xl font-semibold text-gray-900 m-0 mb-2 text-center">
+          <DialogTitle className="text-xl font-semibold text-foreground m-0 mb-2 text-center">
             Beitrag löschen
           </DialogTitle>
-          <DialogDescription className="text-base text-gray-600 leading-relaxed text-center">
+          <DialogDescription className="text-base text-muted-foreground leading-relaxed text-center">
             Möchtest du diesen Beitrag wirklich löschen?
           </DialogDescription>
         </DialogHeader>
-        <div className="px-6 pb-6 pt-4 flex-row gap-3 justify-center border-t border-gray-100 flex">
+        <div className="px-6 pb-6 pt-4 flex-row gap-3 justify-center border-t border-border flex">
           <DialogClose asChild>
             <Button 
               variant="outline" 

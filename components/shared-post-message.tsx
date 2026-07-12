@@ -23,16 +23,16 @@ export function SharedPostMessage({ postId, currentUserId, isMe }: SharedPostMes
 
   if (post === undefined) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-2xl w-full min-h-[100px] border border-gray-100">
-        <span className="text-sm text-gray-500">Lade Beitrag...</span>
+      <div className="flex flex-col items-center justify-center p-4 bg-muted rounded-2xl w-full min-h-[100px] border border-border">
+        <span className="text-sm text-muted-foreground">Lade Beitrag...</span>
       </div>
     );
   }
 
   if (post === null || !post.user) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-2xl w-full border border-gray-100">
-        <span className="text-sm text-gray-500 italic">Dieser Beitrag ist nicht mehr verfügbar.</span>
+      <div className="flex flex-col items-center justify-center p-4 bg-muted rounded-2xl w-full border border-border">
+        <span className="text-sm text-muted-foreground italic">Dieser Beitrag ist nicht mehr verfügbar.</span>
       </div>
     );
   }
@@ -46,7 +46,7 @@ export function SharedPostMessage({ postId, currentUserId, isMe }: SharedPostMes
   return (
     <div
       onClick={() => router.push(`/post/${postId}`)}
-      className="flex flex-col w-full max-w-[320px] sm:max-w-[360px] bg-white rounded-2xl overflow-hidden mt-1 cursor-pointer"
+      className="flex flex-col w-full max-w-[320px] sm:max-w-[360px] bg-card rounded-2xl overflow-hidden mt-1 cursor-pointer"
     >
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">

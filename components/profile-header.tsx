@@ -256,7 +256,7 @@ export function ProfileHeader({
 
 
     return (
-        <div className="relative w-full bg-white">
+        <div className="relative w-full bg-background">
             {/* Header Image - Twitter/X Style (3:1 aspect ratio) - Full width on mobile, limited on desktop */}
             <div
                 className={`relative overflow-hidden group header-image-responsive aspect-[3/1] ${!headerColor && !extractedColor ? 'bg-gradient-to-br from-[#D08945]/20 to-[#DCA067]/20' : ''
@@ -303,7 +303,7 @@ export function ProfileHeader({
             <div className="relative px-4 z-10">
                 <div className="flex items-end justify-between -mt-12 sm:-mt-20 mb-2">
                     {/* Profile Picture - overlaps header by ~50%, thick white border */}
-                    <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center">
+                    <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-background flex items-center justify-center">
                         {image ? (
                             <>
                                 {/* Shimmer während des Ladens */}
@@ -334,7 +334,7 @@ export function ProfileHeader({
                             </>
                         ) : (
                             <div
-                                className="w-full h-full flex items-center justify-center font-semibold text-black text-2xl sm:text-3xl"
+                                className="w-full h-full flex items-center justify-center font-semibold text-foreground text-2xl sm:text-3xl"
                                 style={{
                                     backgroundColor: "rgba(0, 0, 0, 0.2)",
                                 }}
@@ -376,19 +376,19 @@ export function ProfileHeader({
                                         }
                                     }
                                 }}
-                                className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
+                                className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted transition-colors shadow-sm flex-shrink-0"
                                 style={{ flexShrink: 0 }}
                                 aria-label="Nachricht senden"
                             >
-                                <MessageCircle className="w-5 h-5 text-gray-700" />
+                                <MessageCircle className="w-5 h-5 text-foreground" />
                             </button>
                             <button
                                 onClick={() => setIsShareModalOpen(true)}
-                                className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm flex-shrink-0"
+                                className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted transition-colors shadow-sm flex-shrink-0"
                                 style={{ flexShrink: 0 }}
                                 aria-label="Profil teilen"
                             >
-                                <Send className="w-4 h-4 text-gray-700 ml-[-2px] mt-[2px]" />
+                                <Send className="w-4 h-4 text-foreground ml-[-2px] mt-[2px]" />
                             </button>
                             <div style={{ flexShrink: 0 }}>
                                 <FollowButton
@@ -407,7 +407,7 @@ export function ProfileHeader({
                 {/* Name and Username */}
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-lg sm:text-xl font-semibold text-[#000000] flex-1">{name}</h1>
+                        <h1 className="text-lg sm:text-xl font-semibold text-foreground flex-1">{name}</h1>
                         {/* Edit Button - nur auf eigenem Profil */}
                         {isOwnProfile && onEditClick && (
                             <button
@@ -421,14 +421,14 @@ export function ProfileHeader({
                         )}
                     </div>
                     {username && (
-                        <p className="text-sm sm:text-base text-gray-500">@{username}</p>
+                        <p className="text-sm sm:text-base text-muted-foreground">@{username}</p>
                     )}
                 </div>
 
 
                 {/* Bio */}
                 {bio && bio.trim() !== "" && (
-                    <p className="text-sm text-[#000000] leading-relaxed">
+                    <p className="text-sm text-foreground leading-relaxed">
                         {bio}
                     </p>
                 )}
@@ -436,14 +436,14 @@ export function ProfileHeader({
                 {/* Academic Details */}
                 <div className="space-y-2">
                     {majorDisplay && (
-                        <div className="flex items-center gap-2 text-sm text-[#000000]">
-                            <GraduationCap className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                            <GraduationCap className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                             <span>{majorDisplay}</span>
                         </div>
                     )}
                     {joinedDate && (
-                        <div className="flex items-center gap-2 text-sm text-[#000000]">
-                            <Calendar className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                            <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                             <span>{joinedDate} beigetreten</span>
                         </div>
                     )}
@@ -454,7 +454,7 @@ export function ProfileHeader({
                     <div className="flex items-center gap-4 -mt-1" style={{ marginLeft: "-15px" }}>
                         {/* Follower Stat */}
                         <button
-                            className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
+                            className="flex items-center gap-1 hover:underline transition-all text-sm text-foreground"
                             onClick={() => {
                                 setActiveFollowsTab("followers");
                                 setIsFollowsModalOpen(true);
@@ -463,14 +463,14 @@ export function ProfileHeader({
                             <span className="font-semibold inline-block min-w-[3ch] text-right">
                                 {followerCount ?? 0}
                             </span>
-                            <span className="text-[#000000]/60">
+                            <span className="text-muted-foreground">
                                 Follower
                             </span>
                         </button>
 
                         {/* Following Stat */}
                         <button
-                            className="flex items-center gap-1 hover:underline transition-all text-sm text-[#000000]"
+                            className="flex items-center gap-1 hover:underline transition-all text-sm text-foreground"
                             onClick={() => {
                                 setActiveFollowsTab("following");
                                 setIsFollowsModalOpen(true);
@@ -479,7 +479,7 @@ export function ProfileHeader({
                             <span className="font-semibold inline-block min-w-[3ch] text-right">
                                 {followingCount ?? 0}
                             </span>
-                            <span className="text-[#000000]/60">
+                            <span className="text-muted-foreground">
                                 Following
                             </span>
                         </button>
@@ -578,11 +578,11 @@ function FollowsModal({ isOpen, onClose, userId, currentUserId, type }: FollowsM
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-gray-100">
+            <div className="bg-background rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-border">
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
-                    <h2 className="font-semibold text-gray-900">{title}</h2>
-                    <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
+                    <h2 className="font-semibold text-foreground">{title}</h2>
+                    <button onClick={onClose} className="p-1.5 rounded-full hover:bg-muted text-muted-foreground transition-colors">
                         <X size={18} />
                     </button>
                 </div>
@@ -605,21 +605,21 @@ function FollowsModal({ isOpen, onClose, userId, currentUserId, type }: FollowsM
                                     router.push(`/profile/${user.username}`);
                                     onClose();
                                 }}
-                                className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                                className="flex items-center justify-between p-2 rounded-xl hover:bg-muted transition-colors cursor-pointer"
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-accent shrink-0">
                                         {user.image ? (
                                             <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500 text-sm">
+                                            <div className="w-full h-full flex items-center justify-center font-semibold text-muted-foreground text-sm">
                                                 {user.name?.[0]?.toUpperCase()}
                                             </div>
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="font-semibold text-sm text-gray-900 truncate">{user.name}</h3>
-                                        <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+                                        <h3 className="font-semibold text-sm text-foreground truncate">{user.name}</h3>
+                                        <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
                                     </div>
                                 </div>
 
@@ -629,7 +629,7 @@ function FollowsModal({ isOpen, onClose, userId, currentUserId, type }: FollowsM
                                         <>
                                             <button
                                                 onClick={() => handleMessageClick(user._id)}
-                                                className="p-2 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
+                                                className="p-2 rounded-full border border-border bg-background hover:bg-muted text-muted-foreground transition-colors shadow-sm"
                                                 aria-label="Nachricht senden"
                                             >
                                                 <MessageCircle size={14} />

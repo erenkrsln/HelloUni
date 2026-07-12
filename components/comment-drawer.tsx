@@ -673,7 +673,7 @@ export function CommentDrawer({
     return (
       <div
         data-comment-id={commentIdStr}
-        className={`py-2.5 border-b border-gray-100 last:border-b-0 overflow-x-hidden ${isReply ? "" : "px-4"} transition-all duration-1000 ease-out`}
+        className={`py-2.5 border-b border-border last:border-b-0 overflow-x-hidden ${isReply ? "" : "px-4"} transition-all duration-1000 ease-out`}
         style={{
           ...(isReply ? { marginLeft: 0, marginRight: 0, paddingLeft: 0, paddingRight: 0 } : {}),
           ...(isHighlighted ? { backgroundColor: "rgba(251, 191, 36, 0.2)" } : {})
@@ -686,7 +686,7 @@ export function CommentDrawer({
           {/* Avatar */}
           <Avatar className="w-9 h-9 rounded-full flex-shrink-0" style={{ flexShrink: 0 }}>
             <AvatarImage src={comment.user.image} alt={comment.user.name} />
-            <AvatarFallback className="text-xs font-semibold rounded-full bg-gray-200 text-gray-700">
+            <AvatarFallback className="text-xs font-semibold rounded-full bg-muted text-muted-foreground">
               {comment.user.name?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
@@ -695,10 +695,10 @@ export function CommentDrawer({
           <div className="flex-1 min-w-0" style={{ minWidth: 0 }}>
             <div className="flex items-start gap-2 mb-1">
               <div className="flex-1 min-w-0" style={{ minWidth: 0, flexShrink: 1 }}>
-                <span className="font-semibold text-sm text-gray-900 mr-1.5">
+                <span className="font-semibold text-sm text-foreground mr-1.5">
                   {comment.user.name}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {timeAgo}
                 </span>
               </div>
@@ -714,7 +714,7 @@ export function CommentDrawer({
                   <Heart
                     className={`transition-all duration-200 ${displayIsLiked
                       ? "text-red-500 fill-red-500 scale-110"
-                      : "text-gray-400"
+                      : "text-muted-foreground"
                       }`}
                     style={{
                       height: "18px",
@@ -727,8 +727,7 @@ export function CommentDrawer({
                       strokeWidth: 2,
                     }}
                   />
-                  <span className={`text-xs tabular-nums transition-colors ${displayIsLiked ? "text-red-500" : "text-gray-500"
-                    }`} style={{ flexShrink: 0, minWidth: '1.5ch', display: 'inline-block' }}>
+                  <span className={`text-xs tabular-nums transition-colors ${displayIsLiked ? "text-red-500" : "text-muted-foreground"}`} style={{ flexShrink: 0, minWidth: '1.5ch', display: 'inline-block' }}>
                     {comment.likesCount > 0 ? comment.likesCount : <span className="invisible">0</span>}
                   </span>
                 </button>
@@ -742,8 +741,8 @@ export function CommentDrawer({
                 >
                   <ThumbsDown
                     className={`transition-all duration-200 ${displayIsDisliked
-                      ? "text-gray-600 fill-gray-600 scale-110"
-                      : "text-gray-400"
+                      ? "text-foreground fill-foreground scale-110"
+                      : "text-muted-foreground"
                       }`}
                     style={{
                       height: "18px",
@@ -756,7 +755,7 @@ export function CommentDrawer({
                       strokeWidth: 2,
                     }}
                   />
-                  <span className="text-xs tabular-nums transition-colors text-gray-500" style={{ flexShrink: 0, minWidth: '1.5ch', display: 'inline-block', visibility: 'hidden' }}>
+                  <span className="text-xs tabular-nums transition-colors text-muted-foreground" style={{ flexShrink: 0, minWidth: '1.5ch', display: 'inline-block', visibility: 'hidden' }}>
                     0
                   </span>
                 </button>
@@ -765,14 +764,14 @@ export function CommentDrawer({
 
             {/* Show message if disliked, otherwise show comment content */}
             {displayIsDisliked ? (
-              <p className="text-sm text-gray-500 italic mb-1.5 leading-relaxed">
+              <p className="text-sm text-muted-foreground italic mb-1.5 leading-relaxed">
                 Dieser Kommentar wird dir nicht mehr angezeigt
               </p>
             ) : (
               <>
                 {/* Comment Text */}
                 {comment.content && (
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap break-words mb-1.5 leading-relaxed">
+                  <p className="text-sm text-foreground whitespace-pre-wrap break-words mb-1.5 leading-relaxed">
                     {renderContentWithMentions(comment.content)}
                   </p>
                 )}
@@ -795,7 +794,7 @@ export function CommentDrawer({
                       setReplyingTo(comment._id);
                       textareaRef.current?.focus();
                     }}
-                    className="text-xs text-gray-500 hover:text-gray-700 font-medium mb-1 touch-manipulation"
+                    className="text-xs text-muted-foreground hover:text-foreground font-medium mb-1 touch-manipulation"
                   >
                     Antworten
                   </button>
@@ -808,7 +807,7 @@ export function CommentDrawer({
               <div className="mt-1.5">
                 <button
                   onClick={() => toggleReplies(comment._id as string)}
-                  className="text-xs text-gray-500 hover:text-gray-700 font-medium mb-1.5 touch-manipulation flex items-center gap-1"
+                  className="text-xs text-muted-foreground hover:text-foreground font-medium mb-1.5 touch-manipulation flex items-center gap-1"
                 >
                   {isExpanded ? (
                     "Antworten ausblenden"
@@ -849,7 +848,7 @@ export function CommentDrawer({
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"
+        className={`fixed bottom-0 left-0 right-0 bg-card text-card-foreground rounded-t-3xl z-[60] flex flex-col transition-transform duration-300 ease-out ${isOpen ? "translate-y-0" : "translate-y-full"
           } h-[75dvh] overflow-hidden`}
         style={{
           pointerEvents: isOpen ? "auto" : "none",
@@ -857,8 +856,8 @@ export function CommentDrawer({
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-base font-semibold text-gray-900">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
+          <h2 className="text-base font-semibold text-foreground">
             {commentsCount} {commentsCount === 1 ? "Kommentar" : "Kommentare"}
           </h2>
           <div className="flex items-center gap-2 relative">
@@ -870,18 +869,18 @@ export function CommentDrawer({
                   className="p-1.5 touch-manipulation relative"
                   style={{ left: '8px' }}
                 >
-                  <SlidersHorizontal className={`text-gray-600 transition-colors ${isFilterOpen ? "text-[#D08945]" : ""
+                  <SlidersHorizontal className={`text-muted-foreground transition-colors ${isFilterOpen ? "text-[#D08945]" : ""
                     }`} style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
                 </button>
                 {/* Dropdown Menu */}
                 {isFilterOpen && (
-                  <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[140px]">
+                  <div className="absolute right-0 top-full mt-2 bg-popover text-popover-foreground rounded-lg shadow-lg border border-border py-1 z-10 min-w-[140px]">
                     <button
                       onClick={() => {
                         setSortMode("top");
                         setIsFilterOpen(false);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 touch-manipulation flex items-center justify-between"
+                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent touch-manipulation flex items-center justify-between"
                     >
                       <span>Top</span>
                       {sortMode === "top" && (
@@ -893,7 +892,7 @@ export function CommentDrawer({
                         setSortMode("neueste");
                         setIsFilterOpen(false);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 touch-manipulation flex items-center justify-between"
+                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent touch-manipulation flex items-center justify-between"
                     >
                       <span>Neueste</span>
                       {sortMode === "neueste" && (
@@ -911,7 +910,7 @@ export function CommentDrawer({
               aria-label="Schließen"
               style={{ left: '6px' }}
             >
-              <X className="text-gray-600" style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
+              <X className="text-muted-foreground" style={{ height: "18px", width: "18px", minHeight: "18px", minWidth: "18px" }} />
             </button>
           </div>
         </div>
@@ -930,7 +929,7 @@ export function CommentDrawer({
               <Spinner size="md" />
             </div>
           ) : (commentsToOrganize === undefined && commentsCount === 0) || (commentsToOrganize && commentsToOrganize.length === 0) ? (
-            <div className="text-center text-gray-500 py-8 text-sm px-4">
+            <div className="text-center text-muted-foreground py-8 text-sm px-4">
               Noch keine Kommentare
             </div>
           ) : topLevel.length > 0 ? (
@@ -946,14 +945,14 @@ export function CommentDrawer({
         {currentUserId && (
           <div
             ref={inputContainerRef}
-            className="bg-white px-4 pt-2 pb-1.5 flex-shrink-0 border-t border-gray-200"
+            className="bg-card px-4 pt-2 pb-1.5 flex-shrink-0 border-t border-border"
             style={{
               paddingBottom: `calc(0.375rem + ${isInputFocused ? '0px' : 'env(safe-area-inset-bottom, 0px)'})`,
             }}
           >
             {replyingTo && (
-              <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-gray-50 rounded-lg">
-                <span className="text-xs text-gray-600">
+              <div className="flex items-center justify-between mb-2 px-3 py-1.5 bg-muted rounded-lg">
+                <span className="text-xs text-muted-foreground">
                   Antwort an{" "}
                   <span className="font-semibold">
                     {allComments?.find((c) => c._id === replyingTo)?.user.name}
@@ -964,7 +963,7 @@ export function CommentDrawer({
                     setReplyingTo(null);
                     setCommentText("");
                   }}
-                  className="text-gray-400 hover:text-gray-600 touch-manipulation"
+                  className="text-muted-foreground hover:text-foreground touch-manipulation"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -976,7 +975,7 @@ export function CommentDrawer({
                   src={currentUser?.image}
                   alt={currentUser?.name || "Du"}
                 />
-                <AvatarFallback className="text-xs font-semibold rounded-full bg-gray-200 text-gray-700">
+                <AvatarFallback className="text-xs font-semibold rounded-full bg-muted text-muted-foreground">
                   {currentUser?.name?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -996,7 +995,7 @@ export function CommentDrawer({
                   }}
                   onBlur={() => setIsInputFocused(false)}
                   placeholder={replyingTo ? "Antwort schreiben..." : "Kommentar hinzufügen ..."}
-                  className="flex-1 px-3 py-2 text-base rounded-full border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-y-auto scrollbar-hide"
+                  className="flex-1 px-3 py-2 text-base rounded-full border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent resize-none overflow-y-auto scrollbar-hide"
                   rows={1}
                   style={{
                     maxHeight: "100px",

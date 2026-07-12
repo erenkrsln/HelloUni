@@ -236,14 +236,14 @@ export function GroupInfoModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-white gap-0">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
+            <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className="w-[90vw] sm:w-[80vw] max-w-[500px] max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-card text-card-foreground gap-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card z-10">
                     {view === "list" ? (
                         <>
                             <DialogTitle className="text-lg font-semibold">Gruppeninfo</DialogTitle>
                             <button
                                 onClick={handleClose}
-                                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                                className="p-2 -mr-2 text-gray-400 hover:text-muted-foreground rounded-full hover:bg-muted transition-colors"
                             >
                                 <X size={20} />
                             </button>
@@ -255,7 +255,7 @@ export function GroupInfoModal({
                             </div>
                             <button
                                 onClick={() => setView("list")}
-                                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                                className="p-2 -mr-2 text-gray-400 hover:text-muted-foreground rounded-full hover:bg-muted transition-colors"
                             >
                                 <X size={20} />
                             </button>
@@ -263,17 +263,17 @@ export function GroupInfoModal({
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-0 bg-white">
+                <div className="flex-1 overflow-y-auto p-0 bg-card">
                     {view === "list" ? (
                         <div className="flex flex-col">
                             {/* Group Info Header */}
-                            <div className="flex flex-col items-center py-6 border-b border-gray-100">
+                            <div className="flex flex-col items-center py-6 border-b border-border">
                                 <div className="relative mb-3">
                                     <div className="w-24 h-24 rounded-full overflow-hidden relative group">
                                         {conversation.displayImage ? (
                                             <img src={conversation.displayImage} alt={conversation.displayName} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gray-200 text-3xl font-bold text-gray-500">
+                                            <div className="w-full h-full flex items-center justify-center bg-muted text-3xl font-bold text-muted-foreground">
                                                 {conversation.displayName?.charAt(0).toUpperCase()}
                                             </div>
                                         )}
@@ -311,7 +311,7 @@ export function GroupInfoModal({
                                                 value={newName}
                                                 onChange={(e) => setNewName(e.target.value)}
                                                 placeholder={conversation.displayName}
-                                                className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                                                className="w-full px-3 py-1.5 bg-background border border-input rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors text-foreground"
                                                 autoFocus
                                                 onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()}
                                             />
@@ -319,14 +319,14 @@ export function GroupInfoModal({
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={handleUpdateName}
-                                                    className="p-2 bg-[#D08945] text-white rounded-full hover:bg-[#b0733a] transition-colors"
+                                                    className="p-2 bg-muted text-foreground rounded-full hover:bg-accent transition-colors"
                                                 >
-                                                    <Check size={18} />
+                                                    <Check size={16} />
                                                 </button>
 
                                                 <button
                                                     onClick={() => setIsEditingName(false)}
-                                                    className="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
+                                                    className="p-2 bg-muted text-foreground rounded-full hover:bg-accent transition-colors"
                                                 >
                                                     <X size={18} />
                                                 </button>
@@ -351,11 +351,11 @@ export function GroupInfoModal({
                                         </div>
                                     )}
                                 </div>
-                                <p className="text-sm text-gray-500 mt-4">
+                                <p className="text-sm text-muted-foreground mt-4">
                                     {members.filter(m => m.role !== 'left').length} Mitglieder
                                 </p>
                                 {!iAmAdmin && (
-                                    <span className={`mt-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${conversation.isPublic ? "bg-[#D08945] text-white" : "bg-gray-100 text-gray-800"
+                                    <span className={`mt-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${conversation.isPublic ? "bg-[#D08945] text-white" : "bg-muted text-muted-foreground"
                                         }`}>
                                         {conversation.isPublic ? "Öffentliche Gruppe" : "Private Gruppe"}
                                     </span>
@@ -367,8 +367,8 @@ export function GroupInfoModal({
                                 <>
                                     <div className="flex items-center justify-between p-4">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-semibold text-gray-900">Öffentliche Gruppe</span>
-                                            <span className="text-xs text-gray-500 font-normal">Jeder kann dieser Gruppe über die Suche beitreten</span>
+                                            <span className="text-sm font-semibold text-foreground">Öffentliche Gruppe</span>
+                                            <span className="text-xs text-muted-foreground font-normal">Jeder kann dieser Gruppe über die Suche beitreten</span>
                                         </div>
                                         <button
                                             onClick={async () => {
@@ -383,12 +383,12 @@ export function GroupInfoModal({
                                                     alert("Fehler beim Ändern der Sichtbarkeit.");
                                                 }
                                             }}
-                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${conversation.isPublic ? "bg-[#D08945]" : "bg-gray-200"
+                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${conversation.isPublic ? "bg-[#D08945]" : "bg-muted"
                                                 }`}
                                         >
                                             <span
                                                 aria-hidden="true"
-                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${conversation.isPublic ? "translate-x-5" : "translate-x-0"
+                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out ${conversation.isPublic ? "translate-x-5" : "translate-x-0"
                                                     }`}
                                             />
                                         </button>
@@ -398,7 +398,7 @@ export function GroupInfoModal({
                                     {conversation.isPublic && (
                                         <div className="flex items-center justify-between p-4 pt-0">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-semibold text-gray-900">Beitrittsanfrage</span>
+                                                <span className="text-sm font-semibold text-foreground">Beitrittsanfrage</span>
                                             </div>
                                             <button
                                                 onClick={async () => {
@@ -413,12 +413,12 @@ export function GroupInfoModal({
                                                         alert("Fehler beim Ändern der Beitrittsanfrage-Einstellung.");
                                                     }
                                                 }}
-                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${conversation.needsRequestToJoin !== false ? "bg-[#D08945]" : "bg-gray-200"
+                                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${conversation.needsRequestToJoin !== false ? "bg-[#D08945]" : "bg-muted"
                                                     }`}
                                             >
                                                 <span
                                                     aria-hidden="true"
-                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${conversation.needsRequestToJoin !== false ? "translate-x-5" : "translate-x-0"
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out ${conversation.needsRequestToJoin !== false ? "translate-x-5" : "translate-x-0"
                                                         }`}
                                                 />
                                             </button>
@@ -428,9 +428,9 @@ export function GroupInfoModal({
                             )}
 
                             {!hasAdmins && (
-                                <div className="p-4 bg-yellow-50 border-b border-yellow-100">
-                                    <p className="text-sm text-yellow-800 mb-2">Diese Gruppe hat keinen Admin. Du kannst sie übernehmen.</p>
-                                    <Button onClick={handleClaim} variant="outline" size="sm" className="w-full border-yellow-200 text-yellow-800 hover:bg-yellow-100">
+                                <div className="p-4 bg-yellow-500/10 border-b border-yellow-500/20">
+                                    <p className="text-sm text-yellow-700 mb-2">Diese Gruppe hat keinen Admin. Du kannst sie übernehmen.</p>
+                                    <Button onClick={handleClaim} variant="outline" size="sm" className="w-full border-yellow-500/30 text-yellow-700 hover:bg-yellow-500/20">
                                         Gruppe übernehmen
                                     </Button>
                                 </div>
@@ -439,7 +439,7 @@ export function GroupInfoModal({
                             {iAmAdmin && allUsers && members && allUsers.filter(u => !members.some(m => m._id === u._id && m.role !== 'left')).length > 0 && (
                                 <button
                                     onClick={() => setView("add")}
-                                    className="flex items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 text-black font-medium"
+                                    className="flex items-center p-4 hover:bg-accent transition-colors border-b border-border text-foreground font-medium"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-[#D08945] text-white flex items-center justify-center mr-3">
                                         <UserPlus size={20} />
@@ -449,16 +449,16 @@ export function GroupInfoModal({
                             )}
 
                             {/* Active Members */}
-                            <div className="px-4 py-2 bg-gray-100 text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            <div className="px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 Aktuelle Mitglieder
                             </div>
                             {members.filter(m => m.role !== 'left').map(member => (
-                                <div key={member._id} className="flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+                                <div key={member._id} className="flex items-center p-4 hover:bg-accent border-b border-border last:border-0">
                                     <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                                         {member.image ? (
                                             <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center font-bold text-gray-500" style={{ color: "#000000" }}>
+                                            <div className="w-full h-full flex items-center justify-center font-bold text-muted-foreground" style={{ color: "#000000" }}>
                                                 {member.name.charAt(0).toUpperCase()}
                                             </div>
                                         )}
@@ -486,7 +486,7 @@ export function GroupInfoModal({
                                             )}
                                         </div>
 
-                                        <div className="text-xs text-gray-500 mt-0.5">@{member.username}</div>
+                                        <div className="text-xs text-muted-foreground mt-0.5">@{member.username}</div>
                                     </div>
 
                                     {/* Admin Actions */}
@@ -496,7 +496,7 @@ export function GroupInfoModal({
                                             {iAmCreator && member.role !== "creator" && (
                                                 <button
                                                     onClick={() => handleTransferCreator(member._id, member.name)}
-                                                    className="p-2 text-gray-400 rounded-full transition-colors"
+                                                    className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors"
                                                     title="Gruppenleitung übertragen"
                                                 >
                                                     <Sparkles size={18} />
@@ -505,7 +505,7 @@ export function GroupInfoModal({
                                             {member.role === "member" && (
                                                 <button
                                                     onClick={() => handlePromote(member._id)}
-                                                    className="p-2 text-gray-400"
+                                                    className="p-2 text-muted-foreground hover:text-foreground"
                                                     title="Zum Admin machen"
                                                 >
                                                     <Star size={18} />
@@ -523,7 +523,7 @@ export function GroupInfoModal({
                                             {member.role !== "creator" && (
                                                 <button
                                                     onClick={() => handleRemoveMember(member._id)}
-                                                    className="p-2 text-gray-400"
+                                                    className="p-2 text-muted-foreground hover:text-red-500"
                                                     title="Entfernen"
                                                 >
                                                     <Trash2 size={18} />
@@ -537,25 +537,25 @@ export function GroupInfoModal({
                             {/* Previous Members */}
                             {members.some(m => m.role === 'left') && (
                                 <>
-                                    <div className="px-4 py-2 bg-gray-100 text-xs font-semibold text-gray-700 uppercase tracking-wider mt-2">
+                                    <div className="px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">
                                         Ehemalige Mitglieder
                                     </div>
                                     {members.filter(m => m.role === 'left').map(member => (
-                                        <div key={member._id} className="flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 last:border-0 opacity-60">
+                                        <div key={member._id} className="flex items-center p-4 hover:bg-accent border-b border-border last:border-0 opacity-60">
                                             <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                                                 {member.image ? (
                                                     <img src={member.image} alt={member.name} className="w-full h-full object-cover grayscale" />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-500" style={{ color: "#000000" }}>
+                                                    <div className="w-full h-full flex items-center justify-center font-bold text-muted-foreground" style={{ color: "#000000" }}>
                                                         {member.name.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0 mr-2">
                                                 <div className="flex items-center gap-1">
-                                                    <span className="font-semibold truncate text-gray-600">{member.name}</span>
+                                                    <span className="font-semibold truncate text-muted-foreground">{member.name}</span>
                                                 </div>
-                                                <div className="text-xs text-gray-500">@{member.username}</div>
+                                                <div className="text-xs text-muted-foreground">@{member.username}</div>
                                             </div>
                                         </div>
                                     ))}
@@ -566,20 +566,20 @@ export function GroupInfoModal({
                         <div className="flex flex-col h-full">
                             <div className="p-4 border-b">
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                                     <input
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Suchen..."
-                                        className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                                        className="w-full pl-9 pr-4 py-2 bg-background border border-input rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors text-foreground"
                                         autoFocus
                                     />
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto">
                                 {availableUsers.length === 0 ? (
-                                    <div className="p-8 text-center text-gray-400 text-sm">
+                                    <div className="p-8 text-center text-muted-foreground text-sm">
                                         Keine Nutzer gefunden
                                     </div>
                                 ) : (
@@ -587,20 +587,20 @@ export function GroupInfoModal({
                                         <button
                                             key={user._id}
                                             onClick={() => handleAddMember(user._id)}
-                                            className="w-full flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 text-left transition-colors"
+                                            className="w-full flex items-center p-4 hover:bg-accent border-b border-border text-left transition-colors"
                                         >
                                             <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0" style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}>
                                                 {user.image ? (
                                                     <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center font-bold text-gray-500" style={{ color: "#000000" }}>
+                                                    <div className="w-full h-full flex items-center justify-center font-bold text-muted-foreground" style={{ color: "#000000" }}>
                                                         {user.name.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex-1">
-                                                <div className="font-medium text-black">{user.name}</div>
-                                                <div className="text-xs text-gray-500">@{user.username}</div>
+                                                <div className="font-medium text-foreground">{user.name}</div>
+                                                <div className="text-xs text-muted-foreground">@{user.username}</div>
                                             </div>
                                             <div className="w-8 h-8 rounded-full bg-[#D08945] text-white flex items-center justify-center">
                                                 <UserPlus size={16} />
@@ -614,7 +614,7 @@ export function GroupInfoModal({
                 </div>
 
                 {view === "list" && members.some(m => m._id === currentUserId && m.role !== "creator") && (
-                    <div className="p-4 border-t bg-gray-50">
+                    <div className="p-4 border-t bg-muted">
                         <Button onClick={handleLeave} variant="destructive" className="w-full bg-red-100 text-red-600 hover:bg-red-200 border-0">
                             Gruppe verlassen
                         </Button>
@@ -622,7 +622,7 @@ export function GroupInfoModal({
                 )}
 
                 {view === "list" && iAmCreator && (
-                    <div className="p-4 border-t bg-gray-50">
+                    <div className="p-4 border-t bg-muted">
                         <Button onClick={handleDeleteGroup} variant="destructive" className="w-full bg-red-600 text-white hover:bg-red-700">
                             Gruppe löschen
                         </Button>

@@ -30,7 +30,7 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors">
+        <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
           <Users className="w-4 h-4" />
           <span>
             {participantsCount || 0}
@@ -41,7 +41,7 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
       <DialogContent className="w-[90vw] sm:w-[80vw] max-w-[600px] max-h-[60vh] sm:max-h-[70vh] flex flex-col p-6 sm:p-8">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Teilnehmerliste</DialogTitle>
-          <DialogDescription className="text-sm text-gray-600 mt-2">
+          <DialogDescription className="text-sm text-muted-foreground mt-2">
             {participantsCount || 0} {participantsCount === 1 ? "Person nimmt" : "Personen nehmen"} an diesem Event teil
             {participantLimit && ` (max. ${participantLimit})`}.
           </DialogDescription>
@@ -54,7 +54,7 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
           }}
         >
           {participantsList === undefined ? (
-            <div className="text-center text-sm text-gray-500 py-8">
+            <div className="text-center text-sm text-muted-foreground py-8">
               Lade Teilnehmer...
             </div>
           ) : participantsList && participantsList.length > 0 ? (
@@ -78,16 +78,16 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm text-gray-900 truncate">
+                      <div className="font-semibold text-sm text-foreground truncate">
                         {participant.name}
                       </div>
                       {participant.username && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           @{participant.username}
                         </div>
                       )}
                       {participant.uni_name && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           {participant.uni_name}
                           {participant.major && ` • ${participant.major}`}
                         </div>
@@ -109,11 +109,11 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm text-gray-900 truncate">
+                      <div className="font-semibold text-sm text-foreground truncate">
                         {participant.name}
                       </div>
                       {participant.uni_name && (
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           {participant.uni_name}
                           {participant.major && ` • ${participant.major}`}
                         </div>
@@ -124,7 +124,7 @@ export function ParticipantsDialog({ postId, participantsCount, participantLimit
               </div>
             ))
           ) : (
-            <div className="text-center text-sm text-gray-500 py-8">
+            <div className="text-center text-sm text-muted-foreground py-8">
               Noch keine Teilnehmer
             </div>
           )}

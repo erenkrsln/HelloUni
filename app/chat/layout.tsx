@@ -16,7 +16,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   const isChatSelected = pathname !== "/chat" && pathname !== "/chat/";
 
   return (
-    <div className="flex flex-col h-screen w-full bg-white overflow-hidden lg:pl-[120px]">
+    <div className="flex flex-col h-screen w-full bg-background overflow-hidden lg:pl-[120px]">
       {/* Top Header: 
           On desktop: always visible.
           On mobile: visible only if no chat is selected (so active chat detail page is fullscreen).
@@ -42,7 +42,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             On desktop (md): always visible, fixed width.
         */}
         <div
-          className={`h-full flex-col flex-shrink-0 md:flex md:w-[350px] lg:w-[400px] border-r border-gray-100 ${
+          className={`h-full flex-col flex-shrink-0 md:flex md:w-[350px] lg:w-[400px] border-r border-border ${
             isChatSelected ? "hidden" : "flex w-full"
           }`}
         >

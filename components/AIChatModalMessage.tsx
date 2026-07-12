@@ -44,7 +44,7 @@ const AIChatModalMessage = ({ message, isUser, timestamp }: AIChatModalMessagePr
     return (
         <div
             className={`flex justify-center items-end gap-[5px] max-w-[82%] p-[11px] rounded-[8px] ${isUser
-                ? 'bg-white text-black'
+                ? 'bg-card text-foreground'
                 : 'bg-[#F78D57] text-white'
                 }`}
         >

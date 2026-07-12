@@ -56,7 +56,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     return () => window.clearTimeout(id);
   }, [onClose, duration]);
 
-  const bg = toast.type === "error" ? "bg-red-600 text-white" : toast.type === "success" ? "bg-green-600 text-white" : "bg-white border shadow";
+  const bg = toast.type === "error" ? "bg-red-600 text-white" : toast.type === "success" ? "bg-green-600 text-white" : "bg-card text-card-foreground border border-border shadow";
 
   return (
     <div className={`max-w-sm w-full px-4 py-3 rounded-2xl ${bg} transition-all duration-200 transform shadow-lg relative overflow-hidden`}>

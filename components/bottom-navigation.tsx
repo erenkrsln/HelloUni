@@ -73,6 +73,7 @@ export function BottomNavigation() {
           }}
         >
           <Plus
+            aria-hidden="true"
             style={{
               width: "26px",
               height: "26px",
@@ -87,12 +88,12 @@ export function BottomNavigation() {
       )}
 
       <nav
+        aria-label="Hauptnavigation"
         className="fixed bottom-0 left-0 right-0 flex justify-center px-4 pb-safe-bottom z-50 mb-4 lg:bottom-auto lg:top-1/2 lg:transform lg:-translate-y-1/2 lg:left-12 lg:right-auto lg:mb-0 lg:pb-0 lg:px-0 lg:h-auto lg:w-auto"
       >
         <div
-          className="flex items-center justify-between px-5 py-4 w-full max-w-[373px] h-[66px] rounded-[79px] lg:flex-col lg:items-center lg:justify-start lg:gap-5 lg:px-4 lg:py-5 lg:w-[66px] lg:h-auto lg:max-w-none"
+          className="flex items-center justify-between px-5 py-4 w-full max-w-[373px] h-[66px] rounded-[79px] lg:flex-col lg:items-center lg:justify-start lg:gap-5 lg:px-4 lg:py-5 lg:w-[66px] lg:h-auto lg:max-w-none bg-[#dcc6a1] dark:bg-[#D08945]"
           style={{
-            backgroundColor: "#dcc6a1",
             opacity: 1,
             willChange: "transform",
             transform: "translateZ(0)",
@@ -106,13 +107,15 @@ export function BottomNavigation() {
             href="/home"
             prefetch={true}
             onClick={handleHomeClick}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+            aria-label="Startseite"
+            aria-current={isActive("/home") ? "page" : undefined}
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <HomeIcon
               isActive={isActive("/home")}
               size={32}
-              color="#000000"
+              color="currentColor"
             />
           </Link>
 
@@ -121,13 +124,15 @@ export function BottomNavigation() {
             id="tour-nav-search"
             href="/search"
             prefetch={true}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+            aria-label="Suchen"
+            aria-current={isActive("/search") ? "page" : undefined}
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <SearchIcon
               isActive={isActive("/search")}
               size={32}
-              color="#000000"
+              color="currentColor"
             />
           </Link>
 
@@ -136,15 +141,18 @@ export function BottomNavigation() {
             id="tour-nav-calendar"
             href="/calendar"
             prefetch={true}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+            aria-label="Kalender"
+            aria-current={isActive("/calendar") ? "page" : undefined}
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <CalendarDays
+              aria-hidden="true"
               strokeWidth={isActive("/calendar") ? 2.5 : 2}
+              className="text-white stroke-white"
               style={{
                 width: "27px",
                 height: "27px",
-                color: "#000000",
                 willChange: "transform",
                 transform: "translateZ(0)",
                 backfaceVisibility: "hidden"
@@ -157,13 +165,15 @@ export function BottomNavigation() {
             id="tour-nav-workspace"
             href="/workspace"
             prefetch={true}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation"
+            aria-label="Workspace"
+            aria-current={isActive("/workspace") ? "page" : undefined}
+            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <WorkspaceIcon
               isActive={isActive("/workspace")}
               size={28}
-              color="#000000"
+              color="currentColor"
             />
           </Link>
 
@@ -173,15 +183,18 @@ export function BottomNavigation() {
             id="tour-nav-chat"
             href="/chat"
             prefetch={true}
-            className="flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative"
+            aria-label={unreadChatCount > 0 ? `Chat (${unreadChatCount} ungelesene Nachrichten)` : "Chat"}
+            aria-current={isActive("/chat") ? "page" : undefined}
+            className={`flex items-center justify-center transition-transform active:scale-95 cursor-pointer touch-manipulation relative text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg ${isActive("/chat") ? "fill-white" : ""}`}
             style={{ width: "44px", height: "44px", minWidth: "44px", minHeight: "44px", opacity: 1 }}
           >
             <MessageCircle
+              aria-hidden="true"
+              className="text-white"
               style={{
                 width: "27px",
                 height: "27px",
-                color: "#000000",
-                fill: isActive("/chat") ? "#000000" : "none",
+                fill: isActive("/chat") ? "currentColor" : "none",
                 willChange: "transform",
                 transform: "translateY(-2px) translateZ(0)",
                 backfaceVisibility: "hidden"

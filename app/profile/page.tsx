@@ -105,7 +105,7 @@ export default function ProfilePage() {
 
                     {/* Posts section */}
                     <div data-posts-section>
-                        <h3 className="px-4 text-lg font-semibold text-[#000000] mb-4 border-b border-[#000000]/20 pb-2">
+                        <h3 className="px-4 text-lg font-semibold text-foreground mb-4 border-b border-border pb-2">
                             Posts
                         </h3>
                         {allPosts === undefined ? (
@@ -113,7 +113,7 @@ export default function ProfilePage() {
                                 <Spinner size="md" />
                             </div>
                         ) : userPosts.length === 0 ? (
-                            <p className="text-center text-[#000000]/60 py-8">No posts yet.</p>
+                            <p className="text-center text-muted-foreground py-8">No posts yet.</p>
                         ) : (
                             <div style={{ gap: "0", margin: "0", padding: "0" }}>
                                 {userPosts.map((post, index) => (
