@@ -56,6 +56,18 @@ export default function PrivacyPage() {
                         Wir wollen deinen Daten nichts Böses.
                     </p>
                 </section>
+                <section className="mb-8 bg-white p-6 input-card">
+                    <h2 className="text-2xl font-semibold mb-4 text-black ">Absatz 2</h2>
+                    <p className="text-gray-700 leading-relaxed mb-4 ">
+                        Aber wir können alle deine Nachrichten lesen.
+                    </p>
+                </section>
+                <section className="mb-8 bg-white p-6 input-card">
+                    <h2 className="text-2xl font-semibold mb-4 text-black ">Absatz 3</h2>
+                    <p className="text-gray-700 leading-relaxed mb-4 ">
+                        Also bitte teile keine zu privaten Sachen 👉👈
+                    </p>
+                </section>
             </div>
         </main>
     );
