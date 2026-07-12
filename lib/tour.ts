@@ -88,7 +88,7 @@ export function startAppTour() {
         element: "#tour-nav-chat",
         popover: {
           title: "Chats",
-          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen. <br/> Wenn du Fragen rund ums Studium hast, starte einen Chat mit Jastell, dem HelloUni Chatbot. Du erreichst ihn indem du 'jastell' vor deiner Frage in einem Chat mit ihm eingibst.",
+          description: "Hier siehst du alle neuen Nachrichten und kannst neue Unterhaltungen beginnen. <br/> Wenn du Fragen rund ums Studium hast, starte einen Chat mit Jastell, dem HelloUni Chatbot. Du erreichst ihn indem du 'jastell' vor deiner Frage in einem Chat mit ihm eingibst. In Direktchats kannst du auch ohne direkt loschreiben",
           side: "top",
           align: "center"
         }

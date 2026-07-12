@@ -250,16 +250,6 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const chatActionsReady = members !== undefined && aiUser !== undefined;
     const showChatActionButtons = chatActionsReady && !isAiConversation;
 
-    // Beim Öffnen eines Chatbot-Chats das Eingabefeld mit "Jastell: " vorbelegen,
-    // da der Bot nur auf Nachrichten mit diesem Präfix reagiert.
-    const aiPrefilledConvRef = useRef<string | null>(null);
-    useEffect(() => {
-        if (isAiConversation && aiPrefilledConvRef.current !== conversationId) {
-            aiPrefilledConvRef.current = conversationId;
-            setNewMessage((prev) => (prev.trim() === "" ? "Jastell: " : prev));
-        }
-    }, [isAiConversation, conversationId]);
-
     const isGroupAdmin = conversation?.isGroup && currentUser && (
         conversation.creatorId === currentUser._id ||
         conversation.adminIds?.includes(currentUser._id)
@@ -347,6 +337,10 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
         const trimmedMessage = newMessage.trim();
         const aiTriggerMatch = trimmedMessage.match(/^jastell\b(?::\s*|\s+)?/i);
+        const shouldTriggerAi = isAiConversation || !!aiTriggerMatch;
+        const aiPrompt = isAiConversation
+            ? (aiTriggerMatch ? trimmedMessage.slice(aiTriggerMatch[0].length).trim() : trimmedMessage)
+            : trimmedMessage.slice(aiTriggerMatch?.[0].length ?? 0).trim();
 
         try {
             await sendMessage({
@@ -354,8 +348,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                 senderId: currentUser._id,
                 content: trimmedMessage,
             });
-            if (aiTriggerMatch) {
-                const prompt = trimmedMessage.slice(aiTriggerMatch[0].length).trim();
+            if (shouldTriggerAi) {
                 const recentHistory = (messages ?? [])
                     .slice(-AI_HISTORY_LIMIT)
                     .map((message) => ({
@@ -363,7 +356,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                         content: message.content,
                     }));
                 const msg = await handleAi(
-                    prompt,
+                    aiPrompt,
                     currentUser.major || undefined,
                     currentUser.semester,
                     recentHistory,
@@ -1194,7 +1187,7 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
                                         }
                                     }
                                 }}
-                                placeholder="Schreibe eine Nachricht..."
+                                placeholder={isAiConversation ? "Schreibe Jastell direkt..." : "Schreibe eine Nachricht..."}
                                 className="flex-1 bg-transparent outline-none min-w-0 text-black placeholder-gray-400 resize-none py-1 max-h-[120px] overflow-y-auto scrollbar-hide"
                                 rows={1}
                                 style={{ minHeight: '24px' }}
