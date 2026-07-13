@@ -222,11 +222,14 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
     const allConversations = useQuery(api.queries.getConversations, currentUser ? { userId: currentUser._id } : "skip");
     const conversation = allConversations?.find(c => c._id === conversationId);
 
+    const hasActiveAiParticipant =
+        !!aiUserId &&
+        !!members?.some((m) => m._id === aiUserId && m.role !== "left");
+
     // KI-/Chatbot-Konversation erkennen (1:1-Chat mit dem Bot-User "jastell")
     const isAiConversation =
         !conversation?.isGroup &&
-        !!aiUserId &&
-        !!members?.some((m) => m._id === aiUserId);
+        hasActiveAiParticipant;
 
     // Die KI-Erkennung ist erst zuverlässig, wenn members UND der jastell-User geladen sind.
     // Anruf-/Video-/Datei-Icons erst zeigen, wenn feststeht, dass es KEIN KI-Chat ist –
@@ -321,10 +324,8 @@ export default function ChatDetailPage({ params }: { params: Promise<{ id: strin
 
         const trimmedMessage = newMessage.trim();
         const aiTriggerMatch = trimmedMessage.match(/^jastell\b(?::\s*|\s+)?/i);
-        const shouldTriggerAi = isAiConversation || !!aiTriggerMatch;
-        const aiPrompt = isAiConversation
-            ? (aiTriggerMatch ? trimmedMessage.slice(aiTriggerMatch[0].length).trim() : trimmedMessage)
-            : trimmedMessage.slice(aiTriggerMatch?.[0].length ?? 0).trim();
+        const shouldTriggerAi = isAiConversation || (!!conversation?.isGroup && hasActiveAiParticipant && !!aiTriggerMatch);
+        const aiPrompt = aiTriggerMatch ? trimmedMessage.slice(aiTriggerMatch[0].length).trim() : trimmedMessage;
 
         try {
             await sendMessage({
