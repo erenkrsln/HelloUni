@@ -27,11 +27,6 @@ export default function ChatPage() {
   const { currentUser } = useCurrentUser();
   const [isFirstVisit, setIsFirstVisit] = useState(true);
 
-  const aiUserId = useQuery(
-      api.queries.getUserByUsername,
-      { username: "jastell" }
-  ) ?._id;
-
   useEffect(() => {
     const visited = sessionStorage.getItem("chat_visited");
     if (visited) {
@@ -82,12 +77,10 @@ export default function ChatPage() {
     if (!currentUser || selectedUsers.length === 0) return;
     if (selectedUsers.length > 1 && !groupName.trim()) return;
 
-    // Add current user to participants
     const participants = Array.from(
       new Set([
         currentUser._id,
         ...selectedUsers,
-        ...(aiUserId ? [aiUserId] : []),
       ])
     );
     try {
