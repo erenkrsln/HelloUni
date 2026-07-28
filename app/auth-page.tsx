@@ -213,11 +213,11 @@ export default function AuthPage() {
           HelloUni
         </h1>
 
-        <div className="rounded-3xl p-8 shadow-lg w-full" style={{ backgroundColor: "rgba(220, 198, 161)", marginTop: "40px" }}>
-          <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
+        <div className="rounded-3xl p-8 shadow-lg w-full bg-[#dcc6a1] dark:bg-[#D08945]" style={{ marginTop: "40px" }}>
+          <h2 className="text-2xl font-bold text-foreground dark:text-black mb-2 text-center">
             {isDevMode ? "Dev Login" : isSignUp ? "Registrieren" : "Anmelden"}
           </h2>
-          <p className="text-sm text-foreground mb-6 text-center">
+          <p className="text-sm text-foreground dark:text-black mb-6 text-center">
             {isDevMode
               ? ""
               : isSignUp
@@ -335,7 +335,7 @@ export default function AuthPage() {
                 setError("");
                 setSuccess("");
               }}
-              className="text-sm text-foreground hover:text-foreground underline transition-colors"
+              className="text-sm text-foreground dark:text-black hover:text-foreground underline transition-colors"
             >
               {isSignUp ? "Bereits ein Konto? Anmelden" : "Noch kein Konto? Registrieren"}
             </button>
@@ -346,7 +346,7 @@ export default function AuthPage() {
                 setError("");
                 setSuccess("");
               }}
-              className="text-sm text-foreground hover:text-foreground underline transition-colors"
+              className="text-sm text-foreground dark:text-black hover:text-foreground underline transition-colors"
             >
               Dev Login
             </button>
