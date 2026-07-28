@@ -98,11 +98,11 @@ export function MessageLinkPreview({ url }: { url: string }) {
   if (loading) {
     return (
       <div className="flex flex-col w-full max-w-sm mt-2">
-        <div className="flex items-center gap-3 p-2.5 border border-gray-100 rounded-xl bg-gray-50/50 animate-pulse w-full">
-          <div className="w-20 bg-gray-200 rounded-lg flex-shrink-0" style={{ aspectRatio: "1.91 / 1" }} />
+        <div className="flex items-center gap-3 p-2.5 border border-border rounded-xl bg-muted/50 animate-pulse w-full">
+          <div className="w-20 bg-muted rounded-lg flex-shrink-0" style={{ aspectRatio: "1.91 / 1" }} />
           <div className="flex-1 space-y-2">
-            <div className="h-3.5 bg-gray-200 rounded w-3/4" />
-            <div className="h-2.5 bg-gray-200 rounded w-1/2" />
+            <div className="h-3.5 bg-muted rounded w-3/4" />
+            <div className="h-2.5 bg-muted rounded w-1/2" />
           </div>
         </div>
       </div>
@@ -123,11 +123,11 @@ export function MessageLinkPreview({ url }: { url: string }) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 p-2.5 border border-gray-100 rounded-xl bg-gray-50/50 hover:bg-gray-100/70 transition-all w-full cursor-pointer select-none text-left"
+        className="flex items-center gap-3 p-2.5 border border-border rounded-xl bg-muted/50 hover:bg-accent/70 transition-all w-full cursor-pointer select-none text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {hasImage ? (
-          <div className="w-20 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 bg-white" style={{ aspectRatio: "1.91 / 1" }}>
+          <div className="w-20 rounded-lg overflow-hidden flex-shrink-0 border border-border bg-card" style={{ aspectRatio: "1.91 / 1" }}>
             <img
               src={data.image!}
               alt={data.title || "Preview"}
@@ -139,15 +139,15 @@ export function MessageLinkPreview({ url }: { url: string }) {
             />
           </div>
         ) : (
-          <div className="w-20 bg-gray-100 border border-gray-200 flex items-center justify-center rounded-lg text-gray-400 flex-shrink-0" style={{ aspectRatio: "1.91 / 1" }}>
+          <div className="w-20 bg-muted border border-border flex items-center justify-center rounded-lg text-muted-foreground flex-shrink-0" style={{ aspectRatio: "1.91 / 1" }}>
             <ExternalLink size={16} />
           </div>
         )}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h4 className="text-xs font-semibold text-gray-800 line-clamp-2 leading-tight">
+          <h4 className="text-xs font-semibold text-foreground line-clamp-2 leading-tight">
             {data?.title || displayHost}
           </h4>
-          <span className="text-[10px] text-gray-400 mt-1 truncate">
+          <span className="text-[10px] text-muted-foreground mt-1 truncate">
             {displayHost}
           </span>
         </div>
@@ -161,7 +161,7 @@ export function ChatFilesModalLinkPreview({ url }: { url: string }) {
 
   if (loading) {
     return (
-      <div className="w-16 h-auto rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 mr-3 flex-shrink-0 animate-pulse" style={{ aspectRatio: "1.91 / 1" }}>
+      <div className="w-16 h-auto rounded-lg bg-muted flex items-center justify-center text-muted-foreground mr-3 flex-shrink-0 animate-pulse" style={{ aspectRatio: "1.91 / 1" }}>
         <ExternalLink size={16} />
       </div>
     );
@@ -170,7 +170,7 @@ export function ChatFilesModalLinkPreview({ url }: { url: string }) {
   const hasImage = !!data?.image;
 
   return (
-    <div className="w-16 h-auto rounded-lg overflow-hidden mr-3 flex-shrink-0 border border-gray-200 bg-gray-50 flex items-center justify-center" style={{ aspectRatio: "1.91 / 1" }}>
+    <div className="w-16 h-auto rounded-lg overflow-hidden mr-3 flex-shrink-0 border border-border bg-muted flex items-center justify-center" style={{ aspectRatio: "1.91 / 1" }}>
       {hasImage ? (
         <img
           src={data.image!}
@@ -181,7 +181,7 @@ export function ChatFilesModalLinkPreview({ url }: { url: string }) {
           }}
         />
       ) : (
-        <ExternalLink size={16} className="text-gray-400" />
+        <ExternalLink size={16} className="text-muted-foreground" />
       )}
     </div>
   );

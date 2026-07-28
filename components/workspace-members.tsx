@@ -160,11 +160,11 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "creator":
-        return "bg-purple-100 text-purple-700";
+        return "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-transparent dark:border-purple-800/50";
       case "admin":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-transparent dark:border-blue-800/50";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-transparent dark:border-slate-700";
     }
   };
 
@@ -177,10 +177,10 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
       {/* Header */}
       <div className="mb-4 flex justify-between items-center px-1">
         <div>
-          <h2 className="font-bold text-lg text-slate-900">
+          <h2 className="font-bold text-lg text-slate-900 dark:text-white">
             {isEvent ? "Gruppenmitglieder" : "Mitglieder"}
           </h2>
-          <p className="text-sm text-slate-500 font-medium">
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
             {members?.length || 0} {isEvent ? "in der Gruppe" : "in dieser Gruppe"}
           </p>
         </div>
@@ -196,7 +196,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
       </div>
 
       {/* Members List */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
         {members && members.length > 0 ? (
           members.map((member, idx) => {
             const memberRole = getMemberRole(member._id.toString());
@@ -204,14 +204,14 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             return (
               <div
                 key={member._id || idx}
-                className={`p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors ${
-                  idx !== members.length - 1 ? "border-b border-slate-100" : ""
+                className={`p-3.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+                  idx !== members.length - 1 ? "border-b border-slate-100 dark:border-slate-800/50" : ""
                 }`}
               >
                 {/* Member Info */}
                 <div className="flex items-center gap-3 flex-1">
                   {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-200 border border-slate-300 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center">
                     {member.image ? (
                       <img
                         src={member.image}
@@ -219,7 +219,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="font-bold text-slate-700 text-sm select-none">
+                      <span className="font-bold text-slate-700 dark:text-slate-300 text-sm select-none">
                         {member.name?.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -227,15 +227,15 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
 
                   {/* Name & Username */}
                   <div className="flex-1">
-                    <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                    <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
                       {member.name}{" "}
                       {currentUser?._id === member._id && (
-                        <span className="text-[10px] bg-[#D08945]/10 text-[#D08945] px-1.5 py-0.5 rounded-full border border-[#D08945]/20 font-bold">
+                        <span className="text-[10px] bg-[#D08945]/10 dark:bg-[#D08945]/20 text-[#D08945] dark:text-[#FEE3C1] px-1.5 py-0.5 rounded-full border border-[#D08945]/20 dark:border-[#D08945]/30 font-bold">
                           Du
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                       @{member.username || "student"}
                     </div>
                   </div>
@@ -262,14 +262,14 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                                 : member._id.toString(),
                             )
                           }
-                          className="p-1.5 rounded-full hover:bg-slate-200 transition-colors text-slate-600"
+                          className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-400"
                           title="Mitgliederaktionen"
                         >
                           <MoreVertical size={16} />
                         </button>
 
                         {openMenuId === member._id.toString() && (
-                          <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-10 p-1">
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 p-1">
                             {memberRole !== "admin" &&
                               memberRole !== "creator" && (
                                 <button
@@ -281,7 +281,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                                     });
                                     setOpenMenuId(null);
                                   }}
-                                  className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors font-semibold"
+                                  className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors font-semibold"
                                 >
                                   Zum Admin machen
                                 </button>
@@ -297,7 +297,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                                   });
                                   setOpenMenuId(null);
                                 }}
-                                className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors font-semibold"
+                                className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors font-semibold"
                               >
                                 Zum Mitglied machen
                               </button>
@@ -305,7 +305,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
 
                             {memberRole !== "creator" && (
                               <>
-                                <div className="border-t border-slate-100 my-1"></div>
+                                <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                                 <button
                                   onClick={() => {
                                     setConfirmState({
@@ -315,7 +315,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                                     });
                                     setOpenMenuId(null);
                                   }}
-                                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold"
+                                  className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors font-semibold"
                                 >
                                   Aus Gruppe entfernen
                                 </button>
@@ -338,7 +338,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
                             memberId: member._id.toString(),
                           });
                         }}
-                        className="p-1.5 rounded-full hover:bg-red-100 transition-colors text-red-600"
+                        className="p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-red-600 dark:text-red-400"
                         title="Gruppe verlassen"
                       >
                         <LogOut size={16} />
@@ -349,11 +349,11 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
             );
           })
         ) : (
-          <div className="p-6 text-center text-slate-500 font-medium">Noch keine Mitglieder</div>
+          <div className="p-6 text-center text-slate-500 dark:text-slate-400 font-medium">Noch keine Mitglieder</div>
         )}
 
         {!isGroup && (
-          <div className="p-3 text-xs text-slate-400 text-center bg-slate-50 border-t border-slate-100 font-semibold">
+          <div className="p-3 text-xs text-slate-400 dark:text-slate-500 text-center bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 font-semibold">
             Mitglieder-Feature für Events folgt in Kürze
           </div>
         )}

@@ -510,14 +510,19 @@ export default function CreatePage() {
                 <img
                     src="/logo_font.svg"
                     alt="HelloUni"
-                    style={{ height: "80px", width: "auto", objectFit: "contain", display: "block" }}
+                    className="block h-20 w-auto object-contain dark:hidden"
+                />
+                <img
+                    src="/logo_font_dark.svg"
+                    alt="HelloUni"
+                    className="hidden h-20 w-auto object-contain dark:block"
                 />
             </button>
             <LogoSidebar isOpen={isLogoSidebarOpen} onClose={() => setIsLogoSidebarOpen(false)} />
 
             {/* Custom Header with Abbrechen and Posten - Sticky mit Safe Area Support */}
             <div
-                className="fixed left-0 right-0 z-40 bg-white  max-w-[428px] md:max-w-3xl mx-auto"
+                className="fixed left-0 right-0 z-40 bg-background  max-w-[428px] md:max-w-3xl mx-auto"
                 style={{
                     top: "env(safe-area-inset-top, 0px)",
                 }}
@@ -526,7 +531,7 @@ export default function CreatePage() {
                     <button
                         type="button"
                         onClick={() => router.push("/home")}
-                        className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity cursor-pointer touch-manipulation"
+                        className="text-base font-medium text-foreground hover:opacity-70 transition-opacity cursor-pointer touch-manipulation"
                     >
                         Abbrechen
                     </button>
@@ -551,10 +556,10 @@ export default function CreatePage() {
                 ) : (
                     <div className="px-4 py-6">
                         <form id="create-post-form" onSubmit={handleSubmit}>
-                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4 overflow-hidden">
+                            <div className="bg-background rounded-xl border border-border shadow-sm p-6 mb-4 overflow-hidden">
                                 {/* Post Type Selection */}
                                 <div className="mb-4 relative post-type-dropdown">
-                                    <label htmlFor="postType" className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label htmlFor="postType" className="block text-sm font-medium text-foreground mb-2">
                                         Post-Typ
                                     </label>
                                     <div className="relative">
@@ -565,7 +570,7 @@ export default function CreatePage() {
                                                 e.stopPropagation();
                                                 setIsPostTypeOpen(!isPostTypeOpen);
                                             }}
-                                            className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                            className="flex h-11 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                         >
                                             <span>
                                                 {postType === "normal" && "Normal"}
@@ -575,12 +580,12 @@ export default function CreatePage() {
                                                 {postType === "poll" && "Umfrage"}
                                             </span>
                                             <ChevronDown
-                                                className={`h-4 w-4 text-gray-500 transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`}
+                                                className={`h-4 w-4 text-muted-foreground transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`}
                                             />
                                         </button>
                                         {isPostTypeOpen && (
                                             <div
-                                                className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                                                className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-background shadow-lg"
                                             >
                                                 <div className="py-1">
                                                     <button
@@ -591,7 +596,7 @@ export default function CreatePage() {
                                                             setPostType("normal");
                                                             setIsPostTypeOpen(false);
                                                         }}
-                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                        className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                     >
                                                         Normal
                                                     </button>
@@ -603,7 +608,7 @@ export default function CreatePage() {
                                                             setPostType("announcement");
                                                             setIsPostTypeOpen(false);
                                                         }}
-                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                        className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                     >
                                                         Ankündigung
                                                     </button>
@@ -615,7 +620,7 @@ export default function CreatePage() {
                                                             setPostType("spontaneous_meeting");
                                                             setIsPostTypeOpen(false);
                                                         }}
-                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                        className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                     >
                                                         Spontanes Treffen
                                                     </button>
@@ -627,7 +632,7 @@ export default function CreatePage() {
                                                             setPostType("recurring_meeting");
                                                             setIsPostTypeOpen(false);
                                                         }}
-                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                        className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                     >
                                                         Wiederkehrendes Treffen
                                                     </button>
@@ -639,7 +644,7 @@ export default function CreatePage() {
                                                             setPostType("poll");
                                                             setIsPostTypeOpen(false);
                                                         }}
-                                                        className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                        className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                     >
                                                         Umfrage
                                                     </button>
@@ -657,16 +662,16 @@ export default function CreatePage() {
                                         onChange={(e) => setTitle(e.target.value)}
                                         placeholder="Titel (optional)"
                                         maxLength={100}
-                                        className="w-full h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
+                                        className="w-full h-11 px-4 py-2 rounded-lg border border-border bg-background text-foreground text-base md:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
                                     />
                                 </div>
 
                                 {/* Text and Image Container - Vertical Flexbox */}
-                                <div className="flex flex-col border border-gray-300 rounded-lg pb-4">
+                                <div className="flex flex-col border border-border rounded-lg pb-4">
                                     <div className="relative flex-shrink-0">
                                         {/* Overlay for highlighting mentions - render ALL text here since textarea is transparent */}
                                         <div
-                                            className="absolute inset-0 px-4 py-3 pointer-events-none text-base md:text-sm whitespace-pre-wrap break-words overflow-hidden text-gray-900 [&::selection]:bg-blue-200"
+                                            className="absolute inset-0 px-4 py-3 pointer-events-none text-base md:text-sm whitespace-pre-wrap break-words overflow-hidden text-foreground [&::selection]:bg-blue-200"
                                             style={{
                                                 minHeight: "150px",
                                                 zIndex: 1,
@@ -678,7 +683,7 @@ export default function CreatePage() {
                                             {(() => {
                                                 // Show placeholder if content is empty
                                                 if (!content || content.trim() === '') {
-                                                    return <span className="text-gray-400">Was möchtest du teilen?</span>;
+                                                    return <span className="text-muted-foreground">Was möchtest du teilen?</span>;
                                                 }
 
                                                 // Use same regex as FeedCard: /@(\w+)/g
@@ -766,7 +771,7 @@ export default function CreatePage() {
                                             onChange={handleContentChange}
                                             onKeyDown={handleKeyDown}
                                             placeholder="Was möchtest du teilen?"
-                                            className="relative w-full px-4 pt-3 pb-0 bg-transparent text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-0 border-none resize-none transition-colors [&::selection]:bg-blue-200 [&::selection]:text-transparent"
+                                            className="relative w-full px-4 pt-3 pb-0 bg-transparent text-base md:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 border-none resize-none transition-colors [&::selection]:bg-blue-200 [&::selection]:text-transparent"
                                             style={{
                                                 minHeight: "150px",
                                                 color: 'transparent',
@@ -780,7 +785,7 @@ export default function CreatePage() {
                                         {showMentionDropdown && mentionUsers && mentionUsers.length > 0 && (
                                             <div
                                                 ref={mentionDropdownRef}
-                                                className="absolute z-50 mt-1 w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                                className="absolute z-50 mt-1 w-full max-w-md bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto"
                                             >
                                                 {mentionUsers.map((user, index) => (
                                                     <button
@@ -788,8 +793,8 @@ export default function CreatePage() {
                                                         type="button"
                                                         onClick={() => insertMention(user.username)}
                                                         className={`
-                                                w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center gap-3
-                                                ${index === selectedMentionIndex && selectedMentionIndex >= 0 ? 'bg-gray-100' : ''}
+                                                w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center gap-3
+                                                ${index === selectedMentionIndex && selectedMentionIndex >= 0 ? 'bg-muted' : ''}
                                             `}
                                                     >
                                                         {user.image ? (
@@ -799,15 +804,15 @@ export default function CreatePage() {
                                                                 className="w-8 h-8 rounded-full object-cover"
                                                             />
                                                         ) : (
-                                                            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-medium">
+                                                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-sm font-medium">
                                                                 {user.name.charAt(0).toUpperCase()}
                                                             </div>
                                                         )}
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="text-sm font-medium text-gray-900 truncate">
+                                                            <div className="text-sm font-medium text-foreground truncate">
                                                                 {user.name}
                                                             </div>
-                                                            <div className="text-xs text-gray-500 truncate">
+                                                            <div className="text-xs text-muted-foreground truncate">
                                                                 @{user.username}
                                                             </div>
                                                         </div>
@@ -839,9 +844,9 @@ export default function CreatePage() {
 
                                 {/* Event Fields */}
                                 {(postType === "spontaneous_meeting" || postType === "recurring_meeting") && (
-                                    <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200" style={{ textAlign: "left" }}>
+                                    <div className="mt-4 space-y-4 p-4 bg-muted rounded-lg border border-border" style={{ textAlign: "left" }}>
                                         <div>
-                                            <label htmlFor="eventDate" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="eventDate" className="block text-sm font-medium text-foreground mb-1">
                                                 Datum *
                                             </label>
                                             <DatePicker
@@ -851,7 +856,7 @@ export default function CreatePage() {
                                             />
                                         </div>
                                         <div>
-                                            <label htmlFor="eventTime" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="eventTime" className="block text-sm font-medium text-foreground mb-1">
                                                 Uhrzeit
                                             </label>
                                             <TimePicker
@@ -861,7 +866,7 @@ export default function CreatePage() {
                                             />
                                         </div>
                                         <div>
-                                            <label htmlFor="participantLimit" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="participantLimit" className="block text-sm font-medium text-foreground mb-1">
                                                 Teilnehmerlimit
                                             </label>
                                             <input
@@ -871,12 +876,12 @@ export default function CreatePage() {
                                                 onChange={(e) => setParticipantLimit(e.target.value ? parseInt(e.target.value) : undefined)}
                                                 min="1"
                                                 placeholder="Unbegrenzt"
-                                                className="w-full h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
+                                                className="w-full h-11 px-4 py-2 rounded-lg border border-border bg-background text-foreground text-base md:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
                                             />
                                         </div>
                                         {postType === "recurring_meeting" && (
                                             <div className="relative recurrence-dropdown">
-                                                <label htmlFor="recurrencePattern" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="recurrencePattern" className="block text-sm font-medium text-foreground mb-1">
                                                     Wiederholung
                                                 </label>
                                                 <div className="relative">
@@ -887,7 +892,7 @@ export default function CreatePage() {
                                                             e.stopPropagation();
                                                             setIsRecurrenceOpen(!isRecurrenceOpen);
                                                         }}
-                                                        className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                        className="flex h-11 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                                     >
                                                         <span>
                                                             {recurrencePattern === "" && "Keine Wiederholung"}
@@ -896,12 +901,12 @@ export default function CreatePage() {
                                                             {recurrencePattern === "monthly" && "Monatlich"}
                                                         </span>
                                                         <ChevronDown
-                                                            className={`h-4 w-4 text-gray-500 transition-transform ${isRecurrenceOpen ? "rotate-180" : ""}`}
+                                                            className={`h-4 w-4 text-muted-foreground transition-transform ${isRecurrenceOpen ? "rotate-180" : ""}`}
                                                         />
                                                     </button>
                                                     {isRecurrenceOpen && (
                                                         <div
-                                                            className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg"
+                                                            className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-background shadow-lg"
                                                         >
                                                             <div className="py-1">
                                                                 <button
@@ -912,7 +917,7 @@ export default function CreatePage() {
                                                                         setRecurrencePattern("");
                                                                         setIsRecurrenceOpen(false);
                                                                     }}
-                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                    className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                                 >
                                                                     Keine Wiederholung
                                                                 </button>
@@ -924,7 +929,7 @@ export default function CreatePage() {
                                                                         setRecurrencePattern("daily");
                                                                         setIsRecurrenceOpen(false);
                                                                     }}
-                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                    className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                                 >
                                                                     Täglich
                                                                 </button>
@@ -936,7 +941,7 @@ export default function CreatePage() {
                                                                         setRecurrencePattern("weekly");
                                                                         setIsRecurrenceOpen(false);
                                                                     }}
-                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                    className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                                 >
                                                                     Wöchentlich
                                                                 </button>
@@ -948,7 +953,7 @@ export default function CreatePage() {
                                                                         setRecurrencePattern("monthly");
                                                                         setIsRecurrenceOpen(false);
                                                                     }}
-                                                                    className="w-full px-3 py-2 text-left text-sm text-gray-900"
+                                                                    className="w-full px-3 py-2 text-left text-sm text-foreground"
                                                                 >
                                                                     Monatlich
                                                                 </button>
@@ -963,8 +968,8 @@ export default function CreatePage() {
 
                                 {/* Poll Options */}
                                 {postType === "poll" && (
-                                    <div className="mt-4 space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <div className="mt-4 space-y-3 p-4 bg-muted rounded-lg border border-border">
+                                        <label className="block text-sm font-medium text-foreground mb-2">
                                             Umfrage-Optionen *
                                         </label>
                                         {pollOptions.map((option, index) => (
@@ -974,13 +979,13 @@ export default function CreatePage() {
                                                     value={option}
                                                     onChange={(e) => updatePollOption(index, e.target.value)}
                                                     placeholder={`Option ${index + 1}`}
-                                                    className="flex-1 h-11 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 text-base md:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
+                                                    className="flex-1 h-11 px-4 py-2 rounded-lg border border-border bg-background text-foreground text-base md:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors"
                                                 />
                                                 {pollOptions.length > 2 && (
                                                     <button
                                                         type="button"
                                                         onClick={() => removePollOption(index)}
-                                                        className="h-11 w-11 flex items-center justify-center rounded-lg border border-red-300 bg-white text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                                                        className="h-11 w-11 flex items-center justify-center rounded-lg border border-red-300 bg-background text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
                                                     >
                                                         <X className="w-4 h-4" />
                                                     </button>
@@ -1012,19 +1017,19 @@ export default function CreatePage() {
                                             onClick={removeLocation}
                                             className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-orange-100 transition-colors"
                                         >
-                                            <X className="w-4 h-4 text-gray-500" />
+                                            <X className="w-4 h-4 text-muted-foreground" />
                                         </button>
                                     </div>
                                 )}
 
-                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                                     <div className="flex items-center gap-1">
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
                                             title="Bild hinzufügen"
                                             aria-label="Bild hinzufügen"
-                                            className="flex items-center justify-center w-10 h-10 text-gray-600 rounded-lg focus:outline-none active:outline-none"
+                                            className="flex items-center justify-center w-10 h-10 text-muted-foreground rounded-lg focus:outline-none active:outline-none"
                                         >
                                             <ImagePlus className="w-6 h-6" />
                                         </button>
@@ -1035,13 +1040,13 @@ export default function CreatePage() {
                                             aria-label="Standort hinzufügen"
                                             disabled={isLoadingLocation}
                                             className={`flex items-center justify-center w-10 h-10 rounded-lg focus:outline-none active:outline-none transition-colors ${
-                                                locationName ? 'text-[#D08945]' : 'text-gray-600'
+                                                locationName ? 'text-[#D08945]' : 'text-muted-foreground'
                                             } ${isLoadingLocation ? 'animate-pulse' : ''}`}
                                         >
                                             <MapPin className="w-6 h-6" />
                                         </button>
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-muted-foreground">
                                         {content.length}/500
                                     </div>
                                 </div>

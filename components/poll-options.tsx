@@ -48,19 +48,19 @@ export function PollOptions({
             disabled={isVoting}
             className={`w-full text-left p-3 rounded-lg border-2 transition-all ${isSelected
               ? "border-[#D08945] bg-[#D08945]/20"
-              : "border-gray-200 hover:border-gray-300"
+              : "border-border hover:border-accent"
               }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-gray-900">{option}</span>
+              <span className="text-sm font-medium text-foreground">{option}</span>
               {totalVotes > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {voteCount} ({Math.round(percentage)}%)
                 </span>
               )}
             </div>
             {totalVotes > 0 && (
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div
                   className="bg-[#D08945] h-2 rounded-full transition-all"
                   style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}

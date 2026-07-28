@@ -129,10 +129,10 @@ export function PersonalTodoModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="w-[calc(100vw-24px)] md:max-w-[560px] max-h-[calc(100dvh-24px)] p-0 flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 border-b border-slate-100 px-6 py-4">
+        <div className="flex-shrink-0 border-b border-slate-100 dark:border-slate-800 px-6 py-4">
           <DialogHeader>
             <div className="flex-1">
-              <DialogTitle className="text-lg font-bold text-slate-900">
+              <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
                 {todo ? "To-do bearbeiten" : "Persönliches To-do hinzufügen"}
               </DialogTitle>
             </div>
@@ -143,7 +143,7 @@ export function PersonalTodoModal({
           <div className="space-y-4">
             {/* Title */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Titel *
               </label>
               <input
@@ -151,13 +151,13 @@ export function PersonalTodoModal({
                 placeholder="Titel des To-dos eingeben"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 placeholder-slate-400 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Beschreibung (optional)
               </label>
               <textarea
@@ -165,26 +165,26 @@ export function PersonalTodoModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 placeholder-slate-400 text-sm resize-none"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm resize-none"
               />
             </div>
 
             {/* Due Date */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Fälligkeitsdatum (optional)
               </label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white text-sm [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
 
             {/* Priority */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Priorität
               </label>
               <div className="flex gap-2 flex-wrap">
@@ -195,7 +195,7 @@ export function PersonalTodoModal({
                     className={`flex-1 min-w-[80px] px-3.5 py-2.5 rounded-2xl font-semibold text-sm transition-all active:scale-95 ${
                       priority === p
                         ? "bg-[#D08945] text-white shadow-sm"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
                     {priorityLabels[p]}
@@ -206,19 +206,19 @@ export function PersonalTodoModal({
 
             {/* Error */}
             {error && (
-              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-100 text-sm text-red-700 font-medium">
+              <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 text-sm text-red-700 dark:text-red-400 font-medium">
                 {error}
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex-shrink-0 border-t border-slate-100 px-6 py-4">
+        <div className="flex-shrink-0 border-t border-slate-100 dark:border-slate-800 px-6 py-4">
           <DialogFooter className="flex flex-row justify-end gap-2">
             <button
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 rounded-2xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors disabled:opacity-50 min-h-[40px]"
+              className="flex-1 px-4 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 min-h-[40px]"
             >
               Abbrechen
             </button>

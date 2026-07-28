@@ -437,11 +437,14 @@ export function EditProfileModal({
 
       {/* Drawer / Modal */}
       <div
-        className={`fixed bg-white z-[60] flex flex-col transition-all duration-300 ease-out overflow-hidden
-          inset-0 w-full h-full
-          ${isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"}
-          
-          md:top-1/2 md:left-1/2 md:right-auto md:bottom-auto md:w-[540px] md:h-[85vh] md:max-h-[700px] md:rounded-2xl md:border md:border-gray-200 md:shadow-2xl
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-profile-title"
+        className={`fixed bg-card text-card-foreground z-[60] flex flex-col transition-all duration-300 ease-out overflow-hidden
+          inset-0 w-full h-[100dvh] rounded-none
+          ${isOpen ? "translate-y-0 opacity-100" : "translate-y-full md:translate-y-4 md:opacity-0 pointer-events-none"}
+          md:fixed md:pointer-events-auto
+          md:top-1/2 md:left-1/2 md:right-auto md:bottom-auto md:w-[540px] md:h-[85vh] md:max-h-[700px] md:rounded-2xl md:border md:border-border md:shadow-2xl
           ${isOpen 
             ? "md:-translate-x-1/2 md:-translate-y-1/2 md:scale-100 md:opacity-100" 
             : "md:-translate-x-1/2 md:-translate-y-[40%] md:scale-95 md:opacity-0"
@@ -453,16 +456,18 @@ export function EditProfileModal({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-4 py-4 border-b border-gray-200 flex-shrink-0 bg-white sticky top-0 z-[70] pt-[calc(1rem+env(safe-area-inset-top,0px))] min-h-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-4 md:min-h-0"
+          className="flex items-center justify-between px-4 py-4 border-b border-border flex-shrink-0 bg-card sticky top-0 z-[70] pt-[calc(1rem+env(safe-area-inset-top,0px))] min-h-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-4 md:min-h-0"
         >
           <button
+            type="button"
             onClick={handleClose}
-            className="text-base font-medium text-gray-900 hover:opacity-70 transition-opacity"
+            className="text-base font-medium text-foreground hover:opacity-70 transition-opacity"
           >
             Abbrechen
           </button>
-          <h2 className="text-lg font-semibold text-gray-900">Profil bearbeiten</h2>
+          <h2 id="edit-profile-title" className="text-lg font-semibold text-foreground">Profil bearbeiten</h2>
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               handleSubmit(e as any);
@@ -506,11 +511,12 @@ export function EditProfileModal({
           />
           <button
             type="button"
+            aria-label="Hintergrundbild bearbeiten"
             onClick={() => headerImageInputRef.current?.click()}
             className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 active:bg-black flex items-center justify-center transition-all duration-200 shadow-lg z-50 cursor-pointer"
             disabled={isSubmitting}
           >
-            <Camera className="w-4 h-4 text-white pointer-events-none" />
+            <Camera aria-hidden="true" className="w-4 h-4 text-white pointer-events-none" />
           </button>
         </div>
 
@@ -527,6 +533,7 @@ export function EditProfileModal({
             />
             <button
               type="button"
+              aria-label="Profilbild bearbeiten"
               onClick={() => fileInputRef.current?.click()}
               className="relative cursor-pointer focus:outline-none rounded-full group"
               disabled={isSubmitting}
@@ -536,15 +543,15 @@ export function EditProfileModal({
               }}
               onMouseDown={(e) => e.preventDefault()}
             >
-              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white shadow-xl" style={{ backgroundColor: 'white' }}>
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-background shadow-xl" style={{ backgroundColor: 'white' }}>
                 <AvatarImage src={imagePreview || undefined} alt={name} className="object-cover" />
-                <AvatarFallback className="text-xl sm:text-2xl bg-[#000000]/20 text-[#000000] font-semibold">
+                <AvatarFallback className="text-xl sm:text-2xl bg-muted text-foreground font-semibold">
                   {name[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               {/* Foto-Icon Overlay */}
               <div className="absolute bottom-0 right-0 w-8 h-8 bg-[#D08945] rounded-full flex items-center justify-center shadow-md group-hover:bg-[#C07835] transition-colors">
-                <Camera className="w-4 h-4 text-white" />
+                <Camera aria-hidden="true" className="w-4 h-4 text-white" />
               </div>
             </button>
           </div>
@@ -577,24 +584,21 @@ export function EditProfileModal({
               <div className="relative">
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsMajorOpen(!isMajorOpen);
-                  }}
+                  onClick={() => setIsMajorOpen(!isMajorOpen)}
                   disabled={isSubmitting}
-                  className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-11 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span className={major ? "text-gray-900" : "text-gray-500"}>
+                  <span className={major ? "text-foreground" : "text-muted-foreground"}>
                     {major || "Studiengang auswählen"}
                   </span>
                   <ChevronDown
-                    className={`h-4 w-4 text-gray-500 transition-transform ${isMajorOpen ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${isMajorOpen ? "rotate-180" : ""}`}
                   />
                 </button>
                 {isMajorOpen && (
                   <div
-                    className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-lg max-h-60 overflow-y-auto"
                   >
                     <div className="py-1">
                       {STUDY_PROGRAMS.map((program) => (
@@ -607,7 +611,7 @@ export function EditProfileModal({
                             setMajor(program);
                             setIsMajorOpen(false);
                           }}
-                          className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${major === program ? "" : ""
+                          className={`w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent transition-all ${major === program ? "bg-accent/50 font-medium" : ""
                             }`}
                         >
                           {program}
@@ -627,27 +631,24 @@ export function EditProfileModal({
               <div className="relative">
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsSemesterOpen(!isSemesterOpen);
-                  }}
+                  onClick={() => setIsSemesterOpen(!isSemesterOpen)}
                   disabled={isSubmitting}
-                  className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-11 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span className={semester ? "text-gray-900" : "text-gray-500"}>
-                    {semester ? `${semester}. Semester` : "Semester auswählen"}
+                  <span className={semester ? "text-foreground" : "text-muted-foreground"}>
+                    {semester ? `${semester}. Fachsemester` : "Semester auswählen"}
                   </span>
                   <ChevronDown
-                    className={`h-4 w-4 text-gray-500 transition-transform ${isSemesterOpen ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${isSemesterOpen ? "rotate-180" : ""}`}
                   />
                 </button>
                 {isSemesterOpen && (
                   <div
-                    className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-lg max-h-60 overflow-y-auto"
                   >
                     <div className="py-1">
-                      {Array.from({ length: 10 }, (_, i) => i + 1).map((sem) => (
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((sem) => (
                         <button
                           key={sem}
                           type="button"
@@ -657,7 +658,7 @@ export function EditProfileModal({
                             setSemester(sem);
                             setIsSemesterOpen(false);
                           }}
-                          className={`w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 transition-all ${semester === sem ? "" : ""
+                          className={`w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent transition-all ${semester === sem ? "bg-accent/50 font-medium" : ""
                             }`}
                         >
                           {sem}. Semester
@@ -677,26 +678,23 @@ export function EditProfileModal({
               <div className="relative">
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsInterestsOpen(!isInterestsOpen);
-                  }}
+                  onClick={() => setIsInterestsOpen(!isInterestsOpen)}
                   disabled={isSubmitting}
-                  className="flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-11 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span className={selectedInterests.length > 0 ? "text-gray-900" : "text-gray-500"}>
+                  <span className={selectedInterests.length > 0 ? "text-foreground" : "text-muted-foreground"}>
                     {selectedInterests.length > 0
-                      ? `${selectedInterests.length} ${selectedInterests.length === 1 ? 'Interesse' : 'Interessen'} ausgewählt`
+                      ? `${selectedInterests.length} ausgewählt`
                       : "Interessen auswählen"}
                   </span>
                   <ChevronDown
-                    className={`h-4 w-4 text-gray-500 transition-transform ${isInterestsOpen ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${isInterestsOpen ? "rotate-180" : ""}`}
                   />
                 </button>
                 {isInterestsOpen && (
                   <div
-                    className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-lg max-h-60 overflow-y-auto"
                   >
                     <div className="p-2">
                       <div className="flex flex-wrap gap-2">
@@ -713,7 +711,7 @@ export function EditProfileModal({
                               }}
                               className={`px-3 py-1.5 text-sm rounded-full border transition-all ${isSelected
                                 ? "bg-[#D08945] text-white border-[#D08945]"
-                                : "bg-white text-gray-700 border-gray-300 hover:border-[#D08945] hover:text-[#D08945]"
+                                : "bg-background text-foreground border-border hover:border-[#D08945] hover:text-[#D08945]"
                                 }`}
                             >
                               {interest}
@@ -725,28 +723,6 @@ export function EditProfileModal({
                   </div>
                 )}
               </div>
-              {selectedInterests.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedInterests.map((interest) => (
-                    <span
-                      key={interest}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#D08945]/10 text-[#D08945] border border-[#D08945]/20"
-                    >
-                      {interest}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          toggleInterest(interest);
-                        }}
-                        className="hover:text-[#C07835]"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Bio Input */}
@@ -758,13 +734,13 @@ export function EditProfileModal({
                 id="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Erzähle etwas über dich..."
-                rows={4}
-                maxLength={150}
+                placeholder="Erzähl etwas über dich..."
+                rows={3}
+                maxLength={300}
                 disabled={isSubmitting}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-base resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-base resize-none shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-all hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
               />
-              <p className="text-xs text-gray-500 mt-1 text-right">
+              <p className="text-xs text-muted-foreground mt-1 text-right">
                 {bio.length}/150
               </p>
             </div>

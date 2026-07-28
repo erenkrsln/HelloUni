@@ -99,7 +99,7 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
                             disabled={isVoting || isClosed}
                             className={`w-full text-left pb-3 pl-3 pr-3 rounded-lg border-2 transition-all ${isSelected
                                 ? "border-[#D08945] bg-[#D08945]/20"
-                                : "border-gray-200"
+                                : "border-border"
                                 }`}
                         >
                             <div className="relative min-w-[220px] w-full max-w-[320px] flex items-center gap-2 px-3 py-2.5">
@@ -112,7 +112,7 @@ export function ChatPollMessage({ chatPollId, currentUserId, isMe }: ChatPollMes
                                 </span>
                             </div>
 
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-accent rounded-full h-2">
                                 <div
                                     className="bg-[#D08945] h-2 rounded-full transition-all"
                                     style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}

@@ -147,7 +147,7 @@ export function WorkspaceFiles({
       return <ImageIcon size={24} className="text-blue-500" />;
     if (fileType.includes("pdf"))
       return <FileText size={24} className="text-red-500" />;
-    return <FileIcon size={24} className="text-gray-500" />;
+    return <FileIcon size={24} className="text-muted-foreground" />;
   };
 
   const handleDeleteFile = async () => {
@@ -181,7 +181,7 @@ export function WorkspaceFiles({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white px-4 py-6">
+    <div className="flex-1 overflow-y-auto bg-background px-4 py-6">
       <div className="max-w-lg mx-auto space-y-4">
         {onBackToOverview && (
           <SectionHeader
@@ -193,7 +193,7 @@ export function WorkspaceFiles({
 
         <div className="mb-6 flex justify-between items-center px-1">
           {!onBackToOverview && (
-            <h2 className="font-bold text-lg text-slate-900">Freigegebene Dateien</h2>
+            <h2 className="font-bold text-lg text-slate-900 dark:text-white">Freigegebene Dateien</h2>
           )}
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -212,19 +212,19 @@ export function WorkspaceFiles({
 
         <div className="grid grid-cols-2 gap-3">
           {!files ? (
-            <div className="col-span-2 text-center text-slate-500 p-8 font-medium">
+            <div className="col-span-2 text-center text-slate-500 dark:text-slate-400 p-8 font-medium">
               Dateien werden geladen...
             </div>
           ) : files.length === 0 ? (
-            <div className="col-span-2 text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed shadow-sm">
+            <div className="col-span-2 text-center py-12 text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 border-dashed shadow-sm">
               <FolderPlusIcon className="w-12 h-12 mx-auto mb-2 opacity-20 text-[#D08945]" />
-              <p className="text-sm font-semibold text-slate-500">Noch keine Dateien hochgeladen.</p>
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Noch keine Dateien hochgeladen.</p>
             </div>
           ) : (
             (localFiles || files).map((file) => (
               <div
                 key={file._id}
-                className="group bg-white border border-slate-100 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative"
+                className="group bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative"
               >
                 <a
                   href={file.url || file.url || "#"}
@@ -232,16 +232,16 @@ export function WorkspaceFiles({
                   rel="noopener noreferrer"
                   className="flex flex-col items-center text-center gap-2"
                 >
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+                  <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center border border-slate-100 dark:border-slate-700">
                     {renderFileIcon(file.fileType)}
                   </div>
                   <span
-                    className="text-sm font-bold text-slate-800 line-clamp-1 w-full"
+                    className="text-sm font-bold text-slate-800 dark:text-slate-200 line-clamp-1 w-full"
                     title={file.fileName}
                   >
                     {file.fileName}
                   </span>
-                  <div className="flex items-center text-xs text-slate-500 mt-1 font-semibold">
+                  <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">
                     <Download size={12} className="mr-1" /> Ansehen
                   </div>
                 </a>
@@ -252,7 +252,7 @@ export function WorkspaceFiles({
                       setDeletingFileId(file._id);
                       setDeletingFileName(file.fileName);
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-xl bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 border border-transparent hover:border-red-100"
+                    className="absolute top-2 right-2 p-1.5 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900/50 border border-transparent hover:border-red-100 dark:hover:border-red-900/50"
                     title="Datei löschen"
                   >
                     <Trash2 size={14} />

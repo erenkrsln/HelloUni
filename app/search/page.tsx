@@ -447,7 +447,7 @@ export default function SearchPage() {
     }, []);
 
     return (
-        <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white header-spacing">
+        <main className="min-h-screen w-full max-w-[428px] md:max-w-3xl mx-auto pb-24 overflow-x-hidden bg-background header-spacing">
             <Header onMenuClick={() => setIsSidebarOpen(true)} />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -464,7 +464,7 @@ export default function SearchPage() {
                                 onClick={() => setFilterType("all")}
                                 className={`w-full px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "all"
                                     ? "bg-[#d08945] text-white"
-                                    : "bg-gray-100 text-gray-700"
+                                    : "bg-muted text-foreground"
                                     }`}
                             >
                                 Gesamte App
@@ -474,7 +474,7 @@ export default function SearchPage() {
                                     onClick={() => setFilterType("groups")}
                                     className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "groups"
                                         ? "bg-[#d08945] text-white"
-                                        : "bg-gray-100 text-gray-700"
+                                        : "bg-muted text-foreground"
                                         }`}
                                 >
                                     Gruppen
@@ -483,7 +483,7 @@ export default function SearchPage() {
                                     onClick={() => setFilterType("people")}
                                     className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "people"
                                         ? "bg-[#d08945] text-white"
-                                        : "bg-gray-100 text-gray-700"
+                                        : "bg-muted text-foreground"
                                         }`}
                                 >
                                     Personen
@@ -492,7 +492,7 @@ export default function SearchPage() {
                                     onClick={() => setFilterType("posts")}
                                     className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${filterType === "posts"
                                         ? "bg-[#d08945] text-white"
-                                        : "bg-gray-100 text-gray-700"
+                                        : "bg-muted text-foreground"
                                         }`}
                                 >
                                     Posts
@@ -502,13 +502,13 @@ export default function SearchPage() {
 
                         {/* Search Bar */}
                         <div className="relative mb-3 md:mb-4">
-                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground">
                                 <Search className="h-5 w-5" />
                             </div>
                             <input
                                 ref={searchInputRef}
                                 type="text"
-                                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
+                                className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors"
                                 placeholder="Suchen..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -525,7 +525,7 @@ export default function SearchPage() {
                                         onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                                         className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 justify-center ${showAdvancedFilters || userMajor || userInterests || postType || postAuthorMajor || sortBy !== "alphabetical"
                                             ? "bg-[#d08945] text-white"
-                                            : "bg-gray-100 text-gray-700"
+                                            : "bg-muted text-foreground"
                                             }`}
                                     >
                                         <Filter size={16} />
@@ -535,17 +535,17 @@ export default function SearchPage() {
 
                                 {/* Advanced Filters Panel */}
                                 {showAdvancedFilters && (
-                                    <div className="bg-gray-50 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-gray-100 shadow-sm">
+                                    <div className="bg-muted rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 text-sm border border-border shadow-sm">
                                         {/* Sorting Section */}
                                         <div className="space-y-1">
-                                            <label className="text-xs font-medium text-gray-500 ml-1">Sortieren nach</label>
+                                            <label className="text-xs font-medium text-muted-foreground ml-1">Sortieren nach</label>
                                             <div className="flex gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => setSortBy("alphabetical")}
                                                     className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all border ${sortBy === "alphabetical"
                                                         ? "bg-[#D08945] text-white border-transparent"
-                                                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                        : "bg-background text-foreground border-border hover:bg-muted"
                                                         }`}
                                                 >
                                                     Alphabetisch
@@ -555,7 +555,7 @@ export default function SearchPage() {
                                                     onClick={() => setSortBy("recent")}
                                                     className={`flex-1 h-10 rounded-lg text-sm font-medium transition-all border ${sortBy === "recent"
                                                         ? "bg-[#D08945] text-white border-transparent"
-                                                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                        : "bg-background text-foreground border-border hover:bg-muted"
                                                         }`}
                                                 >
                                                     Neueste
@@ -566,14 +566,14 @@ export default function SearchPage() {
                                         {filterType === "people" && (
                                             <>
                                                 <div className="space-y-1 user-major-dropdown relative">
-                                                    <label className="text-xs font-medium text-gray-500 ml-1">Studiengang</label>
+                                                    <label className="text-xs font-medium text-muted-foreground ml-1">Studiengang</label>
                                                     <div className="relative">
                                                         <button
                                                             type="button"
                                                             onClick={() => setIsUserMajorOpen(!isUserMajorOpen)}
-                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                                         >
-                                                            <span className={userMajor ? "text-gray-900" : "text-gray-400"}>
+                                                            <span className={userMajor ? "text-foreground" : "text-muted-foreground"}>
                                                                 {userMajor || "Wähle einen Studiengang"}
                                                             </span>
                                                             {userMajor ? (
@@ -582,30 +582,30 @@ export default function SearchPage() {
                                                                         e.stopPropagation();
                                                                         setUserMajor("");
                                                                     }}
-                                                                    className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
+                                                                    className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
                                                                 >
                                                                     <X size={14} />
                                                                 </div>
                                                             ) : (
-                                                                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isUserMajorOpen ? "rotate-180" : ""}`} />
+                                                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isUserMajorOpen ? "rotate-180" : ""}`} />
                                                             )}
                                                         </button>
 
                                                         {isUserMajorOpen && (
-                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
-                                                                <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
+                                                                <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
                                                                     <input
                                                                         type="text"
                                                                         placeholder="Studiengang suchen..."
                                                                         value={userMajorSearch}
                                                                         onChange={(e) => setUserMajorSearch(e.target.value)}
-                                                                        className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
                                                                         autoFocus
                                                                     />
                                                                 </div>
                                                                 <div className="overflow-y-auto py-1 max-h-48">
                                                                     {filteredUserMajors.length === 0 ? (
-                                                                        <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Studiengänge gefunden</div>
+                                                                        <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Studiengänge gefunden</div>
                                                                     ) : (
                                                                         filteredUserMajors.map((program) => (
                                                                             <button
@@ -615,7 +615,7 @@ export default function SearchPage() {
                                                                                     setUserMajor(program);
                                                                                     setIsUserMajorOpen(false);
                                                                                 }}
-                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${userMajor === program ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
+                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${userMajor === program ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
                                                                             >
                                                                                 {program}
                                                                             </button>
@@ -633,14 +633,14 @@ export default function SearchPage() {
                                         {filterType === "posts" && (
                                             <>
                                                 <div className="space-y-1 post-author-major-dropdown relative">
-                                                    <label className="text-xs font-medium text-gray-500 ml-1">Studiengang</label>
+                                                    <label className="text-xs font-medium text-muted-foreground ml-1">Studiengang</label>
                                                     <div className="relative">
                                                         <button
                                                             type="button"
                                                             onClick={() => setIsPostAuthorMajorOpen(!isPostAuthorMajorOpen)}
-                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                                         >
-                                                            <span className={postAuthorMajor ? "text-gray-900" : "text-gray-400"}>
+                                                            <span className={postAuthorMajor ? "text-foreground" : "text-muted-foreground"}>
                                                                 {postAuthorMajor || "Wähle einen Studiengang"}
                                                             </span>
                                                             {postAuthorMajor ? (
@@ -649,30 +649,30 @@ export default function SearchPage() {
                                                                         e.stopPropagation();
                                                                         setPostAuthorMajor("");
                                                                     }}
-                                                                    className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
+                                                                    className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
                                                                 >
                                                                     <X size={14} />
                                                                 </div>
                                                             ) : (
-                                                                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isPostAuthorMajorOpen ? "rotate-180" : ""}`} />
+                                                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isPostAuthorMajorOpen ? "rotate-180" : ""}`} />
                                                             )}
                                                         </button>
 
                                                         {isPostAuthorMajorOpen && (
-                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
-                                                                <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
+                                                                <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
                                                                     <input
                                                                         type="text"
                                                                         placeholder="Studiengang suchen..."
                                                                         value={postAuthorMajorSearch}
                                                                         onChange={(e) => setPostAuthorMajorSearch(e.target.value)}
-                                                                        className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
                                                                         autoFocus
                                                                     />
                                                                 </div>
                                                                 <div className="overflow-y-auto py-1 max-h-48">
                                                                     {filteredPostAuthorMajors.length === 0 ? (
-                                                                        <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Studiengänge gefunden</div>
+                                                                        <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Studiengänge gefunden</div>
                                                                     ) : (
                                                                         filteredPostAuthorMajors.map((program) => (
                                                                             <button
@@ -682,7 +682,7 @@ export default function SearchPage() {
                                                                                     setPostAuthorMajor(program);
                                                                                     setIsPostAuthorMajorOpen(false);
                                                                                 }}
-                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${postAuthorMajor === program ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
+                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors ${postAuthorMajor === program ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
                                                                             >
                                                                                 {program}
                                                                             </button>
@@ -694,15 +694,15 @@ export default function SearchPage() {
                                                     </div>
                                                 </div>
                                                 <div className="space-y-1 post-type-dropdown relative">
-                                                    <label className="text-xs font-medium text-gray-500 ml-1">Post Typ</label>
+                                                    <label className="text-xs font-medium text-muted-foreground ml-1">Post Typ</label>
                                                     <div className="relative">
                                                         <button
                                                             type="button"
                                                             onClick={() => setIsPostTypeOpen(!isPostTypeOpen)}
-                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
+                                                            className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent"
                                                         >
-                                                            <div className="flex items-center gap-2 text-gray-900">
-                                                                {postType === "" && <span className="text-gray-400">Alle Typen</span>}
+                                                            <div className="flex items-center gap-2 text-foreground">
+                                                                {postType === "" && <span className="text-muted-foreground">Alle Typen</span>}
                                                                 {postType === "normal" && <>Beitrag</>}
                                                                 {postType === "spontaneous_meeting" && <>Spontanes Treffen</>}
                                                                 {postType === "recurring_meeting" && <>Regelmäßiges Treffen</>}
@@ -715,30 +715,30 @@ export default function SearchPage() {
                                                                         e.stopPropagation();
                                                                         setPostType("");
                                                                     }}
-                                                                    className="mr-1 p-0.5 rounded-full hover:bg-gray-100 text-gray-400"
+                                                                    className="mr-1 p-0.5 rounded-full hover:bg-muted text-muted-foreground"
                                                                 >
                                                                     <X size={14} />
                                                                 </div>
                                                             ) : (
-                                                                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`} />
+                                                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isPostTypeOpen ? "rotate-180" : ""}`} />
                                                             )}
                                                         </button>
 
                                                         {isPostTypeOpen && (
-                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 flex flex-col">
-                                                                <div className="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                                            <div className="absolute z-30 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-60 flex flex-col">
+                                                                <div className="p-2 border-b border-border sticky top-0 bg-background z-10">
                                                                     <input
                                                                         type="text"
                                                                         placeholder="Typ suchen..."
                                                                         value={postTypeSearch}
                                                                         onChange={(e) => setPostTypeSearch(e.target.value)}
-                                                                        className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
+                                                                        className="w-full px-3 py-1.5 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-[#D08945] focus:border-transparent"
                                                                         autoFocus
                                                                     />
                                                                 </div>
                                                                 <div className="overflow-y-auto py-1 max-h-48">
                                                                     {filteredPostTypes.length === 0 ? (
-                                                                        <div className="px-3 py-2 text-sm text-gray-500 italic">Keine Typen gefunden</div>
+                                                                        <div className="px-3 py-2 text-sm text-muted-foreground italic">Keine Typen gefunden</div>
                                                                     ) : (
                                                                         filteredPostTypes.map((type) => (
                                                                             <button
@@ -748,7 +748,7 @@ export default function SearchPage() {
                                                                                     setPostType(type.value);
                                                                                     setIsPostTypeOpen(false);
                                                                                 }}
-                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 ${postType === type.value ? "bg-gray-50 text-[#D08945] font-medium" : "text-gray-700"}`}
+                                                                                className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2 ${postType === type.value ? "bg-muted text-[#D08945] font-medium" : "text-foreground"}`}
                                                                             >
                                                                                 {type.label}
                                                                             </button>
@@ -765,8 +765,8 @@ export default function SearchPage() {
                                         )}
 
                                         {/* Action Row */}
-                                        <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
-                                            <span className="text-xs text-gray-500">
+                                        <div className="pt-3 border-t border-border flex items-center justify-between">
+                                            <span className="text-xs text-muted-foreground">
                                                 {hasActiveFiltersOrSorting ? "Filter / Sortierung aktiv" : "Keine Filter aktiv"}
                                             </span>
                                             <button
@@ -775,7 +775,7 @@ export default function SearchPage() {
                                                 disabled={!hasActiveFiltersOrSorting}
                                                 className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${hasActiveFiltersOrSorting
                                                     ? "text-red-600 hover:bg-red-50 active:bg-red-100 cursor-pointer"
-                                                    : "text-gray-300 cursor-not-allowed"
+                                                    : "text-muted-foreground cursor-not-allowed"
                                                     }`}
                                             >
                                                 <RotateCcw size={12} />
@@ -806,12 +806,12 @@ export default function SearchPage() {
                             if (!shouldShowResults) {
                                 if (filterType === "all") {
                                     return (
-                                        <div className="mt-2 md:mt-4 p-4 md:p-5 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 shadow-sm">
+                                        <div className="mt-2 md:mt-4 p-4 md:p-5 rounded-2xl bg-card border border-border shadow-sm">
                                             <div className="flex items-center gap-2.5 mb-3 md:mb-4">
 
                                                 <div>
-                                                    <h3 className="font-semibold text-gray-900 text-base">Schnellsuche mit Präfixen</h3>
-                                                    <p className="text-xs text-gray-500 font-normal">
+                                                    <h3 className="font-semibold text-foreground text-base">Schnellsuche mit Präfixen</h3>
+                                                    <p className="text-xs text-muted-foreground font-normal">
                                                         Filtere deine Ergebnisse direkt über das Suchfeld.
                                                     </p>
                                                 </div>
@@ -851,18 +851,18 @@ export default function SearchPage() {
                                                     <button
                                                         key={item.prefix}
                                                         onClick={() => handlePrefixClick(item.prefix)}
-                                                        className="flex flex-col items-start p-2.5 md:p-3.5 rounded-xl border border-gray-100 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 text-left group"
+                                                        className="flex flex-col items-start p-2.5 md:p-3.5 rounded-xl border border-border bg-background hover:border-border hover:shadow-md transition-all duration-200 text-left group"
                                                     >
                                                         <div className="flex items-center justify-between w-full mb-1.5 md:mb-2">
 
-                                                            <span className=" font-bold text-base px-2 py-0.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-md shadow-sm group-hover:bg-[#D08945] group-hover:text-white group-hover:border-transparent transition-all duration-200">
+                                                            <span className=" font-bold text-base px-2 py-0.5 bg-muted border border-border text-foreground rounded-md shadow-sm group-hover:bg-[#D08945] group-hover:text-white group-hover:border-transparent transition-all duration-200">
                                                                 {item.prefix}
                                                             </span>
                                                         </div>
-                                                        <span className="font-semibold text-gray-800 text-xs truncate w-full">
+                                                        <span className="font-semibold text-foreground text-xs truncate w-full">
                                                             {item.label}
                                                         </span>
-                                                        <span className="text-[10px] text-gray-400 mt-0.5">
+                                                        <span className="text-[10px] text-muted-foreground mt-0.5">
                                                             z.B. {item.example}
                                                         </span>
                                                     </button>
@@ -873,7 +873,7 @@ export default function SearchPage() {
                                 }
 
                                 return (
-                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                                         <Search className="w-12 h-12 mb-4 opacity-20" />
                                         <p className="text-center px-4">
                                             Suche nach Posts
@@ -891,14 +891,14 @@ export default function SearchPage() {
                                                 <div>
                                                     <h2 className="text-lg font-semibold mb-4 px-1">Seiten & Bereiche</h2>
                                                     {pageResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Seiten oder Bereiche gefunden.</div>
+                                                        <div className="py-2 px-1 text-sm text-muted-foreground">Keine Seiten oder Bereiche gefunden.</div>
                                                     ) : (
                                                         <div className="space-y-2">
                                                             {pageResults.map((page) => (
                                                                 <Link
                                                                     key={page.href}
                                                                     href={page.href}
-                                                                    className="flex items-center p-3 rounded-xl hover:bg-gray-50 border border-gray-100 bg-white transition-colors"
+                                                                    className="flex items-center p-3 rounded-xl hover:bg-muted border border-border bg-background transition-colors"
                                                                 >
                                                                     <div className="w-10 h-10 rounded-full bg-[#D08945]/10 text-[#D08945] flex items-center justify-center mr-3 shrink-0">
                                                                         {page.category === "Seite" ? (
@@ -909,9 +909,9 @@ export default function SearchPage() {
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="flex items-center gap-2">
-                                                                            <h3 className="font-semibold text-gray-900 truncate">{page.title}</h3>
+                                                                            <h3 className="font-semibold text-foreground truncate">{page.title}</h3>
                                                                         </div>
-                                                                        <p className="text-xs text-gray-500 mt-0.5 truncate">{page.description}</p>
+                                                                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{page.description}</p>
                                                                     </div>
                                                                 </Link>
                                                             ))}
@@ -924,16 +924,16 @@ export default function SearchPage() {
                                                 <div>
                                                     <h2 className="text-lg font-semibold mb-4 px-1">Öffentliche Gruppen</h2>
                                                     {groupResults === undefined || !currentUserId ? (
-                                                        <div className="py-4 text-center text-sm text-gray-400 font-normal">Laden...</div>
+                                                        <div className="py-4 text-center text-sm text-muted-foreground font-normal">Laden...</div>
                                                     ) : groupResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500 font-normal">Keine öffentlichen Gruppen gefunden.</div>
+                                                        <div className="py-2 px-1 text-sm text-muted-foreground font-normal">Keine öffentlichen Gruppen gefunden.</div>
                                                     ) : (
                                                         <div className="space-y-3">
                                                             {groupResults.map((group) => {
                                                                 const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
                                                                 return (
-                                                                    <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 bg-white border border-gray-100">
-                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                    <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-muted bg-background border border-border">
+                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                             {group.displayImage ? (
                                                                                 <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
                                                                             ) : (
@@ -943,8 +943,8 @@ export default function SearchPage() {
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0 mr-2">
-                                                                            <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
-                                                                            <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                                                                            <h3 className="font-semibold text-foreground truncate">{group.displayName}</h3>
+                                                                            <p className="text-xs text-muted-foreground mt-0.5 font-normal">
                                                                                 {group.participants.length} Mitglieder
                                                                             </p>
                                                                         </div>
@@ -952,7 +952,7 @@ export default function SearchPage() {
                                                                             {isMember ? (
                                                                                 <Link
                                                                                     href={`/chat/${group._id}`}
-                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-muted hover:bg-accent text-foreground text-xs font-semibold rounded-full transition-colors"
                                                                                 >
                                                                                     <MessageCircle size={13} />
                                                                                     Öffnen
@@ -960,7 +960,7 @@ export default function SearchPage() {
                                                                             ) : group.joinRequestStatus === "pending" ? (
                                                                                 <button
                                                                                     disabled
-                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-muted text-muted-foreground text-xs font-semibold rounded-full cursor-not-allowed"
                                                                                 >
                                                                                     Angefragt
                                                                                 </button>
@@ -1006,27 +1006,27 @@ export default function SearchPage() {
                                                 <div>
                                                     <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
                                                     {userResults === undefined ? (
-                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                        <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
                                                     ) : userResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Personen gefunden.</div>
+                                                        <div className="py-2 px-1 text-sm text-muted-foreground">Keine Personen gefunden.</div>
                                                     ) : (
                                                         <div className="space-y-3">
                                                             {userResults.map((user) => (
-                                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors bg-white border border-gray-100">
-                                                                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-3 rounded-xl hover:bg-muted transition-colors bg-background border border-border">
+                                                                    <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                         {user.image ? (
                                                                             <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                                                         ) : (
-                                                                            <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                            <div className="w-full h-full flex items-center justify-center font-semibold text-muted-foreground">
                                                                                 {user.name?.charAt(0).toUpperCase()}
                                                                             </div>
                                                                         )}
                                                                     </div>
                                                                     <div className="flex-1 min-w-0">
-                                                                        <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                        <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                        <h3 className="font-semibold text-foreground truncate">{user.name}</h3>
+                                                                        <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
                                                                         {(user.uni_name || user.major) && (
-                                                                            <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                            <div className="flex items-center text-xs text-muted-foreground mt-0.5 truncate gap-2">
                                                                                 {user.uni_name && (
                                                                                     <span className="flex items-center truncate">
                                                                                         <MapPin size={10} className="mr-1" />
@@ -1055,11 +1055,11 @@ export default function SearchPage() {
                                                 <div>
                                                     <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
                                                     {postResults === undefined ? (
-                                                        <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                        <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
                                                     ) : postResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                        <div className="py-2 px-1 text-sm text-muted-foreground">Keine Beiträge gefunden.</div>
                                                     ) : (
-                                                        <div className="space-y-0 bg-white overflow-hidden pt-2 rounded-xl border border-gray-100">
+                                                        <div className="space-y-0 bg-background overflow-hidden pt-2 rounded-xl border border-border">
                                                             {postResults.map((post, index) => (
                                                                 <FeedCard
                                                                     key={post._id}
@@ -1082,9 +1082,9 @@ export default function SearchPage() {
                                                         {isGroupRecommendationMode ? "Vorschläge für dich" : "Öffentliche Gruppen"}
                                                     </h2>
                                                     {groupResults === undefined || !currentUserId ? (
-                                                        <div className="py-4 text-center text-sm text-gray-400 font-normal">Laden...</div>
+                                                        <div className="py-4 text-center text-sm text-muted-foreground font-normal">Laden...</div>
                                                     ) : groupResults.length === 0 ? (
-                                                        <div className="py-2 px-1 text-sm text-gray-500 font-normal">
+                                                        <div className="py-2 px-1 text-sm text-muted-foreground font-normal">
                                                             {isGroupRecommendationMode ? "Keine Vorschläge gefunden." : "Keine öffentlichen Gruppen gefunden."}
                                                         </div>
                                                     ) : (
@@ -1092,8 +1092,8 @@ export default function SearchPage() {
                                                             {groupResults.map((group) => {
                                                                 const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
                                                                 return (
-                                                                    <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50">
-                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                    <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-muted">
+                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                             {group.displayImage ? (
                                                                                 <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
                                                                             ) : (
@@ -1103,8 +1103,8 @@ export default function SearchPage() {
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0 mr-2">
-                                                                            <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
-                                                                            <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                                                                            <h3 className="font-semibold text-foreground truncate">{group.displayName}</h3>
+                                                                            <p className="text-xs text-muted-foreground mt-0.5 font-normal">
                                                                                 {group.participants.length} Mitglieder
                                                                             </p>
                                                                         </div>
@@ -1112,7 +1112,7 @@ export default function SearchPage() {
                                                                             {isMember ? (
                                                                                 <Link
                                                                                     href={`/chat/${group._id}`}
-                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-muted hover:bg-accent text-foreground text-xs font-semibold rounded-full transition-colors"
                                                                                 >
                                                                                     <MessageCircle size={13} />
                                                                                     Öffnen
@@ -1120,7 +1120,7 @@ export default function SearchPage() {
                                                                             ) : group.joinRequestStatus === "pending" ? (
                                                                                 <button
                                                                                     disabled
-                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
+                                                                                    className="flex items-center gap-1.5 px-4 py-1.5 bg-muted text-muted-foreground text-xs font-semibold rounded-full cursor-not-allowed"
                                                                                 >
                                                                                     Angefragt
                                                                                 </button>
@@ -1168,27 +1168,27 @@ export default function SearchPage() {
                                                         <>
                                                             <h2 className="text-lg font-semibold mb-4 px-1">Vorschläge für dich</h2>
                                                             {compatibleUsers === undefined && displayedUsers === undefined ? (
-                                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                                <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
                                                             ) : (displayedUsers || []).length === 0 ? (
-                                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Vorschläge gefunden.</div>
+                                                                <div className="py-2 px-1 text-sm text-muted-foreground">Keine Vorschläge gefunden.</div>
                                                             ) : (
                                                                 <div className="space-y-3">
                                                                     {(displayedUsers || []).map((user) => (
-                                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors">
+                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                                 {user.image ? (
                                                                                     <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                                                                 ) : (
-                                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-muted-foreground">
                                                                                         {user.name?.charAt(0).toUpperCase()}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
                                                                             <div className="flex-1 min-w-0">
-                                                                                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                                <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                                <h3 className="font-semibold text-foreground truncate">{user.name}</h3>
+                                                                                <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
                                                                                 {(user.uni_name || user.major) && (
-                                                                                    <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                                    <div className="flex items-center text-xs text-muted-foreground mt-0.5 truncate gap-2">
                                                                                         {user.major && (
                                                                                             <span className="flex items-center truncate">
                                                                                                 {user.major}
@@ -1203,12 +1203,12 @@ export default function SearchPage() {
                                                                         </Link>
                                                                     ))}
                                                                     {compatibleUsers === undefined && (
-                                                                        <div className="h-12 flex items-center justify-center text-xs text-gray-400 italic">
+                                                                        <div className="h-12 flex items-center justify-center text-xs text-muted-foreground italic">
                                                                             Mehr Vorschläge werden geladen...
                                                                         </div>
                                                                     )}
                                                                     {hasMoreSuggestions && (
-                                                                        <div ref={observerRef} className="h-12 flex items-center justify-center text-xs text-gray-400 italic">
+                                                                        <div ref={observerRef} className="h-12 flex items-center justify-center text-xs text-muted-foreground italic">
                                                                             Mehr Vorschläge werden geladen...
                                                                         </div>
                                                                     )}
@@ -1219,27 +1219,27 @@ export default function SearchPage() {
                                                         <>
                                                             <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
                                                             {userResults === undefined ? (
-                                                                <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                                <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
                                                             ) : userResults.length === 0 ? (
-                                                                <div className="py-2 px-1 text-sm text-gray-500">Keine Personen gefunden.</div>
+                                                                <div className="py-2 px-1 text-sm text-muted-foreground">Keine Personen gefunden.</div>
                                                             ) : (
                                                                 <div className="space-y-3">
                                                                     {userResults.map((user) => (
-                                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                        <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors">
+                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                                 {user.image ? (
                                                                                     <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                                                                 ) : (
-                                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                    <div className="w-full h-full flex items-center justify-center font-semibold text-muted-foreground">
                                                                                         {user.name?.charAt(0).toUpperCase()}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
                                                                             <div className="flex-1 min-w-0">
-                                                                                <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                                <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                                <h3 className="font-semibold text-foreground truncate">{user.name}</h3>
+                                                                                <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
                                                                                 {(user.uni_name || user.major) && (
-                                                                                    <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                                    <div className="flex items-center text-xs text-muted-foreground mt-0.5 truncate gap-2">
 
                                                                                         {user.major && (
                                                                                             <span className="flex items-center truncate">
@@ -1267,9 +1267,9 @@ export default function SearchPage() {
                                                     </h2>
                                                     {isPostRecommendationMode ? (
                                                         defaultPosts === undefined ? (
-                                                            <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                            <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
                                                         ) : defaultPosts.length === 0 ? (
-                                                            <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                            <div className="py-2 px-1 text-sm text-muted-foreground">Keine Beiträge gefunden.</div>
                                                         ) : (
                                                             <div className="space-y-0">
                                                                 {defaultPosts.map((post, index) => (
@@ -1284,9 +1284,9 @@ export default function SearchPage() {
                                                         )
                                                     ) : (
                                                         postResults === undefined ? (
-                                                            <div className="py-4 text-center text-sm text-gray-400">Laden...</div>
+                                                            <div className="py-4 text-center text-sm text-muted-foreground">Laden...</div>
                                                         ) : postResults.length === 0 ? (
-                                                            <div className="py-2 px-1 text-sm text-gray-500">Keine Beiträge gefunden.</div>
+                                                            <div className="py-2 px-1 text-sm text-muted-foreground">Keine Beiträge gefunden.</div>
                                                         ) : (
                                                             <div className="space-y-0">
                                                                 {postResults.map((post, index) => (
@@ -1313,7 +1313,7 @@ export default function SearchPage() {
                                                                     <Link
                                                                         key={page.href}
                                                                         href={page.href}
-                                                                        className="flex items-center p-3 rounded-xl hover:bg-gray-50 border border-gray-100 bg-white transition-colors"
+                                                                        className="flex items-center p-3 rounded-xl hover:bg-muted border border-border bg-background transition-colors"
                                                                     >
                                                                         <div className="w-10 h-10 rounded-full bg-[#D08945]/10 text-[#D08945] flex items-center justify-center mr-3 shrink-0">
                                                                             {page.category === "Seite" ? (
@@ -1324,9 +1324,9 @@ export default function SearchPage() {
                                                                         </div>
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center gap-2">
-                                                                                <h3 className="font-semibold text-gray-900 truncate">{page.title}</h3>
+                                                                                <h3 className="font-semibold text-foreground truncate">{page.title}</h3>
                                                                             </div>
-                                                                            <p className="text-xs text-gray-500 mt-0.5 truncate">{page.description}</p>
+                                                                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{page.description}</p>
                                                                         </div>
                                                                     </Link>
                                                                 ))}
@@ -1342,8 +1342,8 @@ export default function SearchPage() {
                                                                 {groupResults.map((group) => {
                                                                     const isMember = currentUserId ? group.participants.includes(currentUserId) : false;
                                                                     return (
-                                                                        <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 bg-white border border-gray-100">
-                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                        <div key={group._id} className="flex items-center p-3 rounded-xl hover:bg-muted bg-background border border-border">
+                                                                            <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                                 {group.displayImage ? (
                                                                                     <img src={group.displayImage} alt={group.displayName} className="w-full h-full object-cover" />
                                                                                 ) : (
@@ -1353,8 +1353,8 @@ export default function SearchPage() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="flex-1 min-w-0 mr-2">
-                                                                                <h3 className="font-semibold text-gray-900 truncate">{group.displayName}</h3>
-                                                                                <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                                                                                <h3 className="font-semibold text-foreground truncate">{group.displayName}</h3>
+                                                                                <p className="text-xs text-muted-foreground mt-0.5 font-normal">
                                                                                     {group.participants.length} Mitglieder
                                                                                 </p>
                                                                             </div>
@@ -1362,7 +1362,7 @@ export default function SearchPage() {
                                                                                 {isMember ? (
                                                                                     <Link
                                                                                         href={`/chat/${group._id}`}
-                                                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full transition-colors"
+                                                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-muted hover:bg-accent text-foreground text-xs font-semibold rounded-full transition-colors"
                                                                                     >
                                                                                         <MessageCircle size={13} />
                                                                                         Öffnen
@@ -1370,7 +1370,7 @@ export default function SearchPage() {
                                                                                 ) : group.joinRequestStatus === "pending" ? (
                                                                                     <button
                                                                                         disabled
-                                                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 text-gray-400 text-xs font-semibold rounded-full cursor-not-allowed"
+                                                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-muted text-muted-foreground text-xs font-semibold rounded-full cursor-not-allowed"
                                                                                     >
                                                                                         Angefragt
                                                                                     </button>
@@ -1417,21 +1417,21 @@ export default function SearchPage() {
                                                             <h2 className="text-lg font-semibold mb-4 px-1">Personen</h2>
                                                             <div className="space-y-3">
                                                                 {userResults.map((user) => (
-                                                                    <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-3 rounded-xl hover:bg-gray-50 transition-colors bg-white">
-                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-gray-200">
+                                                                    <Link href={`/profile/${user.username}`} key={user._id} className="flex items-center p-3 rounded-xl hover:bg-muted transition-colors bg-background">
+                                                                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0 relative bg-accent">
                                                                             {user.image ? (
                                                                                 <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                                                             ) : (
-                                                                                <div className="w-full h-full flex items-center justify-center font-semibold text-gray-500">
+                                                                                <div className="w-full h-full flex items-center justify-center font-semibold text-muted-foreground">
                                                                                     {user.name?.charAt(0).toUpperCase()}
                                                                                 </div>
                                                                             )}
                                                                         </div>
                                                                         <div className="flex-1 min-w-0">
-                                                                            <h3 className="font-semibold text-gray-900 truncate">{user.name}</h3>
-                                                                            <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+                                                                            <h3 className="font-semibold text-foreground truncate">{user.name}</h3>
+                                                                            <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
                                                                             {(user.uni_name || user.major) && (
-                                                                                <div className="flex items-center text-xs text-gray-400 mt-0.5 truncate gap-2">
+                                                                                <div className="flex items-center text-xs text-muted-foreground mt-0.5 truncate gap-2">
                                                                                     {user.major && (
                                                                                         <span className="flex items-center truncate">
                                                                                             {user.major}
@@ -1453,7 +1453,7 @@ export default function SearchPage() {
                                                     {postResults !== undefined && postResults.length > 0 && (
                                                         <div>
                                                             <h2 className="text-lg font-semibold mb-4 px-1">Beiträge</h2>
-                                                            <div className="space-y-0 bg-white overflow-hidden pt-2">
+                                                            <div className="space-y-0 bg-background overflow-hidden pt-2">
                                                                 {postResults.map((post, index) => (
                                                                     <FeedCard
                                                                         key={post._id}
@@ -1468,7 +1468,7 @@ export default function SearchPage() {
 
                                                     {/* General loading state while querying the database */}
                                                     {(groupResults === undefined || userResults === undefined || postResults === undefined) && (
-                                                        <div className="py-8 text-center text-sm text-gray-400">
+                                                        <div className="py-8 text-center text-sm text-muted-foreground">
                                                             Suchen...
                                                         </div>
                                                     )}
@@ -1481,7 +1481,7 @@ export default function SearchPage() {
                                                         groupResults.length === 0 &&
                                                         userResults.length === 0 &&
                                                         postResults.length === 0 && (
-                                                            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                                            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                                                                 <Search className="w-12 h-12 mb-4 opacity-20" />
                                                                 <p>Keine Ergebnisse für "{debouncedQuery}" gefunden.</p>
                                                             </div>

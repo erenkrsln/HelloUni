@@ -49,7 +49,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-[50%] top-[50%] z-[100] translate-x-[-50%] translate-y-[-50%] border bg-white shadow-xl",
+          "fixed left-[50%] top-[50%] z-[100] translate-x-[-50%] translate-y-[-50%] border border-border bg-background shadow-xl",
           // Responsive sizing
           "w-[calc(100vw-24px)] max-w-[560px] max-h-[calc(100dvh-24px)]",
           "sm:w-auto",
@@ -72,7 +72,7 @@ const DialogContent = React.forwardRef<
       >
         {children}
         {!hideCloseButton && (
-          <DialogPrimitive.Close className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground touch-target">
+          <DialogPrimitive.Close className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground touch-target">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
@@ -81,7 +81,6 @@ const DialogContent = React.forwardRef<
     </DialogPortal>
   ),
 );
-DialogContent.displayName = DialogPrimitive.Content.displayName;
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({

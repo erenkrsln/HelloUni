@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import { CalendarDays, MapPin, Clock, Plus, Edit2 } from "lucide-react";
+import { CalendarDays, Plus, Edit2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { EventFormModal } from "@/components/event-form-modal";
 import { EventCard } from "@/components/event-card";
@@ -36,7 +36,7 @@ export function WorkspaceEvents({
     : null;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white px-4 py-6">
+    <div className="flex-1 overflow-y-auto bg-background px-4 py-6">
       <div className="max-w-lg mx-auto space-y-4">
         {onBackToOverview && (
           <SectionHeader
@@ -50,10 +50,10 @@ export function WorkspaceEvents({
           <div>
             {!onBackToOverview && (
               <>
-                <h2 className="text-xl font-bold text-slate-900">
+                <h2 className="text-xl font-bold text-foreground">
                   Gruppenevents
                 </h2>
-                <p className="text-sm text-slate-500 font-medium">
+                <p className="text-sm text-muted-foreground font-medium">
                   Bevorstehende Events für diesen Gruppen-Workspace.
                 </p>
               </>
@@ -68,14 +68,14 @@ export function WorkspaceEvents({
         </div>
 
         {events === undefined ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm font-medium">
+          <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm font-medium">
             Events werden geladen…
           </div>
         ) : groupEvents.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+          <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
             <CalendarDays size={34} className="mx-auto mb-3 text-[#D08945]" />
-            <p className="text-sm font-bold text-slate-900">Noch keine Gruppenevents vorhanden.</p>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+            <p className="text-sm font-bold text-foreground">Noch keine Gruppenevents vorhanden.</p>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
               Erstelle ein Gruppenevent, damit die Mitglieder informiert bleiben und am nächsten Treffen teilnehmen können.
             </p>
           </div>
@@ -88,7 +88,7 @@ export function WorkspaceEvents({
                     e.stopPropagation();
                     setEditingEventId(event._id.toString());
                   }}
-                  className="p-2 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
+                  className="p-2 rounded-xl hover:bg-accent transition-colors border border-transparent hover:border-border"
                   title="Event bearbeiten"
                 >
                   <Edit2 size={16} className="text-[#D08945]" />

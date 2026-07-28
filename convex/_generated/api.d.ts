@@ -24,6 +24,7 @@ import type * as queries from "../queries.js";
 import type * as scoring from "../scoring.js";
 import type * as scraping from "../scraping.js";
 import type * as scrapingMutations from "../scrapingMutations.js";
+import type * as settings from "../settings.js";
 import type * as workspace from "../workspace.js";
 
 import type {
@@ -49,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   scoring: typeof scoring;
   scraping: typeof scraping;
   scrapingMutations: typeof scrapingMutations;
+  settings: typeof settings;
   workspace: typeof workspace;
 }>;
 

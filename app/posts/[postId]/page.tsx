@@ -39,28 +39,28 @@ function PostPageContent({ params }: { params: Promise<{ postId: string }> }) {
     });
 
     return (
-        <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
+        <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-background">
             {/* Minimal Header with Back Button */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
+            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border pt-safe-top">
                 <div className="relative px-4 h-14 flex items-center justify-center">
                     <button
                         onClick={() => router.back()}
-                        className="absolute left-4 p-1 text-black hover:opacity-70 transition-opacity"
+                        className="absolute left-4 p-1 text-foreground hover:opacity-70 transition-opacity"
                     >
                         <ArrowLeft className="w-6 h-6" />
                     </button>
-                    <h1 className="text-lg font-bold text-black tracking-tight">Beitrag</h1>
+                    <h1 className="text-lg font-bold text-foreground tracking-tight">Beitrag</h1>
                 </div>
             </header>
 
             <div className="flex-1">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-20">
-                        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                     </div>
                 ) : notFound ? (
                     <div className="flex flex-col items-center justify-center p-8">
-                        <p className="text-gray-500 text-lg mb-4">Beitrag nicht gefunden</p>
+                        <p className="text-muted-foreground text-lg mb-4">Beitrag nicht gefunden</p>
                         <button
                             onClick={() => router.back()}
                             className="text-blue-500 font-medium hover:underline"
@@ -85,17 +85,17 @@ function PostPageContent({ params }: { params: Promise<{ postId: string }> }) {
 export default function PostPage({ params }: { params: Promise<{ postId: string }> }) {
     return (
         <Suspense fallback={
-            <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-white">
-                <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 pt-safe-top">
+            <main className="min-h-screen w-full max-w-3xl mx-auto pb-24 overflow-x-hidden bg-background">
+                <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border pt-safe-top">
                     <div className="relative px-4 h-14 flex items-center justify-center">
-                        <div className="absolute left-4 p-1 text-black opacity-30">
+                        <div className="absolute left-4 p-1 text-foreground opacity-30">
                             <ArrowLeft className="w-6 h-6" />
                         </div>
-                        <h1 className="text-lg font-bold text-black tracking-tight">Beitrag</h1>
+                        <h1 className="text-lg font-bold text-foreground tracking-tight">Beitrag</h1>
                     </div>
                 </header>
                 <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>
                 <BottomNavigation />
             </main>

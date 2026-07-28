@@ -16,7 +16,6 @@ import {
   Star,
   StarOff,
   Sparkles,
-  ArrowLeft,
   Camera,
   Pencil,
   Check,
@@ -39,14 +38,12 @@ export function GroupInfoModal({
   const [view, setView] = useState<"list" | "add">("list");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Group Editing State
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [newDescription, setNewDescription] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Image Crop State
   const [selectedCropImageSrc, setSelectedCropImageSrc] = useState<string | null>(null);
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -56,7 +53,6 @@ export function GroupInfoModal({
   });
   const allUsers = useQuery(api.queries.getAllUsers);
 
-  // Get full conversation details for name/image
   const allConversations = useQuery(api.queries.getConversations, {
     userId: currentUserId,
   });
@@ -71,7 +67,6 @@ export function GroupInfoModal({
   const deleteConversation = useMutation(api.mutations.deleteConversation);
   const leaveGroup = useMutation(api.mutations.leaveGroup);
 
-  // New mutations
   const updateGroupName = useMutation(api.mutations.updateGroupName);
   const updateGroupDescription = useMutation(
     api.mutations.updateGroupDescription,
@@ -133,7 +128,9 @@ export function GroupInfoModal({
 
   const handleLeave = async () => {
     if (iAmCreator) {
-      alert("Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.");
+      alert(
+        "Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.",
+      );
       return;
     }
     if (
@@ -152,10 +149,12 @@ export function GroupInfoModal({
       console.error("Failed to leave group:", error);
       let errorMessage = "Fehler beim Verlassen der Gruppe.";
       if (
-        error.data === "Creator must transfer creator status before leaving the group" ||
+        error.data ===
+          "Creator must transfer creator status before leaving the group" ||
         (error.message && error.message.includes("Creator must transfer"))
       ) {
-        errorMessage = "Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.";
+        errorMessage =
+          "Du bist der Ersteller dieser Gruppe. Bitte übertrage zuerst die Gruppenleitung an ein anderes Mitglied, bevor du die Gruppe verlässt.";
       } else if (error.data) {
         errorMessage = error.data;
       } else if (error.message) {
@@ -231,7 +230,6 @@ export function GroupInfoModal({
     }
   };
 
-  // Update Functions
   const handleUpdateName = async () => {
     if (!newName.trim()) return;
     try {
@@ -281,7 +279,9 @@ export function GroupInfoModal({
   const handleCropComplete = async (croppedBlob: Blob) => {
     setIsUploadingImage(true);
     try {
-      const file = new File([croppedBlob], "group-image.jpg", { type: "image/jpeg" });
+      const file = new File([croppedBlob], "group-image.jpg", {
+        type: "image/jpeg",
+      });
 
       const { uploadUrl, publicUrl } = await fetch("/api/upload", {
         method: "POST",
@@ -332,6 +332,8 @@ export function GroupInfoModal({
     setSearchQuery("");
     setIsEditingName(false);
     setNewName("");
+    setIsEditingDescription(false);
+    setNewDescription("");
     onClose();
   };
 
@@ -340,630 +342,624 @@ export function GroupInfoModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent hideCloseButton withoutExitAnimation withoutEnterAnimation className="sm:w-[560px]">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
-          {view === "list" ? (
-            <>
-              <DialogTitle className="text-lg font-semibold">
-                Gruppeninfo
-              </DialogTitle>
-              <button
-                onClick={handleClose}
-                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3">
+        <DialogContent
+          hideCloseButton
+          withoutExitAnimation
+          withoutEnterAnimation
+          className="w-[90vw] sm:w-[80vw] max-w-[560px] max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl bg-card text-card-foreground gap-0"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card z-10">
+            {view === "list" ? (
+              <>
                 <DialogTitle className="text-lg font-semibold">
-                  Mitglied hinzufügen
+                  Gruppeninfo
                 </DialogTitle>
-              </div>
-              <button
-                onClick={() => setView("list")}
-                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </>
-          )}
-        </div>
+                <button
+                  onClick={handleClose}
+                  className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <DialogTitle className="text-lg font-semibold">
+                    Mitglied hinzufügen
+                  </DialogTitle>
+                </div>
+                <button
+                  onClick={() => setView("list")}
+                  className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </>
+            )}
+          </div>
 
-        <div className="flex-1 overflow-y-auto p-0 bg-white">
-          {view === "list" ? (
-            <div className="flex flex-col">
-              {/* Group Info Header */}
-              <div className="flex flex-col items-center py-6 border-b border-gray-100">
-                <div className="relative mb-3">
-                  <div className="w-24 h-24 rounded-full overflow-hidden relative group">
-                    {conversation.displayImage ? (
-                      <img
-                        src={conversation.displayImage}
-                        alt={conversation.displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-200 text-3xl font-bold text-gray-500">
-                        {conversation.displayName?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+          <div className="flex-1 overflow-y-auto p-0 bg-card">
+            {view === "list" ? (
+              <div className="flex flex-col">
+                <div className="flex flex-col items-center py-6 border-b border-border">
+                  <div className="relative mb-3">
+                    <div className="w-24 h-24 rounded-full overflow-hidden relative group">
+                      {conversation.displayImage ? (
+                        <img
+                          src={conversation.displayImage}
+                          alt={conversation.displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted text-3xl font-bold text-muted-foreground">
+                          {conversation.displayName?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {iAmAdmin && (
+                        <div
+                          className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Camera className="text-white" size={24} />
+                        </div>
+                      )}
+                    </div>
                     {iAmAdmin && (
-                      <div
-                        className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      <button
                         onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-0 right-0 p-1.5 bg-[#D08945] text-white rounded-full shadow-sm hover:bg-[#b0733a] transition-colors"
                       >
-                        <Camera className="text-white" size={24} />
+                        <Camera size={14} />
+                      </button>
+                    )}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 justify-center w-full px-8">
+                    {isEditingName ? (
+                      <div className="flex flex-col items-center gap-3 w-full max-w-[250px]">
+                        <input
+                          type="text"
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          placeholder={conversation.displayName}
+                          className="w-full px-3 py-1.5 bg-background border border-input rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors text-foreground"
+                          autoFocus
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleUpdateName()
+                          }
+                        />
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={handleUpdateName}
+                            className="p-2 bg-[#D08945] text-white rounded-full hover:bg-[#b0733a] transition-colors"
+                          >
+                            <Check size={18} />
+                          </button>
+                          <button
+                            onClick={() => setIsEditingName(false)}
+                            className="p-2 bg-muted text-foreground rounded-full hover:bg-accent transition-colors"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-semibold text-center break-all">
+                          {conversation.displayName}
+                        </h3>
+                        {iAmAdmin && (
+                          <button
+                            onClick={() => {
+                              setNewName(conversation.displayName || "");
+                              setIsEditingName(true);
+                            }}
+                            className="text-[#D08945]"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
-                  {iAmAdmin && (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute bottom-0 right-0 p-1.5 bg-[#D08945] text-white rounded-full shadow-sm hover:bg-[#b0733a] transition-colors"
-                    >
-                      <Camera size={14} />
-                    </button>
-                  )}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                  />
-                </div>
 
-                <div className="flex items-center gap-2 justify-center w-full px-8">
-                  {isEditingName ? (
-                    <div className="flex flex-col items-center gap-3 w-full max-w-[250px]">
-                      <input
-                        type="text"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        placeholder={conversation.displayName}
-                        className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
-                        autoFocus
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && handleUpdateName()
-                        }
-                      />
+                  <p className="text-sm text-muted-foreground mt-4">
+                    {members.filter((m) => m.role !== "left").length} Mitglieder
+                  </p>
 
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={handleUpdateName}
-                          className="p-2 bg-[#D08945] text-white rounded-full hover:bg-[#b0733a] transition-colors"
-                        >
-                          <Check size={18} />
-                        </button>
-
-                        <button
-                          onClick={() => setIsEditingName(false)}
-                          className="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
-                        >
-                          <X size={18} />
-                        </button>
+                  <div className="mt-4 px-8 w-full">
+                    {isEditingDescription ? (
+                      <div className="flex flex-col gap-3 w-full">
+                        <textarea
+                          value={newDescription}
+                          onChange={(e) => setNewDescription(e.target.value)}
+                          placeholder="Gruppenbeschreibung"
+                          className="w-full px-3 py-2 bg-background border border-input rounded-lg outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors min-h-[80px] text-foreground"
+                          autoFocus
+                        />
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={handleUpdateDescription}
+                            className="px-3 py-1.5 bg-[#D08945] text-white rounded-full hover:bg-[#b0733a] transition-colors text-sm font-medium"
+                          >
+                            Speichern
+                          </button>
+                          <button
+                            onClick={() => setIsEditingDescription(false)}
+                            className="px-3 py-1.5 bg-muted text-foreground rounded-full hover:bg-accent transition-colors text-sm font-medium"
+                          >
+                            Abbrechen
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-semibold text-center break-all">
-                        {conversation.displayName}
-                      </h3>
-                      {iAmAdmin && (
-                        <button
-                          onClick={() => {
-                            setNewName(conversation.displayName || "");
-                            setIsEditingName(true);
-                          }}
-                          className="text-[#D08945]"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500 mt-4">
-                  {members.filter((m) => m.role !== "left").length} Mitglieder
-                </p>
-
-                {/* Group Description */}
-                <div className="mt-4 px-8 w-full">
-                  {isEditingDescription ? (
-                    <div className="flex flex-col gap-3 w-full">
-                      <textarea
-                        value={newDescription}
-                        onChange={(e) => setNewDescription(e.target.value)}
-                        placeholder="Gruppenbeschreibung"
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors min-h-[80px]"
-                        autoFocus
-                      />
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={handleUpdateDescription}
-                          className="px-3 py-1.5 bg-[#D08945] text-white rounded-full hover:bg-[#b0733a] transition-colors text-sm font-medium"
-                        >
-                          Speichern
-                        </button>
-                        <button
-                          onClick={() => setIsEditingDescription(false)}
-                          className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors text-sm font-medium"
-                        >
-                          Abbrechen
-                        </button>
+                    ) : (
+                      <div className="flex items-start gap-2 w-full">
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">
+                            Beschreibung
+                          </p>
+                          <p className="text-sm text-foreground break-words">
+                            {conversation.description || "Keine Beschreibung"}
+                          </p>
+                        </div>
+                        {iAmAdmin && (
+                          <button
+                            onClick={() => {
+                              setNewDescription(conversation.description || "");
+                              setIsEditingDescription(true);
+                            }}
+                            className="p-1.5 text-[#D08945] hover:bg-muted rounded-full transition-colors flex-shrink-0"
+                            title="Beschreibung bearbeiten"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2 w-full">
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-gray-500 mb-1">
-                          Beschreibung
-                        </p>
-                        <p className="text-sm text-gray-700 break-words">
-                          {conversation.description || "Keine Beschreibung"}
-                        </p>
-                      </div>
-                      {iAmAdmin && (
-                        <button
-                          onClick={() => {
-                            setNewDescription(conversation.description || "");
-                            setIsEditingDescription(true);
-                          }}
-                          className="p-1.5 text-[#D08945] hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-                          title="Beschreibung bearbeiten"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {!iAmAdmin && (
-                  <span
-                    className={`mt-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      conversation.isPublic
-                        ? "bg-[#D08945] text-white"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {conversation.isPublic
-                      ? "Öffentliche Gruppe"
-                      : "Private Gruppe"}
-                  </span>
-                )}
-              </div>
-
-              {/* Group Settings / Visibility (Admins only) */}
-              {iAmAdmin && (
-                <>
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-900">
-                        Öffentliche Gruppe
-                      </span>
-                      <span className="text-xs text-gray-500 font-normal">
-                        Jeder kann dieser Gruppe über die Suche beitreten
-                      </span>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await toggleGroupPublic({
-                            conversationId,
-                            isPublic: !conversation.isPublic,
-                            userId: currentUserId,
-                          });
-                        } catch (error) {
-                          console.error(
-                            "Failed to toggle group publicity:",
-                            error,
-                          );
-                          alert("Fehler beim Ändern der Sichtbarkeit.");
-                        }
-                      }}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        conversation.isPublic ? "bg-[#D08945]" : "bg-gray-200"
+                  {!iAmAdmin && (
+                    <span
+                      className={`mt-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        conversation.isPublic
+                          ? "bg-[#D08945] text-white"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      <span
-                        aria-hidden="true"
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          conversation.isPublic
-                            ? "translate-x-5"
-                            : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
+                      {conversation.isPublic
+                        ? "Öffentliche Gruppe"
+                        : "Private Gruppe"}
+                    </span>
+                  )}
+                </div>
 
-                  {/* Beitrittsanfrage erforderlich (Sub-Toggle) */}
-                  {conversation.isPublic && (
-                    <div className="flex items-center justify-between p-4 pt-0">
+                {iAmAdmin && (
+                  <>
+                    <div className="flex items-center justify-between p-4">
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-gray-900">
-                          Beitrittsanfrage
+                        <span className="text-sm font-semibold text-foreground">
+                          Öffentliche Gruppe
+                        </span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          Jeder kann dieser Gruppe über die Suche beitreten
                         </span>
                       </div>
                       <button
                         onClick={async () => {
                           try {
-                            await toggleGroupJoinRequestRequired({
+                            await toggleGroupPublic({
                               conversationId,
-                              needsRequestToJoin:
-                                conversation.needsRequestToJoin !== false
-                                  ? false
-                                  : true,
+                              isPublic: !conversation.isPublic,
                               userId: currentUserId,
                             });
                           } catch (error) {
                             console.error(
-                              "Failed to toggle join request setting:",
+                              "Failed to toggle group publicity:",
                               error,
                             );
-                            alert(
-                              "Fehler beim Ändern der Beitrittsanfrage-Einstellung.",
-                            );
+                            alert("Fehler beim Ändern der Sichtbarkeit.");
                           }
                         }}
                         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          conversation.needsRequestToJoin !== false
-                            ? "bg-[#D08945]"
-                            : "bg-gray-200"
+                          conversation.isPublic ? "bg-[#D08945]" : "bg-muted"
                         }`}
                       >
                         <span
                           aria-hidden="true"
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            conversation.needsRequestToJoin !== false
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out ${
+                            conversation.isPublic
                               ? "translate-x-5"
                               : "translate-x-0"
                           }`}
                         />
                       </button>
                     </div>
-                  )}
 
-                  {/* Nur Admins schreiben Toggle */}
-                  <div className="flex items-center justify-between p-4 pt-0">
-                    <div className="flex flex-col pr-4">
-                      <span className="text-sm font-semibold text-gray-900">
-                        Nur Admins können schreiben
-                      </span>
-                      <span className="text-xs text-gray-500 font-normal">
-                        Erlaube nur Admins und dem Ersteller, Nachrichten zu senden
-                      </span>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await toggleOnlyAdminsCanMessage({
-                            conversationId,
-                            onlyAdminsCanMessage: !conversation.onlyAdminsCanMessage,
-                            userId: currentUserId,
-                          });
-                        } catch (error) {
-                          console.error(
-                            "Failed to toggle onlyAdminsCanMessage setting:",
-                            error,
-                          );
-                          alert(
-                            "Fehler beim Ändern der Nachrichteneinschränkung.",
-                          );
-                        }
-                      }}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        conversation.onlyAdminsCanMessage ? "bg-[#D08945]" : "bg-gray-200"
-                      }`}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          conversation.onlyAdminsCanMessage
-                            ? "translate-x-5"
-                            : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {!hasAdmins && (
-                <div className="p-4 bg-yellow-50 border-b border-yellow-100">
-                  <p className="text-sm text-yellow-800 mb-2">
-                    Diese Gruppe hat keinen Admin. Du kannst sie übernehmen.
-                  </p>
-                  <Button
-                    onClick={handleClaim}
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-yellow-200 text-yellow-800 hover:bg-yellow-100"
-                  >
-                    Gruppe übernehmen
-                  </Button>
-                </div>
-              )}
-
-              {iAmAdmin &&
-                allUsers &&
-                members &&
-                allUsers.filter(
-                  (u) =>
-                    !members.some((m) => m._id === u._id && m.role !== "left"),
-                ).length > 0 && (
-                  <button
-                    onClick={() => setView("add")}
-                    className="flex items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 text-black font-medium"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#D08945] text-white flex items-center justify-center mr-3">
-                      <UserPlus size={20} />
-                    </div>
-                    Mitglied hinzufügen
-                  </button>
-                )}
-
-              {/* Active Members */}
-              <div className="px-4 py-2 bg-gray-100 text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                Aktuelle Mitglieder
-              </div>
-              {members
-                .filter((m) => m.role !== "left")
-                .map((member) => (
-                  <div
-                    key={member._id}
-                    className="flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 last:border-0"
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative"
-                      style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                    >
-                      {member.image ? (
-                        <img
-                          src={member.image}
-                          alt={member.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center font-bold text-gray-500"
-                          style={{ color: "#000000" }}
-                        >
-                          {member.name.charAt(0).toUpperCase()}
+                    {conversation.isPublic && (
+                      <div className="flex items-center justify-between p-4 pt-0">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-foreground">
+                            Beitrittsanfrage
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold truncate">
-                          {member.name}
-                        </span>
-
-                        {/* Inhaber Badge */}
-                        {member.role === "creator" && (
-                          <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
-                            <span className="text-xs font-medium">Inhaber</span>
-                            <Sparkles size={13} />
-                          </div>
-                        )}
-
-                        {/* Admin Badge */}
-                        {member.role === "admin" && (
-                          <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
-                            <span className="text-xs font-medium">Admin</span>
-                            <Star size={13} />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        @{member.username}
-                      </div>
-                    </div>
-
-                    {/* Admin Actions */}
-                    {iAmAdmin && member._id !== currentUserId && (
-                      <div className="flex items-center gap-1">
-                        {/* Transfer Creator (only visible to creator) */}
-                        {iAmCreator && member.role !== "creator" && (
-                          <button
-                            onClick={() =>
-                              handleTransferCreator(member._id, member.name)
+                        <button
+                          onClick={async () => {
+                            try {
+                              await toggleGroupJoinRequestRequired({
+                                conversationId,
+                                needsRequestToJoin:
+                                  conversation.needsRequestToJoin !== false
+                                    ? false
+                                    : true,
+                                userId: currentUserId,
+                              });
+                            } catch (error) {
+                              console.error(
+                                "Failed to toggle join request setting:",
+                                error,
+                              );
+                              alert(
+                                "Fehler beim Ändern der Beitrittsanfrage-Einstellung.",
+                              );
                             }
-                            className="p-2 text-gray-400 rounded-full transition-colors"
-                            title="Gruppenleitung übertragen"
-                          >
-                            <Sparkles size={18} />
-                          </button>
-                        )}
-                        {member.role === "member" && (
-                          <button
-                            onClick={() => handlePromote(member._id)}
-                            className="p-2 text-gray-400"
-                            title="Zum Admin machen"
-                          >
-                            <Star size={18} />
-                          </button>
-                        )}
-                        {member.role === "admin" && (
-                          <button
-                            onClick={() => handleDemote(member._id)}
-                            className="p-2 text-[#D08945]"
-                            title="Admin entfernen"
-                          >
-                            <StarOff size={18} />
-                          </button>
-                        )}
-                        {member.role !== "creator" && (
-                          <button
-                            onClick={() => handleRemoveMember(member._id)}
-                            className="p-2 text-gray-400"
-                            title="Entfernen"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
+                          }}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            conversation.needsRequestToJoin !== false
+                              ? "bg-[#D08945]"
+                              : "bg-muted"
+                          }`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out ${
+                              conversation.needsRequestToJoin !== false
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                            }`}
+                          />
+                        </button>
                       </div>
                     )}
-                  </div>
-                ))}
 
-              {/* Previous Members */}
-              {members.some((m) => m.role === "left") && (
-                <>
-                  <div className="px-4 py-2 bg-gray-100 text-xs font-semibold text-gray-700 uppercase tracking-wider mt-2">
-                    Ehemalige Mitglieder
-                  </div>
-                  {members
-                    .filter((m) => m.role === "left")
-                    .map((member) => (
-                      <div
-                        key={member._id}
-                        className="flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 last:border-0 opacity-60"
-                      >
-                        <div
-                          className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative"
-                          style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                        >
-                          {member.image ? (
-                            <img
-                              src={member.image}
-                              alt={member.name}
-                              className="w-full h-full object-cover grayscale"
-                            />
-                          ) : (
-                            <div
-                              className="w-full h-full flex items-center justify-center font-bold text-gray-500"
-                              style={{ color: "#000000" }}
-                            >
-                              {member.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 mr-2">
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold truncate text-gray-600">
-                              {member.name}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            @{member.username}
-                          </div>
-                        </div>
+                    <div className="flex items-center justify-between p-4 pt-0">
+                      <div className="flex flex-col pr-4">
+                        <span className="text-sm font-semibold text-foreground">
+                          Nur Admins können schreiben
+                        </span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          Erlaube nur Admins und dem Ersteller, Nachrichten zu
+                          senden
+                        </span>
                       </div>
-                    ))}
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col h-full">
-              <div className="p-4 border-b">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Suchen..."
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder-gray-400 transition-colors"
-                    autoFocus
-                  />
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {availableUsers.length === 0 ? (
-                  <div className="p-8 text-center text-gray-400 text-sm">
-                    Keine Nutzer gefunden
+                      <button
+                        onClick={async () => {
+                          try {
+                            await toggleOnlyAdminsCanMessage({
+                              conversationId,
+                              onlyAdminsCanMessage:
+                                !conversation.onlyAdminsCanMessage,
+                              userId: currentUserId,
+                            });
+                          } catch (error) {
+                            console.error(
+                              "Failed to toggle onlyAdminsCanMessage setting:",
+                              error,
+                            );
+                            alert(
+                              "Fehler beim Ändern der Nachrichteneinschränkung.",
+                            );
+                          }
+                        }}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          conversation.onlyAdminsCanMessage
+                            ? "bg-[#D08945]"
+                            : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow ring-0 transition duration-200 ease-in-out ${
+                            conversation.onlyAdminsCanMessage
+                              ? "translate-x-5"
+                              : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {!hasAdmins && (
+                  <div className="p-4 bg-yellow-500/10 border-b border-yellow-500/20">
+                    <p className="text-sm text-yellow-700 mb-2">
+                      Diese Gruppe hat keinen Admin. Du kannst sie übernehmen.
+                    </p>
+                    <Button
+                      onClick={handleClaim}
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-yellow-500/30 text-yellow-700 hover:bg-yellow-500/20"
+                    >
+                      Gruppe übernehmen
+                    </Button>
                   </div>
-                ) : (
-                  availableUsers.map((user) => (
+                )}
+
+                {iAmAdmin &&
+                  allUsers &&
+                  members &&
+                  allUsers.filter(
+                    (u) =>
+                      !members.some((m) => m._id === u._id && m.role !== "left"),
+                  ).length > 0 && (
                     <button
-                      key={user._id}
-                      onClick={() => handleAddMember(user._id)}
-                      className="w-full flex items-center p-4 hover:bg-gray-50 border-b border-gray-50 text-left transition-colors"
+                      onClick={() => setView("add")}
+                      className="flex items-center p-4 hover:bg-accent transition-colors border-b border-border text-foreground font-medium"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#D08945] text-white flex items-center justify-center mr-3">
+                        <UserPlus size={20} />
+                      </div>
+                      Mitglied hinzufügen
+                    </button>
+                  )}
+
+                <div className="px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Aktuelle Mitglieder
+                </div>
+                {members
+                  .filter((m) => m.role !== "left")
+                  .map((member) => (
+                    <div
+                      key={member._id}
+                      className="flex items-center p-4 hover:bg-accent border-b border-border last:border-0"
                     >
                       <div
-                        className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0"
+                        className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative"
                         style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
                       >
-                        {user.image ? (
+                        {member.image ? (
                           <img
-                            src={user.image}
-                            alt={user.name}
+                            src={member.image}
+                            alt={member.name}
                             className="w-full h-full object-cover"
                           />
                         ) : (
                           <div
-                            className="w-full h-full flex items-center justify-center font-bold text-gray-500"
+                            className="w-full h-full flex items-center justify-center font-bold text-muted-foreground"
                             style={{ color: "#000000" }}
                           >
-                            {user.name.charAt(0).toUpperCase()}
+                            {member.name.charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-black">
-                          {user.name}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold truncate">
+                            {member.name}
+                          </span>
+                          {member.role === "creator" && (
+                            <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
+                              <span className="text-xs font-medium">Inhaber</span>
+                              <Sparkles size={13} />
+                            </div>
+                          )}
+                          {member.role === "admin" && (
+                            <div className="flex items-center gap-1 bg-[#D08945] text-white px-2 py-0.5 rounded-full">
+                              <span className="text-xs font-medium">Admin</span>
+                              <Star size={13} />
+                            </div>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          @{user.username}
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          @{member.username}
                         </div>
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-[#D08945] text-white flex items-center justify-center">
-                        <UserPlus size={16} />
-                      </div>
-                    </button>
-                  ))
+
+                      {iAmAdmin && member._id !== currentUserId && (
+                        <div className="flex items-center gap-1">
+                          {iAmCreator && member.role !== "creator" && (
+                            <button
+                              onClick={() =>
+                                handleTransferCreator(member._id, member.name)
+                              }
+                              className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors"
+                              title="Gruppenleitung übertragen"
+                            >
+                              <Sparkles size={18} />
+                            </button>
+                          )}
+                          {member.role === "member" && (
+                            <button
+                              onClick={() => handlePromote(member._id)}
+                              className="p-2 text-muted-foreground hover:text-foreground"
+                              title="Zum Admin machen"
+                            >
+                              <Star size={18} />
+                            </button>
+                          )}
+                          {member.role === "admin" && (
+                            <button
+                              onClick={() => handleDemote(member._id)}
+                              className="p-2 text-[#D08945]"
+                              title="Admin entfernen"
+                            >
+                              <StarOff size={18} />
+                            </button>
+                          )}
+                          {member.role !== "creator" && (
+                            <button
+                              onClick={() => handleRemoveMember(member._id)}
+                              className="p-2 text-muted-foreground hover:text-red-500"
+                              title="Entfernen"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                {members.some((m) => m.role === "left") && (
+                  <>
+                    <div className="px-4 py-2 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+                      Ehemalige Mitglieder
+                    </div>
+                    {members
+                      .filter((m) => m.role === "left")
+                      .map((member) => (
+                        <div
+                          key={member._id}
+                          className="flex items-center p-4 hover:bg-accent border-b border-border last:border-0 opacity-60"
+                        >
+                          <div
+                            className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0 relative"
+                            style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
+                          >
+                            {member.image ? (
+                              <img
+                                src={member.image}
+                                alt={member.name}
+                                className="w-full h-full object-cover grayscale"
+                              />
+                            ) : (
+                              <div
+                                className="w-full h-full flex items-center justify-center font-bold text-muted-foreground"
+                                style={{ color: "#000000" }}
+                              >
+                                {member.name.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 mr-2">
+                            <div className="flex items-center gap-1">
+                              <span className="font-semibold truncate text-muted-foreground">
+                                {member.name}
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              @{member.username}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </>
                 )}
               </div>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="flex flex-col h-full">
+                <div className="p-4 border-b border-border">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Suchen..."
+                      className="w-full pl-9 pr-4 py-2 bg-background border border-input rounded-full outline-none focus:outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent placeholder:text-muted-foreground transition-colors text-foreground"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  {availableUsers.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground text-sm">
+                      Keine Nutzer gefunden
+                    </div>
+                  ) : (
+                    availableUsers.map((user) => (
+                      <button
+                        key={user._id}
+                        onClick={() => handleAddMember(user._id)}
+                        className="w-full flex items-center p-4 hover:bg-accent border-b border-border text-left transition-colors"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0"
+                          style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
+                        >
+                          {user.image ? (
+                            <img
+                              src={user.image}
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div
+                              className="w-full h-full flex items-center justify-center font-bold text-muted-foreground"
+                              style={{ color: "#000000" }}
+                            >
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-foreground">
+                            {user.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            @{user.username}
+                          </div>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-[#D08945] text-white flex items-center justify-center">
+                          <UserPlus size={16} />
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
-        {view === "list" &&
-          members.some(
-            (m) => m._id === currentUserId && m.role !== "creator",
-          ) && (
-            <div className="p-4 border-t bg-gray-50">
+          {view === "list" &&
+            members.some(
+              (m) => m._id === currentUserId && m.role !== "creator",
+            ) && (
+              <div className="p-4 border-t border-border bg-card">
+                <Button
+                  onClick={handleLeave}
+                  variant="destructive"
+                  className="w-full bg-red-100 text-red-600 hover:bg-red-200 border-0"
+                >
+                  Gruppe verlassen
+                </Button>
+              </div>
+            )}
+
+          {view === "list" && iAmCreator && (
+            <div className="p-4 border-t border-border bg-card">
               <Button
-                onClick={handleLeave}
+                onClick={handleDeleteGroup}
                 variant="destructive"
-                className="w-full bg-red-100 text-red-600 hover:bg-red-200 border-0"
+                className="w-full bg-red-600 text-white hover:bg-red-700"
               >
-                Gruppe verlassen
+                Gruppe löschen
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
 
-        {view === "list" && iAmCreator && (
-          <div className="p-4 border-t bg-gray-50">
-            <Button
-              onClick={handleDeleteGroup}
-              variant="destructive"
-              className="w-full bg-red-600 text-white hover:bg-red-700"
-            >
-              Gruppe löschen
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-
-    {isCropModalOpen && selectedCropImageSrc && (
-      <ImageCropModal
-        isOpen={isCropModalOpen}
-        onClose={handleCropCancel}
-        imageSrc={selectedCropImageSrc}
-        onCropComplete={handleCropComplete}
-        isUploading={isUploadingImage}
-        aspect={1}
-        cropShape="rect"
-        title="Medien bearbeiten"
-        variant="twitter"
-      />
-    )}
-  </>
-);
+      {isCropModalOpen && selectedCropImageSrc && (
+        <ImageCropModal
+          isOpen={isCropModalOpen}
+          onClose={handleCropCancel}
+          imageSrc={selectedCropImageSrc}
+          onCropComplete={handleCropComplete}
+          isUploading={isUploadingImage}
+          aspect={1}
+          cropShape="rect"
+          title="Medien bearbeiten"
+          variant="twitter"
+        />
+      )}
+    </>
+  );
 }

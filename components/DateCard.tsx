@@ -29,8 +29,8 @@ export default function DateCard({ date, description, isNextUp = false, hasPasse
           ? `bg-[#F78D57] bg-opacity-[0.65] border-[#F78D57] border-opacity-[0.65]${isExpandable ? ' tablet:hover:bg-opacity-[0.82]' : ''}`
           : `bg-black bg-opacity-[0.11] border-opacity-20 border-black${isExpandable ? ' tablet:hover:bg-opacity-20' : ''}`}
         ${hasPassed ? 'opacity-[0.20]' : ''}`}>
-      <span ref={dateRef} className={`text-[17px] font-bold leading-normal text-black ${!expanded ? 'truncate w-full' : ''}`}>{date}</span>
-      <p ref={descRef} className={`text-[14px] font-normal leading-normal text-black ${!expanded ? 'truncate w-full' : ''}`}>{description}</p>
+      <span ref={dateRef} className={`text-[17px] font-bold leading-normal text-foreground ${!expanded ? 'truncate w-full' : ''}`}>{date}</span>
+      <p ref={descRef} className={`text-[14px] font-normal leading-normal text-foreground ${!expanded ? 'truncate w-full' : ''}`}>{description}</p>
     </div>
   )
 }

@@ -249,7 +249,7 @@ export function ChatLocationModal({
       {/* Modal — WhatsApp style: bottom sheet on mobile, centered on desktop */}
       <div
         className="fixed bottom-0 md:bottom-auto md:top-1/2 left-1/2 -translate-x-1/2 md:-translate-y-1/2
-                   z-[90] w-full md:w-[420px] bg-white
+                   z-[90] w-full md:w-[420px] bg-background
                    rounded-t-[28px] md:rounded-[24px]
                    shadow-2xl flex flex-col overflow-hidden
                    h-[90vh] md:h-[680px]"
@@ -261,14 +261,14 @@ export function ChatLocationModal({
         </div>
 
         {/* ── Header ── */}
-        <div className="flex items-center px-2 py-2 flex-shrink-0 bg-white">
+        <div className="flex items-center px-2 py-2 flex-shrink-0 bg-background">
           <button
             onClick={handleClose}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground transition-colors"
           >
             <X size={20} />
           </button>
-          <h2 className="flex-1 text-center font-semibold text-base text-gray-900 -ml-9">
+          <h2 className="flex-1 text-center font-semibold text-base text-foreground -ml-9">
             Standort senden
           </h2>
         </div>
@@ -285,46 +285,46 @@ export function ChatLocationModal({
         )}
 
         {/* ── Map (fills ~55% of height) ── */}
-        <div className="relative flex-shrink-0 w-full h-[55%] md:h-[52%] bg-gray-200">
+        <div className="relative flex-shrink-0 w-full h-[55%] md:h-[52%] bg-accent">
           <div ref={mapContainerRef} className="w-full h-full" />
 
           {/* Recenter FAB */}
           <button
             onClick={requestLocation}
             disabled={isLocating}
-            className="absolute bottom-3 right-3 z-20 w-10 h-10 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-all"
+            className="absolute bottom-3 right-3 z-20 w-10 h-10 rounded-full bg-background shadow-md border border-border flex items-center justify-center hover:bg-muted transition-all"
           >
-            <Navigation size={18} className={isLocating ? "animate-spin text-[#D08945]" : "text-gray-600"} />
+            <Navigation size={18} className={isLocating ? "animate-spin text-[#D08945]" : "text-muted-foreground"} />
           </button>
 
           {/* Selected address chip on map */}
-          <div className="absolute bottom-3 left-3 right-14 z-20 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2 max-w-[75%]">
+          <div className="absolute bottom-3 left-3 right-14 z-20 bg-background/95 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-md flex items-center gap-2 max-w-[75%]">
             <MapPin size={13} className="text-[#D08945] flex-shrink-0" />
-            <p className="text-xs font-medium text-gray-800 truncate">{address}</p>
+            <p className="text-xs font-medium text-foreground truncate">{address}</p>
           </div>
         </div>
 
         {/* ── Scrollable options below map ── */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto bg-background">
 
           {/* — Static location row — */}
           <button
             onClick={handleSendStatic}
             disabled={isSending}
-            className="w-full flex items-center gap-4 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left border-b border-gray-100 disabled:opacity-60"
+            className="w-full flex items-center gap-4 px-4 py-4 hover:bg-muted active:bg-muted transition-colors text-left border-b border-border disabled:opacity-60"
           >
             <div className="w-11 h-11 rounded-full bg-[#D08945]/10 flex items-center justify-center flex-shrink-0">
               <MapPin size={22} className="text-[#D08945]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-semibold text-gray-900">Aktuellen Standort senden</p>
-              <p className="text-xs text-gray-500 mt-0.5 truncate">{address}</p>
+              <p className="text-[15px] font-semibold text-foreground">Aktuellen Standort senden</p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">{address}</p>
             </div>
           </button>
 
           {/* — Live-Standort section — */}
           <div className="px-4 pt-4 pb-2">
-            <p className="text-[13px] font-bold text-gray-500 uppercase tracking-wide mb-3">
+            <p className="text-[13px] font-bold text-muted-foreground uppercase tracking-wide mb-3">
               Live-Standort teilen
             </p>
 
@@ -337,7 +337,7 @@ export function ChatLocationModal({
                   className={`flex-1 py-2.5 rounded-full text-[13px] font-semibold transition-all border ${
                     liveDuration === d.value
                       ? "bg-[#D08945] text-white border-[#D08945] shadow-sm"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-[#D08945]/50"
+                      : "bg-background text-muted-foreground border-border hover:border-[#D08945]/50"
                   }`}
                 >
                   {d.label}
@@ -353,7 +353,7 @@ export function ChatLocationModal({
                 onChange={(e) => setLiveComment(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !isSending) handleSendLive(); }}
                 placeholder="Kommentar hinzufügen"
-                className="flex-1 bg-gray-100 rounded-full px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 transition-all"
+                className="flex-1 bg-muted rounded-full px-4 py-2.5 text-sm text-foreground placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 transition-all"
               />
               <button
                 onClick={handleSendLive}

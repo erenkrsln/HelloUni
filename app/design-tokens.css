@@ -31,6 +31,17 @@
   --post-height: 450px;
   --action-button-width: 49px;
   --action-button-height: 20px;
+  --color-nav-bg: #dcc6a1;
 }
 
-
+.dark {
+  --color-primary-dark: #F4CFAB;
+  --color-primary-light: #D08945;
+  --color-text-beige: #F5F5F5;
+  --color-text-beige-light: #A6A6A6;
+  --color-button-dark: rgba(255, 255, 255, 0.1);
+  --color-button-dark-light: rgba(255, 255, 255, 0.05);
+  --color-text-black: #F5F5F5;
+  --color-text-white: #141414;
+  --color-nav-bg: #1E1E1E;
+}

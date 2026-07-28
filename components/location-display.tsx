@@ -142,7 +142,7 @@ export function LocationDisplay({ locationName, latitude, longitude }: LocationD
             setShowModal(true);
           }
         }}
-        className="flex items-center gap-1.5 mb-3 text-sm text-gray-600 hover:text-[#D08945] transition-colors cursor-pointer group"
+        className="flex items-center gap-1.5 mb-3 text-sm text-muted-foreground hover:text-[#D08945] transition-colors cursor-pointer group"
       >
         <MapPin className="w-4 h-4 text-[#D08945] flex-shrink-0" />
         <span className="truncate max-w-[280px] group-hover:underline">{shortAddress}</span>
@@ -155,11 +155,11 @@ export function LocationDisplay({ locationName, latitude, longitude }: LocationD
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl w-[90vw] max-w-sm mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            className="bg-background rounded-2xl shadow-xl w-[90vw] max-w-sm mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Map Preview */}
-            <div className="relative w-full h-48 bg-gray-100">
+            <div className="relative w-full h-48 bg-muted">
               <div ref={setMapContainer} className="w-full h-full" />
             </div>
 
@@ -167,7 +167,7 @@ export function LocationDisplay({ locationName, latitude, longitude }: LocationD
             <div className="p-4">
               <div className="flex items-start gap-2 mb-4">
                 <MapPin className="w-5 h-5 text-[#D08945] flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-gray-800 leading-snug">{shortAddress}</p>
+                <p className="text-sm text-foreground leading-snug">{shortAddress}</p>
               </div>
 
               {/* Actions */}
@@ -181,7 +181,7 @@ export function LocationDisplay({ locationName, latitude, longitude }: LocationD
                 </button>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2.5 border border-gray-300 text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors"
                 >
                   Schließen
                 </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/header";
@@ -8,14 +8,13 @@ import { BottomNavigation } from "@/components/bottom-navigation";
 import { MobileSidebar } from "@/components/mobile-sidebar";
 import { LoadingScreen } from "@/components/ui/spinner";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
-import { useToast } from "@/components/toast";
-import { useQuery, useMutation } from "convex/react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useQuery } from "convex/react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EventFormModal } from "@/components/event-form-modal";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
-import { Plus, MapPin, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { parseTerminStartDate, parseTerminEndDate } from "@/lib/utils";
 
@@ -34,7 +33,7 @@ type Event = {
 export default function CalendarPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { currentUser, isLoading: isAuthLoading } = useCurrentUser();
-    const [viewMode, setViewMode] = useState("my"); // "my" | "public"
+    const [viewMode, setViewMode] = useState("my");
     const [currentDate, setCurrentDate] = useState(new Date());
     const [activeFilters, setActiveFilters] = useState<Record<string, boolean>>({
         personal: true,
@@ -50,7 +49,6 @@ export default function CalendarPage() {
         }));
     };
 
-    // Data Loading
     const myEvents = useQuery(
         api.events.listByUser,
         currentUser ? { userId: currentUser._id } : "skip"
@@ -71,7 +69,6 @@ export default function CalendarPage() {
         }).sort((a, b) => a.startTime - b.startTime);
     }, [events, currentDate, activeFilters]);
 
-
     const isLoading = viewMode === "my"
         ? isAuthLoading || (!!currentUser && myEvents === undefined)
         : publicEvents === undefined;
@@ -83,9 +80,7 @@ export default function CalendarPage() {
         () => (myConversations || []).filter((conv) => (conv as any).isGroup),
         [myConversations]
     );
-    const toast = useToast();
 
-    // Modal State
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<Event | null>(null);
     const [selectedDate, setSelectedDate] = useState("");
@@ -100,8 +95,6 @@ export default function CalendarPage() {
         setEditingEvent(e);
     };
 
-    // Calendar View Logic
-
     const monthTermine = useMemo(() => {
         const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -115,20 +108,15 @@ export default function CalendarPage() {
     }, [semesterTermine, currentDate]);
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay(); // 0 is Sunday
-    // Adjust for Monday start if needed, but standard US/Sunday start is easier for now. 
-    // Let's assume standard Sunday start (0) for simplicity or standard grid.
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
     const renderCalendarGrid = () => {
         const days = [];
-        // Empty slots for days before start of month
         for (let i = 0; i < firstDayOfMonth; i++) {
-            days.push(<div key={`empty-${i}`} className="min-h-[4rem] bg-gray-50/30 border-b border-r border-gray-100 last:border-r-0" />);
+            days.push(<div key={`empty-${i}`} className="min-h-[4rem] bg-muted/30 border-b border-r border-border last:border-r-0" />);
         }
 
-        // Days
         for (let i = 1; i <= daysInMonth; i++) {
-            // Check if today
             const isToday =
                 i === new Date().getDate() &&
                 currentDate.getMonth() === new Date().getMonth() &&
@@ -164,10 +152,10 @@ export default function CalendarPage() {
                         id: e._id,
                         title: e.title || "Event",
                         colorClass: isGroupEvent
-                            ? "bg-blue-50 text-blue-700 border border-blue-100/70"
+                            ? "bg-blue-50 text-blue-700 border border-blue-100/70 dark:bg-blue-950/30 dark:text-blue-300"
                             : e.isPrivate
-                                ? "bg-purple-50 text-purple-700 border border-purple-100/70"
-                                : "bg-amber-50 text-amber-700 border border-amber-100/70",
+                                ? "bg-purple-50 text-purple-700 border border-purple-100/70 dark:bg-purple-950/30 dark:text-purple-300"
+                                : "bg-amber-50 text-amber-700 border border-amber-100/70 dark:bg-amber-950/30 dark:text-amber-300",
                         isTermin: false,
                         type,
                         eventObj: e
@@ -206,11 +194,11 @@ export default function CalendarPage() {
 
             days.push(
                 <div key={i}
-                    className={`min-h-[4.8rem] md:min-h-[6.8rem] bg-white border-b border-r border-gray-100 last:border-r-0 p-1 relative active:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-1 overflow-hidden ${isToday ? 'bg-blue-50/10 font-bold' : ''}`}
+                    className={`min-h-[4.8rem] md:min-h-[6.8rem] bg-background border-b border-r border-border last:border-r-0 p-1 relative active:bg-muted transition-colors cursor-pointer flex flex-col gap-1 overflow-hidden ${isToday ? 'bg-blue-50/10 dark:bg-blue-950/20 font-bold' : ''}`}
                     onClick={handleDayCellClick}
                 >
                     <div className="flex justify-between items-center w-full mb-0.5">
-                        <div className={`text-[10px] font-semibold w-5 h-5 flex items-center justify-center rounded-full select-none ${isToday ? 'bg-black text-white shadow-sm' : 'text-gray-500'}`}>
+                        <div className={`text-[10px] font-semibold w-5 h-5 flex items-center justify-center rounded-full select-none ${isToday ? 'bg-black text-white shadow-sm' : 'text-muted-foreground'}`}>
                             {i}
                         </div>
                     </div>
@@ -238,7 +226,7 @@ export default function CalendarPage() {
                                     ev.stopPropagation();
                                     handleDayCellClick();
                                 }}
-                                className="text-[9px] font-extrabold text-slate-500 hover:text-slate-700 pl-1 select-none w-full text-left"
+                                className="text-[9px] font-extrabold text-muted-foreground hover:text-foreground pl-1 select-none w-full text-left"
                             >
                                 +{remainingCount} mehr
                             </div>
@@ -258,57 +246,55 @@ export default function CalendarPage() {
     ];
 
     const getFilterStyles = (key: string, isActive: boolean) => {
-        if (!isActive) return "bg-slate-50/70 border-slate-200 text-slate-400 opacity-60";
+        if (!isActive) return "bg-muted/70 border-border text-muted-foreground opacity-60";
         return {
-            personal: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100/50",
-            group: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100/50",
-            public: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/50",
-            termin: "bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100/50",
+            personal: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100/50 dark:bg-purple-950/30 dark:border-purple-800 dark:text-purple-300",
+            group: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100/50 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300",
+            public: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/50 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300",
+            termin: "bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100/50 dark:bg-orange-950/30 dark:border-orange-800 dark:text-orange-300",
         }[key as "personal" | "group" | "public" | "termin"];
     };
 
-
     return (
-        <main className="min-h-screen w-full max-w-md mx-auto md:max-w-3xl pb-32 header-spacing bg-white">
+        <main className="min-h-screen w-full max-w-md mx-auto md:max-w-3xl pb-32 header-spacing bg-background">
             <Header onMenuClick={() => setIsSidebarOpen(true)} title="Kalender" />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             <div className="px-4 py-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Kalender</h1>
-                        <p className="text-sm text-gray-500">Verwalte deinen Zeitplan</p>
+                        <h1 className="text-2xl font-bold text-foreground">Kalender</h1>
+                        <p className="text-sm text-muted-foreground">Verwalte deinen Zeitplan</p>
                     </div>
-                    <Button onClick={() => { setSelectedDate(""); setIsCreateOpen(true); }} size="icon" className="h-10 w-10 bg-black text-white hover:bg-gray-800 rounded-full shadow-lg">
+                    <Button onClick={() => { setSelectedDate(""); setIsCreateOpen(true); }} size="icon" className="h-10 w-10 bg-black text-white hover:bg-neutral-800 rounded-full shadow-lg">
                         <Plus className="w-5 h-5" />
                     </Button>
                 </div>
 
                 <Tabs defaultValue="my" className="w-full mb-8" onValueChange={setViewMode}>
-                    <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100/80 p-1 rounded-2xl h-12">
-                        <TabsTrigger value="my" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Meine Events</TabsTrigger>
-                        <TabsTrigger value="public" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm">Öffentlicher Feed</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/80 p-1 rounded-2xl h-12">
+                        <TabsTrigger value="my" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-sm">Meine Events</TabsTrigger>
+                        <TabsTrigger value="public" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-sm">Öffentlicher Feed</TabsTrigger>
                     </TabsList>
 
                     {isLoading ? (
                         <div className="py-20 text-center"><LoadingScreen text="Kalender wird geladen..." /></div>
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            {/* Calendar Navigation */}
                             <div className="flex items-center justify-between mb-4">
-                                <span className="font-bold text-lg text-gray-900 ml-1">
+                                <span className="font-bold text-lg text-foreground ml-1">
                                     {currentDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}
                                 </span>
                                 <div className="flex gap-1">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
-                                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-muted" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
+                                        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
-                                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-muted" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
+                                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
                                     </Button>
                                 </div>
                             </div>
-                            {/* Interactive Filters */}
+
                             <div
                                 className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 select-none mb-3"
                                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -331,30 +317,27 @@ export default function CalendarPage() {
                                 })}
                             </div>
 
-                            {/* Month Grid */}
-                            <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-gray-50/50 mb-8">
-                                <div className="grid grid-cols-7 border-b border-gray-200">
+                            <div className="border border-border rounded-2xl overflow-hidden shadow-sm bg-muted/50 mb-8">
+                                <div className="grid grid-cols-7 border-b border-border">
                                     {['S', 'M', 'D', 'M', 'D', 'F', 'S'].map((d, i) => (
-                                        <div key={i} className="py-2 text-center text-[10px] uppercase tracking-wider font-semibold text-gray-400">{d}</div>
+                                        <div key={i} className="py-2 text-center text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{d}</div>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-7 bg-gray-200 gap-px border-l border-gray-200">
-                                    {/* Using gap for borders, parent bg makes lines */}
+                                <div className="grid grid-cols-7 bg-accent gap-px border-l border-border">
                                     {renderCalendarGrid()}
                                 </div>
                             </div>
 
-                            {/* List View of Events in Month (or selected day - let's keep it simple for now and show upcoming) */}
                             <div>
-                                <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
+                                <h3 className="font-semibold text-lg mb-4 text-foreground flex items-center gap-2">
                                     Bevorstehende Events
-                                    <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{upcomingEvents.length}</span>
+                                    <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{upcomingEvents.length}</span>
                                 </h3>
 
                                 {upcomingEvents.length === 0 ? (
-                                    <div className="border-2 border-dashed border-gray-100 rounded-2xl p-8 text-center select-none">
-                                        <CalendarIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-gray-400 text-sm font-semibold">
+                                    <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center select-none">
+                                        <CalendarIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                        <p className="text-muted-foreground text-sm font-semibold">
                                             {Object.values(activeFilters).some(v => v)
                                                 ? "Keine Events in diesem Monat"
                                                 : "Keine Events für die ausgewählten Filter"}
@@ -381,7 +364,7 @@ export default function CalendarPage() {
                                                     badgeType={badgeType}
                                                     onClick={() => openEdit(e)}
                                                     rightAction={
-                                                        <ChevronRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                                        <ChevronRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                                     }
                                                 />
                                             );
@@ -392,9 +375,9 @@ export default function CalendarPage() {
 
                             {monthTermine.length > 0 && (
                                 <div className="mt-6">
-                                    <h3 className="font-semibold text-lg mb-4 text-gray-900 flex items-center gap-2">
+                                    <h3 className="font-semibold text-lg mb-4 text-foreground flex items-center gap-2">
                                         Semestertermine
-                                        <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{monthTermine.length}</span>
+                                        <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{monthTermine.length}</span>
                                     </h3>
                                     <div className="space-y-3">
                                         {monthTermine.map((t, i) => {
@@ -441,9 +424,9 @@ export default function CalendarPage() {
 
             <Dialog open={!!selectedDayEvents} onOpenChange={(open) => !open && setSelectedDayEvents(null)}>
                 <DialogContent className="w-[calc(100vw-24px)] md:max-w-[480px] max-h-[calc(100dvh-24px)] rounded-3xl p-5 md:p-6 flex flex-col gap-4 overflow-hidden border-none shadow-2xl">
-                    <DialogHeader className="border-b border-slate-100 pb-3 flex flex-row items-center justify-between">
+                    <DialogHeader className="border-b border-border pb-3 flex flex-row items-center justify-between">
                         <div className="flex-1">
-                            <DialogTitle className="text-lg font-bold text-slate-900 leading-tight">
+                            <DialogTitle className="text-lg font-bold text-foreground leading-tight">
                                 Events am Tag
                             </DialogTitle>
                             <DialogDescription className="text-xs font-semibold text-[#D08945] mt-1 select-none">
@@ -452,15 +435,13 @@ export default function CalendarPage() {
                         </div>
                     </DialogHeader>
 
-                    {/* Scrollable List or Empty State */}
                     {selectedDayEvents && selectedDayEvents.events.length === 0 && selectedDayEvents.termine.length === 0 ? (
                         <div className="flex-1 flex flex-col items-center justify-center py-8 text-center select-none">
-                            <CalendarIcon className="w-8 h-8 text-slate-300 mb-2" />
-                            <p className="text-slate-400 text-xs font-semibold">Keine Events für die ausgewählten Filter</p>
+                            <CalendarIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                            <p className="text-muted-foreground text-xs font-semibold">Keine Events für die ausgewählten Filter</p>
                         </div>
                     ) : (
                         <div className="flex-1 overflow-y-auto pr-1 py-0.5 space-y-3 min-h-0">
-                            {/* Semester Termine */}
                             {selectedDayEvents?.termine.map((t, idx) => {
                                 const start = parseTerminStartDate(t.date);
                                 const end = parseTerminEndDate(t.date);
@@ -479,7 +460,6 @@ export default function CalendarPage() {
                                 );
                             })}
 
-                            {/* Real Events */}
                             {selectedDayEvents?.events.map((e) => {
                                 const isGroupEvent = !!e.workspaceId;
                                 const badgeType = isGroupEvent ? "group" : e.isPrivate ? "personal" : "public";
@@ -502,7 +482,7 @@ export default function CalendarPage() {
                                             openEdit(e);
                                         }}
                                         rightAction={
-                                            <ChevronRight className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                            <ChevronRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                         }
                                     />
                                 );
@@ -510,13 +490,12 @@ export default function CalendarPage() {
                         </div>
                     )}
 
-                    {/* Actions Footer */}
-                    <div className="flex-shrink-0 border-t border-slate-100 pt-4 flex gap-3">
+                    <div className="flex-shrink-0 border-t border-border pt-4 flex gap-3">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={() => setSelectedDayEvents(null)}
-                            className="flex-1 rounded-2xl h-12 text-slate-700 font-bold transition-all active:scale-95 text-sm"
+                            className="flex-1 rounded-2xl h-12 text-foreground font-bold transition-all active:scale-95 text-sm"
                         >
                             Schließen
                         </Button>

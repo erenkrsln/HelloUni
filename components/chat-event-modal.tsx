@@ -112,7 +112,7 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
 
     if (!isOpen) return null;
 
-    const inputClass = "bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors w-full";
+    const inputClass = "bg-background border border-gray-300 rounded-xl px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#D08945] focus:border-transparent transition-colors w-full";
 
     return (
         <>
@@ -124,7 +124,7 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
 
             {/* Modal */}
             <div
-                className="fixed bottom-0 left-1/2 -translate-x-1/2 z-[90] w-full max-w-[428px] bg-white rounded-t-3xl shadow-2xl"
+                className="fixed bottom-0 left-1/2 -translate-x-1/2 z-[90] w-full max-w-[428px] bg-background rounded-t-3xl shadow-2xl"
                 style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
             >
                 {/* Handle bar */}
@@ -133,13 +133,13 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
                 </div>
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-border">
                     <button onClick={handleClose} className="text-[#D08945] text-sm font-medium">
                         Abbrechen
                     </button>
                     <div className="flex items-center gap-2">
                         <CalendarDays size={18} className="text-[#D08945]" />
-                        <h2 className="font-semibold text-base text-gray-900">Termin finden</h2>
+                        <h2 className="font-semibold text-base text-foreground">Termin finden</h2>
                     </div>
                     <button
                         onClick={handleSubmit}
@@ -155,40 +155,40 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
 
                     {/* Title */}
                     <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Was ist geplant?</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Was ist geplant?</label>
                         <input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="z.B. Team Dinner, Kino..."
                             maxLength={100}
-                            className="mt-2 w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 focus:border-[#D08945] transition-all"
+                            className="mt-2 w-full bg-muted border border-border rounded-2xl px-4 py-3 text-sm text-foreground placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 focus:border-[#D08945] transition-all"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Details (optional)</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Details (optional)</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Treffpunkt, Infos..."
                             rows={2}
                             maxLength={300}
-                            className="mt-2 w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 focus:border-[#D08945] resize-none transition-all"
+                            className="mt-2 w-full bg-muted border border-border rounded-2xl px-4 py-3 text-sm text-foreground placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#D08945]/30 focus:border-[#D08945] resize-none transition-all"
                         />
                     </div>
 
                     {/* Time Slots */}
                     <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             Terminvorschläge
                         </label>
                         <div className="mt-2 space-y-3">
                             {timeSlots.map((slot, index) => {
                                 const isValid = parsedSlots[index].endTime > parsedSlots[index].startTime || parsedSlots[index].startTime === 0;
                                 return (
-                                    <div key={index} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 transition-all focus-within:ring-2 focus-within:ring-[#D08945]/30 focus-within:border-[#D08945]">
+                                    <div key={index} className="bg-muted border border-border rounded-2xl p-4 transition-all focus-within:ring-2 focus-within:ring-[#D08945]/30 focus-within:border-[#D08945]">
                                         <div className="flex justify-between items-center mb-3">
                                             <span className="text-xs font-bold text-[#D08945]">Vorschlag {index + 1}</span>
                                             {timeSlots.length > 2 && (
@@ -202,7 +202,7 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
                                         </div>
                                         <div className="space-y-3">
                                             <div>
-                                                <p className="text-xs text-gray-500 mb-1">Datum</p>
+                                                <p className="text-xs text-muted-foreground mb-1">Datum</p>
                                                 <input
                                                     type="date"
                                                     value={slot.date}
@@ -213,7 +213,7 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="flex-1">
-                                                    <p className="text-xs text-gray-500 mb-1">Start</p>
+                                                    <p className="text-xs text-muted-foreground mb-1">Start</p>
                                                     <input
                                                         type="time"
                                                         value={slot.startTime}
@@ -222,7 +222,7 @@ export function ChatEventModal({ isOpen, onClose, conversationId, senderId }: Ch
                                                     />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="text-xs text-gray-500 mb-1">Ende</p>
+                                                    <p className="text-xs text-muted-foreground mb-1">Ende</p>
                                                     <input
                                                         type="time"
                                                         value={slot.endTime}

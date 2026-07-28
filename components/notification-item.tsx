@@ -225,7 +225,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
             <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Left: Avatar */}
                 <div className="relative flex-shrink-0">
-                    <Avatar className="w-11 h-11 border border-gray-100">
+                    <Avatar className="w-11 h-11 border border-border">
                         {notification.issuer.avatarUrl ? (
                             <img
                                 src={notification.issuer.avatarUrl}
@@ -233,7 +233,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500 font-medium text-sm">
+                            <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground font-medium text-sm">
                                 {notification.issuer.username.charAt(0).toUpperCase()}
                             </div>
                         )}
@@ -276,7 +276,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
                                         }
                                     }}
                                     disabled={isLoading}
-                                    className="text-xs font-semibold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors"
+                                    className="text-xs font-semibold px-3 py-1.5 bg-muted hover:bg-accent text-foreground rounded-full transition-colors"
                                 >
                                     Ablehnen
                                 </button>
@@ -308,7 +308,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
                             <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
                                 notification.target?.status === "approved"
                                     ? "bg-green-50 text-green-700 border border-green-100"
-                                    : "bg-gray-100 text-gray-500"
+                                    : "bg-muted text-muted-foreground"
                             }`}>
                                 {notification.target?.status === "approved" ? "Genehmigt" : "Abgelehnt"}
                             </span>
@@ -321,7 +321,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
                         className={`
                             text-sm font-medium transition-all cursor-pointer px-3 py-2 rounded-full whitespace-nowrap flex-shrink-0
                             ${isFollowing
-                                ? "bg-gray-100 text-red-500 hover:opacity-80"
+                                ? "bg-muted text-red-500 hover:opacity-80"
                                 : "bg-[#D08945] text-white hover:opacity-80"
                             }
                             disabled:opacity-50 disabled:cursor-not-allowed
@@ -339,7 +339,7 @@ export function NotificationItem({ notification, currentUserId }: NotificationIt
                             <img
                                 src={notification.target.thumbnail}
                                 alt="Preview"
-                                className="w-10 h-10 aspect-square object-cover rounded-[4px] border border-gray-100"
+                                className="w-10 h-10 aspect-square object-cover rounded-[4px] border border-border"
                             />
                         )}
                     </>

@@ -5,13 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   MessageSquare,
-  ListTodo,
-  Folder,
-  Users,
-  BarChart2,
-  Calendar,
-  Layout,
-  Info,
 } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -26,7 +19,6 @@ import { WorkspaceOverview } from "@/components/workspace-overview";
 import { WorkspaceEventDetails } from "@/components/workspace-event-details";
 import { useCurrentUser } from "@/lib/hooks/useCurrentUser";
 import { useMutation } from "convex/react";
-import Link from "next/link";
 
 export default function WorkspaceHubPage({
   params,
@@ -123,7 +115,7 @@ export default function WorkspaceHubPage({
                 size={48}
                 className="text-[#D08945] opacity-50 mb-4"
               />
-              <p className="mb-4 text-sm text-gray-600 text-center leading-relaxed">
+              <p className="mb-4 text-sm text-muted-foreground text-center leading-relaxed">
                 Der Chat für diesen Workspace ist direkt in deine Nachrichten integriert.
               </p>
               <button
@@ -196,17 +188,14 @@ export default function WorkspaceHubPage({
   };
 
   return (
-    <main className="flex flex-col h-screen w-full max-w-[428px] md:max-w-full mx-auto bg-white relative">
+    <main className="flex flex-col h-screen w-full max-w-[428px] md:max-w-full mx-auto bg-background relative">
       {/* Header */}
       <div
-        className="flex flex-col gap-1 px-4 py-3 bg-white border-b border-gray-100 z-10 sticky top-0"
+        className="flex flex-col gap-1 px-4 py-3 bg-background border-b border-border z-10 sticky top-0"
         style={{ paddingTop: `calc(0.75rem + env(safe-area-inset-top, 0px))` }}
       >
         <div className="flex items-center">
-          <button
-            onClick={() => router.back()}
-            className="mr-3 p-2 -ml-2 rounded-full hover:bg-gray-100"
-          >
+          <button onClick={() => router.back()} className="mr-3 p-2 -ml-2 rounded-full hover:bg-muted">
             <ArrowLeft size={24} />
           </button>
           <div className="min-w-0">
@@ -217,7 +206,7 @@ export default function WorkspaceHubPage({
                   ? eventData?.title || "Event"
                   : "Workspace"}
             </h1>
-            <p className="text-sm text-gray-500 truncate font-medium">
+            <p className="text-sm text-muted-foreground truncate font-medium">
               {isGroup
                 ? `${groupMembers?.length ?? 0} ${groupMembers?.length === 1 ? "Mitglied" : "Mitglieder"} · Gruppen-Workspace`
                 : isEvent
@@ -234,7 +223,7 @@ export default function WorkspaceHubPage({
       {/* This navigation was redundant with the function boxes in Overview */}
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="flex-1 overflow-y-auto bg-muted">
         {renderTabContent()}
       </div>
     </main>

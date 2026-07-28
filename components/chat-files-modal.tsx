@@ -7,15 +7,11 @@ import { Id } from "@/convex/_generated/dataModel";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
   FileText,
   X,
-  Download,
-  ExternalLink,
-  Image,
   CirclePlay,
 } from "lucide-react";
 import { ChatFilesModalLinkPreview } from "@/components/LinkPreview";
@@ -45,7 +41,6 @@ export function ChatFilesModal({
     "media",
   );
 
-  // Separate and sort files by type
   const mediaFiles =
     files
       ?.filter((f) => f.type === "image" || f.type === "video")
@@ -59,11 +54,10 @@ export function ChatFilesModal({
       ?.filter((f) => f.type === "link")
       .sort((a, b) => b.createdAt - a.createdAt) || [];
 
-  // Group files by date
   const groupFilesByDate = (fileList: typeof files) => {
     if (!fileList) return {};
 
-    const grouped: Record<string, typeof fileList> = {};
+    const grouped: Record<string, NonNullable<typeof files>> = {};
     fileList.forEach((file) => {
       const date = new Date(file.createdAt).toLocaleDateString("de-DE", {
         day: "2-digit",
@@ -104,7 +98,7 @@ export function ChatFilesModal({
         className={
           selectedMedia
             ? "duration-0 p-0 border-0 rounded-none max-w-none w-screen h-screen bg-transparent"
-            : "duration-0 flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-white w-[90vw] max-w-[400px] h-[520px] max-h-[85vh] sm:w-[640px] sm:h-[680px] sm:max-w-none sm:max-h-[90vh]"
+            : "duration-0 flex flex-col p-0 gap-0 overflow-hidden rounded-2xl bg-background w-[90vw] max-w-[400px] h-[520px] max-h-[85vh] sm:w-[640px] sm:h-[680px] sm:max-w-none sm:max-h-[90vh]"
         }
       >
         {selectedMedia ? (
@@ -138,26 +132,25 @@ export function ChatFilesModal({
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background z-10">
               <DialogTitle className="text-lg font-semibold">
                 Geteilte Medien
               </DialogTitle>
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b bg-white">
+            <div className="flex border-b bg-background">
               <button
                 onClick={() => setActiveTab("media")}
                 className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === "media"
                     ? "text-[#D08945] border-[#D08945]"
-                    : "text-gray-500 hover:text-gray-700 border-transparent"
+                    : "text-muted-foreground hover:text-foreground border-transparent"
                 }`}
               >
                 Medien
@@ -167,7 +160,7 @@ export function ChatFilesModal({
                 className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === "pdfs"
                     ? "text-[#D08945] border-[#D08945]"
-                    : "text-gray-500 hover:text-gray-700 border-transparent"
+                    : "text-muted-foreground hover:text-foreground border-transparent"
                 }`}
               >
                 PDFs
@@ -177,20 +170,20 @@ export function ChatFilesModal({
                 className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === "links"
                     ? "text-[#D08945] border-[#D08945]"
-                    : "text-gray-500 hover:text-gray-700 border-transparent"
+                    : "text-muted-foreground hover:text-foreground border-transparent"
                 }`}
               >
                 Links
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 bg-white">
+            <div className="flex-1 overflow-y-auto p-4 bg-background">
               {!files ? (
-                <div className="text-center text-gray-400 py-8">
+                <div className="text-center text-muted-foreground py-8">
                   Lade Dateien...
                 </div>
               ) : currentCount === 0 ? (
-                <div className="text-center text-gray-400 py-8">
+                <div className="text-center text-muted-foreground py-8">
                   Keine{" "}
                   {activeTab === "media"
                     ? "Medien"
@@ -203,7 +196,7 @@ export function ChatFilesModal({
                 <div className="space-y-6">
                   {Object.entries(currentFiles).map(([date, filesForDate]) => (
                     <div key={date}>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         {date}
                       </h3>
                       <div
@@ -216,7 +209,7 @@ export function ChatFilesModal({
                         {filesForDate.map((file) => (
                           <div
                             key={file._id}
-                            className={`bg-white rounded-lg border border-gray-300 overflow-hidden flex transition-shadow cursor-pointer hover:shadow-md ${activeTab === "links" ? "flex-row items-center p-3" : "flex-col"}`}
+                            className={`bg-background rounded-lg border border-border overflow-hidden flex transition-shadow cursor-pointer hover:shadow-md ${activeTab === "links" ? "flex-row items-center p-3" : "flex-col"}`}
                             onClick={() => {
                               if (
                                 (file.type === "image" ||
@@ -234,9 +227,7 @@ export function ChatFilesModal({
                           >
                             {activeTab === "links" ? (
                               <>
-                                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[#D08945] mr-3 flex-shrink-0">
-                                  <ExternalLink size={30} />
-                                </div>
+                                <ChatFilesModalLinkPreview url={file.url} />
                                 <div className="flex-1 min-w-0">
                                   <p
                                     className="text-sm font-medium truncate"
@@ -244,7 +235,7 @@ export function ChatFilesModal({
                                   >
                                     {file.url}
                                   </p>
-                                  <p className="text-[10px] text-gray-400">
+                                  <p className="text-[10px] text-muted-foreground">
                                     {new Date(
                                       file.createdAt,
                                     ).toLocaleTimeString("de-DE", {
@@ -287,7 +278,7 @@ export function ChatFilesModal({
                                     )}
                                   </div>
                                 </div>
-                                <div className="p-2 border-t border-[#efeadd]">
+                                <div className="p-2 border-t border-border">
                                   <div className="w-full">
                                     <p
                                       className="text-xs font-medium truncate"
@@ -300,7 +291,7 @@ export function ChatFilesModal({
                                             ? "Video"
                                             : "Dokument")}
                                     </p>
-                                    <p className="text-[10px] text-gray-400">
+                                    <p className="text-[10px] text-muted-foreground">
                                       {new Date(
                                         file.createdAt,
                                       ).toLocaleTimeString("de-DE", {

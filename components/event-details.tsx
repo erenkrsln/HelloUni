@@ -30,7 +30,7 @@ export function EventDetails({
   return (
     <div className="mb-3 space-y-1">
       {eventDate && (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="w-4 h-4" />
           <span>{formatEventDate(eventDate)}</span>
           {eventTime && <span>um {eventTime} Uhr</span>}
@@ -44,7 +44,7 @@ export function EventDetails({
         />
       )}
       {recurrencePattern && (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-muted-foreground">
           Wiederholung: {recurrencePattern}
         </div>
       )}

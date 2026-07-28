@@ -23,10 +23,10 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
         return (
             <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="text-center">
-                    <p className="text-gray-500 text-base">
+                    <p className="text-muted-foreground text-base">
                         Keine Benachrichtigungen vorhanden
                     </p>
-                    <p className="text-gray-400 text-sm mt-2">
+                    <p className="text-muted-foreground text-sm mt-2">
                         Du wirst hier benachrichtigt, wenn jemand dir folgt oder mit deinen Beiträgen interagiert.
                     </p>
                 </div>
@@ -49,7 +49,7 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
         <div className="pb-20">
             {hasToday && (
                 <div className="relative">
-                    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-50 px-4 py-3">
+                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
                         <h2 className="font-bold text-[16px]">Heute</h2>
                     </div>
                     <div className="divide-y divide-gray-50">
@@ -66,7 +66,7 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
 
             {hasThisWeek && (
                 <div className="relative">
-                    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-50 px-4 py-3">
+                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
                         <h2 className="font-bold text-[16px]">Diese Woche</h2>
                     </div>
                     <div className="divide-y divide-gray-50">
@@ -83,7 +83,7 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
 
             {hasEarlier && (
                 <div className="relative">
-                    <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-50 px-4 py-3">
+                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3">
                         <h2 className="font-bold text-[16px]">Früher</h2>
                     </div>
                     <div className="divide-y divide-gray-50">

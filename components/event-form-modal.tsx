@@ -221,10 +221,10 @@ export function EventFormModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[calc(100vw-24px)] md:max-w-[560px] max-h-[calc(100dvh-24px)] p-0 flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-slate-100 px-6 py-4">
+        <div className="flex-shrink-0 border-b border-slate-100 dark:border-slate-800 px-6 py-4">
           <DialogHeader>
             <div className="flex-1">
-              <DialogTitle className="text-lg font-bold text-slate-900">
+              <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
                 {mode === "create" ? "Event erstellen" : isCreator ? "Event bearbeiten" : "Event ansehen"}
               </DialogTitle>
             </div>
@@ -235,24 +235,24 @@ export function EventFormModal({
           <>
             {/* Read-Only Body */}
             <DialogBody className="px-6 py-4 overflow-y-auto min-h-0 space-y-4">
-              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
+              <div className="bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-800/80 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 break-words">{event?.title}</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white break-words">{event?.title}</h3>
                   {event?.description && (
-                    <p className="mt-2 text-sm text-slate-600 whitespace-pre-wrap break-words leading-relaxed italic">
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-words leading-relaxed italic">
                       "{event.description}"
                     </p>
                   )}
                 </div>
 
-                <div className="h-px bg-slate-100" />
+                <div className="h-px bg-slate-100 dark:bg-slate-700" />
 
                 <div className="space-y-3.5 text-sm">
                   <div className="flex items-center gap-3">
                     <CalendarIcon className="w-5 h-5 text-[#D08945]" />
                     <div>
-                      <p className="text-xs text-slate-400 font-semibold select-none">Datum</p>
-                      <p className="font-bold text-slate-800">
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold select-none">Datum</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">
                         {event?.startTime && new Date(event.startTime).toLocaleDateString("de-DE", {
                           weekday: "long",
                           day: "numeric",
@@ -266,8 +266,8 @@ export function EventFormModal({
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-purple-600" />
                     <div>
-                      <p className="text-xs text-slate-400 font-semibold select-none">Uhrzeit</p>
-                      <p className="font-bold text-slate-800">
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold select-none">Uhrzeit</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">
                         {event?.startTime && new Date(event.startTime).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
                         {" - "}
                         {event?.endTime && new Date(event.endTime).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
@@ -279,30 +279,30 @@ export function EventFormModal({
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-emerald-600" />
                       <div>
-                        <p className="text-xs text-slate-400 font-semibold select-none">Ort</p>
-                        <p className="font-bold text-slate-800 break-words">{event.location}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold select-none">Ort</p>
+                        <p className="font-bold text-slate-800 dark:text-slate-200 break-words">{event.location}</p>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                  <Lock className="w-4 h-4 text-amber-600" />
+              <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-100 dark:border-amber-900/50">
+                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+                  <Lock className="w-4 h-4 text-amber-600 dark:text-amber-500" />
                 </div>
-                <p className="text-xs text-amber-800 font-medium">
+                <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">
                   Dieses Event wurde von jemand anderem erstellt. Du kannst es nur ansehen.
                 </p>
               </div>
             </DialogBody>
 
             {/* Read-Only Footer */}
-            <div className="flex-shrink-0 border-t border-slate-100 px-6 py-4">
+            <div className="flex-shrink-0 border-t border-slate-100 dark:border-slate-800 px-6 py-4">
               <DialogFooter className="w-full">
                 <button
                   onClick={handleClose}
-                  className="w-full px-4 py-2.5 rounded-2xl text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 font-bold min-h-[40px] transition-all active:scale-95 text-sm"
+                  className="w-full px-4 py-2.5 rounded-2xl text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold min-h-[40px] transition-all active:scale-95 text-sm"
                 >
                   Schließen
                 </button>
@@ -315,7 +315,7 @@ export function EventFormModal({
             <DialogBody className="px-6 py-4 overflow-y-auto min-h-0 space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Titel *
             </label>
             <input
@@ -323,13 +323,13 @@ export function EventFormModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Event Titel"
-              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 placeholder-slate-400 text-sm"
+              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Beschreibung (optional)
             </label>
             <textarea
@@ -337,52 +337,52 @@ export function EventFormModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Beschreibung des Events (optional)"
               rows={3}
-              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 placeholder-slate-400 text-sm resize-none"
+              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm resize-none"
             />
           </div>
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Datum *
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 text-sm"
+              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white text-sm [color-scheme:light] dark:[color-scheme:dark]"
             />
           </div>
 
           {/* Start & End Times */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Startzeit *
               </label>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white text-sm [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Endzeit *
               </label>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white text-sm [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
           </div>
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Ort (optional)
             </label>
             <input
@@ -390,14 +390,14 @@ export function EventFormModal({
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="z.B. Raum 101"
-              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 placeholder-slate-400 text-sm"
+              className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
             />
           </div>
 
           {/* Event Type & Selection */}
           {mode === "create" ? (
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Eventtyp
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -414,8 +414,8 @@ export function EventFormModal({
                     }
                     className={`rounded-2xl border px-3 py-2.5 text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
                       eventType === option.key
-                        ? "border-[#D08945] bg-[#FEE3C1] text-[#953F0B]"
-                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        ? "border-[#D08945] bg-[#FEE3C1] dark:bg-[#D08945]/20 text-[#953F0B] dark:text-[#FEE3C1]"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                     }`}
                   >
                     <option.icon className="h-4 w-4" />
@@ -426,13 +426,13 @@ export function EventFormModal({
 
               {eventType === "group" && (
                 <div className="mt-3">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Gruppe *
                   </label>
                   <select
                     value={groupWorkspaceId}
                     onChange={(e) => setGroupWorkspaceId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 text-sm"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] text-slate-900 dark:text-white text-sm"
                   >
                     <option value="">Gruppe auswählen</option>
                     {groupOptions.map((group) => (
@@ -445,7 +445,7 @@ export function EventFormModal({
                     ))}
                   </select>
                   {groupOptions.length === 0 && (
-                    <p className="mt-1.5 text-xs text-slate-500">
+                    <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                       Tritt zuerst einer Gruppe bei oder erstelle eine, um ein Gruppenevent zu planen.
                     </p>
                   )}
@@ -454,9 +454,9 @@ export function EventFormModal({
             </div>
           ) : (
             // Edit mode read-only event type (changing workspaceId is complex and unsupported in backend schema updates)
-            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 flex items-center justify-between text-xs select-none">
-              <span className="font-semibold text-slate-500">Eventtyp:</span>
-              <span className="font-bold text-slate-800 capitalize">
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-3 border border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs select-none">
+              <span className="font-semibold text-slate-500 dark:text-slate-400">Eventtyp:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 capitalize">
                 {eventType === "group"
                   ? "Gruppe"
                   : eventType === "public"
@@ -468,12 +468,12 @@ export function EventFormModal({
 
           {/* Delete Action (Separated visual placement) */}
           {mode === "edit" && isCreator && (
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isLoading}
-                className="w-full py-2.5 rounded-2xl bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 font-bold transition-colors active:scale-95 text-sm"
+                className="w-full py-2.5 rounded-2xl bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 font-bold transition-colors active:scale-95 text-sm"
               >
                 Event löschen
               </button>
@@ -482,12 +482,12 @@ export function EventFormModal({
         </DialogBody>
 
         {/* Footer */}
-        <div className="flex-shrink-0 border-t border-slate-100 px-6 py-4">
+        <div className="flex-shrink-0 border-t border-slate-100 dark:border-slate-800 px-6 py-4">
           <DialogFooter className="flex flex-row gap-2 justify-end w-full">
             <button
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 rounded-2xl text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 font-semibold min-h-[40px] transition-all active:scale-95 text-sm"
+              className="flex-1 px-4 py-2.5 rounded-2xl text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold min-h-[40px] transition-all active:scale-95 text-sm"
             >
               Abbrechen
             </button>

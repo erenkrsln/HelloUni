@@ -158,7 +158,7 @@ export default function Home() {
                 className={`text-sm font-medium transition-all px-3 py-1.5 md:px-4 md:py-2 rounded-full whitespace-nowrap flex-shrink-0 md:flex-shrink md:flex-1 ${
                   active
                     ? "bg-[#D08945] text-white"
-                    : "bg-gray-100 text-gray-700 hover:opacity-80"
+                    : "bg-muted text-foreground hover:opacity-80"
                 } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               >
                 {FEED_LABELS[feed]}
@@ -173,8 +173,8 @@ export default function Home() {
             onClick={() => setRankingMode("chronological")}
             className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${
               rankingMode === "chronological"
-                ? "bg-slate-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:opacity-80"
+                ? "bg-slate-600 text-white dark:bg-slate-500"
+                : "bg-muted text-foreground hover:opacity-80"
             }`}
             title="Neueste Beiträge zuerst"
           >
@@ -184,8 +184,8 @@ export default function Home() {
             onClick={() => setRankingMode("engagement")}
             className={`text-xs font-medium transition-all cursor-pointer px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${
               rankingMode === "engagement"
-                ? "bg-slate-600 text-white"
-                : "bg-slate-100 text-slate-700 hover:opacity-80"
+                ? "bg-slate-600 text-white dark:bg-slate-500"
+                : "bg-muted text-foreground hover:opacity-80"
             }`}
             title="Nach Relevanz und Engagement sortiert"
           >
@@ -195,60 +195,60 @@ export default function Home() {
 
         {/* Desktop Compose Box - beim Reload ein Skeleton, solange die Nutzerdaten laden */}
         {currentUser === undefined ? (
-          <div className="hidden md:flex items-center gap-3 px-5 py-4 bg-white rounded-3xl border-2 border-black/5">
+          <div className="hidden md:flex items-center gap-3 px-5 py-4 bg-background rounded-3xl border-2 border-black/5 dark:border-border">
             <div className="w-12 h-12 rounded-full bg-muted animate-pulse flex-shrink-0" />
             <div className="flex-1 h-5 bg-muted animate-pulse rounded" />
             <div className="w-24 h-10 bg-muted animate-pulse rounded-full flex-shrink-0" />
           </div>
         ) : (
-        <div
-          onClick={() => router.push("/create")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              router.push("/create");
-            }
-          }}
-          className="hidden md:flex items-center gap-3 px-5 py-4 bg-white rounded-3xl border-2 border-black/5 cursor-pointer transition-colors hover:border-black/10"
-        >
-          <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gray-100 flex-shrink-0">
-            {currentUser?.image ? (
-              <>
-                {!composerAvatarLoaded && (
-                  <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
-                )}
-                <NextImage
-                  src={currentUser.image}
-                  alt={currentUser.name || "Profil"}
-                  width={128}
-                  height={128}
-                  quality={90}
-                  className="object-cover rounded-full w-full h-full transition-opacity duration-300"
-                  style={{
-                    opacity: composerAvatarLoaded ? 1 : 0,
-                    zIndex: composerAvatarLoaded ? 20 : 0,
-                  }}
-                  onLoad={() => {
-                    markImageAsLoaded(currentUser.image);
-                    setComposerAvatarLoaded(true);
-                  }}
-                />
-              </>
-            ) : (
-              <User className="w-6 h-6 text-gray-400" />
-            )}
+          <div
+            onClick={() => router.push("/create")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                router.push("/create");
+              }
+            }}
+            className="hidden md:flex items-center gap-3 px-5 py-4 bg-background dark:bg-card rounded-3xl border-2 border-black/5 hover:border-black/10 dark:border-border cursor-pointer transition-colors"
+          >
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-border flex items-center justify-center bg-muted flex-shrink-0">
+              {currentUser?.image ? (
+                <>
+                  {!composerAvatarLoaded && (
+                    <div className="absolute inset-0 rounded-full bg-muted animate-pulse z-10" />
+                  )}
+                  <NextImage
+                    src={currentUser.image}
+                    alt={currentUser.name || "Profil"}
+                    width={128}
+                    height={128}
+                    quality={90}
+                    className="object-cover rounded-full w-full h-full transition-opacity duration-300"
+                    style={{
+                      opacity: composerAvatarLoaded ? 1 : 0,
+                      zIndex: composerAvatarLoaded ? 20 : 0,
+                    }}
+                    onLoad={() => {
+                      markImageAsLoaded(currentUser.image);
+                      setComposerAvatarLoaded(true);
+                    }}
+                  />
+                </>
+              ) : (
+                <User className="w-6 h-6 text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 text-left text-muted-foreground text-lg">
+              {currentUser?.name
+                ? `Was machst du gerade, ${currentUser.name.split(" ")[0]}?`
+                : "Was machst du gerade?"}
+            </div>
+            <div className="flex items-center justify-center px-5 py-2 bg-[#D08945] text-white rounded-full font-medium">
+              Posten
+            </div>
           </div>
-          <div className="flex-1 text-left text-gray-400 text-lg">
-            {currentUser?.name
-              ? `Was machst du gerade, ${currentUser.name.split(" ")[0]}?`
-              : "Was machst du gerade?"}
-          </div>
-          <div className="flex items-center justify-center px-5 py-2 bg-[#D08945] text-white rounded-full font-medium">
-            Posten
-          </div>
-        </div>
         )}
       </div>
 
@@ -256,7 +256,7 @@ export default function Home() {
         {/* Upload Progress Bar */}
         {uploadProgress !== null && uploadProgress >= 0 && (
           <div className="px-4 mb-4">
-            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-1 bg-accent rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#D08945] to-[#F4CFAB] transition-all duration-300 ease-out"
                 style={{ width: `${uploadProgress}%` }}

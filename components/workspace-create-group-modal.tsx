@@ -125,9 +125,9 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="flex flex-col max-h-[90vh] p-0">
-        <div className="flex-shrink-0 border-b border-slate-100 px-6 py-4">
+        <div className="flex-shrink-0 border-b border-border px-6 py-4">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-slate-900">
+            <DialogTitle className="text-lg font-bold text-foreground">
               Neue Gruppe erstellen
             </DialogTitle>
           </DialogHeader>
@@ -135,9 +135,8 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
 
         <DialogBody className="overflow-y-auto flex-1 px-6 py-4 min-h-0">
           <div className="space-y-4 pr-1">
-            {/* Group Name */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-foreground mb-1">
                 Gruppenname <span className="text-red-500">*</span>
               </label>
               <input
@@ -145,13 +144,12 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
                 placeholder="z. B. Lerngruppe Mathe"
-                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
+                className="w-full bg-background text-foreground border border-input rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
               />
             </div>
 
-            {/* Description */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-foreground mb-1">
                 Beschreibung
               </label>
               <textarea
@@ -159,25 +157,23 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Beschreibe den Zweck dieser Gruppe…"
                 rows={3}
-                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] resize-none"
+                className="w-full bg-background text-foreground border border-input rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945] resize-none"
               />
             </div>
 
-            {/* Group Type */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-foreground mb-1">
                 Gruppentyp
               </label>
               <select
                 value={groupType}
                 onChange={(e) => {
                   setGroupType(e.target.value);
-                  // Clear custom type if switching away from "Other"
                   if (e.target.value !== "Other") {
                     setCustomGroupType("");
                   }
                 }}
-                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm outline-none bg-white focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
+                className="w-full border border-input rounded-2xl px-3.5 py-2.5 text-sm outline-none bg-background text-foreground focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
               >
                 {GROUP_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -187,10 +183,9 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
               </select>
             </div>
 
-            {/* Custom Group Type (if "Other" selected) */}
             {groupType === "Other" && (
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                <label className="block text-sm font-semibold text-foreground mb-1">
                   Eigenen Gruppentyp
                 </label>
                 <input
@@ -198,14 +193,13 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                   value={customGroupType}
                   onChange={(e) => setCustomGroupType(e.target.value)}
                   placeholder="Gib deinen Gruppentyp ein"
-                  className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
+                  className="w-full bg-background text-foreground border border-input rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
                 />
               </div>
             )}
 
-            {/* Visibility */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-foreground mb-1">
                 Sichtbarkeit
               </label>
               <select
@@ -213,31 +207,30 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                 onChange={(e) =>
                   setVisibility(e.target.value as "private" | "public")
                 }
-                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm outline-none bg-white focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
+                className="w-full border border-input rounded-2xl px-3.5 py-2.5 text-sm outline-none bg-background text-foreground focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
               >
                 <option value="private">Privat</option>
                 <option value="public">Öffentlich</option>
               </select>
             </div>
 
-            {/* Group Icon */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-sm font-semibold text-foreground mb-1.5">
                 Gruppensymbol
               </label>
               <div className="flex items-center gap-2">
-                <div className="text-4xl select-none border border-slate-100 rounded-2xl p-2.5 bg-slate-50/50">{icon}</div>
+                <div className="text-4xl select-none border border-border rounded-2xl p-2.5 bg-muted">{icon}</div>
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="px-3.5 py-2.5 text-sm font-semibold border border-slate-200 bg-slate-50 text-slate-700 rounded-2xl hover:bg-slate-100 transition-colors flex items-center gap-2"
+                  className="px-3.5 py-2.5 text-sm font-semibold border border-input bg-muted text-foreground rounded-2xl hover:bg-accent transition-colors flex items-center gap-2"
                 >
                   <Smile size={18} />
                   Ändern
                 </button>
               </div>
               {showEmojiPicker && (
-                <div className="flex flex-wrap gap-2 mt-2 p-2 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="flex flex-wrap gap-2 mt-2 p-2 bg-muted rounded-2xl border border-border">
                   {EMOJI_SUGGESTIONS.map((emoji) => (
                     <button
                       key={emoji}
@@ -246,7 +239,7 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                         setIcon(emoji);
                         setShowEmojiPicker(false);
                       }}
-                      className="text-2xl p-2 rounded-xl hover:bg-slate-200 transition-colors"
+                      className="text-2xl p-2 rounded-xl hover:bg-accent transition-colors"
                     >
                       {emoji}
                     </button>
@@ -255,9 +248,8 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
               )}
             </div>
 
-            {/* Current Goal */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-foreground mb-1">
                 Aktuelles Ziel
               </label>
               <input
@@ -265,18 +257,18 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                 value={currentGoal}
                 onChange={(e) => setCurrentGoal(e.target.value)}
                 placeholder="Woran arbeitet diese Gruppe zurzeit?"
-                className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
+                className="w-full bg-background text-foreground border border-input rounded-2xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
               />
             </div>
 
-            {/* Add Members */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
+              <label className="block text-sm font-semibold text-foreground mb-1">
                 Mitglieder hinzufügen <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Search
-                  className="absolute left-3.5 top-3 text-slate-400 flex-shrink-0"
+                  aria-hidden="true"
+                  className="absolute left-3.5 top-3 text-muted-foreground flex-shrink-0"
                   size={16}
                 />
                 <input
@@ -284,26 +276,27 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Benutzer suchen..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
+                  className="w-full bg-background text-foreground border border-input rounded-2xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#D08945]/20 focus:border-[#D08945]"
                 />
               </div>
             </div>
 
-            <div className="border border-slate-200 rounded-2xl overflow-y-auto max-h-[180px] min-h-0 bg-white">
+            <div className="border border-border rounded-2xl overflow-y-auto max-h-[180px] min-h-0 bg-card">
               {filteredUsers.length === 0 ? (
-                <div className="text-center text-sm text-slate-400 py-6">
+                <div className="text-center text-sm text-muted-foreground py-6">
                   Keine Benutzer gefunden.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-border">
                   {filteredUsers.map((user) => (
-                    <div
+                    <button
+                      type="button"
                       key={user._id}
                       onClick={() => toggleUser(user._id)}
-                      className="flex items-center justify-between p-3 hover:bg-slate-50 cursor-pointer transition-colors"
+                      className="w-full flex items-center justify-between p-3 hover:bg-accent cursor-pointer transition-colors text-left focus:outline-none focus:ring-2 focus:ring-[#D08945]"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex-shrink-0">
                           {user.image ? (
                             <img
                               src={user.image}
@@ -313,22 +306,22 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
                           ) : null}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold text-slate-900 truncate">
+                          <div className="text-sm font-semibold text-foreground truncate">
                             {user.name}
                           </div>
-                          <div className="text-xs text-slate-500 truncate font-medium">
+                          <div className="text-xs text-muted-foreground truncate font-medium">
                             @{user.username}
                           </div>
                         </div>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors flex-shrink-0 ${selectedUsers.includes(user._id) ? "bg-[#D08945] border-[#D08945]" : "border-slate-300"}`}
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors flex-shrink-0 ${selectedUsers.includes(user._id) ? "bg-[#D08945] border-[#D08945]" : "border-border"}`}
                       >
                         {selectedUsers.includes(user._id) && (
-                          <Check size={12} className="text-white" />
+                          <Check aria-hidden="true" size={12} className="text-white" />
                         )}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -336,15 +329,17 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
           </div>
         </DialogBody>
 
-        <div className="flex-shrink-0 border-t border-slate-100 px-6 py-4">
+        <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-muted">
           <DialogFooter className="flex flex-row justify-end gap-2">
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-2xl border border-slate-200 bg-white transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground rounded-2xl border border-border bg-background transition-colors"
             >
               Abbrechen
             </button>
             <button
+              type="button"
               onClick={handleCreate}
               disabled={
                 isSubmitting || !groupName.trim() || selectedUsers.length === 0

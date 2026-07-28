@@ -174,15 +174,15 @@ export function EditGroupImageModal({
         aria-describedby={undefined}
         hideCloseButton
         withoutExitAnimation
-        className="flex flex-col p-0 rounded-2xl gap-0 bg-white max-w-[460px]"
+        className="flex flex-col p-0 rounded-2xl gap-0 bg-card text-card-foreground max-w-[460px]"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <DialogTitle className="text-lg font-semibold">
             Gruppenbild bearbeiten
           </DialogTitle>
           <button
             onClick={handleClose}
-            className="p-2 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-accent transition-colors"
           >
             <X size={20} />
           </button>
@@ -207,7 +207,7 @@ export function EditGroupImageModal({
                 alt={groupName}
                 className="object-cover"
               />
-              <AvatarFallback className=" bg-gray-100 text-gray-400">
+              <AvatarFallback className="bg-muted text-muted-foreground">
                 {groupName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
