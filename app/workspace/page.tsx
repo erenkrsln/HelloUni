@@ -176,10 +176,10 @@ export default function WorkspacePage() {
         {/* My Groups Section */}
         <section ref={groupsRef} className="mb-8 scroll-mt-16">
           <div className="flex justify-between items-center mb-4 px-1">
-            <h2 className="text-lg font-bold text-slate-900">Meine Gruppen</h2>
+            <h2 className="text-lg font-bold text-foreground">Meine Gruppen</h2>
             <button
               onClick={() => setIsCreateGroupModalOpen(true)}
-              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-accent rounded-2xl border border-border bg-card transition-all shadow-sm active:scale-95"
             >
               <Plus size={16} /> Neue Gruppe
             </button>
@@ -189,9 +189,9 @@ export default function WorkspacePage() {
               <Link
                 href={`/workspace/group_${group._id}`}
                 key={group._id}
-                className="border border-slate-100 p-4 rounded-2xl shadow-sm text-center bg-slate-50/50 cursor-pointer hover:shadow-md hover:bg-slate-50 transition-all block flex flex-col justify-between min-h-[140px]"
+                className="border border-border p-4 rounded-2xl shadow-sm text-center bg-card cursor-pointer hover:shadow-md hover:bg-accent/40 transition-all block flex flex-col justify-between min-h-[140px]"
               >
-                <div className="w-12 h-12 bg-white rounded-full mx-auto mb-3 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 text-2xl select-none">
+                <div className="w-12 h-12 bg-card dark:bg-[#1E1E1E] rounded-full mx-auto mb-3 flex items-center justify-center shadow-sm overflow-hidden border border-border text-2xl select-none">
                   {group.icon ? (
                     group.icon
                   ) : (
@@ -199,10 +199,10 @@ export default function WorkspacePage() {
                   )}
                 </div>
                 <div className="flex-1 flex flex-col justify-center">
-                  <h3 className="text-sm font-semibold text-slate-900 line-clamp-1 mb-1">
+                  <h3 className="text-sm font-semibold text-foreground line-clamp-1 mb-1">
                     {(group as any).displayName || "Gruppe"}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-xs text-muted-foreground font-medium">
                     {group.participants.length} {group.participants.length === 1 ? "Mitglied" : "Mitglieder"}
                   </p>
                 </div>
@@ -235,7 +235,7 @@ export default function WorkspacePage() {
                 onClick={() => setTaskFilter(chip.id)}
                 className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${taskFilter === chip.id
                     ? "bg-[#D08945] text-white shadow-sm"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
                   }`}
               >
                 {chip.label}
@@ -277,10 +277,10 @@ export default function WorkspacePage() {
                         {task.priority && (
                           <span
                             className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm ${task.priority === "high"
-                                ? "bg-rose-50 text-rose-700 border border-rose-100"
+                                ? "bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/30"
                                 : task.priority === "medium"
-                                  ? "bg-amber-50 text-amber-700 border border-amber-100"
-                                  : "bg-green-50 text-green-700 border border-green-100"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
+                                  : "bg-green-50 text-green-700 border border-green-100 dark:bg-green-950/20 dark:text-green-400 dark:border-green-900/30"
                               }`}
                           >
                             {priorityLabels[task.priority as keyof typeof priorityLabels]}
@@ -288,8 +288,8 @@ export default function WorkspacePage() {
                         )}
                         <span
                           className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shadow-sm truncate max-w-[140px] ${isPersonal
-                              ? "bg-purple-50 text-purple-700 border border-purple-100"
-                              : "bg-blue-50 text-blue-700 border border-blue-100"
+                              ? "bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/30"
+                              : "bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/30"
                             }`}
                         >
                           {isPersonal ? "Persönlich" : (task as any).groupName}
@@ -351,10 +351,10 @@ export default function WorkspacePage() {
         {/* Events Section */}
         <section ref={eventsRef} className="mb-8 scroll-mt-16">
           <div className="flex justify-between items-center mb-4 px-1">
-            <h2 className="text-lg font-bold text-slate-900">Events</h2>
+            <h2 className="text-lg font-bold text-foreground">Events</h2>
             <Link
               href="/calendar"
-              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-2xl border border-slate-200 bg-white transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1 px-3.5 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-accent rounded-2xl border border-border bg-card transition-all shadow-sm active:scale-95"
             >
               <Plus size={16} /> Event erstellen
             </Link>
@@ -373,7 +373,7 @@ export default function WorkspacePage() {
                 onClick={() => setEventFilter(chip.id)}
                 className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap transition-all active:scale-95 flex-shrink-0 ${eventFilter === chip.id
                     ? "bg-[#D08945] text-white shadow-sm"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
                   }`}
               >
                 {chip.label}
@@ -406,7 +406,7 @@ export default function WorkspacePage() {
                 );
               })
             ) : (
-              <p className="text-sm text-slate-500 text-center py-8 bg-slate-50/50 rounded-2xl border border-slate-100">
+              <p className="text-sm text-muted-foreground text-center py-8 bg-card rounded-2xl border border-border">
                 {eventFilter === "all" && "Keine bevorstehenden Events"}
                 {eventFilter === "personal" && "Keine bevorstehenden persönlichen Events"}
                 {eventFilter === "groups" && "Keine bevorstehenden Gruppen-Events"}

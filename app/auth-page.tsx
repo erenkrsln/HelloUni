@@ -72,7 +72,7 @@ export default function AuthPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/check-user", {
+      const response = await fetch("/api/check-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail }),
@@ -109,7 +109,7 @@ export default function AuthPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/register-profile", {
+      const response = await fetch("/api/register-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(registerData),
@@ -151,7 +151,7 @@ export default function AuthPage() {
 
     setIsLoading(true);
     try {
-      const checkResponse = await fetch("/api/auth/check-user", {
+      const checkResponse = await fetch("/api/check-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: devEmail }),
@@ -159,7 +159,7 @@ export default function AuthPage() {
       const checkData = await parseApiJson(checkResponse);
 
       if (!checkData.exists) {
-        await fetch("/api/auth/register-profile", {
+        await fetch("/api/register-profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

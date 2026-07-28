@@ -56,7 +56,7 @@ export function DeleteAccountDialog({
 
     try {
       // 1. API-Route aufrufen, die serverseitig die Löschung durchführt
-      const response = await fetch("/api/auth/delete-account", {
+      const response = await fetch("/api/delete-account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });

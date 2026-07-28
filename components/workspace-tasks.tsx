@@ -386,19 +386,19 @@ export function WorkspaceTasks({
               );
               const columnStyles = {
                 todo: {
-                  bg: "bg-blue-50/60 border border-blue-100/40",
-                  badge: "bg-blue-100/60 text-blue-700",
-                  label: "text-blue-800",
+                  bg: "bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100/40 dark:border-blue-900/40",
+                  badge: "bg-blue-100/60 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
+                  label: "text-blue-800 dark:text-blue-300",
                 },
                 in_progress: {
-                  bg: "bg-amber-50/60 border border-amber-100/40",
-                  badge: "bg-amber-100/60 text-amber-700",
-                  label: "text-amber-800",
+                  bg: "bg-amber-50/60 dark:bg-amber-900/20 border border-amber-100/40 dark:border-amber-900/40",
+                  badge: "bg-amber-100/60 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300",
+                  label: "text-amber-800 dark:text-amber-300",
                 },
                 done: {
-                  bg: "bg-green-50/60 border border-green-100/40",
-                  badge: "bg-green-100/60 text-green-700",
-                  label: "text-green-800",
+                  bg: "bg-green-50/60 dark:bg-green-900/20 border border-green-100/40 dark:border-green-900/40",
+                  badge: "bg-green-100/60 dark:bg-green-900/40 text-green-700 dark:text-green-300",
+                  label: "text-green-800 dark:text-green-300",
                 },
               }[status.key as "todo" | "in_progress" | "done"];
 
@@ -447,14 +447,14 @@ export function WorkspaceTasks({
         <AnimatePresence>
           {showCreateModal && (
             <Modal onClose={() => setShowCreateModal(false)}>
-              <div className="rounded-3xl bg-white shadow-2xl w-full flex flex-col max-h-[calc(100dvh-24px)] overflow-hidden">
+              <div className="rounded-3xl bg-white dark:bg-slate-900 shadow-2xl w-full flex flex-col max-h-[calc(100dvh-24px)] overflow-hidden">
                 {/* Header - Fixed */}
-                <div className="flex-shrink-0 border-b border-slate-200 px-6 py-4 flex items-start justify-between gap-4">
+                <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                       Aufgabe erstellen
                     </h3>
-                    <p className="text-sm text-slate-500 font-medium">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                       Füge Details hinzu und weise die Aufgabe zu, bevor du sie speicherst.
                     </p>
                   </div>
@@ -462,7 +462,7 @@ export function WorkspaceTasks({
                     type="button"
                     onClick={() => setShowCreateModal(false)}
                     aria-label="Schließen"
-                    className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 -mr-2"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 -mr-2"
                   >
                     <X size={20} />
                   </button>
@@ -475,7 +475,7 @@ export function WorkspaceTasks({
                 >
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         Titel
                       </label>
                       <input
@@ -486,14 +486,14 @@ export function WorkspaceTasks({
                             title: e.target.value,
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 text-sm"
+                        className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 text-sm"
                         placeholder="Titel der Aufgabe eingeben"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         Beschreibung
                       </label>
                       <textarea
@@ -504,14 +504,14 @@ export function WorkspaceTasks({
                             description: e.target.value,
                           }))
                         }
-                        className="w-full h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 resize-none text-sm"
+                        className="w-full h-24 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 resize-none text-sm"
                         placeholder="Kurze Beschreibung hinzufügen"
                       />
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Zuständig
                         </label>
                         <select
@@ -522,7 +522,7 @@ export function WorkspaceTasks({
                               assigneeId: e.target.value,
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                         >
                           <option value="">Nicht zugewiesen</option>
                           {assigneeOptions.map((member) => (
@@ -534,7 +534,7 @@ export function WorkspaceTasks({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Fälligkeitsdatum
                         </label>
                         <input
@@ -546,14 +546,14 @@ export function WorkspaceTasks({
                               deadline: e.target.value,
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 [color-scheme:light] dark:[color-scheme:dark]"
                         />
                       </div>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Priorität
                         </label>
                         <select
@@ -565,7 +565,7 @@ export function WorkspaceTasks({
                                 .value as TaskFormState["priority"],
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                         >
                           <option value="low">Niedrig</option>
                           <option value="medium">Mittel</option>
@@ -574,7 +574,7 @@ export function WorkspaceTasks({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Sichtbarkeit
                         </label>
                         <select
@@ -586,7 +586,7 @@ export function WorkspaceTasks({
                                 .value as TaskFormState["visibility"],
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                         >
                           <option value="public">Öffentlich</option>
                           <option value="private">Privat</option>
@@ -595,7 +595,7 @@ export function WorkspaceTasks({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         Anfangsstatus
                       </label>
                       <select
@@ -606,7 +606,7 @@ export function WorkspaceTasks({
                             status: e.target.value as TaskStatus,
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                       >
                         <option value="todo">Offen</option>
                         <option value="in_progress">In Bearbeitung</option>
@@ -617,11 +617,11 @@ export function WorkspaceTasks({
                 </form>
 
                 {/* Footer - Fixed */}
-                <div className="flex-shrink-0 border-t border-slate-200 px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 items-stretch sm:items-center sm:justify-end w-full bg-slate-50/50">
+                <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 items-stretch sm:items-center sm:justify-end w-full bg-slate-50/50 dark:bg-slate-900/50">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="flex-1 sm:flex-initial px-5 h-12 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold transition-all active:scale-95 text-sm flex items-center justify-center"
+                    className="flex-1 sm:flex-initial px-5 h-12 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition-all active:scale-95 text-sm flex items-center justify-center"
                   >
                     Abbrechen
                   </button>
@@ -642,14 +642,14 @@ export function WorkspaceTasks({
         <AnimatePresence>
           {selectedTask && (
             <Modal onClose={() => setSelectedTask(null)}>
-              <div className="rounded-3xl bg-white shadow-2xl w-full flex flex-col max-h-[calc(100dvh-24px)] overflow-hidden">
+              <div className="rounded-3xl bg-white dark:bg-slate-900 shadow-2xl w-full flex flex-col max-h-[calc(100dvh-24px)] overflow-hidden">
                 {/* Header - Fixed */}
-                <div className="flex-shrink-0 border-b border-slate-200 px-6 py-4 flex items-start justify-between gap-4">
+                <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                       Aufgabendetails
                     </h3>
-                    <p className="text-sm text-slate-500 font-medium">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                       Bearbeite die ausgewählte Aufgabe und speichere deine Änderungen.
                     </p>
                   </div>
@@ -657,7 +657,7 @@ export function WorkspaceTasks({
                     type="button"
                     onClick={() => setSelectedTask(null)}
                     aria-label="Schließen"
-                    className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 -mr-2"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 -mr-2"
                   >
                     <X size={20} />
                   </button>
@@ -667,7 +667,7 @@ export function WorkspaceTasks({
                 <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         Titel
                       </label>
                       <input
@@ -678,12 +678,12 @@ export function WorkspaceTasks({
                             title: e.target.value,
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 text-sm"
+                        className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 text-sm"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         Beschreibung
                       </label>
                       <textarea
@@ -694,13 +694,13 @@ export function WorkspaceTasks({
                             description: e.target.value,
                           }))
                         }
-                        className="w-full h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 resize-none text-sm"
+                        className="w-full h-24 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white px-4 py-2.5 outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 resize-none text-sm"
                       />
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Zuständig
                         </label>
                         <select
@@ -711,7 +711,7 @@ export function WorkspaceTasks({
                               assigneeId: e.target.value,
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                         >
                           <option value="">Nicht zugewiesen</option>
                           {assigneeOptions.map((member) => (
@@ -723,7 +723,7 @@ export function WorkspaceTasks({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Fälligkeitsdatum
                         </label>
                         <input
@@ -735,14 +735,14 @@ export function WorkspaceTasks({
                               deadline: e.target.value,
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20 [color-scheme:light] dark:[color-scheme:dark]"
                         />
                       </div>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Priorität
                         </label>
                         <select
@@ -754,7 +754,7 @@ export function WorkspaceTasks({
                                 .value as TaskFormState["priority"],
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                         >
                           <option value="low">Niedrig</option>
                           <option value="medium">Mittel</option>
@@ -763,7 +763,7 @@ export function WorkspaceTasks({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                           Sichtbarkeit
                         </label>
                         <select
@@ -775,7 +775,7 @@ export function WorkspaceTasks({
                                 .value as TaskFormState["visibility"],
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                         >
                           <option value="public">Öffentlich</option>
                           <option value="private">Privat</option>
@@ -784,7 +784,7 @@ export function WorkspaceTasks({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         Status
                       </label>
                       <select
@@ -795,7 +795,7 @@ export function WorkspaceTasks({
                             status: e.target.value as TaskStatus,
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
+                        className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-3.5 py-2.5 text-sm outline-none focus:border-[#D08945] focus:ring-2 focus:ring-[#D08945]/20"
                       >
                         <option value="todo">Offen</option>
                         <option value="in_progress">In Bearbeitung</option>
@@ -806,11 +806,11 @@ export function WorkspaceTasks({
                 </div>
 
                 {/* Footer - Fixed */}
-                <div className="flex-shrink-0 border-t border-slate-200 px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 items-stretch sm:items-center sm:justify-between w-full bg-slate-50/50">
+                <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-col-reverse sm:flex-row gap-3 items-stretch sm:items-center sm:justify-between w-full bg-slate-50/50 dark:bg-slate-900/50">
                   <button
                     type="button"
                     onClick={() => selectedTask && handleDelete(selectedTask)}
-                    className="flex-1 sm:flex-initial px-5 h-12 rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold transition-all active:scale-95 text-sm flex items-center justify-center"
+                    className="flex-1 sm:flex-initial px-5 h-12 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-bold transition-all active:scale-95 text-sm flex items-center justify-center"
                   >
                     Aufgabe löschen
                   </button>
@@ -918,7 +918,7 @@ function TaskCard({
               {task.title || "Unbenannte Aufgabe"}
             </h3>
             <span
-              className={`text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border shadow-sm ${task.visibility === "private" ? "bg-muted text-foreground border-border" : "bg-emerald-50 text-emerald-700 border-emerald-100"}`}
+              className={`text-[9px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border shadow-sm ${task.visibility === "private" ? "bg-muted text-foreground border-border" : "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900/50"}`}
             >
               {task.visibility === "private" ? "Privat" : "Öffentlich"}
             </span>
@@ -933,7 +933,7 @@ function TaskCard({
             onDelete(task);
           }}
           aria-label={`Aufgabe löschen: ${task.title || "Ohne Titel"}`}
-          className="rounded-full border border-border bg-muted p-2 text-muted-foreground hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+          className="rounded-full border border-border bg-muted p-2 text-muted-foreground hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-900/50 dark:hover:bg-red-950/30 dark:hover:text-red-400"
         >
           <Trash2 aria-hidden="true" size={14} />
         </button>
@@ -950,7 +950,7 @@ function TaskCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border shadow-sm ${task.priority === "high" ? "bg-rose-50 text-rose-700 border-rose-100" : task.priority === "low" ? "bg-sky-50 text-sky-700 border-sky-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border shadow-sm ${task.priority === "high" ? "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-900/50" : task.priority === "low" ? "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border-sky-100 dark:border-sky-900/50" : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/50"}`}
         >
           {task.priority === "high" ? "Hoch" : task.priority === "low" ? "Niedrig" : "Mittel"}
         </span>

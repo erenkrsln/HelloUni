@@ -114,11 +114,11 @@ export function WorkspaceOverview({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white px-4 py-6">
+    <div className="flex-1 overflow-y-auto bg-white dark:bg-transparent px-4 py-6">
       <div className="max-w-lg mx-auto space-y-6">
         {/* Group Header */}
         {isGroup && (
-          <div className="text-center pb-6 border-b border-gray-100">
+          <div className="text-center pb-6 border-b border-gray-100 dark:border-slate-800">
             {groupData && (
               <>
                 {/* 1. Group Icon */}
@@ -127,39 +127,39 @@ export function WorkspaceOverview({
                 </div>
 
                 {/* 2. Large Group Name */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-3 break-words px-4">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 break-words px-4">
                   {groupData.name || "Gruppe"}
                 </h1>
 
                 {/* 3. Metadata Badges */}
                 <div className="flex flex-wrap justify-center gap-2 mb-4 text-xs">
                   {workspaceGroup?.groupType && (
-                    <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full font-semibold shadow-sm">
+                    <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50 px-2.5 py-1 rounded-full font-semibold shadow-sm">
                       {workspaceGroup.groupType === "Other" && workspaceGroup.customGroupType
                         ? workspaceGroup.customGroupType
                         : (GROUP_TYPE_LABELS[workspaceGroup.groupType] || workspaceGroup.groupType)}
                     </span>
                   )}
                   {workspaceGroup?.visibility && (
-                    <span className="bg-gray-50 text-gray-700 border border-gray-200 px-2.5 py-1 rounded-full font-semibold capitalize shadow-sm">
+                    <span className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 px-2.5 py-1 rounded-full font-semibold capitalize shadow-sm">
                       {visibilityLabels[workspaceGroup.visibility] || workspaceGroup.visibility}
                     </span>
                   )}
-                  <span className="bg-gray-50 text-gray-700 border border-gray-200 px-2.5 py-1 rounded-full font-semibold shadow-sm">
+                  <span className="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 px-2.5 py-1 rounded-full font-semibold shadow-sm">
                     {groupMembers?.length || 0} {groupMembers?.length === 1 ? "Mitglied" : "Mitglieder"}
                   </span>
                 </div>
 
                 {/* 4. Description */}
                 {groupData.description ? (
-                  <p className="text-sm text-gray-600 max-w-sm mx-auto whitespace-pre-wrap break-words leading-relaxed italic px-4">
+                  <p className="text-sm text-gray-600 dark:text-slate-300 max-w-sm mx-auto whitespace-pre-wrap break-words leading-relaxed italic px-4">
                     "{groupData.description}"
                   </p>
                 ) : (
                   canManage && (
                     <button
                       onClick={() => onTabChange?.("group-info")}
-                      className="text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors mt-1 font-medium"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors mt-1 font-medium"
                     >
                       + Beschreibung hinzufügen
                     </button>
@@ -168,11 +168,11 @@ export function WorkspaceOverview({
 
                 {/* 5. Current Goal */}
                 {workspaceGroup?.currentGoal && (
-                  <div className="mt-5 p-3.5 bg-blue-50/40 border border-blue-100/60 rounded-2xl text-xs text-gray-700 max-w-xs mx-auto shadow-sm">
-                    <div className="font-semibold text-blue-800 mb-1 flex items-center justify-center gap-1 select-none">
+                  <div className="mt-5 p-3.5 bg-blue-50/40 dark:bg-blue-950/30 border border-blue-100/60 dark:border-blue-900/50 rounded-2xl text-xs text-gray-700 dark:text-slate-300 max-w-xs mx-auto shadow-sm">
+                    <div className="font-semibold text-blue-800 dark:text-blue-300 mb-1 flex items-center justify-center gap-1 select-none">
                       🎯 Aktuelles Ziel
                     </div>
-                    <p className="italic text-center break-words px-2 text-gray-600">
+                    <p className="italic text-center break-words px-2 text-gray-600 dark:text-slate-400">
                       "{workspaceGroup.currentGoal}"
                     </p>
                   </div>
@@ -184,24 +184,24 @@ export function WorkspaceOverview({
 
         {/* Event Header */}
         {isEvent && eventData && (
-          <div className="text-center pb-6 border-b border-slate-100 flex flex-col items-center">
+          <div className="text-center pb-6 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center">
             {/* Visual Date block */}
-            <div className="flex flex-col items-center justify-center bg-[#D08945]/10 border border-[#D08945]/20 rounded-2xl w-16 h-16 shrink-0 shadow-sm mx-auto mb-3 select-none">
-              <span className="text-xs font-extrabold text-[#953F0B] uppercase tracking-wider">
+            <div className="flex flex-col items-center justify-center bg-[#D08945]/10 dark:bg-[#D08945]/20 border border-[#D08945]/20 dark:border-[#D08945]/30 rounded-2xl w-16 h-16 shrink-0 shadow-sm mx-auto mb-3 select-none">
+              <span className="text-xs font-extrabold text-[#953F0B] dark:text-[#FEE3C1] uppercase tracking-wider">
                 {new Date(eventData.startTime).toLocaleString("de-DE", { month: "short" }).toUpperCase()}
               </span>
-              <span className="text-2xl font-extrabold text-slate-800 leading-none mt-0.5">
+              <span className="text-2xl font-extrabold text-slate-800 dark:text-white leading-none mt-0.5">
                 {new Date(eventData.startTime).getDate()}
               </span>
             </div>
 
             {/* Event Title */}
-            <h1 className="text-2xl font-extrabold text-slate-900 mb-2.5 break-words px-4">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2.5 break-words px-4">
               {eventData.title}
             </h1>
 
             {/* Date & Time / Location */}
-            <div className="text-xs text-slate-500 font-semibold space-y-1 mb-4 select-none">
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold space-y-1 mb-4 select-none">
               <div className="flex items-center justify-center gap-1">
                 <span>📅</span>
                 <span>
@@ -213,7 +213,7 @@ export function WorkspaceOverview({
                 </span>
               </div>
               {eventData.location && (
-                <div className="flex items-center justify-center gap-1 text-slate-600">
+                <div className="flex items-center justify-center gap-1 text-slate-600 dark:text-slate-300">
                   <span>📍</span>
                   <span>{eventData.location}</span>
                 </div>
@@ -223,15 +223,15 @@ export function WorkspaceOverview({
             {/* Badges */}
             <div className="flex flex-wrap justify-center gap-2 mb-4 text-[11px] select-none">
               {eventData.workspaceId ? (
-                <span className="bg-[#FEE3C1] text-[#953F0B] border border-[#FEE3C1]/80 px-3 py-1 rounded-full font-bold shadow-sm">
+                <span className="bg-[#FEE3C1] dark:bg-[#D08945]/20 text-[#953F0B] dark:text-[#FEE3C1] border border-[#FEE3C1]/80 dark:border-[#D08945]/30 px-3 py-1 rounded-full font-bold shadow-sm">
                   {eventGroup?.displayName || "Gruppe"}
                 </span>
               ) : eventData.isPrivate ? (
-                <span className="bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1 rounded-full font-bold shadow-sm">
+                <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-900/50 px-3 py-1 rounded-full font-bold shadow-sm">
                   Privat
                 </span>
               ) : (
-                <span className="bg-green-50 text-green-700 border border-green-100 px-3 py-1 rounded-full font-bold shadow-sm">
+                <span className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-100 dark:border-green-900/50 px-3 py-1 rounded-full font-bold shadow-sm">
                   Öffentlich
                 </span>
               )}
@@ -239,11 +239,11 @@ export function WorkspaceOverview({
 
             {/* Description */}
             {eventData.description ? (
-              <p className="text-sm text-slate-600 max-w-sm mx-auto whitespace-pre-wrap break-words leading-relaxed italic px-4">
+              <p className="text-sm text-slate-600 dark:text-slate-300 max-w-sm mx-auto whitespace-pre-wrap break-words leading-relaxed italic px-4">
                 "{eventData.description}"
               </p>
             ) : (
-              <p className="text-xs text-slate-400 italic select-none">
+              <p className="text-xs text-slate-400 dark:text-slate-500 italic select-none">
                 Keine Beschreibung vorhanden.
               </p>
             )}
@@ -255,25 +255,25 @@ export function WorkspaceOverview({
           {/* Chat */}
           <div
             onClick={() => onTabChange?.("chat")}
-            className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+            className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
           >
             <div>
               <MessageSquare size={24} className="text-[#D08945] mb-2" />
-              <h3 className="font-bold text-sm text-slate-800 mb-1">Chat</h3>
+              <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Chat</h3>
             </div>
-            <p className="text-xs text-gray-500 font-medium select-none">Chat öffnen</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">Chat öffnen</p>
           </div>
 
           {/* Tasks */}
           <div
             onClick={() => onTabChange?.("tasks")}
-            className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+            className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
           >
             <div>
-              <ListTodo size={24} className="text-blue-600 mb-2" />
-              <h3 className="font-bold text-sm text-slate-800 mb-1">Aufgaben</h3>
+              <ListTodo size={24} className="text-blue-600 dark:text-blue-400 mb-2" />
+              <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Aufgaben</h3>
             </div>
-            <p className="text-xs text-gray-500 font-medium select-none">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">
               {taskStats?.openCount || 0} offen
             </p>
           </div>
@@ -281,13 +281,13 @@ export function WorkspaceOverview({
           {/* Files */}
           <div
             onClick={() => onTabChange?.("files")}
-            className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+            className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
           >
             <div>
-              <Folder size={24} className="text-green-600 mb-2" />
-              <h3 className="font-bold text-sm text-slate-800 mb-1">Dateien</h3>
+              <Folder size={24} className="text-green-600 dark:text-green-400 mb-2" />
+              <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Dateien</h3>
             </div>
-            <p className="text-xs text-gray-500 font-medium select-none">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">
               {fileStats?.count || 0} {fileStats?.count === 1 ? "Datei" : "Dateien"}
             </p>
           </div>
@@ -295,13 +295,13 @@ export function WorkspaceOverview({
           {/* Polls */}
           <div
             onClick={() => onTabChange?.("polls")}
-            className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+            className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
           >
             <div>
-              <BarChart2 size={24} className="text-purple-600 mb-2" />
-              <h3 className="font-bold text-sm text-slate-800 mb-1">Umfragen</h3>
+              <BarChart2 size={24} className="text-purple-600 dark:text-purple-400 mb-2" />
+              <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Umfragen</h3>
             </div>
-            <p className="text-xs text-gray-500 font-medium select-none">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">
               {pollStats?.activeCount || 0} aktiv
             </p>
           </div>
@@ -311,13 +311,13 @@ export function WorkspaceOverview({
               {/* Events (Group only) */}
               <div
                 onClick={() => onTabChange?.("events")}
-                className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+                className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
               >
                 <div>
-                  <Calendar size={24} className="text-orange-600 mb-2" />
-                  <h3 className="font-bold text-sm text-slate-800 mb-1">Events</h3>
+                  <Calendar size={24} className="text-orange-600 dark:text-orange-400 mb-2" />
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Events</h3>
                 </div>
-                <p className="text-xs text-gray-500 font-medium select-none">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">
                   {eventStats?.upcomingCount || 0} bevorstehend
                 </p>
               </div>
@@ -325,13 +325,13 @@ export function WorkspaceOverview({
               {/* Group Settings (Group only) -> renamed "Einstellungen" */}
               <div
                 onClick={() => onTabChange?.("group-info")}
-                className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+                className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
               >
                 <div>
-                  <Settings size={24} className="text-slate-600 mb-2" />
-                  <h3 className="font-bold text-sm text-slate-800 mb-1">Einstellungen</h3>
+                  <Settings size={24} className="text-slate-600 dark:text-slate-400 mb-2" />
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Einstellungen</h3>
                 </div>
-                <p className="text-xs text-gray-500 font-medium select-none">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">
                   {groupMembers?.length || 0} {groupMembers?.length === 1 ? "Mitglied" : "Mitglieder"}
                 </p>
               </div>
@@ -341,13 +341,13 @@ export function WorkspaceOverview({
               {/* Teilnehmende (Event only) */}
               <div
                 onClick={() => onTabChange?.("group-info")}
-                className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+                className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
               >
                 <div>
-                  <Users size={24} className="text-orange-600 mb-2" />
-                  <h3 className="font-bold text-sm text-slate-800 mb-1">Teilnehmende</h3>
+                  <Users size={24} className="text-orange-600 dark:text-orange-400 mb-2" />
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Teilnehmende</h3>
                 </div>
-                <p className="text-xs text-gray-500 font-medium select-none">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">
                   {(eventGroupMembers?.length || 1)} {((eventGroupMembers?.length || 1) === 1 ? "Teilnehmer" : "Teilnehmende")}
                 </p>
               </div>
@@ -355,13 +355,13 @@ export function WorkspaceOverview({
               {/* Eventdetails (Event only) */}
               <div
                 onClick={() => onTabChange?.("event-details")}
-                className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
+                className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 hover:shadow-md hover:bg-slate-50/30 dark:hover:bg-slate-800 transition-all cursor-pointer flex flex-col justify-between min-h-[110px]"
               >
                 <div>
-                  <Settings size={24} className="text-slate-600 mb-2" />
-                  <h3 className="font-bold text-sm text-slate-800 mb-1">Eventdetails</h3>
+                  <Settings size={24} className="text-slate-600 dark:text-slate-400 mb-2" />
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-1">Eventdetails</h3>
                 </div>
-                <p className="text-xs text-gray-500 font-medium select-none">Details & Optionen</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium select-none">Details & Optionen</p>
               </div>
             </>
           )}

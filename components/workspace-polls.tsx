@@ -87,7 +87,7 @@ export function WorkspacePolls({
 
         <div className="flex justify-between items-center mb-6 px-1">
           {!onBackToOverview && (
-            <h2 className="font-bold text-lg text-slate-900">Aktive Umfragen</h2>
+            <h2 className="font-bold text-lg text-slate-900 dark:text-white">Aktive Umfragen</h2>
           )}
           {!isCreating && (
             <button
@@ -102,14 +102,14 @@ export function WorkspacePolls({
         {isCreating && (
           <form
             onSubmit={handleCreatePoll}
-            className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-6 space-y-4"
+            className="bg-white dark:bg-slate-900/50 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 mb-6 space-y-4"
           >
             <input
               type="text"
               placeholder="Stelle eine Frage..."
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              className="w-full font-bold bg-transparent border-b border-slate-200 outline-none pb-2 text-slate-900 focus:border-[#D08945] text-base"
+              className="w-full font-bold bg-transparent border-b border-slate-200 dark:border-slate-800 outline-none pb-2 text-slate-900 dark:text-white focus:border-[#D08945] text-base"
             />
             <div className="space-y-2">
               {options.map((opt, idx) => (
@@ -119,7 +119,7 @@ export function WorkspacePolls({
                   placeholder={`Option ${idx + 1}`}
                   value={opt}
                   onChange={(e) => handleOptionChange(idx, e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#D08945]/20 text-sm text-slate-900"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-[#D08945]/20 text-sm text-slate-900 dark:text-white"
                 />
               ))}
             </div>
@@ -127,7 +127,7 @@ export function WorkspacePolls({
               <button
                 type="button"
                 onClick={() => setOptions([...options, ""])}
-                className="px-3.5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors"
+                className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 + Option hinzufügen
               </button>
@@ -135,7 +135,7 @@ export function WorkspacePolls({
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
               >
                 Abbrechen
               </button>
@@ -154,13 +154,13 @@ export function WorkspacePolls({
 
         <div className="space-y-4">
           {!polls ? (
-            <div className="text-center text-slate-500 p-8 font-medium">
+            <div className="text-center text-slate-500 dark:text-slate-400 p-8 font-medium">
               Umfragen werden geladen...
             </div>
           ) : polls.length === 0 && !isCreating ? (
-            <div className="text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed shadow-sm">
+            <div className="text-center py-12 text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 border-dashed shadow-sm">
               <BarChart2 className="w-12 h-12 mx-auto mb-2 opacity-20 text-[#D08945]" />
-              <p className="text-sm font-semibold text-slate-500">
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 Keine aktiven Umfragen. <br /> Stelle der Gruppe eine Frage!
               </p>
             </div>
@@ -173,16 +173,16 @@ export function WorkspacePolls({
               return (
                 <div
                   key={poll._id}
-                  className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative"
+                  className="group bg-white dark:bg-slate-900/50 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-shadow relative"
                 >
                   <div className="flex justify-between items-start mb-4 gap-4">
-                    <h3 className="font-bold text-slate-900 flex-1 text-base">
+                    <h3 className="font-bold text-slate-900 dark:text-white flex-1 text-base">
                       {poll.question}
                     </h3>
                     {currentUser && poll.createdBy === currentUser._id && (
                       <button
                         onClick={() => setEditingPollId(poll._id.toString())}
-                        className="p-2 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
+                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                         title="Umfrage bearbeiten"
                       >
                         <Edit2 size={16} className="text-[#D08945]" />
@@ -212,10 +212,10 @@ export function WorkspacePolls({
                               optionIndex: idx,
                             })
                           }
-                          className={`relative overflow-hidden rounded-2xl border p-3.5 cursor-pointer transition-colors ${voted ? "border-[#D08945] bg-orange-50/40" : "border-slate-200 hover:bg-slate-50"}`}
+                          className={`relative overflow-hidden rounded-2xl border p-3.5 cursor-pointer transition-colors ${voted ? "border-[#D08945] bg-orange-50/40 dark:bg-[#D08945]/10" : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
                         >
                           <div
-                            className={`absolute left-0 top-0 bottom-0 transition-all duration-500 ${voted || isWinning ? "bg-[#D08945] opacity-10" : "bg-slate-200 opacity-50"}`}
+                            className={`absolute left-0 top-0 bottom-0 transition-all duration-500 ${voted || isWinning ? "bg-[#D08945] opacity-10" : "bg-slate-200 dark:bg-slate-700 opacity-50"}`}
                             style={{ width: `${percentage}%` }}
                           />
                           <div className="relative flex justify-between items-center z-10">
@@ -223,15 +223,15 @@ export function WorkspacePolls({
                               {voted ? (
                                 <Check size={16} className="text-[#D08945] stroke-[3]" />
                               ) : (
-                                <div className="w-4 h-4 border rounded-full border-slate-300 bg-white" />
+                                <div className="w-4 h-4 border rounded-full border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800" />
                               )}
                               <span
-                                className={`text-sm ${voted ? "font-bold text-slate-900" : "text-slate-700 font-semibold"}`}
+                                className={`text-sm ${voted ? "font-bold text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300 font-semibold"}`}
                               >
                                 {option}
                               </span>
                             </div>
-                            <span className="text-xs font-bold text-slate-600">
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
                               {percentage}%
                             </span>
                           </div>
@@ -239,7 +239,7 @@ export function WorkspacePolls({
                       );
                     })}
                   </div>
-                  <div className="text-xs text-slate-400 mt-3 font-semibold">
+                  <div className="text-xs text-slate-400 dark:text-slate-500 mt-3 font-semibold">
                     {totalVotes} {totalVotes === 1 ? "Stimme" : "Stimmen"}
                   </div>
 
